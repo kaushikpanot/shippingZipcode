@@ -22,7 +22,6 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['verify.shopify.jwt'])->group(function () {
     Route::controller(ApiController::class)->group(function () {
         Route::get('country', 'getCountryList');
-        Route::get('state/{country_id}', 'getCountryBasedStateList');
-        Route::post('carrierService', 'storeCarrierService');
+        Route::get('currency', 'getCurrencyList');
     });
 });

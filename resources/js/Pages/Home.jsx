@@ -70,8 +70,9 @@ function Home() {
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
+                <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}></Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
                         <FormLayout>
                             <FormLayout.Group>
                                 <TextField
@@ -94,11 +95,13 @@ function Home() {
                             </ButtonGroup>
                         </div>
                     </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
             </div>
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%" }}>
                 <Grid>
+                <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '3%' }}>
                             <Text variant="headingLg" as="h5">
@@ -109,7 +112,7 @@ function Home() {
                             </p>
                         </div>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
 
                         <Card>
                             <div style={{ display: "flex", justifyContent: "space-between", marginTop: "2%" }}>
@@ -131,6 +134,7 @@ function Home() {
 
 
                     </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
 
                 </Grid>
             </div>

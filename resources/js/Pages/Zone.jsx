@@ -32,7 +32,18 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 function Help() {
     const navigate = useNavigate();
-    console.log(apiCommonURL)
+    const [country,setCountry] = useState([])
+    const [formData, setFormData] = useState({
+        name: "",
+        currency: "",
+        country: "",
+    });
+    const handleConfigrationSettings = (field) => (value) => {
+        setFormData((prevState) => ({
+            ...prevState,
+            [field]: value,
+        }));
+    };
     const [selected, setSelected] = useState(['enable']);
     const handleChange = useCallback((value) => setSelected(value), []);
     const [checked, setChecked] = useState(false);
@@ -80,9 +91,30 @@ function Help() {
             console.error("Error fetching country:", error);
         }
     }
-    useEffect( () =>{
-getCountry()
-    },[])
+    const getCurrency = async () => {
+        try {
+            const token = await getSessionToken(app);
+            console.log(token)
+            const response = await axios.get(`${apiCommonURL}/api/currency`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const countryData = response.data.countries;
+            const stateList = countryData.countries.map(state => ({
+                label: state.name,
+                value: state.code
+            }));
+            setCountry(stateList)
+            console.log(countryData)
+        } catch (error) {
+            console.error("Error fetching country:", error);
+        }
+    }
+    useEffect(() => {
+        getCountry()
+        getCurrency()
+    }, [])
     return (
         <Page
             fullWidth
@@ -93,6 +125,7 @@ getCountry()
             <Divider borderColor="border" />
             <div style={{ marginTop: '2%', marginBottom: "2%" }}>
                 <Grid>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '10%' }}>
                             <Text variant="headingLg" as="h5">
@@ -104,7 +137,7 @@ getCountry()
                             </p>
                         </div>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
                         <LegacyCard sectioned>
                             <div className='choice'>
                                 <ChoiceList
@@ -122,6 +155,8 @@ getCountry()
                                     label="Zone Name (Internal Use Only)"
                                     placeholder="West Zone"
                                     autoComplete="off"
+                                    value={formData.name}
+                                    nChange={handleConfigrationSettings('name')}
                                 />
                             </div>
                             <div style={{ marginTop: "2%" }} className='zonetext'>
@@ -129,7 +164,9 @@ getCountry()
                                     label="Country"
                                     placeholder="West Zone"
                                     autoComplete="off"
-                                    helpText="NOTE: Make sure you enable this country on your default Shopify manage rates, you can see here."
+                                    value={formData.country}
+                                    onChange={handleConfigrationSettings('country')}
+                                    helpText="NOTE: Make sure you enable this country on your default Shopify manage rates."
                                 />
                             </div>
                             <div style={{ marginTop: "2%", marginBottom: "2%" }} className='zonetext'>
@@ -137,7 +174,9 @@ getCountry()
                                     label="Currency Format"
                                     placeholder="West Zone"
                                     autoComplete="off"
-                                    helpText="NOTE: Make sure you enable this currency on your Shopify markets, you can see here."
+                                    value={formData.currency}
+                                    onChange={handleConfigrationSettings('currency')}
+                                    helpText="NOTE: Make sure you enable this currency on your Shopify markets."
 
                                 />
                             </div>
@@ -153,13 +192,16 @@ getCountry()
               </div> */}
                         </LegacyCard>
                     </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+
                 </Grid>
             </div>
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
+                <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}></Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
                         <FormLayout>
                             <FormLayout.Group>
                                 <TextField
@@ -182,11 +224,13 @@ getCountry()
                             </ButtonGroup>
                         </div>
                     </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
             </div>
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "5%" }}>
                 <Grid>
+                <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '5%' }}>
                             <Text variant="headingLg" as="h5">
@@ -197,13 +241,14 @@ getCountry()
                             </p>
                         </div>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
                         <Card>
                             <div style={{ textAlign: "center", paddingTop: "5%", paddingBottom: "5%", textDecoration: "none" }}>
                                 <Link onClick={() => handleEditForm()}> Click Here</Link> to add rate for this particular zone.
                             </div>
                         </Card>
                     </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
             </div>
         </Page>

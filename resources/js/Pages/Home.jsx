@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback } from 'react';
 import {
     Page,
     Button,
@@ -11,7 +11,11 @@ import {
     Card,
     FormLayout,
     Select,
-    ButtonGroup
+    ButtonGroup,
+    Modal,
+    TextContainer,
+    Banner
+    , Link
 } from '@shopify/polaris';
 import {
     SearchIcon,
@@ -28,17 +32,23 @@ function Home() {
     }
 
     const [select, setSelect] = useState('today');
+    const [active, setActive] = useState(false);
 
     const handleSelectChange = useCallback(
         (value) => setSelect(value),
         [],
     );
 
+    const toggleModal = useCallback(() => setActive((active) => !active), []);
+
     const options = [
         { label: 'Status' },
         { label: 'Enable', value: 'enable' },
         { label: 'Disable', value: 'disable' },
     ];
+    const handleEditZone = (Zoneid) => {
+        navigate(`/Zone/${Zoneid}`);
+    };
     return (
         <Page
             // fullWidth
@@ -46,6 +56,17 @@ function Home() {
             primaryAction={<Button variant="primary" onClick={AddZone}>Add Zone</Button>}
 
         >
+            <Divider borderColor="border" />
+            <div style={{marginTop:"2%",marginBottom:"2%"}}>
+
+            <Card sectioned>
+                <Banner title="Free Development Store Plan  " tone="warning" >
+                    <p>
+                        You are in free plan now. After you switch your Shopify's store plan from development to any paid plan, You have to select a plan on the app as well.
+                    </p>
+                </Banner>
+            </Card>
+            </div>
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
@@ -95,9 +116,8 @@ function Home() {
                                 <a href='' style={{ fontSize: "15px", fontWeight: "bold", textDecoration: "none" }}> Wast Zone</a>
                                 <div style={{}} >
                                     <ButtonGroup>
-                                        <Button variant="primary" icon={EditIcon} />
-                                        <Button variant="primary" tone="critical" icon={DeleteIcon} />
-
+                                        <Button variant="primary" icon={EditIcon} onClick={() => handleEditZone()} />
+                                        <Button variant="primary" tone="critical" icon={DeleteIcon} onClick={toggleModal} />
                                     </ButtonGroup>
                                 </div>
                             </div>
@@ -114,7 +134,31 @@ function Home() {
 
                 </Grid>
             </div>
-
+            <Modal
+                open={active}
+                onClose={toggleModal}
+                title="Delete Zone"
+                primaryAction={{
+                    content: 'Delete',
+                    destructive: true,
+                    onAction: () => {
+                        // Add your delete logic here
+                        toggleModal();
+                    },
+                }}
+                secondaryActions={[
+                    {
+                        content: 'Cancel',
+                        onAction: toggleModal,
+                    },
+                ]}
+            >
+                <Modal.Section>
+                    <TextContainer>
+                        <p>Are you sure you want to delete this zone?</p>
+                    </TextContainer>
+                </Modal.Section>
+            </Modal>
         </Page>
     )
 }

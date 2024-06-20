@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import axios from 'axios';
 import {
     Page,
     Button,
@@ -22,12 +23,16 @@ import {
     ResetIcon
 } from '@shopify/polaris-icons';
 import { useNavigate } from 'react-router-dom';
-
+import createApp from '@shopify/app-bridge';
+import { getSessionToken } from "@shopify/app-bridge-utils";
+const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
+const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 
 
 function Help() {
     const navigate = useNavigate();
+    console.log(apiCommonURL)
     const [selected, setSelected] = useState(['enable']);
     const handleChange = useCallback((value) => setSelected(value), []);
     const [checked, setChecked] = useState(false);
@@ -50,13 +55,34 @@ function Help() {
     const handleEditForm = () => {
         navigate('/Rate');
         console.log('navigate on Rule')
-      };
-      
-  const navigateHome = () => {
-    // 👇️ Navigate to /
-    navigate('/');
-    console.log('navigat')
-  };
+    };
+
+    const navigateHome = () => {
+        // 👇️ Navigate to /
+        navigate('/');
+    };
+    const app = createApp({
+        apiKey: SHOPIFY_API_KEY,
+        host: new URLSearchParams(location.search).get("host"),
+    });
+    const getCountry = async () => {
+        try {
+            const token = await getSessionToken(app);
+            console.log(token)
+            const response = await axios.get(`${apiCommonURL}/api/country`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const countryData = response.data;
+            console.log(countryData)
+        } catch (error) {
+            console.error("Error fetching country:", error);
+        }
+    }
+    useEffect( () =>{
+getCountry()
+    },[])
     return (
         <Page
             fullWidth
@@ -174,7 +200,7 @@ function Help() {
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <Card>
                             <div style={{ textAlign: "center", paddingTop: "5%", paddingBottom: "5%", textDecoration: "none" }}>
-                                <Link  onClick={() => handleEditForm()}> Click Here</Link> to add rate for this particular zone.
+                                <Link onClick={() => handleEditForm()}> Click Here</Link> to add rate for this particular zone.
                             </div>
                         </Card>
                     </Grid.Cell>

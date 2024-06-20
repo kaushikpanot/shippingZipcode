@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,6 +14,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [HomeController::class,'index'])->middleware(['verify.shop','verify.shopify'])->name('home');
+Route::get('/{path?}', [HomeController::class, 'common'])
+    ->where('path', '^(?!uploads).')
+    ->where('path', '..(?!jpg|jpeg|png|gif|bmp|ico|webp).')
+    ->where('path', '.*')
+    ->fallback();

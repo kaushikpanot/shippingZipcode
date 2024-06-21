@@ -314,4 +314,43 @@ class ApiController extends Controller
             return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);
         }
     }
+
+    public function zoneDestroy($id)
+    {
+        try {
+
+            $shop = request()->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
+
+            if (!$shop) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Token not provided.'
+                ], 400);
+            }
+
+            $user_id = User::where('name', $shop)->pluck('id')->first();
+
+            if (!$user_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not found.'
+                ], 404);
+            }
+
+            $zone = Zone::where('user_id', $user_id)->findOrFail($id);
+
+            $zone->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Zone deleted successfully.'
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['status' => false, 'message' => 'Zone not found.']);
+        } catch (Throwable $th) {
+            Log::error('Unexpected zone delete error', ['exception' => $th->getMessage()]);
+            return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);
+        }
+    }
 }

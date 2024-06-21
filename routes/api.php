@@ -29,5 +29,6 @@ Route::middleware(['verify.shopify.jwt'])->group(function () {
         Route::post('zone/save', 'zoneStore');
         Route::get('zone/{id}/edit', 'zoneEdit');
         Route::get('zones/{name?}', 'zoneList');
+        Route::delete('zone/{id}', 'zoneDestroy');
     });
 });

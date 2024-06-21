@@ -3,7 +3,6 @@ import axios from 'axios';
 import {
     Page,
     Button,
-    LegacyCard,
     Divider,
     Grid,
     Text,
@@ -16,8 +15,8 @@ import {
     IndexTable,
     useIndexResourceState,
     Badge,
-    Icon
-
+    Icon,
+    Toast,
 } from '@shopify/polaris';
 import {
     SearchIcon,
@@ -32,96 +31,101 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 function Home() {
     const navigate = useNavigate();
-    const [zoneDetails, setZoneDetails] = useState([])
-    const AddZone = () => {
-        navigate('/Zone')
-    }
+    const [zoneDetails, setZoneDetails] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [itemsPerPage] = useState(5); 
     const [active, setActive] = useState(false);
     const [toastActive, setToastActive] = useState(false);
-    const [selectedRuleId, setSelectedRuleId] = useState(null);
-    const toggletoast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
+    const [selectedZoneId, setselectedZoneId] = useState(null);
+    const [textFieldValue, setTextFieldValue] = useState("");
+
+    const toggleToast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
     const toggleModal = useCallback(() => setActive((active) => !active), []);
+
     const toastMarkup = toastActive ? (
         <Toast content="Zipcode Rule deleted" onDismiss={toggleToast} />
-      ) : null;
-    // const handleEditZone = (Zoneid) => {
-    //     navigate(`/Zone/${Zoneid}`);
-    // };
+    ) : null;
 
-    const [textFieldValue, setTextFieldValue] = useState();
-
-    const handleTextFieldChange = useCallback(
-      (value) => setTextFieldValue(value),
-      [],
-    );
-    const orders = [
-        {
-            id: '1020',
-            Name: 'Jaydon Stanton',
-            Countrylist: 'india,pakistan',
-
-        },
-        {
-            id: '1019',
-            Name: 'Jaydon Stanton',
-            Countrylist: 'india,pakistan',
-        },
-        {
-            id: '1018',
-            Name: 'Jaydon Stanton',
-            Countrylist: 'india,pakistan',
-        },
-    ];
     const app = createApp({
         apiKey: SHOPIFY_API_KEY,
         host: new URLSearchParams(location.search).get("host"),
     });
-    useEffect(() => {
-        const getZoneDetails = async () => {
-            const token = await getSessionToken(app);
-            try {
-                const response = await axios.get(`${apiCommonURL}/api/assignRule`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                const ruledata = response.data.assignRules;
-                setZoneDetails(ruledata)
-                console.log(ruledata, 'data');
-            } catch (error) {
-                console.error(error, 'error from');
-            }
-        };
-        getZoneDetails();
-    }, []);
-    
-    const handleDelete = useCallback(async () => {
+
+    const getZoneDetails = async () => {
         const token = await getSessionToken(app);
         try {
-          await axios.delete(`${apiCommonURL}/api/rule/${selectedRuleId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          setRowData((prevData) => prevData.filter((rule) => rule.id !== selectedRuleId));
-          setFilteredRowData((prevData) => prevData.filter((rule) => rule.id !== selectedRuleId));
-          setToastActive(true);
+            const response = await axios.get(`${apiCommonURL}/api/zones`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const ruledata = response.data.zones;
+            setZoneDetails(ruledata);
+            setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
         } catch (error) {
-          console.error('Error deleting rule:', error);
+            console.error(error, 'error from');
         }
-      }, [selectedRuleId]);
+    };
+
+    useEffect(() => {
+        getZoneDetails();
+    }, []);
+
+    const handleEditZone = (Zoneid) => {
+        navigate(`/Zone/${Zoneid}`);
+    };
+
+    const handleDelete = async () => {
+        try {
+            const token = await getSessionToken(app);
+            await axios.delete(`${apiCommonURL}/api/zone/${selectedZoneId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            toggleModal(); 
+            toggleToast(); 
+            getZoneDetails();
+        } catch (error) {
+            console.error('Error deleting zone:', error);
+        }
+    };
+
+    const handleTextFieldChange = useCallback(
+        (value) => setTextFieldValue(value),
+        [],
+    );
+
+    const handleNextPage = useCallback(() => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    }, [currentPage, totalPages]);
+
+    const handlePreviousPage = useCallback(() => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    }, [currentPage]);
 
     const resourceName = {
-        singular: 'order',
-        plural: 'orders',
+        singular: 'zone',
+        plural: 'zones',
     };
 
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
-        useIndexResourceState(orders);
+        useIndexResourceState(zoneDetails);
 
-    const rowMarkup = orders.map(
+    const filteredZones = zoneDetails.filter(zone =>
+        zone.name.toLowerCase().includes(textFieldValue.toLowerCase())
+    );
+
+    const paginatedZones = filteredZones.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    const rowMarkup = paginatedZones.map(
         (
-            { id, Name, Countrylist },
+            { id, name, country },
             index,
         ) => (
             <IndexTable.Row
@@ -132,33 +136,29 @@ function Home() {
             >
                 <IndexTable.Cell>
                     <Text variant="bodyMd" fontWeight="bold" as="span">
-                        {Name}
+                        {name}
                     </Text>
                 </IndexTable.Cell>
-                <IndexTable.Cell>{Countrylist}</IndexTable.Cell>
+                <IndexTable.Cell>{country}</IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
-                        <Button variant="primary" icon={EditIcon} onClick={() => handleEditZone()} />
-                        <Button variant="primary" tone="critical" icon={DeleteIcon}  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedRuleId(id); toggleModal(); }} />
+                        <Button icon={EditIcon} variant="primary" onClick={() => handleEditZone(id)} />
+                        <Button icon={DeleteIcon} variant="primary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedZoneId(id); toggleModal(); }} />
                     </ButtonGroup>
                 </IndexTable.Cell>
-
             </IndexTable.Row>
         ),
     );
 
     return (
         <Page
-            // fullWidth
             title="Zones & Rates"
-            primaryAction={<Button variant="primary" onClick={() => AddZone()}>Add Zone</Button>}
-
+            primaryAction={<Button onClick={() => navigate('/Zone')}>Add Zone</Button>}
         >
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
-
                 <Card sectioned>
-                    <Banner title="Free Development Store Plan  " tone="warning" >
+                    <Banner title="Free Development Store Plan" status="warning">
                         <p>
                             You are in free plan now. After you switch your Shopify's store plan from development to any paid plan, You have to select a plan on the app as well.
                         </p>
@@ -174,39 +174,45 @@ function Home() {
                             <Text variant="headingLg" as="h5">
                                 Zones Listing
                             </Text>
-                            <div style={{marginTop:"2.5%"}}>
+                            <div style={{ marginTop: "2.5%" }}>
                                 <TextField
                                     type="text"
                                     value={textFieldValue}
+                                    placeholder="Search by name..."
                                     onChange={handleTextFieldChange}
-                                    prefix={<Icon source={SearchIcon} tone="base" />}
+                                    prefix={<Icon source={SearchIcon} />}
                                     autoComplete="off"
                                 />
                             </div>
                             <div style={{ marginTop: "2.5%" }}>
                                 <IndexTable
                                     resourceName={resourceName}
-                                    itemCount={orders.length}
+                                    itemCount={filteredZones.length}
                                     selectedItemsCount={
                                         allResourcesSelected ? 'All' : selectedResources.length
                                     }
                                     onSelectionChange={handleSelectionChange}
                                     headings={[
-                                        { title: 'Name' },
-                                        { title: 'County List' },
+                                        { title: 'Zipcode Rule Name' },
+                                        { title: 'Country' },
                                         { title: 'Action' },
                                     ]}
+                                    paginated
+                                    pagination={{
+                                        hasPrevious: currentPage > 1,
+                                        hasNext: currentPage < totalPages,
+                                        onNext: handleNextPage,
+                                        onPrevious: handlePreviousPage,
+                                    }}
                                 >
                                     {rowMarkup}
                                 </IndexTable>
                             </div>
                         </Card>
                     </Grid.Cell>
-
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
             </div>
-
 
             <Modal
                 open={active}
@@ -230,8 +236,9 @@ function Home() {
                     </TextContainer>
                 </Modal.Section>
             </Modal>
+            {toastMarkup}
         </Page>
-    )
+    );
 }
 
-export default Home
+export default Home;

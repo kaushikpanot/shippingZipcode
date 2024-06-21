@@ -1,4 +1,7 @@
 import React, { useState, useCallback } from 'react';
+import axios from 'axios';
+import { useParams } from 'react-router-dom';
+
 import {
     Page,
     Button,
@@ -19,12 +22,15 @@ const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 function Help() {
+    const { zone_id } = useParams();
+    console.log(zone_id)
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         name: '',
-        price: '',
-        code: '',
+        base_price: '',
+        service_code: '',
         description: '',
+        zone_id
     })
     const [enabled, setEnabled] = useState(true);
     const toastDuration = 3000;
@@ -52,7 +58,8 @@ function Help() {
     const saveRate = async () => {
         try {
             const token = await getSessionToken(app);
-            const response = await axios.post(`${apiCommonURL}/api/add/rule`, formData, {
+        console.log(token)
+            const response = await axios.post(`${apiCommonURL}/api/rate/save`, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -109,22 +116,22 @@ function Help() {
                             </div>
                             <div style={{ marginTop: '2%' }} className='zonetext'>
                                 <TextField
-                                    label="Base Price"
+                                    label="Base price"
                                     placeholder="0.00"
                                     autoComplete="off"
                                     prefix="Rs."
-                                    value={formData.price}
-                                    onChange={handleRateFormChange('price')}
+                                    value={formData.base_price}
+                                    onChange={handleRateFormChange('base_price')}
                                 />
                             </div>
                             <div style={{ marginTop: '2%', marginBottom: '2%' }} className='zonetext'>
                                 <TextField
-                                    label="Service Code"
-                                    placeholder="Service Code"
+                                    label="Service code"
+                                    placeholder="Service code"
                                     autoComplete="off"
-                                    value={formData.code}
-                                    onChange={handleRateFormChange('code')}
-                                    helpText="The service code should not be the same as the other rates."
+                                    value={formData.service_code}
+                                    onChange={handleRateFormChange('service_code')}
+                                    helpText="The service service_code should not be the same as the other rates."
                                 />
                             </div>
                             <div style={{ marginTop: '2%' }} className='zonetext'>

@@ -16,7 +16,10 @@ import {
     ButtonGroup,
     Card,
     Link,
-    Toast
+    Toast,
+    IndexTable,
+    useIndexResourceState,
+    Badge,
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
@@ -36,6 +39,7 @@ function Help() {
     const [country, setCountry] = useState([])
     const [currencys, setCurrencys] = useState([])
     const [toastContent, setToastContent] = useState("");
+    const [formErrors, setFormErrors] = useState({});
     const [showToast, setShowToast] = useState(false);
     const toastDuration = 3000;
 
@@ -48,6 +52,10 @@ function Help() {
         setFormData((prevState) => ({
             ...prevState,
             [field]: value,
+        }));
+        setFormErrors((prevErrors) => ({
+            ...prevErrors,
+            [field]: ""
         }));
 
     };
@@ -101,7 +109,7 @@ function Help() {
     const getCurrency = async () => {
         try {
             const token = await getSessionToken(app);
-            console.log(token)
+
             const response = await axios.get(`${apiCommonURL}/api/currency`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -118,18 +126,59 @@ function Help() {
             console.error("Error fetching country:", error);
         }
     }
+    const editData = async () => {
+        try {
+            const token = await getSessionToken(app);
+
+            const response = await axios.get(`${apiCommonURL}/api/zone/3/edit`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            console.log(response.data)
+        } catch (error) {
+            console.error("Error fetching country:", error);
+        }
+    }
     useEffect(() => {
         getCountry()
         getCurrency()
+        editData()
     }, [])
+    const validateFields = () => {
+        let isValid = true;
 
+        for (const key in formData) {
+            if (!formData[key].trim()) {
+                setFormErrors((prevFormErrors) => ({
+                    ...prevFormErrors,
+                    [key]: `${key.charAt(0).toUpperCase() + key.slice(1)} is required `
+                }));
+                isValid = false;
+            } else {
+                setFormErrors((prevFormErrors) => ({
+                    ...prevFormErrors,
+                    [key]: ""
+                }));
+            }
+        }
 
+        return isValid;
+    };
 
     const saveZone = async () => {
+        if (!validateFields()) {
+            return;
+        }
         try {
             const token = await getSessionToken(app);
-            
-            const response = await axios.post(`${apiCommonURL}/api/zone/create`, formData, {
+            const selectedCountry = country.find(country => country.value === formData.country);
+            const dataToSubmit = {
+                ...formData,
+                country: selectedCountry ? selectedCountry.label : formData.country,
+            };
+            const response = await axios.post(`${apiCommonURL}/api/zone/save`, dataToSubmit, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -144,6 +193,67 @@ function Help() {
             setShowToast(true);
         }
     }
+
+
+    const orders = [
+        {
+            id: '1020',
+            order: '#1020',
+            date: 'Jul 20 at 4:34pm',
+            customer: 'Jaydon Stanton',
+            total: '$969.44',
+           
+        },
+        {
+            id: '1019',
+            order: '#1019',
+            date: 'Jul 20 at 3:46pm',
+            customer: 'Ruben Westerfelt',
+            total: '$701.19',
+     },
+        {
+            id: '1018',
+            order: '#1018',
+            date: 'Jul 20 at 3.44pm',
+            customer: 'Leo Carder',
+            total: '$798.24',
+            },
+    ];
+    const resourceName = {
+        singular: 'order',
+        plural: 'orders',
+    };
+
+    const { selectedResources, allResourcesSelected, handleSelectionChange } =
+        useIndexResourceState(orders);
+
+    const rowMarkup = orders.map(
+        (
+            { id, order, date, customer, total},
+            index,
+        ) => (
+            <IndexTable.Row
+                id={id}
+                key={id}
+                selected={selectedResources.includes(id)}
+                position={index}
+            >
+                <IndexTable.Cell>
+                    <Text variant="bodyMd" fontWeight="bold" as="span">
+                        {order}
+                    </Text>
+                </IndexTable.Cell>
+                <IndexTable.Cell>{date}</IndexTable.Cell>
+                <IndexTable.Cell>{customer}</IndexTable.Cell>
+                <IndexTable.Cell>
+                    <Text as="span" alignment="end" numeric>
+                        {total}
+                    </Text>
+                </IndexTable.Cell>
+               
+            </IndexTable.Row>
+        ),
+    );
     return (
         <Page
             fullWidth
@@ -186,6 +296,7 @@ function Help() {
                                     placeholder="Name"
                                     value={formData.name}
                                     onChange={handleConfigrationSettings('name')}
+                                    error={formErrors.name}
                                 />                            </div>
                             <div style={{ marginTop: "2%" }} className='zonetext'>
 
@@ -216,7 +327,7 @@ function Help() {
                 <Grid>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '5%' }}>
+                        <div style={{ paddingTop: '2%' }}>
                             <Text variant="headingLg" as="h5">
                                 Specify rates
                             </Text>
@@ -255,22 +366,31 @@ function Help() {
             <div style={{ marginTop: "2%", marginBottom: "5%" }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '5%' }}>
-                            <Text variant="headingLg" as="h5">
-                                Specify rates
-                            </Text>
-                            <p style={{ paddingTop: '7%', fontSize: '14px' }}>
-                                Specify shipping rates for this particular zone.
-                            </p>
-                        </div>
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
-                        <Card>
+                    <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
+                        {/* <Card>
                             <div style={{ textAlign: "center", paddingTop: "5%", paddingBottom: "5%", textDecoration: "none" }}>
                                 <Link onClick={() => handleEditForm()}> Click Here</Link> to add rate for this particular zone.
                             </div>
-                        </Card>
+                        </Card> */}
+                        <LegacyCard>
+                            <IndexTable
+                                resourceName={resourceName}
+                                itemCount={orders.length}
+                                selectedItemsCount={
+                                    allResourcesSelected ? 'All' : selectedResources.length
+                                }
+                                onSelectionChange={handleSelectionChange}
+                                headings={[
+                                    { title: 'Order' },
+                                    { title: 'Date' },
+                                    { title: 'Customer' },
+                                    { title: 'Total', alignment: 'end' },
+                                    
+                                ]}
+                            >
+                                {rowMarkup}
+                            </IndexTable>
+                        </LegacyCard>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>

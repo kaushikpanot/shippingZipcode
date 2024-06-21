@@ -15,7 +15,8 @@ import {
     Select,
     ButtonGroup,
     Card,
-    Link
+    Link,
+    Toast
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
@@ -32,7 +33,12 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 function Help() {
     const navigate = useNavigate();
-    const [country,setCountry] = useState([])
+    const [country, setCountry] = useState([])
+    const [currencys, setCurrencys] = useState([])
+    const [toastContent, setToastContent] = useState("");
+    const [showToast, setShowToast] = useState(false);
+    const toastDuration = 3000;
+
     const [formData, setFormData] = useState({
         name: "",
         currency: "",
@@ -43,14 +49,10 @@ function Help() {
             ...prevState,
             [field]: value,
         }));
+
     };
     const [selected, setSelected] = useState(['enable']);
     const handleChange = useCallback((value) => setSelected(value), []);
-    const [checked, setChecked] = useState(false);
-    const handlecehckbox = useCallback(
-        (newChecked) => setChecked(newChecked),
-        [],
-    );
     const [select, setSelect] = useState('today');
 
     const handleSelectChange = useCallback(
@@ -79,18 +81,23 @@ function Help() {
     const getCountry = async () => {
         try {
             const token = await getSessionToken(app);
-            console.log(token)
             const response = await axios.get(`${apiCommonURL}/api/country`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
             const countryData = response.data;
-            console.log(countryData)
+            const stateList = countryData.countries.map(state => ({
+                label: `${state.name} (${state.code})`,
+                value: state.code
+            }));
+            setCountry(stateList);
+
         } catch (error) {
             console.error("Error fetching country:", error);
         }
     }
+
     const getCurrency = async () => {
         try {
             const token = await getSessionToken(app);
@@ -100,13 +107,13 @@ function Help() {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            const countryData = response.data.countries;
-            const stateList = countryData.countries.map(state => ({
-                label: state.name,
-                value: state.code
-            }));
-            setCountry(stateList)
-            console.log(countryData)
+            const countryData = response.data.currencies;
+
+            const currency = countryData.map(cuency => ({
+                label: cuency.currency,
+                value: cuency.currency
+            }))
+            setCurrencys(currency)
         } catch (error) {
             console.error("Error fetching country:", error);
         }
@@ -115,11 +122,33 @@ function Help() {
         getCountry()
         getCurrency()
     }, [])
+
+
+
+    const saveZone = async () => {
+        try {
+            const token = await getSessionToken(app);
+            
+            const response = await axios.post(`${apiCommonURL}/api/zone/create`, formData, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            console.log('Response:', response.data);
+            setToastContent("Data has been added successfully");
+            setShowToast(true);
+
+        } catch (error) {
+            console.error('Error occurs', error);
+            setToastContent("Error occurred while saving data");
+            setShowToast(true);
+        }
+    }
     return (
         <Page
             fullWidth
             title="Add Zone"
-            primaryAction={<Button variant="primary">Save</Button>}
+            primaryAction={<Button variant="primary" onClick={saveZone}>Save</Button>}
             secondaryActions={<Button onClick={navigateHome}>Back</Button>}
         >
             <Divider borderColor="border" />
@@ -152,44 +181,30 @@ function Help() {
                             </div>
                             <div style={{ marginTop: "2%" }} className='zonetext'>
                                 <TextField
-                                    label="Zone Name (Internal Use Only)"
-                                    placeholder="West Zone"
-                                    autoComplete="off"
+                                    type="text"
+                                    label="Name"
+                                    placeholder="Name"
                                     value={formData.name}
-                                    nChange={handleConfigrationSettings('name')}
-                                />
-                            </div>
+                                    onChange={handleConfigrationSettings('name')}
+                                />                            </div>
                             <div style={{ marginTop: "2%" }} className='zonetext'>
-                                <TextField
+
+                                <Select
                                     label="Country"
-                                    placeholder="West Zone"
-                                    autoComplete="off"
-                                    value={formData.country}
+                                    options={country}
                                     onChange={handleConfigrationSettings('country')}
-                                    helpText="NOTE: Make sure you enable this country on your default Shopify manage rates."
+                                    value={formData.country}
                                 />
                             </div>
                             <div style={{ marginTop: "2%", marginBottom: "2%" }} className='zonetext'>
-                                <TextField
-                                    label="Currency Format"
-                                    placeholder="West Zone"
-                                    autoComplete="off"
-                                    value={formData.currency}
+                                <Select
+                                    label="Currency"
+                                    options={currencys}
                                     onChange={handleConfigrationSettings('currency')}
-                                    helpText="NOTE: Make sure you enable this currency on your Shopify markets."
+                                    value={formData.currency}
 
                                 />
                             </div>
-                            {/* <Divider borderColor="border-inverse" />
-              <div style={{ marginTop: "2%" }}>
-                <Tooltip active content="Enable Or Disable Rate">
-                  <Checkbox
-                    checked={checked}
-                    label="All rates for this zone will be updated according to below:"
-                    onChange={handlecehckbox}
-                  />
-                </Tooltip>
-              </div> */}
                         </LegacyCard>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
@@ -199,8 +214,17 @@ function Help() {
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
-                <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}></Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                        <div style={{ paddingTop: '5%' }}>
+                            <Text variant="headingLg" as="h5">
+                                Specify rates
+                            </Text>
+                            <p style={{ paddingTop: '7%', fontSize: '14px' }}>
+                                Specify shipping rates for this particular zone.
+                            </p>
+                        </div>
+                    </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
                         <FormLayout>
                             <FormLayout.Group>
@@ -216,9 +240,9 @@ function Help() {
                                 />
                             </FormLayout.Group>
                         </FormLayout>
-                        <div style={{ marginTop: "2%" }}>
+                        <div style={{ marginTop: "2%", float: 'right' }}>
                             <ButtonGroup>
-                                <Button variant="primary" icon={ResetIcon} />
+                                {/* <Button variant="primary" icon={ResetIcon} /> */}
                                 <Button variant="primary" icon={SearchIcon} />
                                 <Button variant="primary" onClick={() => handleEditForm()}>Add Rate</Button>
                             </ButtonGroup>
@@ -230,7 +254,7 @@ function Help() {
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "5%" }}>
                 <Grid>
-                <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '5%' }}>
                             <Text variant="headingLg" as="h5">
@@ -251,6 +275,9 @@ function Help() {
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
             </div>
+            {showToast && (
+                <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
+            )}
         </Page>
     );
 }

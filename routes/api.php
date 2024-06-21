@@ -19,9 +19,13 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // });
 
+Route::post('getResponse', [ApiController::class, 'getResponse']);
+
 Route::middleware(['verify.shopify.jwt'])->group(function () {
     Route::controller(ApiController::class)->group(function () {
         Route::get('country', 'getCountryList');
         Route::get('currency', 'getCurrencyList');
+
+        Route::post('zone/create', 'zoneStore');
     });
 });

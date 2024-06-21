@@ -213,4 +213,105 @@ class ApiController extends Controller
             return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);
         }
     }
+
+    public function zoneEdit($id)
+    {
+        try {
+            // Assuming this is how you get the shop
+            $shop = request()->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
+
+            if (!$shop) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Token not provided.'
+                ], 400);
+            }
+
+            // Validate if shop exists in the User table
+            $user = User::where('name', $shop)->first();
+
+            if (!$user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not found.'
+                ], 404);
+            }
+
+            // Validate if the zone exists
+            $zone = Zone::find($id);
+
+            if (!$zone) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Zone not found.'
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Zone data retrieved successfully.',
+                'zone' => $zone
+            ]);
+        } catch (Throwable $th) {
+            Log::error('Unexpected zone edit error', ['exception' => $th->getMessage()]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'An unexpected error occurred.'
+            ], 500);
+        }
+    }
+
+    public function zoneList(Request $request, $name = null)
+    {
+        try {
+
+            $shop = request()->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
+
+            if (!$shop) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Token not provided.'
+                ], 400);
+            }
+
+            $user_id = User::where('name', $shop)->pluck('id')->first();
+
+            if (!$user_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not found.'
+                ], 404);
+            }
+
+            $per_page = $request->input('per_page', 10);
+
+            $zonesQuery = Zone::where('user_id', $user_id);
+
+            if ($name) {
+                $zonesQuery->where('name', 'like', '%' . $name . '%');
+            }
+
+            $zones = $zonesQuery->paginate($per_page);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Zone list retrieved successfully.',
+                'pagination' => [
+                    'total' => $zones->total(),
+                    'per_page' => $zones->perPage(),
+                    'current_page' => $zones->currentPage(),
+                    'last_page' => $zones->lastPage(),
+                    'next_page_url' => $zones->nextPageUrl(),
+                    'prev_page_url' => $zones->previousPageUrl(),
+                ],
+                'zones' => $zones->items()
+            ]);
+        } catch (Throwable $th) {
+            Log::error('Unexpected zone list error', ['exception' => $th->getMessage()]);
+            return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);
+        }
+    }
 }

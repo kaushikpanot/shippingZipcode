@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Rate;
 use App\Models\User;
 use App\Models\Zone;
 use Illuminate\Http\Request;
@@ -318,7 +319,6 @@ class ApiController extends Controller
     public function zoneDestroy($id)
     {
         try {
-
             $shop = request()->attributes->get('shopifySession');
             // $shop = "krishnalaravel-test.myshopify.com";
 
@@ -350,6 +350,64 @@ class ApiController extends Controller
             return response()->json(['status' => false, 'message' => 'Zone not found.']);
         } catch (Throwable $th) {
             Log::error('Unexpected zone delete error', ['exception' => $th->getMessage()]);
+            return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);
+        }
+    }
+
+
+    public function rateStore(Request $request)
+    {
+        try {
+            $shop = $request->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
+
+            if (!$shop) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Token not provided.'
+                ], 400);
+            }
+
+            $inputData = $request->all();
+
+            $user_id = User::where('name', $shop)->value('id');
+
+            if (!$user_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not found.'
+                ], 404);
+            }
+
+            $inputData['user_id'] = $user_id;
+
+            // Validation rules and custom messages
+            $rules = [
+                'zone_id' => 'required|exists:zones,id',
+                // Add other validation rules here if necessary
+            ];
+
+            $messages = [
+                'zone_id.required' => 'The zone ID is required.',
+                'zone_id.exists' => 'The selected zone ID is invalid.',
+            ];
+
+            // Validate the request input
+            $validator = Validator::make($inputData, $rules, $messages);
+
+            if ($validator->fails()) {
+                return response()->json(['status' => false, 'errors' => $validator->errors()], 422);
+            }
+
+            // Update or create the rate
+            Rate::updateOrCreate(['id' => $request->input('id')], $inputData);
+
+            return response()->json(['status' => true, 'message' => 'Rate added successfully.']);
+        } catch (\Illuminate\Database\QueryException $ex) {
+            Log::error('Database error when adding rate', ['exception' => $ex->getMessage()]);
+            return response()->json(['status' => false, 'message' => 'Database error occurred.'], 500);
+        } catch (\Exception $ex) {
+            Log::error('Unexpected error when adding rate', ['exception' => $ex->getMessage()]);
             return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);
         }
     }

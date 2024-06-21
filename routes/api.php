@@ -26,6 +26,8 @@ Route::middleware(['verify.shopify.jwt'])->group(function () {
         Route::get('country', 'getCountryList');
         Route::get('currency', 'getCurrencyList');
 
-        Route::post('zone/create', 'zoneStore');
+        Route::post('zone/save', 'zoneStore');
+        Route::get('zone/{id}/edit', 'zoneEdit');
+        Route::get('zones/{name?}', 'zoneList');
     });
 });

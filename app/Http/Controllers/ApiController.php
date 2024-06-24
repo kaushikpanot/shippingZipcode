@@ -147,15 +147,29 @@ class ApiController extends Controller
                     'description' => 'Delivered within 5-7 business days',
                     'currency' => 'USD',
                 ],
-
             ]
         ];
 
-        // Log the input data for debugging
+        $originCompanyName = $input['rate']['origin']['company_name'] . ".myshopify.com";
+
+        $originCountryName = $input['rate']['origin']['country'];
+
+        $userId = User::where('name', $originCompanyName)->value('id');
+
+        $rate = Rate::where('user_id', $userId)->count();
+
         Log::info('Shopify Carrier Service Request:', $input);
 
+        if($rate > 0){
+            return response()->json($response);
+        }
+
+        $rateCount = Zone::forUserInCountry($userId, $originCountryName)->withCount('rates')->first();
+
+        if($rateCount->rates_count > 0){
+            return response()->json($response);
+        }
         // Return the JSON response
-        return response()->json($response);
     }
 
     public function zoneStore(Request $request)

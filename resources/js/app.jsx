@@ -7,4 +7,5 @@ const container = document.getElementById('main');
 const props = Object.assign({}, container.dataset)
 const root = createRoot(container); // createRoot(container!) if you use TypeScript
 window.shopId = props.shopid;
+
 root.render(<Index tab="home"  {...props} />);

@@ -17,8 +17,8 @@ class VerifyShop
     public function handle(Request $request, Closure $next)
     {
         if ($request->input('embedded') == 1) {
-            $shop = $request->input('shop');
-            return response()->view('welcome', ['shop' => $shop], 200);
+            $shop = $request->input('host');
+            return response()->view('welcome', ['host' => $shop], 200);
 
         }
         return $next($request);

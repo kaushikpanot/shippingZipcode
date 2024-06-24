@@ -20,13 +20,14 @@ import {
     IndexTable,
     useIndexResourceState,
     Badge,
+    BlockStack,
+    InlineGrid
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
-    SearchIcon,
-    ResetIcon
+    PlusIcon
 } from '@shopify/polaris-icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import createApp from '@shopify/app-bridge';
 import { getSessionToken } from "@shopify/app-bridge-utils";
 const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
@@ -34,7 +35,8 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 
 
-function Help() {
+function Zone(props) {
+    const { Zoneid } = useParams(); 
     const navigate = useNavigate();
     const [country, setCountry] = useState([])
     const [currencys, setCurrencys] = useState([])
@@ -42,11 +44,12 @@ function Help() {
     const [formErrors, setFormErrors] = useState({});
     const [showToast, setShowToast] = useState(false);
     const toastDuration = 3000;
-
+    let app = "";
     const [formData, setFormData] = useState({
         name: "",
         currency: "",
         country: "",
+        Zoneid
     });
     const handleConfigrationSettings = (field) => (value) => {
         setFormData((prevState) => ({
@@ -61,18 +64,7 @@ function Help() {
     };
     const [selected, setSelected] = useState(['enable']);
     const handleChange = useCallback((value) => setSelected(value), []);
-    const [select, setSelect] = useState('today');
 
-    const handleSelectChange = useCallback(
-        (value) => setSelect(value),
-        [],
-    );
-
-    const options = [
-        { label: 'Status' },
-        { label: 'Enable', value: 'enable' },
-        { label: 'Disable', value: 'disable' },
-    ];
     const handleEditForm = () => {
         navigate('/Rate');
         console.log('navigate on Rule')
@@ -82,10 +74,7 @@ function Help() {
         // 👇️ Navigate to /
         navigate('/');
     };
-    const app = createApp({
-        apiKey: SHOPIFY_API_KEY,
-        host: new URLSearchParams(location.search).get("host"),
-    });
+
     const getCountry = async () => {
         try {
             const token = await getSessionToken(app);
@@ -126,22 +115,32 @@ function Help() {
             console.error("Error fetching country:", error);
         }
     }
+
     const editData = async () => {
         try {
             const token = await getSessionToken(app);
 
-            const response = await axios.get(`${apiCommonURL}/api/zone/3/edit`, {
+            const response = await axios.get(`${apiCommonURL}/api/zone/${Zoneid}/edit`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
-            console.log(response.data)
+            setFormData({
+                name:response.data.zone.name,
+                currency: response.data.zone.currency,
+                country: response.data.zone.country,
+            });
+    
         } catch (error) {
+          
             console.error("Error fetching country:", error);
         }
     }
     useEffect(() => {
+        app = createApp({
+            apiKey: SHOPIFY_API_KEY,
+            host: props.host,
+        });
         getCountry()
         getCurrency()
         editData()
@@ -168,10 +167,14 @@ function Help() {
     };
 
     const saveZone = async () => {
-        if (!validateFields()) {
-            return;
-        }
+        // if (!validateFields()) {
+        //     return;
+        // }
         try {
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
             const token = await getSessionToken(app);
             const selectedCountry = country.find(country => country.value === formData.country);
             const dataToSubmit = {
@@ -182,10 +185,12 @@ function Help() {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
-            });
-            console.log('Response:', response.data);
+            });                                                             
             setToastContent("Data has been added successfully");
             setShowToast(true);
+            setTimeout(() => {
+                navigate('/');
+            }, 1000);
 
         } catch (error) {
             console.error('Error occurs', error);
@@ -202,7 +207,7 @@ function Help() {
             date: 'Jul 20 at 4:34pm',
             customer: 'Jaydon Stanton',
             total: '$969.44',
-           
+
         },
         {
             id: '1019',
@@ -210,14 +215,14 @@ function Help() {
             date: 'Jul 20 at 3:46pm',
             customer: 'Ruben Westerfelt',
             total: '$701.19',
-     },
+        },
         {
             id: '1018',
             order: '#1018',
             date: 'Jul 20 at 3.44pm',
             customer: 'Leo Carder',
             total: '$798.24',
-            },
+        },
     ];
     const resourceName = {
         singular: 'order',
@@ -229,7 +234,7 @@ function Help() {
 
     const rowMarkup = orders.map(
         (
-            { id, order, date, customer, total},
+            { id, order, date, customer, total },
             index,
         ) => (
             <IndexTable.Row
@@ -250,7 +255,7 @@ function Help() {
                         {total}
                     </Text>
                 </IndexTable.Cell>
-               
+
             </IndexTable.Row>
         ),
     );
@@ -261,7 +266,6 @@ function Help() {
             primaryAction={<Button variant="primary" onClick={saveZone}>Save</Button>}
             secondaryActions={<Button onClick={navigateHome}>Back</Button>}
         >
-            <Divider borderColor="border" />
             <div style={{ marginTop: '2%', marginBottom: "2%" }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
@@ -305,6 +309,7 @@ function Help() {
                                     options={country}
                                     onChange={handleConfigrationSettings('country')}
                                     value={formData.country}
+                                    isMulti
                                 />
                             </div>
                             <div style={{ marginTop: "2%", marginBottom: "2%" }} className='zonetext'>
@@ -322,84 +327,74 @@ function Help() {
 
                 </Grid>
             </div>
+
+
             <Divider borderColor="border" />
-            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '2%' }}>
-                            <Text variant="headingLg" as="h5">
-                                Specify rates
-                            </Text>
-                            <p style={{ paddingTop: '7%', fontSize: '14px' }}>
-                                Specify shipping rates for this particular zone.
-                            </p>
-                        </div>
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
-                        <FormLayout>
-                            <FormLayout.Group>
-                                <TextField
-                                    type="text"
-                                    placeholder='Rate Name/ Service Code'
-                                    autoComplete="off"
-                                />
-                                <Select
-                                    options={options}
-                                    onChange={handleSelectChange}
-                                    value={select}
-                                />
-                            </FormLayout.Group>
-                        </FormLayout>
-                        <div style={{ marginTop: "2%", float: 'right' }}>
-                            <ButtonGroup>
-                                {/* <Button variant="primary" icon={ResetIcon} /> */}
-                                <Button variant="primary" icon={SearchIcon} />
-                                <Button variant="primary" onClick={() => handleEditForm()}>Add Rate</Button>
-                            </ButtonGroup>
-                        </div>
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-                </Grid>
-            </div>
-            <Divider borderColor="border" />
-            <div style={{ marginTop: "2%", marginBottom: "5%" }}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
-                        {/* <Card>
+            {Zoneid && (
+                <div style={{ marginTop: "2%", marginBottom: "5%" }}>
+                    <Grid>
+                        <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                        <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
+                            {/* <Card>
                             <div style={{ textAlign: "center", paddingTop: "5%", paddingBottom: "5%", textDecoration: "none" }}>
                                 <Link onClick={() => handleEditForm()}> Click Here</Link> to add rate for this particular zone.
                             </div>
                         </Card> */}
-                        <LegacyCard>
-                            <IndexTable
-                                resourceName={resourceName}
-                                itemCount={orders.length}
-                                selectedItemsCount={
-                                    allResourcesSelected ? 'All' : selectedResources.length
-                                }
-                                onSelectionChange={handleSelectionChange}
-                                headings={[
-                                    { title: 'Order' },
-                                    { title: 'Date' },
-                                    { title: 'Customer' },
-                                    { title: 'Total', alignment: 'end' },
-                                    
-                                ]}
-                            >
-                                {rowMarkup}
-                            </IndexTable>
-                        </LegacyCard>
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-                </Grid>
-            </div>
+                            <Card>
+                                <BlockStack gap="200">
+                                    <InlineGrid columns="1fr auto">
+                                        <Text as="h2" variant="headingSm">
+                                            Zones
+                                        </Text>
+                                        <Button
+                                            onClick={() => handleEditForm()}
+                                            accessibilityLabel="Add zone"
+                                            icon={PlusIcon}
+                                        >
+                                            Add Rate
+                                        </Button>
+                                    </InlineGrid>
+                                    <Text as="p" variant="bodyMd">
+                                        Specify shipping rates for this particular zone.                                    </Text>
+                                </BlockStack>
+                                <div style={{ marginTop: "2.5%" }}>
+                                    <TextField
+                                        type="text"
+                                        placeholder='Rate Name/ Service Code'
+                                        autoComplete="off"
+                                    />
+                                </div>
+                                <div style={{ marginTop: "2.5%" }}>
+                                    <IndexTable
+                                        resourceName={resourceName}
+                                        itemCount={orders.length}
+                                        selectedItemsCount={
+                                            allResourcesSelected ? 'All' : selectedResources.length
+                                        }
+                                        onSelectionChange={handleSelectionChange}
+                                        headings={[
+                                            { title: 'Order' },
+                                            { title: 'Date' },
+                                            { title: 'Customer' },
+                                            { title: 'Total', alignment: 'end' },
+
+                                        ]}
+                                    >
+                                        {rowMarkup}
+                                    </IndexTable>
+                                </div>
+                            </Card>
+                        </Grid.Cell>
+                        <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    </Grid>
+                </div>
+            )}
             {showToast && (
                 <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
             )}
+
         </Page>
     );
 }
 
-export default Help;
+export default Zone;

@@ -48,8 +48,8 @@ function Help() {
         }));
     }
     const BacktoZone = () => {
-        navigate('/Zone');
-        console.log('navigate on Rate');
+        navigate(`/Zone/${zone_id}`);
+      
     };
     const app = createApp({
         apiKey: SHOPIFY_API_KEY,

@@ -17,11 +17,14 @@ import {
     Badge,
     Icon,
     Toast,
+    BlockStack,
+    InlineGrid
 } from '@shopify/polaris';
 import {
     SearchIcon,
     EditIcon,
-    DeleteIcon
+    DeleteIcon,
+    PlusIcon
 } from '@shopify/polaris-icons';
 import { useNavigate } from 'react-router-dom';
 import createApp from '@shopify/app-bridge';
@@ -29,12 +32,12 @@ import { getSessionToken } from "@shopify/app-bridge-utils";
 const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
-function Home() {
+function Home(props) {
     const navigate = useNavigate();
     const [zoneDetails, setZoneDetails] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [itemsPerPage] = useState(5); 
+    const [itemsPerPage] = useState(5);
     const [active, setActive] = useState(false);
     const [toastActive, setToastActive] = useState(false);
     const [selectedZoneId, setselectedZoneId] = useState(null);
@@ -49,7 +52,7 @@ function Home() {
 
     const app = createApp({
         apiKey: SHOPIFY_API_KEY,
-        host: new URLSearchParams(location.search).get("host"),
+        host: props.host,
     });
 
     const getZoneDetails = async () => {
@@ -75,7 +78,9 @@ function Home() {
     const handleEditZone = (Zoneid) => {
         navigate(`/Zone/${Zoneid}`);
     };
-
+    const zoneNavigate = () =>{
+        navigate('/Zone');
+    }
     const handleDelete = async () => {
         try {
             const token = await getSessionToken(app);
@@ -84,8 +89,8 @@ function Home() {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            toggleModal(); 
-            toggleToast(); 
+            toggleModal();
+            toggleToast();
             getZoneDetails();
         } catch (error) {
             console.error('Error deleting zone:', error);
@@ -152,28 +157,31 @@ function Home() {
 
     return (
         <Page
-            title="Zones & Rates"
-            primaryAction={<Button onClick={() => navigate('/Zone')}>Add Zone</Button>}
+            fullWidth
         >
-            <Divider borderColor="border" />
-            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
-                <Card sectioned>
-                    <Banner title="Free Development Store Plan" status="warning">
-                        <p>
-                            You are in free plan now. After you switch your Shopify's store plan from development to any paid plan, You have to select a plan on the app as well.
-                        </p>
-                    </Banner>
-                </Card>
-            </div>
-            <Divider borderColor="border" />
+
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
-                        <Card>
-                            <Text variant="headingLg" as="h5">
-                                Zones Listing
-                            </Text>
+                        <Card roundedAbove="sm">
+                            <BlockStack gap="200">
+                                <InlineGrid columns="1fr auto">
+                                    <Text as="h2" variant="headingSm">
+                                        Zones
+                                    </Text>
+                                    <Button
+                                        onClick={() => zoneNavigate()}
+                                        accessibilityLabel="Add zone"
+                                        icon={PlusIcon}
+                                    >
+                                        Add Zone
+                                    </Button>
+                                </InlineGrid>
+                                <Text as="p" variant="bodyMd">
+                                    Group your zip codes into zones and easily assign rates to each zone.
+                                </Text>
+                            </BlockStack>
                             <div style={{ marginTop: "2.5%" }}>
                                 <TextField
                                     type="text"

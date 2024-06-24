@@ -10,7 +10,6 @@ import Routes from '../Routing/Routes';
 export default function Main(props)  {
     const navigate = useNavigate();
     const location = useLocation();
-  
 
     const history = { replace: (path) => navigate(path, { replace: true }) };
 

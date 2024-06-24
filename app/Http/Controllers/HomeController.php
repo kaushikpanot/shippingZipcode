@@ -13,6 +13,8 @@ class HomeController extends Controller
     {
         $post = $request->input();
         $shop = $request->input('shop');
+        $host = $request->input('host');
+
         $shopName = $post['shop'];
         $token = User::where('name', $shopName)->first();
 
@@ -39,12 +41,13 @@ class HomeController extends Controller
         // Parse the JSON response
         $jsonResponse = $response->json();
 
-        return view('welcome', compact('shop'));
+        return view('welcome', compact('shop','host'));
     }
 
     public function common(Request $request)
     {
         $shop = $request->input('shop');
-        return view('welcome', compact('shop'));
+        $host = $request->input('host');
+        return view('welcome', compact('shop','host'));
     }
 }

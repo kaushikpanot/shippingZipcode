@@ -37,7 +37,7 @@
             <div class="app-content">
                 <main role="main">
 
-     			 <div id="main" ></div>
+     			 <div id="main" data-host="{{ $host }}"></div>
                 </main>
             </div>
         </div>

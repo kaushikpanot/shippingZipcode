@@ -137,7 +137,7 @@ class ApiController extends Controller
     public function getResponse(Request $request)
     {
         $input = $request->input();
-
+        dd($input);
         // Construct the response data
         $response = [
             'rates' => [
@@ -354,7 +354,6 @@ class ApiController extends Controller
         }
     }
 
-
     public function rateStore(Request $request)
     {
         try {
@@ -408,6 +407,160 @@ class ApiController extends Controller
             return response()->json(['status' => false, 'message' => 'Database error occurred.'], 500);
         } catch (\Exception $ex) {
             Log::error('Unexpected error when adding rate', ['exception' => $ex->getMessage()]);
+            return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);
+        }
+    }
+
+    public function rateList($zone_id, $name = null)
+    {
+        try {
+            $shop = request()->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
+
+            if (!$shop) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Token not provided.'
+                ], 400);
+            }
+
+            $user_id = User::where('name', $shop)->value('id');
+
+            if (!$user_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not found.'
+                ], 404);
+            }
+
+            // Validate the zone_id parameter
+            if (!Zone::where('id', $zone_id)->exists()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Zone not found.'
+                ], 404);
+            }
+
+            // Initialize the query for fetching rates
+            $ratesQuery = Rate::where('user_id', $user_id)->where('zone_id', $zone_id);
+
+            // If a name parameter is provided, filter the results based on it
+            if ($name) {
+                $ratesQuery->where(function ($query) use ($name) {
+                    $query->where('name', 'like', '%' . $name . '%')
+                        ->orWhere('service_code', 'like', '%' . $name . '%');
+                });
+            }
+
+            // Fetch the rates, with optional pagination
+            $per_page = request()->input('per_page', 10);
+            $rates = $ratesQuery->paginate($per_page);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Rate list retrieved successfully.',
+                'pagination' => [
+                    'total' => $rates->total(),
+                    'per_page' => $rates->perPage(),
+                    'current_page' => $rates->currentPage(),
+                    'last_page' => $rates->lastPage(),
+                    'next_page_url' => $rates->nextPageUrl(),
+                    'prev_page_url' => $rates->previousPageUrl(),
+                ],
+                'rates' => $rates->items(),
+            ]);
+        } catch (\Illuminate\Database\QueryException $ex) {
+            Log::error('Database error when retrieving rate list', ['exception' => $ex->getMessage()]);
+            return response()->json(['status' => false, 'message' => 'Database error occurred.'], 500);
+        } catch (\Exception $ex) {
+            Log::error('Unexpected error when retrieving rate list', ['exception' => $ex->getMessage()]);
+            return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);
+        }
+    }
+
+    public function rateEdit($id)
+    {
+        try {
+            // Assuming this is how you get the shop
+            $shop = request()->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
+
+            if (!$shop) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Token not provided.'
+                ], 400);
+            }
+
+            // Validate if shop exists in the User table
+            $user = User::where('name', $shop)->first();
+
+            if (!$user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not found.'
+                ], 404);
+            }
+
+            // Validate if the zone exists
+            $rate = Rate::find($id);
+
+            if (!$rate) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Rate not found.'
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Rate data retrieved successfully.',
+                'rate' => $rate
+            ]);
+        } catch (Throwable $th) {
+            Log::error('Unexpected zone edit error', ['exception' => $th->getMessage()]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'An unexpected error occurred.'
+            ], 500);
+        }
+    }
+
+    public function rateDestroy($id)
+    {
+        try {
+            $shop = request()->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
+
+            if (!$shop) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Token not provided.'
+                ], 400);
+            }
+
+            $user_id = User::where('name', $shop)->pluck('id')->first();
+
+            if (!$user_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not found.'
+                ], 404);
+            }
+
+            $rate = Rate::where('user_id', $user_id)->findOrFail($id);
+
+            $rate->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Rate deleted successfully.'
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['status' => false, 'message' => 'Rate not found.']);
+        } catch (Throwable $th) {
+            Log::error('Unexpected rate delete error', ['exception' => $th->getMessage()]);
             return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);
         }
     }

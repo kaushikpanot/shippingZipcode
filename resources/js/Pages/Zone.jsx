@@ -9,21 +9,19 @@ import {
     Text,
     ChoiceList,
     TextField,
-    Checkbox,
-    Tooltip,
-    FormLayout,
     Select,
     ButtonGroup,
     Card,
-    Link,
     Toast,
     IndexTable,
     useIndexResourceState,
-    Badge,
     BlockStack,
     InlineGrid,
     Modal,
-    TextContainer
+    TextContainer,
+    EmptySearchResult,
+    SkeletonBodyText,
+    SkeletonDisplayText,
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
@@ -42,6 +40,7 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 function Zone(props) {
     const { Zoneid } = useParams();
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
     const [country, setCountry] = useState([])
     const [currencys, setCurrencys] = useState([])
     const [rate, setRate] = useState([])
@@ -49,14 +48,11 @@ function Zone(props) {
     const [formErrors, setFormErrors] = useState({});
     const [showToast, setShowToast] = useState(false);
     const toastDuration = 3000;
+    const [selectedZoneId, setselectedZoneId] = useState(null);
     const [active, setActive] = useState(false);
-    const [id,setId]= useState(null)
     const [toastActive, setToastActive] = useState(false);
     const toggleToast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
     const toggleModal = useCallback(() => setActive((active) => !active), []);
-    const toastMarkup = toastActive ? (
-        <Toast content="Rate deleted" onDismiss={toggleToast} />
-    ) : null;
     let app = "";
     const [formData, setFormData] = useState({
         name: "",
@@ -77,7 +73,9 @@ function Zone(props) {
     };
     const [selected, setSelected] = useState(['enable']);
     const handleChange = useCallback((value) => setSelected(value), []);
-
+    const toastMarkup = toastActive ? (
+        <Toast content="Zipcode Rule deleted" onDismiss={toggleToast} />
+    ) : null;
     const handleRateAdd = () => {
         navigate(`/Rate/${Zoneid}`);
         console.log('navigate on Rule')
@@ -88,6 +86,9 @@ function Zone(props) {
         navigate('/');
     };
 
+    const handleEditZone = (rate_id) => {
+        navigate(`/Rate/${rate_id}`);
+    };
     const getCountry = async () => {
         try {
             const token = await getSessionToken(app);
@@ -124,6 +125,7 @@ function Zone(props) {
                 value: cuency.currency
             }))
             setCurrencys(currency)
+            setLoading(false)
         } catch (error) {
             console.error("Error fetching country:", error);
         }
@@ -139,7 +141,7 @@ function Zone(props) {
                 }
             });
             setRate(response.data.rates)
-            console.log(response.data)
+            setLoading(false)
         } catch (error) {
             console.error("Error fetching country:", error);
         }
@@ -166,25 +168,31 @@ function Zone(props) {
     }
     const handleDelete = async () => {
         try {
-             const app = createApp({
+            const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
             });
             const token = await getSessionToken(app);
-            console.log(token)
-            await axios.delete(`${apiCommonURL}/api/rate/${id}`, {
+
+            const response = await axios.delete(`${apiCommonURL}/api/rate/${selectedZoneId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            console.log(Zoneid)
+
+            console.log('Delete Response:', selectedZoneId);
             toggleModal();
             toggleToast();
-            getRateData();
+            getRateData()
         } catch (error) {
-            console.error('Error deleting zone:', error);
+            console.error('Error deleting item:', error);
+            setToastContent("Error occurred while deleting item");
+            setShowToast(true);
+        } finally {
+            setShowModal(false);
         }
     };
+
 
     useEffect(() => {
         app = createApp({
@@ -251,37 +259,20 @@ function Zone(props) {
     }
 
 
-    const orders = [
-        {
-            id: '1020',
-            order: '#1020',
-            date: 'Jul 20 at 4:34pm',
-            customer: 'Jaydon Stanton',
-            total: '$969.44',
-
-        },
-        {
-            id: '1019',
-            order: '#1019',
-            date: 'Jul 20 at 3:46pm',
-            customer: 'Ruben Westerfelt',
-            total: '$701.19',
-        },
-        {
-            id: '1018',
-            order: '#1018',
-            date: 'Jul 20 at 3.44pm',
-            customer: 'Leo Carder',
-            total: '$798.24',
-        },
-    ];
+    
     const resourceName = {
         singular: 'Zone',
         plural: 'Zone',
     };
-
+    const emptyStateMarkup = (
+        <EmptySearchResult
+            title={'No Rates yet'}
+            description={'Try changing the filters or search term'}
+            withIllustration
+        />
+    );
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
-        useIndexResourceState(orders);
+        useIndexResourceState(rate);
 
     const rowMarkup = rate.map(
         (
@@ -304,14 +295,94 @@ function Zone(props) {
                 <IndexTable.Cell>{description}</IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
-                        <Button icon={EditIcon} variant="primary"  />
-                        <Button icon={DeleteIcon} variant="primary" tone="critical"  onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleModal(); }}  />
+                        <Button icon={EditIcon} variant="primary"onClick={() => handleEditZone(id)} />
+                        <Button icon={DeleteIcon} variant="primary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedZoneId(id); toggleModal(); }} />
                     </ButtonGroup>
                 </IndexTable.Cell>
 
             </IndexTable.Row>
         ),
     );
+
+    if (loading) {
+        return (
+            <Page
+                fullWidth
+                title="Add Zone"
+                primaryAction={<Button variant="primary" onClick={saveZone}>Save</Button>}
+                secondaryActions={<Button onClick={navigateHome}>Back</Button>}
+            >
+                <Grid>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                        <div style={{ paddingTop: '18%' }}>
+                             <SkeletonDisplayText size="small" />
+                             <div style={{ paddingTop: '7%', fontSize: '14px' }}>
+                             <SkeletonBodyText lines={2} />
+                                </div>
+                        </div>
+
+
+
+
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                        <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                            <Card roundedAbove="sm">
+                            
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={2} />
+                                    </LegacyCard>
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={2} />
+                                    </LegacyCard>
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={2} />
+                                    </LegacyCard>
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={2} />
+                                    </LegacyCard>
+                                </div>
+                            </Card>
+                        </div>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                </Grid>
+<div style={{marginTop:"2%"}}>
+                <Grid>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
+                        <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                            <Card roundedAbove="sm">
+                                <div style={{ marginLeft: "85%" }}>
+                                    <SkeletonDisplayText size="medium" />
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={3} />
+                                    </LegacyCard>
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={5} />
+                                    </LegacyCard>
+                                </div>
+                            </Card>
+                        </div>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                </Grid>
+                </div>
+            </Page>
+        );
+    }
     return (
         <Page
             fullWidth
@@ -382,8 +453,9 @@ function Zone(props) {
             </div>
 
 
-            <Divider borderColor="border" />
             {Zoneid && (
+                <div>
+                    <Divider borderColor="border" />
                 <div style={{ marginTop: "2%", marginBottom: "5%" }}>
                     <Grid>
                         <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
@@ -420,7 +492,9 @@ function Zone(props) {
                                 <div style={{ marginTop: "2.5%" }}>
                                     <IndexTable
                                         resourceName={resourceName}
-                                        itemCount={orders.length}
+                                        itemCount={rate.length}
+                                        emptyState={emptyStateMarkup}
+
                                         selectedItemsCount={
                                             allResourcesSelected ? 'All' : selectedResources.length
                                         }
@@ -429,8 +503,8 @@ function Zone(props) {
                                             { title: 'Rate Name' },
                                             { title: 'Service Code' },
                                             { title: 'Base Rate Price' },
-                                            { title: 'Description'},
-                                            { title: 'Actions'},
+                                            { title: 'Description' },
+                                            { title: 'Actions' },
 
                                         ]}
                                     >
@@ -441,11 +515,12 @@ function Zone(props) {
                         </Grid.Cell>
                     </Grid>
                 </div>
+                </div>
             )}
             {showToast && (
                 <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
             )}
-      <Modal
+            <Modal
                 open={active}
                 onClose={toggleModal}
                 title="Delete Zone"
@@ -463,7 +538,7 @@ function Zone(props) {
             >
                 <Modal.Section>
                     <TextContainer>
-                        <p>Are you sure you want to delete this Rate?</p>
+                        <p>Are you sure you want to delete this zone?</p>
                     </TextContainer>
                 </Modal.Section>
             </Modal>

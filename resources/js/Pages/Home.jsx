@@ -18,7 +18,10 @@ import {
     Icon,
     Toast,
     BlockStack,
-    InlineGrid
+    InlineGrid,
+    SkeletonBodyText,
+    SkeletonDisplayText,
+    LegacyCard
 } from '@shopify/polaris';
 import {
     SearchIcon,
@@ -34,6 +37,7 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 function Home(props) {
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
     const [zoneDetails, setZoneDetails] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -57,6 +61,7 @@ function Home(props) {
 
     const getZoneDetails = async () => {
         const token = await getSessionToken(app);
+        setLoading(true)
         try {
             const response = await axios.get(`${apiCommonURL}/api/zones`, {
                 headers: {
@@ -65,7 +70,9 @@ function Home(props) {
             });
             const ruledata = response.data.zones;
             setZoneDetails(ruledata);
+            console.log(ruledata)
             setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
+            setLoading(false);
         } catch (error) {
             console.error(error, 'error from');
         }
@@ -78,7 +85,7 @@ function Home(props) {
     const handleEditZone = (Zoneid) => {
         navigate(`/Zone/${Zoneid}`);
     };
-    const zoneNavigate = () =>{
+    const zoneNavigate = () => {
         navigate('/Zone');
     }
     const handleDelete = async () => {
@@ -92,6 +99,7 @@ function Home(props) {
             toggleModal();
             toggleToast();
             getZoneDetails();
+            console.log(selectedZoneId)
         } catch (error) {
             console.error('Error deleting zone:', error);
         }
@@ -154,7 +162,37 @@ function Home(props) {
             </IndexTable.Row>
         ),
     );
-
+    if (loading) {
+        return (
+            <Page
+                fullWidth
+            >
+                <Grid>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
+                        <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                            <Card roundedAbove="sm">
+                                <div style={{ marginLeft: "85%" }}>
+                                    <SkeletonDisplayText size="medium" />
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={3} />
+                                    </LegacyCard>
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={5} />
+                                    </LegacyCard>
+                                </div>
+                            </Card>
+                        </div>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                </Grid>
+            </Page>
+        );
+    }
     return (
         <Page
             fullWidth

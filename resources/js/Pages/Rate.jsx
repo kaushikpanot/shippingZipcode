@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
 
@@ -21,9 +21,10 @@ import { getSessionToken } from "@shopify/app-bridge-utils";
 const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
-function Help() {
+function Help(props) {
     const { zone_id } = useParams();
     const navigate = useNavigate();
+    let app = "";
     const [formData, setFormData] = useState({
         name: '',
         base_price: '',
@@ -50,12 +51,21 @@ function Help() {
         navigate(`/Zone/${zone_id}`);
       
     };
-    const app = createApp({
-        apiKey: SHOPIFY_API_KEY,
-        host: new URLSearchParams(location.search).get("host"),
-    });
+
+
+    useEffect(() => {
+        app = createApp({
+            apiKey: SHOPIFY_API_KEY,
+            host: props.host,
+        });
+    },[])
+  
     const saveRate = async () => {
         try {
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
             const token = await getSessionToken(app);
         console.log(token)
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, formData, {

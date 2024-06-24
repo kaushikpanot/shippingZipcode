@@ -137,7 +137,6 @@ class ApiController extends Controller
     public function getResponse(Request $request)
     {
         $input = $request->input();
-        dd($input);
         // Construct the response data
         $response = [
             'rates' => [
@@ -215,7 +214,7 @@ class ApiController extends Controller
         }
     }
 
-    public function zoneEdit($id)
+    public function zoneEdit(Request $request)
     {
         try {
             // Assuming this is how you get the shop
@@ -239,8 +238,9 @@ class ApiController extends Controller
                 ], 404);
             }
 
+            $zoneId = $request->input('zone_id');
             // Validate if the zone exists
-            $zone = Zone::find($id);
+            $zone = Zone::find($zoneId);
 
             if (!$zone) {
                 return response()->json([
@@ -249,11 +249,41 @@ class ApiController extends Controller
                 ], 404);
             }
 
+            // Initialize the query for fetching rates
+            $ratesQuery = Rate::where('user_id', $user->id)->where('zone_id', $zoneId);
+
+            // If a name parameter is provided, filter the results based on it
+            $filter_param = $request->input('filter_param');
+
+            if (@$filter_param) {
+                $ratesQuery->where(function ($query) use ($filter_param) {
+                    $query->where('name', 'like', '%' . $filter_param . '%')
+                        ->orWhere('service_code', 'like', '%' . $filter_param . '%');
+                });
+            }
+
+            // Fetch the rates, with optional pagination
+            $per_page = $request->input('per_page', 10);
+            $rates = $ratesQuery->paginate($per_page);
+
+
             return response()->json([
                 'status' => true,
-                'message' => 'Zone data retrieved successfully.',
-                'zone' => $zone
+                'message' => 'Zone data with rate retrieved successfully.',
+                'zone' => $zone,
+                'ratePagination' => [
+                    'total' => $rates->total(),
+                    'per_page' => $rates->perPage(),
+                    'current_page' => $rates->currentPage(),
+                    'last_page' => $rates->lastPage(),
+                    'next_page_url' => $rates->nextPageUrl(),
+                    'prev_page_url' => $rates->previousPageUrl(),
+                ],
+                'rates' => $rates->items(),
             ]);
+        } catch (\Illuminate\Database\QueryException $ex) {
+            Log::error('Database error when retrieving rate list', ['exception' => $ex->getMessage()]);
+            return response()->json(['status' => false, 'message' => 'Database error occurred.'], 500);
         } catch (Throwable $th) {
             Log::error('Unexpected zone edit error', ['exception' => $th->getMessage()]);
 

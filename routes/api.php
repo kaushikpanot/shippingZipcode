@@ -27,7 +27,7 @@ Route::middleware(['verify.shopify.jwt'])->group(function () {
         Route::get('currency', 'getCurrencyList');
 
         Route::post('zone/save', 'zoneStore');
-        Route::get('zone/{id}/edit', 'zoneEdit');
+        Route::post('zone/{id}/edit', 'zoneEdit');
         Route::get('zones/{name?}', 'zoneList');
         Route::delete('zone/{id}', 'zoneDestroy');
 

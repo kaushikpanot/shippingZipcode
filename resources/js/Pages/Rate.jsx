@@ -23,7 +23,6 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 function Help() {
     const { zone_id } = useParams();
-    console.log(zone_id)
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         name: '',

@@ -21,11 +21,15 @@ import {
     useIndexResourceState,
     Badge,
     BlockStack,
-    InlineGrid
+    InlineGrid,
+    Modal,
+    TextContainer
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
-    PlusIcon
+    PlusIcon,
+    EditIcon,
+    DeleteIcon,
 } from '@shopify/polaris-icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import createApp from '@shopify/app-bridge';
@@ -36,14 +40,23 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 
 function Zone(props) {
-    const { Zoneid } = useParams(); 
+    const { Zoneid } = useParams();
     const navigate = useNavigate();
     const [country, setCountry] = useState([])
     const [currencys, setCurrencys] = useState([])
+    const [rate, setRate] = useState([])
     const [toastContent, setToastContent] = useState("");
     const [formErrors, setFormErrors] = useState({});
     const [showToast, setShowToast] = useState(false);
     const toastDuration = 3000;
+    const [active, setActive] = useState(false);
+    const [id,setId]= useState(null)
+    const [toastActive, setToastActive] = useState(false);
+    const toggleToast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
+    const toggleModal = useCallback(() => setActive((active) => !active), []);
+    const toastMarkup = toastActive ? (
+        <Toast content="Rate deleted" onDismiss={toggleToast} />
+    ) : null;
     let app = "";
     const [formData, setFormData] = useState({
         name: "",
@@ -65,8 +78,8 @@ function Zone(props) {
     const [selected, setSelected] = useState(['enable']);
     const handleChange = useCallback((value) => setSelected(value), []);
 
-    const handleEditForm = () => {
-        navigate('/Rate');
+    const handleRateAdd = () => {
+        navigate(`/Rate/${Zoneid}`);
         console.log('navigate on Rule')
     };
 
@@ -116,6 +129,21 @@ function Zone(props) {
         }
     }
 
+    const getRateData = async () => {
+        try {
+            const token = await getSessionToken(app);
+
+            const response = await axios.get(`${apiCommonURL}/api/rates/${Zoneid}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            setRate(response.data.rates)
+            console.log(response.data)
+        } catch (error) {
+            console.error("Error fetching country:", error);
+        }
+    }
     const editData = async () => {
         try {
             const token = await getSessionToken(app);
@@ -126,16 +154,38 @@ function Zone(props) {
                 }
             });
             setFormData({
-                name:response.data.zone.name,
+                name: response.data.zone.name,
                 currency: response.data.zone.currency,
                 country: response.data.zone.country,
             });
-    
+
         } catch (error) {
-          
+
             console.error("Error fetching country:", error);
         }
     }
+    const handleDelete = async () => {
+        try {
+             const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
+            const token = await getSessionToken(app);
+            console.log(token)
+            await axios.delete(`${apiCommonURL}/api/rate/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            console.log(Zoneid)
+            toggleModal();
+            toggleToast();
+            getRateData();
+        } catch (error) {
+            console.error('Error deleting zone:', error);
+        }
+    };
+
     useEffect(() => {
         app = createApp({
             apiKey: SHOPIFY_API_KEY,
@@ -144,6 +194,7 @@ function Zone(props) {
         getCountry()
         getCurrency()
         editData()
+        getRateData()
     }, [])
     const validateFields = () => {
         let isValid = true;
@@ -185,7 +236,7 @@ function Zone(props) {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
-            });                                                             
+            });
             setToastContent("Data has been added successfully");
             setShowToast(true);
             setTimeout(() => {
@@ -225,16 +276,16 @@ function Zone(props) {
         },
     ];
     const resourceName = {
-        singular: 'order',
-        plural: 'orders',
+        singular: 'Zone',
+        plural: 'Zone',
     };
 
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
         useIndexResourceState(orders);
 
-    const rowMarkup = orders.map(
+    const rowMarkup = rate.map(
         (
-            { id, order, date, customer, total },
+            { id, name, service_code, base_price, description },
             index,
         ) => (
             <IndexTable.Row
@@ -245,15 +296,17 @@ function Zone(props) {
             >
                 <IndexTable.Cell>
                     <Text variant="bodyMd" fontWeight="bold" as="span">
-                        {order}
+                        {name}
                     </Text>
                 </IndexTable.Cell>
-                <IndexTable.Cell>{date}</IndexTable.Cell>
-                <IndexTable.Cell>{customer}</IndexTable.Cell>
+                <IndexTable.Cell>{service_code}</IndexTable.Cell>
+                <IndexTable.Cell>{base_price}</IndexTable.Cell>
+                <IndexTable.Cell>{description}</IndexTable.Cell>
                 <IndexTable.Cell>
-                    <Text as="span" alignment="end" numeric>
-                        {total}
-                    </Text>
+                    <ButtonGroup>
+                        <Button icon={EditIcon} variant="primary"  />
+                        <Button icon={DeleteIcon} variant="primary" tone="critical"  onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleModal(); }}  />
+                    </ButtonGroup>
                 </IndexTable.Cell>
 
             </IndexTable.Row>
@@ -344,10 +397,10 @@ function Zone(props) {
                                 <BlockStack gap="200">
                                     <InlineGrid columns="1fr auto">
                                         <Text as="h2" variant="headingSm">
-                                            Zones
+                                            Rates
                                         </Text>
                                         <Button
-                                            onClick={() => handleEditForm()}
+                                            onClick={() => handleRateAdd()}
                                             accessibilityLabel="Add zone"
                                             icon={PlusIcon}
                                         >
@@ -373,10 +426,11 @@ function Zone(props) {
                                         }
                                         onSelectionChange={handleSelectionChange}
                                         headings={[
-                                            { title: 'Order' },
-                                            { title: 'Date' },
-                                            { title: 'Customer' },
-                                            { title: 'Total', alignment: 'end' },
+                                            { title: 'Rate Name' },
+                                            { title: 'Service Code' },
+                                            { title: 'Base Rate Price' },
+                                            { title: 'Description'},
+                                            { title: 'Actions'},
 
                                         ]}
                                     >
@@ -385,14 +439,35 @@ function Zone(props) {
                                 </div>
                             </Card>
                         </Grid.Cell>
-                        <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     </Grid>
                 </div>
             )}
             {showToast && (
                 <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
             )}
-
+      <Modal
+                open={active}
+                onClose={toggleModal}
+                title="Delete Zone"
+                primaryAction={{
+                    content: 'Delete',
+                    destructive: true,
+                    onAction: handleDelete,
+                }}
+                secondaryActions={[
+                    {
+                        content: 'Cancel',
+                        onAction: toggleModal,
+                    },
+                ]}
+            >
+                <Modal.Section>
+                    <TextContainer>
+                        <p>Are you sure you want to delete this Rate?</p>
+                    </TextContainer>
+                </Modal.Section>
+            </Modal>
+            {toastMarkup}
         </Page>
     );
 }

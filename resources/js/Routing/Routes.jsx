@@ -17,7 +17,7 @@ export default function Routing(props) {
             {/* <Route exact path="/Rate" element={<Rate {...props} />} /> */}
             <Route exact path="/Rate/:zone_id" element={<Rate {...props} />} />
             <Route exact path="/Zone" element={<Zone {...props} />} />
-            <Route exact path="/Zone/:Zoneid" element={<Zone {...props} />} />
+            <Route exact path="/Zone/:zone_id" element={<Zone {...props} />} />
 
 
         </Routes>

@@ -18,8 +18,13 @@ import {
     Icon,
     Toast,
     BlockStack,
-    InlineGrid
+    InlineGrid,
+    SkeletonBodyText,
+    SkeletonDisplayText,
+    LegacyCard,
+    Spinner,
 } from '@shopify/polaris';
+import '../../../public/css/style.css';
 import {
     SearchIcon,
     EditIcon,
@@ -34,6 +39,8 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 function Home(props) {
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
+    const [loadingDelete, setLoadingDelete] = useState(false)
     const [zoneDetails, setZoneDetails] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -47,7 +54,7 @@ function Home(props) {
     const toggleModal = useCallback(() => setActive((active) => !active), []);
 
     const toastMarkup = toastActive ? (
-        <Toast content="Zipcode Rule deleted" onDismiss={toggleToast} />
+        <Toast content="Zone  deleted" onDismiss={toggleToast} />
     ) : null;
 
     const app = createApp({
@@ -57,6 +64,7 @@ function Home(props) {
 
     const getZoneDetails = async () => {
         const token = await getSessionToken(app);
+        setLoading(true)
         try {
             const response = await axios.get(`${apiCommonURL}/api/zones`, {
                 headers: {
@@ -66,6 +74,8 @@ function Home(props) {
             const ruledata = response.data.zones;
             setZoneDetails(ruledata);
             setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
+            setLoading(false);
+            console.log(ruledata)
         } catch (error) {
             console.error(error, 'error from');
         }
@@ -75,14 +85,15 @@ function Home(props) {
         getZoneDetails();
     }, []);
 
-    const handleEditZone = (Zoneid) => {
-        navigate(`/Zone/${Zoneid}`);
+    const handleEditZone = (zone_id) => {
+        navigate(`/Zone/${zone_id}`);
     };
-    const zoneNavigate = () =>{
+    const zoneNavigate = () => {
         navigate('/Zone');
     }
     const handleDelete = async () => {
         try {
+            setLoadingDelete(true)
             const token = await getSessionToken(app);
             await axios.delete(`${apiCommonURL}/api/zone/${selectedZoneId}`, {
                 headers: {
@@ -92,8 +103,12 @@ function Home(props) {
             toggleModal();
             toggleToast();
             getZoneDetails();
+            
         } catch (error) {
             console.error('Error deleting zone:', error);
+        }
+        finally {
+            setLoadingDelete(false)
         }
     };
 
@@ -154,7 +169,37 @@ function Home(props) {
             </IndexTable.Row>
         ),
     );
-
+    if (loading) {
+        return (
+            <Page
+                fullWidth
+            >
+                <Grid>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
+                        <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                            <Card roundedAbove="sm">
+                                <div style={{ marginLeft: "85%" }}>
+                                    <SkeletonDisplayText size="medium" />
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={3} />
+                                    </LegacyCard>
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={5} />
+                                    </LegacyCard>
+                                </div>
+                            </Card>
+                        </div>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                </Grid>
+            </Page>
+        );
+    }
     return (
         <Page
             fullWidth
@@ -172,6 +217,7 @@ function Home(props) {
                                     </Text>
                                     <Button
                                         onClick={() => zoneNavigate()}
+                                        variant='primary'
                                         accessibilityLabel="Add zone"
                                         icon={PlusIcon}
                                     >
@@ -192,7 +238,19 @@ function Home(props) {
                                     autoComplete="off"
                                 />
                             </div>
-                            <div style={{ marginTop: "2.5%" }}>
+                            <div style={{ marginTop: "2.5%", position: 'relative' }}>
+                                {loadingDelete && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '80%',
+                                        left: '50%',
+                                        transform: 'translate(-50%, -50%)',
+                                        zIndex: 1,
+                                    }}>
+                                        <Spinner accessibilityLabel="Loading" size="large" />
+                                    </div>
+                                )}
+                                  {!loadingDelete && (
                                 <IndexTable
                                     resourceName={resourceName}
                                     itemCount={filteredZones.length}
@@ -215,6 +273,7 @@ function Home(props) {
                                 >
                                     {rowMarkup}
                                 </IndexTable>
+                                 )}
                             </div>
                         </Card>
                     </Grid.Cell>
@@ -240,7 +299,7 @@ function Home(props) {
             >
                 <Modal.Section>
                     <TextContainer>
-                        <p>Are you sure you want to delete this zone?</p>
+                        <p>Are you sure you want to delete this Rate?</p>
                     </TextContainer>
                 </Modal.Section>
             </Modal>

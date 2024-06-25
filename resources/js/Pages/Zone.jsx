@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
+import '../../../public/css/style.css';
 import {
     Page,
     Button,
@@ -9,23 +10,29 @@ import {
     Text,
     ChoiceList,
     TextField,
-    Checkbox,
-    Tooltip,
-    FormLayout,
     Select,
     ButtonGroup,
     Card,
-    Link,
     Toast,
     IndexTable,
     useIndexResourceState,
-    Badge,
     BlockStack,
-    InlineGrid
+    InlineGrid,
+    Modal,
+    TextContainer,
+    EmptySearchResult,
+    SkeletonBodyText,
+    SkeletonDisplayText,
+    Spinner,
+    Autocomplete,
+    Tag,
+    LegacyStack
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
-    PlusIcon
+    PlusIcon,
+    EditIcon,
+    DeleteIcon,
 } from '@shopify/polaris-icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import createApp from '@shopify/app-bridge';
@@ -36,38 +43,55 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 
 function Zone(props) {
-    const { Zoneid } = useParams(); 
+    const { zone_id } = useParams();
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
+    const [loadingDelete, setLoadingDelete] = useState(false)
     const [country, setCountry] = useState([])
     const [currencys, setCurrencys] = useState([])
+    const [rate, setRate] = useState([])
     const [toastContent, setToastContent] = useState("");
-    const [formErrors, setFormErrors] = useState({});
+    const [errors, setErrors] = useState({});
     const [showToast, setShowToast] = useState(false);
     const toastDuration = 3000;
+    const [selectedZoneId, setselectedZoneId] = useState(null);
+    const [active, setActive] = useState(false);
+    const [selectedOptions, setSelectedOptions] = useState([]);
+    const [inputValue, setInputValue] = useState('');
+    const [toastActive, setToastActive] = useState(false);
+    const toggleToast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
+    const toggleModal = useCallback(() => setActive((active) => !active), []);
     let app = "";
+    const [editdata, setEdit] = useState({
+        zone_id: zone_id,
+        page: "1",
+        per_page: '10'
+    });
     const [formData, setFormData] = useState({
         name: "",
         currency: "",
-        country: "",
-        Zoneid
+        country: [],
+        id: "",
     });
-    const handleConfigrationSettings = (field) => (value) => {
+    const handleZoneDataChange = (field) => (value) => {
         setFormData((prevState) => ({
             ...prevState,
             [field]: value,
         }));
-        setFormErrors((prevErrors) => ({
+        setErrors((prevErrors) => ({
             ...prevErrors,
-            [field]: ""
+            [field]: '',
         }));
 
     };
     const [selected, setSelected] = useState(['enable']);
     const handleChange = useCallback((value) => setSelected(value), []);
+    const toastMarkup = toastActive ? (
+        <Toast content="Rate deleted" onDismiss={toggleToast} />
+    ) : null;
+    const handleRateAdd = (zone_id) => {
+        navigate(`/Rate/${zone_id}`);
 
-    const handleEditForm = () => {
-        navigate('/Rate');
-        console.log('navigate on Rule')
     };
 
     const navigateHome = () => {
@@ -75,6 +99,9 @@ function Zone(props) {
         navigate('/');
     };
 
+    const handleEditZone = (rate_id) => {
+        navigate(`/Zone/${zone_id}/Rate/Edit/${rate_id}`);
+    };
     const getCountry = async () => {
         try {
             const token = await getSessionToken(app);
@@ -90,7 +117,6 @@ function Zone(props) {
                 value: state.code
             }));
             setCountry(stateList);
-
         } catch (error) {
             console.error("Error fetching country:", error);
         }
@@ -112,31 +138,72 @@ function Zone(props) {
                 value: cuency.currency
             }))
             setCurrencys(currency)
+            setLoading(false)
         } catch (error) {
             console.error("Error fetching country:", error);
         }
     }
 
-    const editData = async () => {
-        try {
-            const token = await getSessionToken(app);
+    const editAndSet = async () => {
 
-            const response = await axios.get(`${apiCommonURL}/api/zone/${Zoneid}/edit`, {
+        try {
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
+            const token = await getSessionToken(app);
+            const response = await axios.post(`${apiCommonURL}/api/zone/detail`, editdata, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
             setFormData({
-                name:response.data.zone.name,
+                name: response.data.zone.name,
                 currency: response.data.zone.currency,
                 country: response.data.zone.country,
+                countryCode: response.data.zone.countryCode,
+                id: response.data.zone.id,
             });
-    
+            setRate(response.data.rates)
+
+
         } catch (error) {
-          
-            console.error("Error fetching country:", error);
+            console.error('Error occurs', error);
+
         }
     }
+    const handleDelete = async () => {
+        try {
+            setLoadingDelete(true)
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
+            const token = await getSessionToken(app);
+
+            const response = await axios.delete(`${apiCommonURL}/api/rate/${selectedZoneId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            toggleModal();
+            toggleToast();
+            editAndSet();
+
+        } catch (error) {
+            console.error('Error deleting item:', error);
+            setToastContent("Error occurred while deleting item");
+            setShowToast(true);
+        }
+        finally {
+            // setLoadingDelete(false)
+        }
+    };
+
+
+    
+
     useEffect(() => {
         app = createApp({
             apiKey: SHOPIFY_API_KEY,
@@ -144,98 +211,132 @@ function Zone(props) {
         });
         getCountry()
         getCurrency()
-        editData()
+        editAndSet()
     }, [])
-    const validateFields = () => {
-        let isValid = true;
+    const updateText = useCallback(
+        (value) => {
+            setInputValue(value);
 
-        for (const key in formData) {
-            if (!formData[key].trim()) {
-                setFormErrors((prevFormErrors) => ({
-                    ...prevFormErrors,
-                    [key]: `${key.charAt(0).toUpperCase() + key.slice(1)} is required `
-                }));
-                isValid = false;
-            } else {
-                setFormErrors((prevFormErrors) => ({
-                    ...prevFormErrors,
-                    [key]: ""
-                }));
+            if (value === '') {
+                getCountry();
+                return;
             }
-        }
 
-        return isValid;
-    };
+            const filterRegex = new RegExp(value, 'i');
+            const resultOptions = country.filter((option) =>
+                option.label.match(filterRegex),
+            );
 
-    const saveZone = async () => {
-        // if (!validateFields()) {
-        //     return;
-        // }
-        try {
-            const app = createApp({
-                apiKey: SHOPIFY_API_KEY,
-                host: props.host,
-            });
-            const token = await getSessionToken(app);
-            const selectedCountry = country.find(country => country.value === formData.country);
-            const dataToSubmit = {
-                ...formData,
-                country: selectedCountry ? selectedCountry.label : formData.country,
-            };
-            const response = await axios.post(`${apiCommonURL}/api/zone/save`, dataToSubmit, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });                                                             
-            setToastContent("Data has been added successfully");
-            setShowToast(true);
-            setTimeout(() => {
-                navigate('/');
-            }, 1000);
-
-        } catch (error) {
-            console.error('Error occurs', error);
-            setToastContent("Error occurred while saving data");
-            setShowToast(true);
-        }
-    }
-
-
-    const orders = [
-        {
-            id: '1020',
-            order: '#1020',
-            date: 'Jul 20 at 4:34pm',
-            customer: 'Jaydon Stanton',
-            total: '$969.44',
-
+            setCountry(resultOptions);
         },
-        {
-            id: '1019',
-            order: '#1019',
-            date: 'Jul 20 at 3:46pm',
-            customer: 'Ruben Westerfelt',
-            total: '$701.19',
+        [country],
+    );
+
+    const removeTag = useCallback(
+        (tag) => () => {
+            const newSelectedOptions = selectedOptions.filter(option => option !== tag);
+            setSelectedOptions(newSelectedOptions);
         },
-        {
-            id: '1018',
-            order: '#1018',
-            date: 'Jul 20 at 3.44pm',
-            customer: 'Leo Carder',
-            total: '$798.24',
-        },
-    ];
+        [selectedOptions],
+    );
+
+
+    const verticalContentMarkup =
+        selectedOptions.length > 0 ? (
+            <LegacyStack spacing="extraTight" alignment="center">
+                {selectedOptions.map((option) => {
+                    const tagLabel = country.find(opt => opt.value === option)?.label || option;
+                    return (
+                        <Tag key={option} onRemove={removeTag(option)}>
+                            {tagLabel}
+                        </Tag>
+                    );
+                })}
+            </LegacyStack>
+        ) : null;
+
+    const textField = (
+        <Autocomplete.TextField
+            onChange={updateText}
+            label="Select Countries"
+            value={inputValue}
+            placeholder="Search countries"
+            verticalContent={verticalContentMarkup}
+            
+            autoComplete="off"
+        />
+    );
+
     const resourceName = {
-        singular: 'order',
-        plural: 'orders',
+        singular: 'Zone',
+        plural: 'Zone',
     };
-
+    const emptyStateMarkup = (
+        <EmptySearchResult
+            title={'No Rates yet'}
+            description={'Try changing the filters or search term'}
+            withIllustration
+        />
+    );
+  
+    const saveZone = async () => {
+        try {
+          const newErrors = {};
+          if (!formData.name) newErrors.name = 'Zone name is required';
+      
+          if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+          }
+      
+          const app = createApp({
+            apiKey: SHOPIFY_API_KEY,
+            host: props.host,
+          });
+          const token = await getSessionToken(app);
+      
+          // Map selected options to array of { name, code } objects
+          const selectedCountries = selectedOptions.map(option => {
+            const selectedCountry = country.find(country => country.value === option);
+            return {
+              name: selectedCountry ? selectedCountry.label : '',
+              code: option
+            };
+          });
+      
+          const dataToSubmit = {
+            ...formData,
+            country: selectedCountries,
+          };
+      
+          console.log("Data to submit:", dataToSubmit);
+      
+          const response = await axios.post(`${apiCommonURL}/api/zone/save`, dataToSubmit, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+      
+          setToastContent("Zone saved successfully.");
+          setShowToast(true);
+          setTimeout(() => {
+            navigate('/');
+          }, 1000);
+      
+        } catch (error) {
+          console.error('Error occurs', error);
+          setToastContent("Error occurred while saving data");
+          setShowToast(true);
+        }
+      }
+      
+      
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
-        useIndexResourceState(orders);
+        useIndexResourceState(rate);
 
-    const rowMarkup = orders.map(
+    const rowMarkup = rate.map(
         (
-            { id, order, date, customer, total },
+            { id, name, service_code, base_price, description },
             index,
         ) => (
             <IndexTable.Row
@@ -246,20 +347,102 @@ function Zone(props) {
             >
                 <IndexTable.Cell>
                     <Text variant="bodyMd" fontWeight="bold" as="span">
-                        {order}
+                        {name}
                     </Text>
                 </IndexTable.Cell>
-                <IndexTable.Cell>{date}</IndexTable.Cell>
-                <IndexTable.Cell>{customer}</IndexTable.Cell>
+                <IndexTable.Cell>{service_code}</IndexTable.Cell>
+                <IndexTable.Cell>{base_price}</IndexTable.Cell>
+                <IndexTable.Cell>{description}</IndexTable.Cell>
                 <IndexTable.Cell>
-                    <Text as="span" alignment="end" numeric>
-                        {total}
-                    </Text>
+                    <ButtonGroup>
+                        <Button icon={EditIcon} variant="primary" onClick={() => handleEditZone(id)} />
+                        <Button icon={DeleteIcon} variant="primary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedZoneId(id); toggleModal(); }} />
+                    </ButtonGroup>
                 </IndexTable.Cell>
 
             </IndexTable.Row>
         ),
     );
+
+    if (loading) {
+        return (
+            <Page
+                fullWidth
+                title="Add Zone"
+                primaryAction={<Button variant="primary" onClick={saveZone}>Save</Button>}
+                secondaryActions={<Button onClick={navigateHome}>Back</Button>}
+            >
+                <Grid>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                        <div style={{ paddingTop: '18%' }}>
+                            <SkeletonDisplayText size="small" />
+                            <div style={{ paddingTop: '7%', fontSize: '14px' }}>
+                                <SkeletonBodyText lines={2} />
+                            </div>
+                        </div>
+
+
+
+
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                        <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                            <Card roundedAbove="sm">
+
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={2} />
+                                    </LegacyCard>
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={2} />
+                                    </LegacyCard>
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={2} />
+                                    </LegacyCard>
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={2} />
+                                    </LegacyCard>
+                                </div>
+                            </Card>
+                        </div>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                </Grid>
+                <div style={{ marginTop: "2%" }}>
+                    <Grid>
+                        <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                        <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
+                            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                                <Card roundedAbove="sm">
+                                    <div style={{ marginLeft: "85%" }}>
+                                        <SkeletonDisplayText size="medium" />
+                                    </div>
+                                    <div style={{ marginTop: "2%", }}>
+                                        <LegacyCard sectioned>
+                                            <SkeletonBodyText lines={3} />
+                                        </LegacyCard>
+                                    </div>
+                                    <div style={{ marginTop: "2%", }}>
+                                        <LegacyCard sectioned>
+                                            <SkeletonBodyText lines={5} />
+                                        </LegacyCard>
+                                    </div>
+                                </Card>
+                            </div>
+                        </Grid.Cell>
+                        <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    </Grid>
+                </div>
+            </Page>
+        );
+    }
     return (
         <Page
             fullWidth
@@ -300,24 +483,28 @@ function Zone(props) {
                                     label="Name"
                                     placeholder="Name"
                                     value={formData.name}
-                                    onChange={handleConfigrationSettings('name')}
-                                    error={formErrors.name}
+                                    onChange={handleZoneDataChange('name')}
+                                    error={errors.name}
+
                                 />                            </div>
                             <div style={{ marginTop: "2%" }} className='zonetext'>
 
-                                <Select
-                                    label="Country"
-                                    options={country}
-                                    onChange={handleConfigrationSettings('country')}
-                                    value={formData.country}
-                                    isMulti
-                                />
+                              
+                                    <Autocomplete
+                                        allowMultiple
+                                        options={country}
+                                        selected={selectedOptions}
+                                        textField={textField}
+                                        onSelect={setSelectedOptions}
+                                        listTitle="Suggested Countries"
+                                    />
+                              
                             </div>
                             <div style={{ marginTop: "2%", marginBottom: "2%" }} className='zonetext'>
                                 <Select
-                                    label="Currency"
+                                    label=" Slect Currency"
                                     options={currencys}
-                                    onChange={handleConfigrationSettings('currency')}
+                                    onChange={handleZoneDataChange('currency')}
                                     value={formData.currency}
 
                                 />
@@ -330,69 +517,93 @@ function Zone(props) {
             </div>
 
 
-            <Divider borderColor="border" />
-            {Zoneid && (
-                <div style={{ marginTop: "2%", marginBottom: "5%" }}>
-                    <Grid>
-                        <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-                        <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
-                            {/* <Card>
-                            <div style={{ textAlign: "center", paddingTop: "5%", paddingBottom: "5%", textDecoration: "none" }}>
-                                <Link onClick={() => handleEditForm()}> Click Here</Link> to add rate for this particular zone.
-                            </div>
-                        </Card> */}
-                            <Card>
-                                <BlockStack gap="200">
-                                    <InlineGrid columns="1fr auto">
-                                        <Text as="h2" variant="headingSm">
-                                            Zones
-                                        </Text>
-                                        <Button
-                                            onClick={() => handleEditForm()}
-                                            accessibilityLabel="Add zone"
-                                            icon={PlusIcon}
-                                        >
-                                            Add Rate
-                                        </Button>
-                                    </InlineGrid>
-                                    <Text as="p" variant="bodyMd">
-                                        Specify shipping rates for this particular zone.                                    </Text>
-                                </BlockStack>
-                                <div style={{ marginTop: "2.5%" }}>
-                                    <TextField
-                                        type="text"
-                                        placeholder='Rate Name/ Service Code'
-                                        autoComplete="off"
-                                    />
-                                </div>
-                                <div style={{ marginTop: "2.5%" }}>
-                                    <IndexTable
-                                        resourceName={resourceName}
-                                        itemCount={orders.length}
-                                        selectedItemsCount={
-                                            allResourcesSelected ? 'All' : selectedResources.length
-                                        }
-                                        onSelectionChange={handleSelectionChange}
-                                        headings={[
-                                            { title: 'Order' },
-                                            { title: 'Date' },
-                                            { title: 'Customer' },
-                                            { title: 'Total', alignment: 'end' },
+            {zone_id && (
+                <div>
+                    <Divider borderColor="border" />
+                    <div style={{ marginTop: "2%", marginBottom: "5%" }}>
+                        <Grid>
+                            <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                            <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
 
-                                        ]}
-                                    >
-                                        {rowMarkup}
-                                    </IndexTable>
-                                </div>
-                            </Card>
-                        </Grid.Cell>
-                        <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-                    </Grid>
+                                <Card>
+                                    <BlockStack gap="200">
+                                        <InlineGrid columns="1fr auto">
+                                            <Text as="h2" variant="headingSm">
+                                                Rates
+                                            </Text>
+                                            <Button
+                                                onClick={() => handleRateAdd(zone_id)}
+                                                accessibilityLabel="Add zone"
+                                                icon={PlusIcon}
+                                            >
+                                                Add Rate
+                                            </Button>
+                                        </InlineGrid>
+                                        <Text as="p" variant="bodyMd">
+                                            Specify shipping rates for this particular zone.                                    </Text>
+                                    </BlockStack>
+                                    <div style={{ marginTop: "2.5%" }}>
+                                        <TextField
+                                            type="text"
+                                            placeholder='Rate Name/ Service Code'
+                                            autoComplete="off"
+                                        />
+                                    </div>
+                                    <div style={{ marginTop: "2.5%" }}>
+                                        {loadingDelete ? <Spinner accessibilityLabel="Loading" size="large" /> : null}
+                                        <IndexTable
+                                            resourceName={resourceName}
+                                            itemCount={rate.length}
+                                            emptyState={emptyStateMarkup}
+
+                                            selectedItemsCount={
+                                                allResourcesSelected ? 'All' : selectedResources.length
+                                            }
+                                            onSelectionChange={handleSelectionChange}
+                                            headings={[
+                                                { title: 'Rate Name' },
+                                                { title: 'Service Code' },
+                                                { title: 'Base Rate Price' },
+                                                { title: 'Description' },
+                                                { title: 'Actions' },
+
+                                            ]}
+                                        >
+                                            {rowMarkup}
+                                        </IndexTable>
+                                    </div>
+                                </Card>
+                            </Grid.Cell>
+                        </Grid>
+                    </div>
                 </div>
             )}
             {showToast && (
                 <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
             )}
+            <Modal
+                open={active}
+                onClose={toggleModal}
+                title="Delete Zone"
+                primaryAction={{
+                    content: 'Delete',
+                    destructive: true,
+                    onAction: handleDelete,
+                }}
+                secondaryActions={[
+                    {
+                        content: 'Cancel',
+                        onAction: toggleModal,
+                    },
+                ]}
+            >
+                <Modal.Section>
+                    <TextContainer>
+                        <p>Are you sure you want to delete this zone?</p>
+                    </TextContainer>
+                </Modal.Section>
+            </Modal>
+            {toastMarkup}
 
         </Page>
     );

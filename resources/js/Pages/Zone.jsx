@@ -26,21 +26,21 @@ import {
     Spinner,
     Autocomplete,
     Tag,
-    LegacyStack
+    LegacyStack,
+    Icon
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
     PlusIcon,
     EditIcon,
     DeleteIcon,
+    SearchIcon
 } from '@shopify/polaris-icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import createApp from '@shopify/app-bridge';
 import { getSessionToken } from "@shopify/app-bridge-utils";
 const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
-
-
 
 function Zone(props) {
     const { zone_id } = useParams();
@@ -58,6 +58,11 @@ function Zone(props) {
     const [active, setActive] = useState(false);
     const [selectedOptions, setSelectedOptions] = useState([]);
     const [inputValue, setInputValue] = useState('');
+    const [textFieldValue, setTextFieldValue] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [itemsPerPage] = useState(5);
+
     const [toastActive, setToastActive] = useState(false);
     const toggleToast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
     const toggleModal = useCallback(() => setActive((active) => !active), []);
@@ -73,6 +78,10 @@ function Zone(props) {
         country: [],
         id: "",
     });
+    const handleTextFieldChange = useCallback(
+        (value) => setTextFieldValue(value),
+        [],
+    );
     const handleZoneDataChange = (field) => (value) => {
         setFormData((prevState) => ({
             ...prevState,
@@ -162,8 +171,11 @@ function Zone(props) {
                 countryCode: response.data.zone.countryCode,
                 id: response.data.zone.id,
             });
-            setSelectedOptions (response.data.zone.country)
-            setRate(response.data.rates)
+            setSelectedOptions(response.data.zone.country)
+
+            const ratedata = response.data.rates
+            setTotalPages(Math.ceil(ratedata.length / itemsPerPage));
+            setRate(ratedata)
             console.log(response.data)
 
         } catch (error) {
@@ -196,7 +208,7 @@ function Zone(props) {
             setShowToast(true);
         }
         finally {
-            // setLoadingDelete(false)
+            setLoadingDelete(false)
         }
     };
 
@@ -263,6 +275,17 @@ function Zone(props) {
             autoComplete="off"
         />
     );
+    const handleNextPage = useCallback(() => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    }, [currentPage, totalPages]);
+
+    const handlePreviousPage = useCallback(() => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    }, [currentPage]);
 
     const resourceName = {
         singular: 'Zone',
@@ -331,7 +354,13 @@ function Zone(props) {
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
         useIndexResourceState(rate);
 
-    const rowMarkup = rate.map(
+
+    const filteredZones = rate.filter(zone =>
+        zone.name.toLowerCase().includes(textFieldValue.toLowerCase())
+    );
+    const paginatedZones = filteredZones.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    const rowMarkup = paginatedZones.map(
         (
             { id, name, service_code, base_price, description },
             index,
@@ -542,7 +571,10 @@ function Zone(props) {
                                     <div style={{ marginTop: "2.5%" }}>
                                         <TextField
                                             type="text"
-                                            placeholder='Rate Name/ Service Code'
+                                            value={textFieldValue}
+                                            placeholder="Search by name..."
+                                            onChange={handleTextFieldChange}
+                                            prefix={<Icon source={SearchIcon} />}
                                             autoComplete="off"
                                         />
                                     </div>
@@ -565,6 +597,13 @@ function Zone(props) {
                                                 { title: 'Actions' },
 
                                             ]}
+                                            paginated
+                                            pagination={{
+                                                hasPrevious: currentPage > 1,
+                                                hasNext: currentPage < totalPages,
+                                                onNext: handleNextPage,
+                                                onPrevious: handlePreviousPage,
+                                            }}
                                         >
                                             {rowMarkup}
                                         </IndexTable>

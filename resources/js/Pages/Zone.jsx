@@ -315,7 +315,7 @@ function Zone(props) {
             }
           });
       
-          setToastContent("Data has been added successfully");
+          setToastContent("Zone saved successfully.");
           setShowToast(true);
           setTimeout(() => {
             navigate('/');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Rate;
 use App\Models\User;
 use App\Models\Zone;
+use App\Models\ZoneCountry;
 use Illuminate\Http\Request;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Http;
@@ -138,6 +139,14 @@ class ApiController extends Controller
     {
         $input = $request->input();
         // Construct the response data
+        $originCompanyName = $input['rate']['origin']['company_name'] . ".myshopify.com";
+
+        $originCountryName = $input['rate']['origin']['country'];
+
+        $userId = User::where('name', $originCompanyName)->value('id');
+
+        $rateCount = Zone::forUserInCountry($userId, $originCountryName)->withCount('rates')->with('rates')->first();
+
         $response = [
             'rates' => [
                 [
@@ -150,21 +159,15 @@ class ApiController extends Controller
             ]
         ];
 
-        $originCompanyName = $input['rate']['origin']['company_name'] . ".myshopify.com";
+        // $rate = Rate::where('user_id', $userId)->count();
 
-        $originCountryName = $input['rate']['origin']['country'];
-
-        $userId = User::where('name', $originCompanyName)->value('id');
-
-        $rate = Rate::where('user_id', $userId)->count();
+        Log::info('Shopify Carrier Service Request rateCount:', ["rateCount" => $rateCount]);
 
         Log::info('Shopify Carrier Service Request:', $input);
 
-        if($rate > 0){
-            return response()->json($response);
-        }
-
-        $rateCount = Zone::forUserInCountry($userId, $originCountryName)->withCount('rates')->first();
+        // if($rate > 0){
+        //     return response()->json($response);
+        // }
 
         if($rateCount->rates_count > 0){
             return response()->json($response);
@@ -176,7 +179,8 @@ class ApiController extends Controller
     {
         try {
             // Retrieve the shop from the request attributes (assuming middleware handles the shopify session)
-            $shop = $request->attributes->get('shopifySession');
+            // $shop = $request->attributes->get('shopifySession');
+            $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -201,7 +205,7 @@ class ApiController extends Controller
             // Validation rules and custom messages
             $rules = [
                 'name' => 'required|string|max:255',
-                'country' => 'required|string|max:255',
+                'country' => 'required',
                 'currency' => 'required|string|max:255'
             ];
 
@@ -218,8 +222,25 @@ class ApiController extends Controller
                 return response()->json(['status' => false, 'errors' => $validator->errors()], 422);
             }
 
+            $countryData = $inputData['country'];
+
+            unset($inputData['country']);
+
             // Update or create the zone
-            Zone::updateOrCreate(['id' => $request->input('id')], $inputData);
+            $zone = Zone::updateOrCreate(['id' => $request->input('id')], $inputData);
+
+            ZoneCountry::where('user_id', $user_id)->where('zone_id', $zone->id)->delete();
+
+            foreach($countryData as $country) {
+                $insertData = [
+                    'user_id' => $user_id,
+                    'zone_id' => $zone->id,
+                    'countryCode' => $country['code'],
+                    'country' => $country['name']
+                ];
+
+                ZoneCountry::create($insertData);
+            }
 
             return response()->json(['status' => true, 'message' => 'Zone added successfully.']);
         } catch (\Throwable $th) {
@@ -232,8 +253,8 @@ class ApiController extends Controller
     {
         try {
             // Assuming this is how you get the shop
-            $shop = request()->attributes->get('shopifySession');
-            // $shop = "krishnalaravel-test.myshopify.com";
+            // $shop = request()->attributes->get('shopifySession');
+            $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([

@@ -159,12 +159,12 @@ function Zone(props) {
             setFormData({
                 name: response.data.zone.name,
                 currency: response.data.zone.currency,
-                country: response.data.zone.country,
                 countryCode: response.data.zone.countryCode,
                 id: response.data.zone.id,
             });
+            setSelectedOptions (response.data.zone.country)
             setRate(response.data.rates)
-
+            console.log(response.data)
 
         } catch (error) {
             console.error('Error occurs', error);
@@ -201,7 +201,7 @@ function Zone(props) {
     };
 
 
-    
+
 
     useEffect(() => {
         app = createApp({
@@ -238,8 +238,6 @@ function Zone(props) {
         },
         [selectedOptions],
     );
-
-
     const verticalContentMarkup =
         selectedOptions.length > 0 ? (
             <LegacyStack spacing="extraTight" alignment="center">
@@ -261,7 +259,7 @@ function Zone(props) {
             value={inputValue}
             placeholder="Search countries"
             verticalContent={verticalContentMarkup}
-            
+
             autoComplete="off"
         />
     );
@@ -277,59 +275,59 @@ function Zone(props) {
             withIllustration
         />
     );
-  
+
     const saveZone = async () => {
         try {
-          const newErrors = {};
-          if (!formData.name) newErrors.name = 'Zone name is required';
-      
-          if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
-            return;
-          }
-      
-          const app = createApp({
-            apiKey: SHOPIFY_API_KEY,
-            host: props.host,
-          });
-          const token = await getSessionToken(app);
-      
-          // Map selected options to array of { name, code } objects
-          const selectedCountries = selectedOptions.map(option => {
-            const selectedCountry = country.find(country => country.value === option);
-            return {
-              name: selectedCountry ? selectedCountry.label : '',
-              code: option
-            };
-          });
-      
-          const dataToSubmit = {
-            ...formData,
-            country: selectedCountries,
-          };
-      
-          console.log("Data to submit:", dataToSubmit);
-      
-          const response = await axios.post(`${apiCommonURL}/api/zone/save`, dataToSubmit, {
-            headers: {
-              'Authorization': `Bearer ${token}`
+            const newErrors = {};
+            if (!formData.name) newErrors.name = 'Zone name is required';
+
+            if (Object.keys(newErrors).length > 0) {
+                setErrors(newErrors);
+                return;
             }
-          });
-      
-          setToastContent("Zone saved successfully.");
-          setShowToast(true);
-          setTimeout(() => {
-            navigate('/');
-          }, 1000);
-      
+
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
+            const token = await getSessionToken(app);
+
+            // Map selected options to array of { name, code } objects
+            const selectedCountries = selectedOptions.map(option => {
+                const selectedCountry = country.find(country => country.value === option);
+                return {
+                    name: selectedCountry ? selectedCountry.label : '',
+                    code: option
+                };
+            });
+
+            const dataToSubmit = {
+                ...formData,
+                country: selectedCountries,
+            };
+
+            console.log("Data to submit:", dataToSubmit);
+
+            const response = await axios.post(`${apiCommonURL}/api/zone/save`, dataToSubmit, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            setToastContent("Zone saved successfully.");
+            setShowToast(true);
+            setTimeout(() => {
+                navigate('/');
+            }, 1000);
+
         } catch (error) {
-          console.error('Error occurs', error);
-          setToastContent("Error occurred while saving data");
-          setShowToast(true);
+            console.error('Error occurs', error);
+            setToastContent("Error occurred while saving data");
+            setShowToast(true);
         }
-      }
-      
-      
+    }
+
+
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
         useIndexResourceState(rate);
 
@@ -488,20 +486,20 @@ function Zone(props) {
                                 />                            </div>
                             <div style={{ marginTop: "2%" }} className='zonetext'>
 
-                              
-                                    <Autocomplete
-                                        allowMultiple
-                                        options={country}
-                                        selected={selectedOptions}
-                                        textField={textField}
-                                        onSelect={setSelectedOptions}
-                                        listTitle="Suggested Countries"
-                                    />
-                              
+
+                                <Autocomplete
+                                    allowMultiple
+                                    options={country}
+                                    selected={selectedOptions}
+                                    textField={textField}
+                                    onSelect={setSelectedOptions}
+                                    listTitle="Suggested Countries"
+                                />
+
                             </div>
                             <div style={{ marginTop: "2%", marginBottom: "2%" }} className='zonetext'>
                                 <Select
-                                    label=" Slect Currency"
+                                    label=" Select Currency"
                                     options={currencys}
                                     onChange={handleZoneDataChange('currency')}
                                     value={formData.currency}

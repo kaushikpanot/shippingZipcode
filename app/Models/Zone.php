@@ -22,6 +22,7 @@ class Zone extends Model
 
     public function scopeForUserInCountry($query, $userId, $country)
     {
+        dd($query);
         return $query->where('user_id', $userId)
             ->where('country', $country);
     }

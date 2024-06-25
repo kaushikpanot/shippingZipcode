@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
-
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     Page,
     Button,
@@ -11,23 +10,20 @@ import {
     Text,
     TextField,
     Checkbox,
-    Card,
     Toast
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
-import { useNavigate } from 'react-router-dom';
 import createApp from '@shopify/app-bridge';
 import { getSessionToken } from "@shopify/app-bridge-utils";
+
 const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 function Rate(props) {
-    const { rate_id } = useParams();
-    const { zone_id } = useParams();
-
-
+    const { rate_id, zone_id } = useParams();
     const navigate = useNavigate();
     let app = "";
+
     const [formData, setFormData] = useState({
         name: '',
         base_price: '',
@@ -35,34 +31,41 @@ function Rate(props) {
         description: '',
         zone_id: zone_id,
         id: " ",
-    })
+    });
+
     const [enabled, setEnabled] = useState(true);
     const toastDuration = 3000;
     const [showToast, setShowToast] = useState(false);
     const [toastContent, setToastContent] = useState("");
+    const [errors, setErrors] = useState({});
 
     const handleSwitchChange = useCallback(
         (newChecked) => setEnabled(newChecked),
         [],
     );
+
     const handleRateFormChange = (field) => (value) => {
         setFormData((prevState) => ({
             ...prevState,
             [field]: value,
         }));
-    }
-    const BacktoZone = (zone_id) => {
-        navigate(`/Zone/${zone_id}`);
-
+        setErrors((prevErrors) => ({
+            ...prevErrors,
+            [field]: '',
+        }));
     };
 
+    const BacktoZone = (zone_id) => {
+        navigate(`/Zone/${zone_id}`);
+    };
 
     useEffect(() => {
         app = createApp({
             apiKey: SHOPIFY_API_KEY,
             host: props.host,
         });
-    }, [])
+    }, []);
+
     const editRate = async () => {
         try {
             const token = await getSessionToken(app);
@@ -72,6 +75,7 @@ function Rate(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
+
             setFormData({
                 name: response.data.rate.name,
                 base_price: response.data.rate.base_price,
@@ -80,38 +84,49 @@ function Rate(props) {
                 id: response.data.rate.id,
                 zone_id: response.data.rate.zone_id
             });
-         
-
         } catch (error) {
             console.error("Error fetching edit data:", error);
         }
-    }
+    };
+
     useEffect(() => {
-        editRate()
-    }, [])
+        editRate();
+    }, []);
+
     const saveRate = async () => {
+        const newErrors = {};
+        if (!formData.name) newErrors.name = 'Rate name is required';
+        if (!formData.base_price) newErrors.base_price = 'Base price is required';
+        if (!formData.service_code) newErrors.service_code = 'Service code is required';
+        if (!formData.description) newErrors.description = 'Description is required';
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
         try {
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
             });
             const token = await getSessionToken(app);
-           
+
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-           
-            setToastContent("Data has been added successfully");
-            setShowToast(true);
 
+            setToastContent("Rate saved successfully");
+            setShowToast(true);
         } catch (error) {
             console.error('Error occurs', error);
             setToastContent("Error occurred while saving data");
             setShowToast(true);
         }
-    }
+    };
+
     return (
         <Page
             fullWidth
@@ -150,6 +165,7 @@ function Rate(props) {
                                     autoComplete="off"
                                     value={formData.name}
                                     onChange={handleRateFormChange('name')}
+                                    error={errors.name}
                                 />
                             </div>
                             <div style={{ marginTop: '2%' }} className='zonetext'>
@@ -160,6 +176,7 @@ function Rate(props) {
                                     prefix="Rs."
                                     value={formData.base_price}
                                     onChange={handleRateFormChange('base_price')}
+                                    error={errors.base_price}
                                 />
                             </div>
                             <div style={{ marginTop: '2%', marginBottom: '2%' }} className='zonetext'>
@@ -170,6 +187,7 @@ function Rate(props) {
                                     value={formData.service_code}
                                     onChange={handleRateFormChange('service_code')}
                                     helpText="The service service_code should not be the same as the other rates."
+                                    error={errors.service_code}
                                 />
                             </div>
                             <div style={{ marginTop: '2%' }} className='zonetext'>
@@ -179,6 +197,7 @@ function Rate(props) {
                                     autoComplete="off"
                                     value={formData.description}
                                     onChange={handleRateFormChange('description')}
+                                    error={errors.description}
                                 />
                             </div>
                         </LegacyCard>

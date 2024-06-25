@@ -21,7 +21,8 @@ import {
     InlineGrid,
     SkeletonBodyText,
     SkeletonDisplayText,
-    LegacyCard
+    LegacyCard,
+    Spinner,
 } from '@shopify/polaris';
 import {
     SearchIcon,
@@ -38,6 +39,7 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 function Home(props) {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
+    const [loadingDelete, setLoadingDelete] = useState(false)
     const [zoneDetails, setZoneDetails] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -72,6 +74,7 @@ function Home(props) {
             setZoneDetails(ruledata);
             setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
             setLoading(false);
+            console.log(ruledata)
         } catch (error) {
             console.error(error, 'error from');
         }
@@ -89,6 +92,7 @@ function Home(props) {
     }
     const handleDelete = async () => {
         try {
+            setLoadingDelete(true)
             const token = await getSessionToken(app);
             await axios.delete(`${apiCommonURL}/api/zone/${selectedZoneId}`, {
                 headers: {
@@ -98,8 +102,12 @@ function Home(props) {
             toggleModal();
             toggleToast();
             getZoneDetails();
+            
         } catch (error) {
             console.error('Error deleting zone:', error);
+        }
+        finally {
+            setLoadingDelete(false)
         }
     };
 
@@ -228,7 +236,19 @@ function Home(props) {
                                     autoComplete="off"
                                 />
                             </div>
-                            <div style={{ marginTop: "2.5%" }}>
+                            <div style={{ marginTop: "2.5%", position: 'relative' }}>
+                                {loadingDelete && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '80%',
+                                        left: '50%',
+                                        transform: 'translate(-50%, -50%)',
+                                        zIndex: 1,
+                                    }}>
+                                        <Spinner accessibilityLabel="Loading" size="large" />
+                                    </div>
+                                )}
+                                  {!loadingDelete && (
                                 <IndexTable
                                     resourceName={resourceName}
                                     itemCount={filteredZones.length}
@@ -251,6 +271,7 @@ function Home(props) {
                                 >
                                     {rowMarkup}
                                 </IndexTable>
+                                 )}
                             </div>
                         </Card>
                     </Grid.Cell>

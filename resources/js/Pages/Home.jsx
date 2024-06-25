@@ -64,6 +64,7 @@ function Home(props) {
 
     const getZoneDetails = async () => {
         const token = await getSessionToken(app);
+     
         setLoading(true)
         try {
             const response = await axios.get(`${apiCommonURL}/api/zones`, {

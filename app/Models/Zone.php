@@ -20,14 +20,16 @@ class Zone extends Model
         return $this->hasMany(Rate::class, 'zone_id', 'id');
     }
 
-    public function scopeForUserInCountry($query, $userId, $country)
+    public function countries()
     {
-        dd($query);
-        return $query->where('user_id', $userId)
-            ->where('country', $country);
+        return $this->hasMany(ZoneCountry::class);
     }
 
-    public function countries(){
-        return $this->hasMany(ZoneCountry::class);
+    public function scopeForUserInCountry($query, $userId, $countryCode)
+    {
+        return $query->where('user_id', $userId)
+            ->whereHas('countries', function ($query) use ($countryCode) {
+                $query->where('countryCode', $countryCode);
+            });
     }
 }

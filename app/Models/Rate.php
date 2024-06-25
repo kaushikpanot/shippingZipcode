@@ -12,4 +12,9 @@ class Rate extends Model
     protected $fillable = ["user_id", "zone_id", "name", "base_price", "service_code", "description", "status"];
 
     protected $hidden = ['created_at', 'updated_at'];
+
+    public function zone()
+    {
+        return $this->belongsTo(Zone::class);
+    }
 }

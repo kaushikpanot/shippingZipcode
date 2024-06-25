@@ -138,6 +138,7 @@ class ApiController extends Controller
     public function getResponse(Request $request)
     {
         $input = $request->input();
+
         // Construct the response data
         $originCompanyName = $input['rate']['origin']['company_name'] . ".myshopify.com";
 
@@ -145,34 +146,25 @@ class ApiController extends Controller
 
         $userId = User::where('name', $originCompanyName)->value('id');
 
-        $rateCount = Zone::forUserInCountry($userId, $originCountryName)->withCount('rates')->with('rates')->first();
+        $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $originCountryName)->pluck('zone_id');
 
-        $response = [
-            'rates' => [
-                [
-                    'service_name' => 'Standard Shipping555',
-                    'service_code' => 'STANDARD',
-                    'total_price' => 5000, // Price in cents
-                    'description' => 'Delivered within 5-7 business days',
-                    'currency' => 'USD',
-                ],
-            ]
-        ];
+        $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency')->get();
 
-        // $rate = Rate::where('user_id', $userId)->count();
+        $response = [];
 
-        Log::info('Shopify Carrier Service Request rateCount:', ["rateCount" => $rateCount]);
-
-        Log::info('Shopify Carrier Service Request:', $input);
-
-        // if($rate > 0){
-        //     return response()->json($response);
-        // }
-
-        if($rateCount->rates_count > 0){
-            return response()->json($response);
+        foreach ($rates as $rate) {
+            $response['rates'][] = [
+                'service_name' => $rate->name,
+                'service_code' => $rate->service_code,
+                'total_price' => $rate->base_price, // Convert to cents if needed
+                'description' => $rate->description,
+                'currency' => $rate->zone->currency,
+            ];
         }
-        // Return the JSON response
+
+        Log::info('Shopify Carrier Service Request rateCount:', ["response" => $response]);
+
+        return response()->json($response);
     }
 
     public function zoneStore(Request $request)
@@ -231,7 +223,7 @@ class ApiController extends Controller
 
             ZoneCountry::where('user_id', $user_id)->where('zone_id', $zone->id)->delete();
 
-            foreach($countryData as $country) {
+            foreach ($countryData as $country) {
                 $insertData = [
                     'user_id' => $user_id,
                     'zone_id' => $zone->id,

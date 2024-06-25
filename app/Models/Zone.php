@@ -25,4 +25,8 @@ class Zone extends Model
         return $query->where('user_id', $userId)
             ->where('country', $country);
     }
+
+    public function countries(){
+        return $this->hasMany(ZoneCountry::class);
+    }
 }

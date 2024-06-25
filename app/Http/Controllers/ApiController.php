@@ -275,7 +275,7 @@ class ApiController extends Controller
 
             $zoneId = $request->input('zone_id');
             // Validate if the zone exists
-            $zone = Zone::find($zoneId);
+            $zone = Zone::with('countries')->find($zoneId);
 
             if (!$zone) {
                 return response()->json([
@@ -283,6 +283,10 @@ class ApiController extends Controller
                     'message' => 'Zone not found.'
                 ], 404);
             }
+
+            $zone->country = $zone->countries->pluck('countryCode')->all();
+
+            unset($zone->countries);
 
             // Initialize the query for fetching rates
             $ratesQuery = Rate::where('user_id', $user->id)->where('zone_id', $zoneId);

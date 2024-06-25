@@ -20,8 +20,8 @@ class SettingContoller extends Controller
     {
         try {
 
-            // $shop = $request->attributes->get('shopifySession');
-            $shop = "krishnalaravel-test.myshopify.com";
+            $shop = $request->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -72,8 +72,8 @@ class SettingContoller extends Controller
     {
         try {
 
-            // $shop = $request->attributes->get('shopifySession');
-            $shop = "krishnalaravel-test.myshopify.com";
+            $shop = $request->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([

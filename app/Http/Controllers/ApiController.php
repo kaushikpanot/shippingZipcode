@@ -179,8 +179,8 @@ class ApiController extends Controller
     {
         try {
             // Retrieve the shop from the request attributes (assuming middleware handles the shopify session)
-            // $shop = $request->attributes->get('shopifySession');
-            $shop = "krishnalaravel-test.myshopify.com";
+            $shop = $request->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -253,8 +253,8 @@ class ApiController extends Controller
     {
         try {
             // Assuming this is how you get the shop
-            // $shop = request()->attributes->get('shopifySession');
-            $shop = "krishnalaravel-test.myshopify.com";
+            $shop = request()->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([

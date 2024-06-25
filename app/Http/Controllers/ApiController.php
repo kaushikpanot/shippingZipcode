@@ -275,7 +275,7 @@ class ApiController extends Controller
 
             $zoneId = $request->input('zone_id');
             // Validate if the zone exists
-            $zone = Zone::with('countries')->find($zoneId);
+            $zone = Zone::with('countries:zone_id,countryCode')->find($zoneId);
 
             if (!$zone) {
                 return response()->json([
@@ -336,7 +336,6 @@ class ApiController extends Controller
     public function zoneList(Request $request, $name = null)
     {
         try {
-
             $shop = request()->attributes->get('shopifySession');
             // $shop = "krishnalaravel-test.myshopify.com";
 
@@ -358,13 +357,18 @@ class ApiController extends Controller
 
             $per_page = $request->input('per_page', 10);
 
-            $zonesQuery = Zone::where('user_id', $user_id);
+            $zonesQuery = Zone::with('countries:zone_id,country')->where('user_id', $user_id);
 
             if ($name) {
                 $zonesQuery->where('name', 'like', '%' . $name . '%');
             }
 
             $zones = $zonesQuery->paginate($per_page);
+
+            // foreach ($zones as $zone) {
+            //     $zone->country = $zone->countries->pluck('country')->implode(', ');
+            //     unset($zone->countries);
+            // }
 
             return response()->json([
                 'status' => true,

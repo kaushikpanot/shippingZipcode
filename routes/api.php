@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ApiController;
+use App\Http\Controllers\SettingContoller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,7 +22,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('getResponse', [ApiController::class, 'getResponse']);
 
-Route::middleware(['verify.shopify.jwt'])->group(function () {
+// Route::middleware(['verify.shopify.jwt'])->group(function () {
+    Route::resource('settings', SettingContoller::class);
+
     Route::controller(ApiController::class)->group(function () {
         Route::get('country', 'getCountryList');
         Route::get('currency', 'getCurrencyList');
@@ -36,4 +39,4 @@ Route::middleware(['verify.shopify.jwt'])->group(function () {
         Route::get('rate/{id}/edit', 'rateEdit');
         Route::delete('rate/{id}', 'rateDestroy');
     });
-});
+// });

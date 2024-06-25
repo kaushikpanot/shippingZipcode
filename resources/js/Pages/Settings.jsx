@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { Toast } from '@shopify/polaris';
 import { Select } from '@shopify/polaris';
 import { Page, Button, Grid, Divider, LegacyCard, RadioButton,Text} from '@shopify/polaris';
+import '../../../public/css/style.css';
 const Settings = () => {
 
 

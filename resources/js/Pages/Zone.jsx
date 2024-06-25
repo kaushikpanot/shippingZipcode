@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
+import '../../../public/css/style.css';
 import {
     Page,
     Button,
@@ -230,13 +231,13 @@ function Zone(props) {
         [country],
     );
 
-    // const removeTag = useCallback(
-    //     (tag) => () => {
-    //         const newSelectedOptions = selectedOptions.filter(option => option !== tag);
-    //         setSelectedOptions(newSelectedOptions);
-    //     },
-    //     [selectedOptions],
-    // );
+    const removeTag = useCallback(
+        (tag) => () => {
+            const newSelectedOptions = selectedOptions.filter(option => option !== tag);
+            setSelectedOptions(newSelectedOptions);
+        },
+        [selectedOptions],
+    );
 
 
     const verticalContentMarkup =
@@ -245,7 +246,7 @@ function Zone(props) {
                 {selectedOptions.map((option) => {
                     const tagLabel = country.find(opt => opt.value === option)?.label || option;
                     return (
-                        <Tag key={option} >
+                        <Tag key={option} onRemove={removeTag(option)}>
                             {tagLabel}
                         </Tag>
                     );

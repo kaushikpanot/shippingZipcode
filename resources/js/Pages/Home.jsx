@@ -24,6 +24,7 @@ import {
     LegacyCard,
     Spinner,
 } from '@shopify/polaris';
+import '../../../public/css/style.css';
 import {
     SearchIcon,
     EditIcon,
@@ -216,6 +217,7 @@ function Home(props) {
                                     </Text>
                                     <Button
                                         onClick={() => zoneNavigate()}
+                                        variant='primary'
                                         accessibilityLabel="Add zone"
                                         icon={PlusIcon}
                                     >

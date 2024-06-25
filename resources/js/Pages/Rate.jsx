@@ -21,8 +21,11 @@ import { getSessionToken } from "@shopify/app-bridge-utils";
 const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
-function Help(props) {
+function Rate(props) {
+    const { rate_id } = useParams();
     const { zone_id } = useParams();
+
+
     const navigate = useNavigate();
     let app = "";
     const [formData, setFormData] = useState({
@@ -30,7 +33,8 @@ function Help(props) {
         base_price: '',
         service_code: '',
         description: '',
-        zone_id
+        zone_id: zone_id,
+        id: " ",
     })
     const [enabled, setEnabled] = useState(true);
     const toastDuration = 3000;
@@ -47,9 +51,9 @@ function Help(props) {
             [field]: value,
         }));
     }
-    const BacktoZone = () => {
+    const BacktoZone = (zone_id) => {
         navigate(`/Zone/${zone_id}`);
-      
+
     };
 
 
@@ -58,8 +62,33 @@ function Help(props) {
             apiKey: SHOPIFY_API_KEY,
             host: props.host,
         });
-    },[])
-  
+    }, [])
+    const editRate = async () => {
+        try {
+            const token = await getSessionToken(app);
+
+            const response = await axios.get(`${apiCommonURL}/api/rate/${rate_id}/edit`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            setFormData({
+                name: response.data.rate.name,
+                base_price: response.data.rate.base_price,
+                service_code: response.data.rate.service_code,
+                description: response.data.rate.description,
+                id: response.data.rate.id,
+                zone_id: response.data.rate.zone_id
+            });
+         
+
+        } catch (error) {
+            console.error("Error fetching edit data:", error);
+        }
+    }
+    useEffect(() => {
+        editRate()
+    }, [])
     const saveRate = async () => {
         try {
             const app = createApp({
@@ -67,13 +96,13 @@ function Help(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
-        console.log(token)
+           
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            console.log('Response:', response.data);
+           
             setToastContent("Data has been added successfully");
             setShowToast(true);
 
@@ -88,7 +117,7 @@ function Help(props) {
             fullWidth
             title="Add Rate"
             primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
-            secondaryActions={<Button onClick={BacktoZone}>Back</Button>}
+            secondaryActions={<Button onClick={() => BacktoZone(zone_id)}>Back</Button>}
         >
             <Divider borderColor="border" />
             <div style={{ marginTop: '2%', marginBottom: '2%' }}>
@@ -164,4 +193,4 @@ function Help(props) {
     );
 }
 
-export default Help;
+export default Rate;

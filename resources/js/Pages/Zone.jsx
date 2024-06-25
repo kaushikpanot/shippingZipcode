@@ -38,7 +38,7 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 
 function Zone(props) {
-    const { Zoneid } = useParams();
+    const { zone_id } = useParams();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [country, setCountry] = useState([])
@@ -54,11 +54,17 @@ function Zone(props) {
     const toggleToast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
     const toggleModal = useCallback(() => setActive((active) => !active), []);
     let app = "";
+
+    const [editdata, setEdit] = useState({
+        zone_id: zone_id,
+        page: "1",
+        per_page: '10'
+    });
     const [formData, setFormData] = useState({
         name: "",
         currency: "",
-        country: "",
-        Zoneid
+        country: [],
+        id: "",
     });
     const handleConfigrationSettings = (field) => (value) => {
         setFormData((prevState) => ({
@@ -74,11 +80,11 @@ function Zone(props) {
     const [selected, setSelected] = useState(['enable']);
     const handleChange = useCallback((value) => setSelected(value), []);
     const toastMarkup = toastActive ? (
-        <Toast content="Zipcode Rule deleted" onDismiss={toggleToast} />
+        <Toast content="Rate deleted" onDismiss={toggleToast} />
     ) : null;
-    const handleRateAdd = () => {
-        navigate(`/Rate/${Zoneid}`);
-        console.log('navigate on Rule')
+    const handleRateAdd = (zone_id) => {
+        navigate(`/Rate/${zone_id}`);
+
     };
 
     const navigateHome = () => {
@@ -87,7 +93,7 @@ function Zone(props) {
     };
 
     const handleEditZone = (rate_id) => {
-        navigate(`/Rate/${rate_id}`);
+        navigate(`/Zone/${zone_id}/Rate/Edit/${rate_id}`);
     };
     const getCountry = async () => {
         try {
@@ -131,26 +137,16 @@ function Zone(props) {
         }
     }
 
-    const getRateData = async () => {
-        try {
-            const token = await getSessionToken(app);
 
-            const response = await axios.get(`${apiCommonURL}/api/rates/${Zoneid}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+    const editAndSet = async () => {
+
+        try {
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
             });
-            setRate(response.data.rates)
-            setLoading(false)
-        } catch (error) {
-            console.error("Error fetching country:", error);
-        }
-    }
-    const editData = async () => {
-        try {
             const token = await getSessionToken(app);
-
-            const response = await axios.get(`${apiCommonURL}/api/zone/${Zoneid}/edit`, {
+            const response = await axios.post(`${apiCommonURL}/api/zone/detail`, editdata, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -159,11 +155,14 @@ function Zone(props) {
                 name: response.data.zone.name,
                 currency: response.data.zone.currency,
                 country: response.data.zone.country,
+                id: response.data.zone.id,
             });
+            setRate(response.data.rates)
+
 
         } catch (error) {
+            console.error('Error occurs', error);
 
-            console.error("Error fetching country:", error);
         }
     }
     const handleDelete = async () => {
@@ -180,30 +179,19 @@ function Zone(props) {
                 }
             });
 
-            console.log('Delete Response:', selectedZoneId);
             toggleModal();
             toggleToast();
-            getRateData()
+            editAndSet();
+
         } catch (error) {
             console.error('Error deleting item:', error);
             setToastContent("Error occurred while deleting item");
             setShowToast(true);
-        } finally {
-            setShowModal(false);
         }
     };
 
 
-    useEffect(() => {
-        app = createApp({
-            apiKey: SHOPIFY_API_KEY,
-            host: props.host,
-        });
-        getCountry()
-        getCurrency()
-        editData()
-        getRateData()
-    }, [])
+
     const validateFields = () => {
         let isValid = true;
 
@@ -239,6 +227,7 @@ function Zone(props) {
             const dataToSubmit = {
                 ...formData,
                 country: selectedCountry ? selectedCountry.label : formData.country,
+                contryCode: formData.country
             };
             const response = await axios.post(`${apiCommonURL}/api/zone/save`, dataToSubmit, {
                 headers: {
@@ -258,8 +247,15 @@ function Zone(props) {
         }
     }
 
-
-    
+    useEffect(() => {
+        app = createApp({
+            apiKey: SHOPIFY_API_KEY,
+            host: props.host,
+        });
+        getCountry()
+        getCurrency()
+        editAndSet()
+    }, [])
     const resourceName = {
         singular: 'Zone',
         plural: 'Zone',
@@ -295,7 +291,7 @@ function Zone(props) {
                 <IndexTable.Cell>{description}</IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
-                        <Button icon={EditIcon} variant="primary"onClick={() => handleEditZone(id)} />
+                        <Button icon={EditIcon} variant="primary" onClick={() => handleEditZone(id)} />
                         <Button icon={DeleteIcon} variant="primary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedZoneId(id); toggleModal(); }} />
                     </ButtonGroup>
                 </IndexTable.Cell>
@@ -316,10 +312,10 @@ function Zone(props) {
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '18%' }}>
-                             <SkeletonDisplayText size="small" />
-                             <div style={{ paddingTop: '7%', fontSize: '14px' }}>
-                             <SkeletonBodyText lines={2} />
-                                </div>
+                            <SkeletonDisplayText size="small" />
+                            <div style={{ paddingTop: '7%', fontSize: '14px' }}>
+                                <SkeletonBodyText lines={2} />
+                            </div>
                         </div>
 
 
@@ -329,7 +325,7 @@ function Zone(props) {
                     <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
                         <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                             <Card roundedAbove="sm">
-                            
+
                                 <div style={{ marginTop: "2%", }}>
                                     <LegacyCard sectioned>
                                         <SkeletonBodyText lines={2} />
@@ -355,30 +351,30 @@ function Zone(props) {
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
-<div style={{marginTop:"2%"}}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
-                        <div style={{ marginTop: "2%", marginBottom: "2%" }}>
-                            <Card roundedAbove="sm">
-                                <div style={{ marginLeft: "85%" }}>
-                                    <SkeletonDisplayText size="medium" />
-                                </div>
-                                <div style={{ marginTop: "2%", }}>
-                                    <LegacyCard sectioned>
-                                        <SkeletonBodyText lines={3} />
-                                    </LegacyCard>
-                                </div>
-                                <div style={{ marginTop: "2%", }}>
-                                    <LegacyCard sectioned>
-                                        <SkeletonBodyText lines={5} />
-                                    </LegacyCard>
-                                </div>
-                            </Card>
-                        </div>
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-                </Grid>
+                <div style={{ marginTop: "2%" }}>
+                    <Grid>
+                        <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                        <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
+                            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                                <Card roundedAbove="sm">
+                                    <div style={{ marginLeft: "85%" }}>
+                                        <SkeletonDisplayText size="medium" />
+                                    </div>
+                                    <div style={{ marginTop: "2%", }}>
+                                        <LegacyCard sectioned>
+                                            <SkeletonBodyText lines={3} />
+                                        </LegacyCard>
+                                    </div>
+                                    <div style={{ marginTop: "2%", }}>
+                                        <LegacyCard sectioned>
+                                            <SkeletonBodyText lines={5} />
+                                        </LegacyCard>
+                                    </div>
+                                </Card>
+                            </div>
+                        </Grid.Cell>
+                        <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    </Grid>
                 </div>
             </Page>
         );
@@ -429,11 +425,11 @@ function Zone(props) {
                             <div style={{ marginTop: "2%" }} className='zonetext'>
 
                                 <Select
+                                    isMulti
                                     label="Country"
                                     options={country}
                                     onChange={handleConfigrationSettings('country')}
                                     value={formData.country}
-                                    isMulti
                                 />
                             </div>
                             <div style={{ marginTop: "2%", marginBottom: "2%" }} className='zonetext'>
@@ -453,68 +449,64 @@ function Zone(props) {
             </div>
 
 
-            {Zoneid && (
+            {zone_id && (
                 <div>
                     <Divider borderColor="border" />
-                <div style={{ marginTop: "2%", marginBottom: "5%" }}>
-                    <Grid>
-                        <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-                        <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
-                            {/* <Card>
-                            <div style={{ textAlign: "center", paddingTop: "5%", paddingBottom: "5%", textDecoration: "none" }}>
-                                <Link onClick={() => handleEditForm()}> Click Here</Link> to add rate for this particular zone.
-                            </div>
-                        </Card> */}
-                            <Card>
-                                <BlockStack gap="200">
-                                    <InlineGrid columns="1fr auto">
-                                        <Text as="h2" variant="headingSm">
-                                            Rates
-                                        </Text>
-                                        <Button
-                                            onClick={() => handleRateAdd()}
-                                            accessibilityLabel="Add zone"
-                                            icon={PlusIcon}
+                    <div style={{ marginTop: "2%", marginBottom: "5%" }}>
+                        <Grid>
+                            <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                            <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
+
+                                <Card>
+                                    <BlockStack gap="200">
+                                        <InlineGrid columns="1fr auto">
+                                            <Text as="h2" variant="headingSm">
+                                                Rates
+                                            </Text>
+                                            <Button
+                                                onClick={() => handleRateAdd(zone_id)}
+                                                accessibilityLabel="Add zone"
+                                                icon={PlusIcon}
+                                            >
+                                                Add Rate
+                                            </Button>
+                                        </InlineGrid>
+                                        <Text as="p" variant="bodyMd">
+                                            Specify shipping rates for this particular zone.                                    </Text>
+                                    </BlockStack>
+                                    <div style={{ marginTop: "2.5%" }}>
+                                        <TextField
+                                            type="text"
+                                            placeholder='Rate Name/ Service Code'
+                                            autoComplete="off"
+                                        />
+                                    </div>
+                                    <div style={{ marginTop: "2.5%" }}>
+                                        <IndexTable
+                                            resourceName={resourceName}
+                                            itemCount={rate.length}
+                                            emptyState={emptyStateMarkup}
+
+                                            selectedItemsCount={
+                                                allResourcesSelected ? 'All' : selectedResources.length
+                                            }
+                                            onSelectionChange={handleSelectionChange}
+                                            headings={[
+                                                { title: 'Rate Name' },
+                                                { title: 'Service Code' },
+                                                { title: 'Base Rate Price' },
+                                                { title: 'Description' },
+                                                { title: 'Actions' },
+
+                                            ]}
                                         >
-                                            Add Rate
-                                        </Button>
-                                    </InlineGrid>
-                                    <Text as="p" variant="bodyMd">
-                                        Specify shipping rates for this particular zone.                                    </Text>
-                                </BlockStack>
-                                <div style={{ marginTop: "2.5%" }}>
-                                    <TextField
-                                        type="text"
-                                        placeholder='Rate Name/ Service Code'
-                                        autoComplete="off"
-                                    />
-                                </div>
-                                <div style={{ marginTop: "2.5%" }}>
-                                    <IndexTable
-                                        resourceName={resourceName}
-                                        itemCount={rate.length}
-                                        emptyState={emptyStateMarkup}
-
-                                        selectedItemsCount={
-                                            allResourcesSelected ? 'All' : selectedResources.length
-                                        }
-                                        onSelectionChange={handleSelectionChange}
-                                        headings={[
-                                            { title: 'Rate Name' },
-                                            { title: 'Service Code' },
-                                            { title: 'Base Rate Price' },
-                                            { title: 'Description' },
-                                            { title: 'Actions' },
-
-                                        ]}
-                                    >
-                                        {rowMarkup}
-                                    </IndexTable>
-                                </div>
-                            </Card>
-                        </Grid.Cell>
-                    </Grid>
-                </div>
+                                            {rowMarkup}
+                                        </IndexTable>
+                                    </div>
+                                </Card>
+                            </Grid.Cell>
+                        </Grid>
+                    </div>
                 </div>
             )}
             {showToast && (

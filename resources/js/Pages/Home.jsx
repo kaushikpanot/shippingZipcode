@@ -51,7 +51,7 @@ function Home(props) {
     const toggleModal = useCallback(() => setActive((active) => !active), []);
 
     const toastMarkup = toastActive ? (
-        <Toast content="Zipcode Rule deleted" onDismiss={toggleToast} />
+        <Toast content="Zone  deleted" onDismiss={toggleToast} />
     ) : null;
 
     const app = createApp({
@@ -70,7 +70,6 @@ function Home(props) {
             });
             const ruledata = response.data.zones;
             setZoneDetails(ruledata);
-            console.log(ruledata)
             setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
             setLoading(false);
         } catch (error) {
@@ -82,8 +81,8 @@ function Home(props) {
         getZoneDetails();
     }, []);
 
-    const handleEditZone = (Zoneid) => {
-        navigate(`/Zone/${Zoneid}`);
+    const handleEditZone = (zone_id) => {
+        navigate(`/Zone/${zone_id}`);
     };
     const zoneNavigate = () => {
         navigate('/Zone');
@@ -99,7 +98,6 @@ function Home(props) {
             toggleModal();
             toggleToast();
             getZoneDetails();
-            console.log(selectedZoneId)
         } catch (error) {
             console.error('Error deleting zone:', error);
         }
@@ -278,7 +276,7 @@ function Home(props) {
             >
                 <Modal.Section>
                     <TextContainer>
-                        <p>Are you sure you want to delete this zone?</p>
+                        <p>Are you sure you want to delete this Rate?</p>
                     </TextContainer>
                 </Modal.Section>
             </Modal>

@@ -64,7 +64,7 @@ function Home(props) {
 
     const getZoneDetails = async () => {
         const token = await getSessionToken(app);
-     
+
         setLoading(true)
         try {
             const response = await axios.get(`${apiCommonURL}/api/zones`, {
@@ -76,8 +76,6 @@ function Home(props) {
             setZoneDetails(ruledata);
             setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
             setLoading(false);
-            console.log(response.data)
-          
         } catch (error) {
             console.error(error, 'error from');
         }
@@ -105,7 +103,7 @@ function Home(props) {
             toggleModal();
             toggleToast();
             getZoneDetails();
-            
+
         } catch (error) {
             console.error('Error deleting zone:', error);
         }
@@ -146,7 +144,7 @@ function Home(props) {
     const paginatedZones = filteredZones.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const rowMarkup = paginatedZones.map(
-        ({ id, name, countries ,currency}, index) => (
+        ({ id, name, countries, currency }, index) => (
             <IndexTable.Row
                 id={id}
                 key={id}
@@ -154,12 +152,12 @@ function Home(props) {
                 position={index}
             >
                 <IndexTable.Cell>
-                <Link
-          dataPrimaryLink
-          onClick={() => handleEditZone(id)}>
-                    <Text variant="bodyMd" fontWeight="bold" as="span">
-                        {name}
-                    </Text>
+                    <Link
+                        dataPrimaryLink
+                        onClick={() => handleEditZone(id)}>
+                        <Text variant="bodyMd" fontWeight="bold" as="span">
+                            {name}
+                        </Text>
                     </Link>
                 </IndexTable.Cell>
                 <IndexTable.Cell>
@@ -174,9 +172,9 @@ function Home(props) {
                     })}
                 </IndexTable.Cell>
                 <IndexTable.Cell>
-                    
-                        {currency}
-                   
+
+                    {currency}
+
                 </IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
@@ -187,7 +185,7 @@ function Home(props) {
             </IndexTable.Row>
         ),
     );
-    
+
     if (loading) {
         return (
             <Page
@@ -269,31 +267,31 @@ function Home(props) {
                                         <Spinner accessibilityLabel="Loading" size="large" />
                                     </div>
                                 )}
-                                  {!loadingDelete && (
-                                <IndexTable
-                                    resourceName={resourceName}
-                                    itemCount={filteredZones.length}
-                                    selectedItemsCount={
-                                        allResourcesSelected ? 'All' : selectedResources.length
-                                    }
-                                    onSelectionChange={handleSelectionChange}
-                                    headings={[
-                                        { title: 'Zipcode Rule Name' },
-                                        { title: 'Country' },
-                                        { title: 'currency' },
-                                        { title: 'Action' },
-                                    ]}
-                                    paginated
-                                    pagination={{
-                                        hasPrevious: currentPage > 1,
-                                        hasNext: currentPage < totalPages,
-                                        onNext: handleNextPage,
-                                        onPrevious: handlePreviousPage,
-                                    }}
-                                >
-                                    {rowMarkup}
-                                </IndexTable>
-                                 )}
+                                {!loadingDelete && (
+                                    <IndexTable
+                                        resourceName={resourceName}
+                                        itemCount={filteredZones.length}
+                                        selectedItemsCount={
+                                            allResourcesSelected ? 'All' : selectedResources.length
+                                        }
+                                        onSelectionChange={handleSelectionChange}
+                                        headings={[
+                                            { title: 'Zipcode Rule Name' },
+                                            { title: 'Country' },
+                                            { title: 'currency' },
+                                            { title: 'Action' },
+                                        ]}
+                                        paginated
+                                        pagination={{
+                                            hasPrevious: currentPage > 1,
+                                            hasNext: currentPage < totalPages,
+                                            onNext: handleNextPage,
+                                            onPrevious: handlePreviousPage,
+                                        }}
+                                    >
+                                        {rowMarkup}
+                                    </IndexTable>
+                                )}
                             </div>
                         </Card>
                     </Grid.Cell>

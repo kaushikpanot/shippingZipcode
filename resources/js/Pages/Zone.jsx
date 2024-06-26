@@ -77,7 +77,7 @@ function Zone(props) {
         currency: "",
         country: [],
         id: "",
-        status: 1, 
+        status: 1,
     });
     const handleSwitchChange = useCallback(
         (newChecked) => {
@@ -122,10 +122,40 @@ function Zone(props) {
     const handleEditZone = (rate_id) => {
         navigate(`/Zone/${zone_id}/Rate/Edit/${rate_id}`);
     };
+    const editAndSet = async () => {
+
+        try {
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
+            const token = await getSessionToken(app);
+            const response = await axios.post(`${apiCommonURL}/api/zone/detail`, editdata, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            setFormData({
+                name: response.data.zone.name,
+                currency: response.data.zone.currency,
+                id: response.data.zone.id,
+                status: response.data.zone.status,
+            });
+            setSelectedOptions(response.data.zone.country)
+            const ratedata = response.data.rates
+            setTotalPages(Math.ceil(ratedata.length / itemsPerPage));
+            setRate(ratedata)
+
+
+        } catch (error) {
+            console.error('Error occurs', error);
+
+        }
+    }
+    
     const getCountry = async () => {
         try {
             const token = await getSessionToken(app);
-           // console.log("hello",token);
             const response = await axios.get(`${apiCommonURL}/api/country`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -164,39 +194,6 @@ function Zone(props) {
         }
     }
 
-    const editAndSet = async () => {
-
-        try {
-            const app = createApp({
-                apiKey: SHOPIFY_API_KEY,
-                host: props.host,
-            });
-            const token = await getSessionToken(app);
-            const response = await axios.post(`${apiCommonURL}/api/zone/detail`, editdata, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            setFormData({
-                name: response.data.zone.name,
-                currency: response.data.zone.currency,
-                countryCode: response.data.zone.countryCode,
-                id: response.data.zone.id,
-                // status: response.data.rate.status,
-            });
-            setSelectedOptions(response.data.zone.country)
-
-            const ratedata = response.data.rates
-            setTotalPages(Math.ceil(ratedata.length / itemsPerPage));
-            setRate(ratedata)
-
-           
-        } catch (error) {
-            console.error('Error occurs', error);
-
-        }
-    }
-    
     const handleDelete = async () => {
         try {
             setLoadingDelete(true)

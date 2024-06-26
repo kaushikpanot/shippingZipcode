@@ -91,9 +91,15 @@ class SettingContoller extends Controller
                 ], 404);
             }
 
-            Setting::updateOrCreate(['user_id' => $user_id], $request->input());
+            $setting = Setting::updateOrCreate(['user_id' => $user_id], $request->input());
 
-            return response()->json(['status' => true, 'message' => 'Setting added successfully.']);
+            if ($setting->wasRecentlyCreated) {
+                $message = 'Setting created successfully.';
+            } else {
+                $message = 'Setting updated successfully.';
+            }
+
+            return response()->json(['status' => true, 'message' => $message]);
         } catch (ValidationException $e) {
             return response()->json(['status' => false, 'message' => $e->validator->errors()]);
         } catch (\Throwable $th) {

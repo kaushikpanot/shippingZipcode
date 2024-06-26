@@ -9,7 +9,7 @@ class Zone extends Model
 {
     use HasFactory;
 
-    protected $fillable = ["user_id", "name", "country", "currency", "countryCode"];
+    protected $fillable = ["user_id", "name", "country", "currency", "countryCode", "status"];
 
     protected $hidden = [
         'created_at', 'updated_at',

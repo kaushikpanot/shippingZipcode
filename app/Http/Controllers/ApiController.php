@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Rate;
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\Zone;
 use App\Models\ZoneCountry;
@@ -146,9 +147,18 @@ class ApiController extends Controller
 
         $userId = User::where('name', $originCompanyName)->value('id');
 
-        // Log the value
-        Log::info($shopDomain);
-        $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $originCountryName)->pluck('zone_id');
+        $setting = Setting::where('user_id', $userId)->first();
+
+        if(empty($setting) && !$setting->status) {
+            return response()->json("Shipping not available");
+            Log::info($setting);
+        }
+
+        $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $originCountryName)->whereHas('zone', function ($query) {
+            $query->where('status', 1);
+        })->pluck('zone_id');
+
+        Log::info($zoneIds);
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency')->get();
 

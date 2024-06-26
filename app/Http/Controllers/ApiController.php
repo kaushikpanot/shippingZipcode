@@ -145,7 +145,6 @@ class ApiController extends Controller
         $originCountryName = $input['rate']['origin']['country'];
 
         $userId = User::where('name', $originCompanyName)->value('id');
-      
 
         // Log the value
         Log::info($shopDomain);
@@ -227,6 +226,11 @@ class ApiController extends Controller
             ZoneCountry::where('user_id', $user_id)->where('zone_id', $zone->id)->delete();
 
             foreach ($countryData as $country) {
+                // Check if either the country name or country code is empty
+                if (empty($country['name']) || empty($country['code'])) {
+                    continue; // Skip this iteration and move to the next country
+                }
+
                 $insertData = [
                     'user_id' => $user_id,
                     'zone_id' => $zone->id,

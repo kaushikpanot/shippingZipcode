@@ -35,17 +35,22 @@ function Rate(props) {
         service_code: '',
         description: '',
         zone_id: zone_id,
-        id: " ",
+        id: "",
+        status: 1, 
     });
 
-    const [enabled, setEnabled] = useState(true);
-    const toastDuration = 3000;
+    const [toastDuration, setToastDuration] = useState(3000);
     const [showToast, setShowToast] = useState(false);
     const [toastContent, setToastContent] = useState("");
     const [errors, setErrors] = useState({});
 
     const handleSwitchChange = useCallback(
-        (newChecked) => setEnabled(newChecked),
+        (newChecked) => {
+            setFormData((prevState) => ({
+                ...prevState,
+                status: newChecked ? 1 : 0,
+            }));
+        },
         [],
     );
 
@@ -87,11 +92,11 @@ function Rate(props) {
                 service_code: response.data.rate.service_code,
                 description: response.data.rate.description,
                 id: response.data.rate.id,
-                zone_id: response.data.rate.zone_id
+                zone_id: response.data.rate.zone_id,
+                status: response.data.rate.status,
             });
-           // setLoading(false)
+            // setLoading(false)
         } catch (error) {
-            
             console.error("Error fetching edit data:", error);
         }
     };
@@ -138,7 +143,7 @@ function Rate(props) {
         return (
             <Page
                 fullWidth
-                title="Add Rate"
+                title={rate_id ? 'Edit Rate' : 'Add Rate'}
                 primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
                 secondaryActions={<Button onClick={BacktoZone}>Back</Button>}
             >
@@ -188,7 +193,7 @@ function Rate(props) {
     return (
         <Page
             fullWidth
-            title="Add Rate"
+            title={rate_id ? 'Edit Rate' : 'Add Rate'}
             primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
             secondaryActions={<Button onClick={() => BacktoZone(zone_id)}>Back</Button>}
         >
@@ -210,8 +215,8 @@ function Rate(props) {
                         <LegacyCard sectioned>
                             <div style={{ display: 'flex', alignItems: 'center', marginBottom: "2%" }}>
                                 <Checkbox
-                                    label={enabled ? 'Rate is enabled' : 'Rate is disabled'}
-                                    checked={enabled}
+                                    label={formData.status === 1 ? 'Rate is enabled' : 'Rate is disabled'}
+                                    checked={formData.status === 1}
                                     onChange={handleSwitchChange}
                                 />
                             </div>

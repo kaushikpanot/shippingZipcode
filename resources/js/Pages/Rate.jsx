@@ -10,7 +10,10 @@ import {
     Text,
     TextField,
     Checkbox,
-    Toast
+    Toast,
+    SkeletonBodyText,
+    SkeletonDisplayText,
+    Card
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import createApp from '@shopify/app-bridge';
@@ -22,6 +25,7 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 function Rate(props) {
     const { rate_id, zone_id } = useParams();
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     let app = "";
 
@@ -85,7 +89,9 @@ function Rate(props) {
                 id: response.data.rate.id,
                 zone_id: response.data.rate.zone_id
             });
+           // setLoading(false)
         } catch (error) {
+            
             console.error("Error fetching edit data:", error);
         }
     };
@@ -128,6 +134,57 @@ function Rate(props) {
         }
     };
 
+    if (loading) {
+        return (
+            <Page
+                fullWidth
+                title="Add Rate"
+                primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
+                secondaryActions={<Button onClick={BacktoZone}>Back</Button>}
+            >
+                <Grid>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                        <div style={{ paddingTop: '18%' }}>
+                            <SkeletonDisplayText size="small" />
+                            <div style={{ paddingTop: '7%', fontSize: '14px' }}>
+                                <SkeletonBodyText lines={2} />
+                            </div>
+                        </div>
+
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                        <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                            <Card roundedAbove="sm">
+
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={2} />
+                                    </LegacyCard>
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={2} />
+                                    </LegacyCard>
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={2} />
+                                    </LegacyCard>
+                                </div>
+                                <div style={{ marginTop: "2%", }}>
+                                    <LegacyCard sectioned>
+                                        <SkeletonBodyText lines={2} />
+                                    </LegacyCard>
+                                </div>
+                            </Card>
+                        </div>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                </Grid>
+            </Page>
+        );
+    }
     return (
         <Page
             fullWidth

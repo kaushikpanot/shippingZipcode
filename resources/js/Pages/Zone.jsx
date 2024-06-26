@@ -27,7 +27,7 @@ import {
     Autocomplete,
     Tag,
     LegacyStack,
-    Icon
+    Icon,
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
@@ -176,7 +176,7 @@ function Zone(props) {
             const ratedata = response.data.rates
             setTotalPages(Math.ceil(ratedata.length / itemsPerPage));
             setRate(ratedata)
-            console.log(response.data)
+           
 
         } catch (error) {
             console.error('Error occurs', error);
@@ -328,8 +328,6 @@ function Zone(props) {
                 ...formData,
                 country: selectedCountries,
             };
-
-            console.log("Data to submit:", dataToSubmit);
 
             const response = await axios.post(`${apiCommonURL}/api/zone/save`, dataToSubmit, {
                 headers: {
@@ -560,6 +558,7 @@ function Zone(props) {
                                             <Button
                                                 onClick={() => handleRateAdd(zone_id)}
                                                 accessibilityLabel="Add zone"
+                                                variant='primary'
                                                 icon={PlusIcon}
                                             >
                                                 Add Rate
@@ -620,7 +619,7 @@ function Zone(props) {
             <Modal
                 open={active}
                 onClose={toggleModal}
-                title="Delete Zone"
+                title="Delete Rate"
                 primaryAction={{
                     content: 'Delete',
                     destructive: true,
@@ -635,7 +634,7 @@ function Zone(props) {
             >
                 <Modal.Section>
                     <TextContainer>
-                        <p>Are you sure you want to delete this zone?</p>
+                        <p>Are you sure you want to delete this Rate?</p>
                     </TextContainer>
                 </Modal.Section>
             </Modal>

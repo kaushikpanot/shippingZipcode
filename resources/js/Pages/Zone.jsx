@@ -104,7 +104,7 @@ function Zone(props) {
     };
 
     const navigateHome = () => {
-        // 👇️ Navigate to /
+      
         navigate('/');
     };
 
@@ -114,6 +114,7 @@ function Zone(props) {
     const getCountry = async () => {
         try {
             const token = await getSessionToken(app);
+           // console.log("hello",token);
             const response = await axios.get(`${apiCommonURL}/api/country`, {
                 headers: {
                     'Authorization': `Bearer ${token}`

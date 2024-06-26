@@ -256,18 +256,8 @@ function Home(props) {
                                 />
                             </div>
                             <div style={{ marginTop: "2.5%", position: 'relative' }}>
-                                {loadingDelete && (
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '80%',
-                                        left: '50%',
-                                        transform: 'translate(-50%, -50%)',
-                                        zIndex: 1,
-                                    }}>
-                                        <Spinner accessibilityLabel="Loading" size="large" />
-                                    </div>
-                                )}
-                                {!loadingDelete && (
+                               
+                             
                                     <IndexTable
                                         resourceName={resourceName}
                                         itemCount={filteredZones.length}
@@ -291,7 +281,7 @@ function Home(props) {
                                     >
                                         {rowMarkup}
                                     </IndexTable>
-                                )}
+                               
                             </div>
                         </Card>
                     </Grid.Cell>
@@ -327,3 +317,16 @@ function Home(props) {
 }
 
 export default Home;
+
+
+
+
+
+
+
+
+
+
+
+
+

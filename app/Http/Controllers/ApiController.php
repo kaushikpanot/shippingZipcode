@@ -87,6 +87,7 @@ class ApiController extends Controller
         try {
             // Retrieve the Shopify session
             $shop = request()->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -96,7 +97,7 @@ class ApiController extends Controller
             }
 
             // Fetch the token for the shop
-            $token = User::where('name', $shop)->pluck('password')->first();
+            $token = User::where('name', $shop)->first();
 
             if (!$token) {
                 return response()->json([
@@ -110,7 +111,7 @@ class ApiController extends Controller
 
             // Headers for Shopify API request
             $customHeaders = [
-                'X-Shopify-Access-Token' => $token,
+                'X-Shopify-Access-Token' => $token['password'],
             ];
 
             // Make HTTP GET request to Shopify REST API endpoint
@@ -118,6 +119,7 @@ class ApiController extends Controller
             // Check if the request was successful
             if ($response->successful()) {
                 $responseData = [
+                    'shop_currency' => $token['shop_currency'],
                     'currencies' => $response->json('currencies')
                 ];
 
@@ -149,20 +151,34 @@ class ApiController extends Controller
 
         $setting = Setting::where('user_id', $userId)->first();
 
-        if(empty($setting) && !$setting->status) {
-            return response()->json("Shipping not available");
-            Log::info($setting);
+        $response = [];
+
+        if (!empty($setting) && !$setting->status) {
+            // Log::info($setting);
+            return response()->json($response);
         }
 
         $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $originCountryName)->whereHas('zone', function ($query) {
             $query->where('status', 1);
         })->pluck('zone_id');
 
-        Log::info($zoneIds);
+        // Log::info($zoneIds);
 
-        $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency')->get();
+        $rates = Rate::whereIn('zone_id', $zoneIds)
+            ->where('user_id', $userId)
+            ->where('status', 1)
+            ->with('zone:id,currency')->get();
 
-        $response = [];
+        // Check the setting for shipping rate and get the appropriate rate
+        // if ($setting->shippingRate == 'Only Higher') {
+        //     $maxRate = $ratesQuery->max('base_price');
+        //     $rates = $ratesQuery->where('base_price', $maxRate)->get();
+        // } elseif ($setting->shippingRate == 'Only Lower') {
+        //     $minRate = $ratesQuery->min('base_price');
+        //     $rates = $ratesQuery->where('base_price', $minRate)->get();
+        // } else {
+        //     $rates = $ratesQuery->get();
+        // }
 
         foreach ($rates as $rate) {
             $response['rates'][] = [
@@ -174,7 +190,7 @@ class ApiController extends Controller
             ];
         }
 
-        Log::info('Shopify Carrier Service Request rateCount:', ["response" => $response]);
+        // Log::info('Shopify Carrier Service Request rateCount:', ["response" => $response]);
 
         return response()->json($response);
     }

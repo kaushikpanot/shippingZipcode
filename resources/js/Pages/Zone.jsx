@@ -158,7 +158,7 @@ function Zone(props) {
                 value: cuency.currency
             }))
             setCurrencys(currency)
-          
+            setLoading(false)
         } catch (error) {
             console.error("Error fetching country:", error);
         }
@@ -190,12 +190,13 @@ function Zone(props) {
             setTotalPages(Math.ceil(ratedata.length / itemsPerPage));
             setRate(ratedata)
 
-            setLoading(false)
+           
         } catch (error) {
             console.error('Error occurs', error);
 
         }
     }
+    
     const handleDelete = async () => {
         try {
             setLoadingDelete(true)

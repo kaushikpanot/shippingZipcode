@@ -3,7 +3,7 @@ import axios from 'axios';
 import {
     Page,
     Button,
-    Divider,
+    Link,
     Grid,
     Text,
     TextField,
@@ -76,6 +76,7 @@ function Home(props) {
             setZoneDetails(ruledata);
             setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
             setLoading(false);
+            console.log(response.data)
           
         } catch (error) {
             console.error(error, 'error from');
@@ -145,7 +146,7 @@ function Home(props) {
     const paginatedZones = filteredZones.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const rowMarkup = paginatedZones.map(
-        ({ id, name, countries }, index) => (
+        ({ id, name, countries ,currency}, index) => (
             <IndexTable.Row
                 id={id}
                 key={id}
@@ -153,9 +154,13 @@ function Home(props) {
                 position={index}
             >
                 <IndexTable.Cell>
+                <Link
+          dataPrimaryLink
+          onClick={() => handleEditZone(id)}>
                     <Text variant="bodyMd" fontWeight="bold" as="span">
                         {name}
                     </Text>
+                    </Link>
                 </IndexTable.Cell>
                 <IndexTable.Cell>
                     {countries.map((countryObj, countryIndex) => {
@@ -167,6 +172,11 @@ function Home(props) {
                             </Text>
                         );
                     })}
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    
+                        {currency}
+                   
                 </IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
@@ -270,6 +280,7 @@ function Home(props) {
                                     headings={[
                                         { title: 'Zipcode Rule Name' },
                                         { title: 'Country' },
+                                        { title: 'currency' },
                                         { title: 'Action' },
                                     ]}
                                     paginated

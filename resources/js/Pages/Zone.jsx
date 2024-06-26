@@ -26,21 +26,21 @@ import {
     Spinner,
     Autocomplete,
     Tag,
-    LegacyStack
+    LegacyStack,
+    Icon,
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
     PlusIcon,
     EditIcon,
     DeleteIcon,
+    SearchIcon
 } from '@shopify/polaris-icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import createApp from '@shopify/app-bridge';
 import { getSessionToken } from "@shopify/app-bridge-utils";
 const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
-
-
 
 function Zone(props) {
     const { zone_id } = useParams();
@@ -58,6 +58,11 @@ function Zone(props) {
     const [active, setActive] = useState(false);
     const [selectedOptions, setSelectedOptions] = useState([]);
     const [inputValue, setInputValue] = useState('');
+    const [textFieldValue, setTextFieldValue] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [itemsPerPage] = useState(5);
+
     const [toastActive, setToastActive] = useState(false);
     const toggleToast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
     const toggleModal = useCallback(() => setActive((active) => !active), []);
@@ -73,6 +78,10 @@ function Zone(props) {
         country: [],
         id: "",
     });
+    const handleTextFieldChange = useCallback(
+        (value) => setTextFieldValue(value),
+        [],
+    );
     const handleZoneDataChange = (field) => (value) => {
         setFormData((prevState) => ({
             ...prevState,
@@ -159,12 +168,15 @@ function Zone(props) {
             setFormData({
                 name: response.data.zone.name,
                 currency: response.data.zone.currency,
-                country: response.data.zone.country,
                 countryCode: response.data.zone.countryCode,
                 id: response.data.zone.id,
             });
-            setRate(response.data.rates)
+            setSelectedOptions(response.data.zone.country)
 
+            const ratedata = response.data.rates
+            setTotalPages(Math.ceil(ratedata.length / itemsPerPage));
+            setRate(ratedata)
+           
 
         } catch (error) {
             console.error('Error occurs', error);
@@ -196,12 +208,12 @@ function Zone(props) {
             setShowToast(true);
         }
         finally {
-            // setLoadingDelete(false)
+            setLoadingDelete(false)
         }
     };
 
 
-    
+
 
     useEffect(() => {
         app = createApp({
@@ -238,8 +250,6 @@ function Zone(props) {
         },
         [selectedOptions],
     );
-
-
     const verticalContentMarkup =
         selectedOptions.length > 0 ? (
             <LegacyStack spacing="extraTight" alignment="center">
@@ -261,10 +271,21 @@ function Zone(props) {
             value={inputValue}
             placeholder="Search countries"
             verticalContent={verticalContentMarkup}
-            
+
             autoComplete="off"
         />
     );
+    const handleNextPage = useCallback(() => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    }, [currentPage, totalPages]);
+
+    const handlePreviousPage = useCallback(() => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    }, [currentPage]);
 
     const resourceName = {
         singular: 'Zone',
@@ -277,63 +298,67 @@ function Zone(props) {
             withIllustration
         />
     );
-  
+
     const saveZone = async () => {
         try {
-          const newErrors = {};
-          if (!formData.name) newErrors.name = 'Zone name is required';
-      
-          if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
-            return;
-          }
-      
-          const app = createApp({
-            apiKey: SHOPIFY_API_KEY,
-            host: props.host,
-          });
-          const token = await getSessionToken(app);
-      
-          // Map selected options to array of { name, code } objects
-          const selectedCountries = selectedOptions.map(option => {
-            const selectedCountry = country.find(country => country.value === option);
-            return {
-              name: selectedCountry ? selectedCountry.label : '',
-              code: option
-            };
-          });
-      
-          const dataToSubmit = {
-            ...formData,
-            country: selectedCountries,
-          };
-      
-          console.log("Data to submit:", dataToSubmit);
-      
-          const response = await axios.post(`${apiCommonURL}/api/zone/save`, dataToSubmit, {
-            headers: {
-              'Authorization': `Bearer ${token}`
+            const newErrors = {};
+            if (!formData.name) newErrors.name = 'Zone name is required';
+
+            if (Object.keys(newErrors).length > 0) {
+                setErrors(newErrors);
+                return;
             }
-          });
-      
-          setToastContent("Zone saved successfully.");
-          setShowToast(true);
-          setTimeout(() => {
-            navigate('/');
-          }, 1000);
-      
+
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
+            const token = await getSessionToken(app);
+
+            // Map selected options to array of { name, code } objects
+            const selectedCountries = selectedOptions.map(option => {
+                const selectedCountry = country.find(country => country.value === option);
+                return {
+                    name: selectedCountry ? selectedCountry.label : '',
+                    code: option
+                };
+            });
+
+            const dataToSubmit = {
+                ...formData,
+                country: selectedCountries,
+            };
+
+            const response = await axios.post(`${apiCommonURL}/api/zone/save`, dataToSubmit, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            setToastContent("Zone saved successfully.");
+            setShowToast(true);
+            setTimeout(() => {
+                navigate('/');
+            }, 1000);
+
         } catch (error) {
-          console.error('Error occurs', error);
-          setToastContent("Error occurred while saving data");
-          setShowToast(true);
+            console.error('Error occurs', error);
+            setToastContent("Error occurred while saving data");
+            setShowToast(true);
         }
-      }
-      
-      
+    }
+
+
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
         useIndexResourceState(rate);
 
-    const rowMarkup = rate.map(
+
+    const filteredZones = rate.filter(zone =>
+        zone.name.toLowerCase().includes(textFieldValue.toLowerCase())
+    );
+    const paginatedZones = filteredZones.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    const rowMarkup = paginatedZones.map(
         (
             { id, name, service_code, base_price, description },
             index,
@@ -488,20 +513,20 @@ function Zone(props) {
                                 />                            </div>
                             <div style={{ marginTop: "2%" }} className='zonetext'>
 
-                              
-                                    <Autocomplete
-                                        allowMultiple
-                                        options={country}
-                                        selected={selectedOptions}
-                                        textField={textField}
-                                        onSelect={setSelectedOptions}
-                                        listTitle="Suggested Countries"
-                                    />
-                              
+
+                                <Autocomplete
+                                    allowMultiple
+                                    options={country}
+                                    selected={selectedOptions}
+                                    textField={textField}
+                                    onSelect={setSelectedOptions}
+                                    listTitle="Suggested Countries"
+                                />
+
                             </div>
                             <div style={{ marginTop: "2%", marginBottom: "2%" }} className='zonetext'>
                                 <Select
-                                    label=" Slect Currency"
+                                    label=" Select Currency"
                                     options={currencys}
                                     onChange={handleZoneDataChange('currency')}
                                     value={formData.currency}
@@ -533,6 +558,7 @@ function Zone(props) {
                                             <Button
                                                 onClick={() => handleRateAdd(zone_id)}
                                                 accessibilityLabel="Add zone"
+                                                variant='primary'
                                                 icon={PlusIcon}
                                             >
                                                 Add Rate
@@ -544,7 +570,10 @@ function Zone(props) {
                                     <div style={{ marginTop: "2.5%" }}>
                                         <TextField
                                             type="text"
-                                            placeholder='Rate Name/ Service Code'
+                                            value={textFieldValue}
+                                            placeholder="Search by name..."
+                                            onChange={handleTextFieldChange}
+                                            prefix={<Icon source={SearchIcon} />}
                                             autoComplete="off"
                                         />
                                     </div>
@@ -567,6 +596,13 @@ function Zone(props) {
                                                 { title: 'Actions' },
 
                                             ]}
+                                            paginated
+                                            pagination={{
+                                                hasPrevious: currentPage > 1,
+                                                hasNext: currentPage < totalPages,
+                                                onNext: handleNextPage,
+                                                onPrevious: handlePreviousPage,
+                                            }}
                                         >
                                             {rowMarkup}
                                         </IndexTable>
@@ -583,7 +619,7 @@ function Zone(props) {
             <Modal
                 open={active}
                 onClose={toggleModal}
-                title="Delete Zone"
+                title="Delete Rate"
                 primaryAction={{
                     content: 'Delete',
                     destructive: true,
@@ -598,7 +634,7 @@ function Zone(props) {
             >
                 <Modal.Section>
                     <TextContainer>
-                        <p>Are you sure you want to delete this zone?</p>
+                        <p>Are you sure you want to delete this Rate?</p>
                     </TextContainer>
                 </Modal.Section>
             </Modal>

@@ -76,7 +76,7 @@ function Home(props) {
             setZoneDetails(ruledata);
             setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
             setLoading(false);
-            console.log(ruledata)
+          
         } catch (error) {
             console.error(error, 'error from');
         }
@@ -145,10 +145,7 @@ function Home(props) {
     const paginatedZones = filteredZones.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const rowMarkup = paginatedZones.map(
-        (
-            { id, name, country },
-            index,
-        ) => (
+        ({ id, name, countries }, index) => (
             <IndexTable.Row
                 id={id}
                 key={id}
@@ -160,7 +157,17 @@ function Home(props) {
                         {name}
                     </Text>
                 </IndexTable.Cell>
-                <IndexTable.Cell>{country}</IndexTable.Cell>
+                <IndexTable.Cell>
+                    {countries.map((countryObj, countryIndex) => {
+                        const countryName = countryObj.country.split(' (')[0];
+                        return (
+                            <Text variant="bodyMd" key={countryIndex} as="span">
+                                {countryName}
+                                {countryIndex < countries.length - 1 && ", "}
+                            </Text>
+                        );
+                    })}
+                </IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
                         <Button icon={EditIcon} variant="primary" onClick={() => handleEditZone(id)} />
@@ -170,6 +177,7 @@ function Home(props) {
             </IndexTable.Row>
         ),
     );
+    
     if (loading) {
         return (
             <Page

@@ -138,14 +138,17 @@ class ApiController extends Controller
     public function getResponse(Request $request)
     {
         $input = $request->input();
-
+        $shopDomain = $request->header();
         // Construct the response data
-        $originCompanyName = $input['rate']['origin']['company_name'] . ".myshopify.com";
+        $originCompanyName = $shopDomain['x-shopify-shop-domain'][0];
 
         $originCountryName = $input['rate']['origin']['country'];
 
         $userId = User::where('name', $originCompanyName)->value('id');
+      
 
+        // Log the value
+        Log::info($shopDomain);
         $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $originCountryName)->pluck('zone_id');
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency')->get();

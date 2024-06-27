@@ -144,14 +144,14 @@ class ApiController extends Controller
         $originCompanyName = $shopDomain['x-shopify-shop-domain'][0];
 
         $originCountryName = $input['rate']['origin']['country'];
-
+       
         $userId = User::where('name', $originCompanyName)->value('id');
 
         $setting = Setting::where('user_id', $userId)->first();
-
-        if(empty($setting) && !$setting->status) {
-            return response()->json("Shipping not available");
+        
+        if(!empty($setting) && !$setting->status) {
             Log::info($setting);
+            return response()->json("Shipping not available");
         }
 
         $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $originCountryName)->whereHas('zone', function ($query) {

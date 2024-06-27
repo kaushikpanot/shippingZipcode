@@ -9,6 +9,7 @@ use App\Models\Zone;
 use App\Models\ZoneCountry;
 use Illuminate\Http\Request;
 use GuzzleHttp\Exception\RequestException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -141,11 +142,14 @@ class ApiController extends Controller
     public function getResponse(Request $request)
     {
         $input = $request->input();
+
         $shopDomain = $request->header();
         // Construct the response data
         $originCompanyName = $shopDomain['x-shopify-shop-domain'][0];
 
         $originCountryName = $input['rate']['origin']['country'];
+
+        $destinationZipcode = $input['rate']['destination']['postal_code'];
 
         $userId = User::where('name', $originCompanyName)->value('id');
 
@@ -154,7 +158,6 @@ class ApiController extends Controller
         $response = [];
 
         if (!empty($setting) && !$setting->status) {
-            Log::info($setting);
             return response()->json($response);
         }
 
@@ -163,22 +166,35 @@ class ApiController extends Controller
         })->pluck('zone_id');
 
         Log::info($zoneIds);
-
+        DB::enableQueryLog();
         $ratesQuery = Rate::whereIn('zone_id', $zoneIds)
             ->where('user_id', $userId)
             ->where('status', 1)
             ->with('zone:id,currency');
 
-        // Check the setting for shipping rate and get the appropriate rate
+        // Determine the appropriate rate based on the shipping rate setting
         if ($setting->shippingRate == 'Only Higher') {
             $maxRate = $ratesQuery->max('base_price');
-            $rates = $ratesQuery->where('base_price', $maxRate)->get();
+            $ratesQuery = $ratesQuery->where('base_price', $maxRate);
         } elseif ($setting->shippingRate == 'Only Lower') {
             $minRate = $ratesQuery->min('base_price');
-            $rates = $ratesQuery->where('base_price', $minRate)->get();
-        } else {
-            $rates = $ratesQuery->get();
+            $ratesQuery = $ratesQuery->where('base_price', $minRate);
         }
+
+
+        // else {
+        //     $rates = $ratesQuery->get();
+        // }
+
+        // Filter rates by destination zipcode
+        // $rates = $ratesQuery->whereRaw("FIND_IN_SET(?, zipcode)", [$destinationZipcode])->get();
+        $rates = $ratesQuery->where(function ($query) use ($destinationZipcode) {
+            $query->whereRaw("FIND_IN_SET(?, zipcode)", [$destinationZipcode]);
+        })->get();
+
+        Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
+
+        Log::info('Shopify Carrier Service Request input:', ['rates1'=>$rates]);
 
         foreach ($rates as $rate) {
             $response['rates'][] = [
@@ -190,7 +206,7 @@ class ApiController extends Controller
             ];
         }
 
-        Log::info('Shopify Carrier Service Request rateCount:', ["response" => $response]);
+        // Log::info('Shopify Carrier Service response:', ["response" => $response]);
 
         return response()->json($response);
     }
@@ -455,8 +471,8 @@ class ApiController extends Controller
     public function rateStore(Request $request)
     {
         try {
-            $shop = $request->attributes->get('shopifySession');
-            // $shop = "krishnalaravel-test.myshopify.com";
+            // $shop = $request->attributes->get('shopifySession');
+            $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([

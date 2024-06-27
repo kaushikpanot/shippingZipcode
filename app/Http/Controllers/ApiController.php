@@ -87,6 +87,7 @@ class ApiController extends Controller
         try {
             // Retrieve the Shopify session
             $shop = request()->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -96,7 +97,7 @@ class ApiController extends Controller
             }
 
             // Fetch the token for the shop
-            $token = User::where('name', $shop)->pluck('password')->first();
+            $token = User::where('name', $shop)->first();
 
             if (!$token) {
                 return response()->json([
@@ -110,7 +111,7 @@ class ApiController extends Controller
 
             // Headers for Shopify API request
             $customHeaders = [
-                'X-Shopify-Access-Token' => $token,
+                'X-Shopify-Access-Token' => $token['password'],
             ];
 
             // Make HTTP GET request to Shopify REST API endpoint
@@ -118,6 +119,7 @@ class ApiController extends Controller
             // Check if the request was successful
             if ($response->successful()) {
                 $responseData = [
+                    'shop_currency' => $token['shop_currency'],
                     'currencies' => $response->json('currencies')
                 ];
 
@@ -160,9 +162,21 @@ class ApiController extends Controller
 
         Log::info($zoneIds);
 
-        $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency')->get();
+        $ratesQuery = Rate::whereIn('zone_id', $zoneIds)
+            ->where('user_id', $userId)
+            ->where('status', 1)
+            ->with('zone:id,currency');
 
-        $response = [];
+        // Check the setting for shipping rate and get the appropriate rate
+        if ($setting->shippingRate == 'Only Higher') {
+            $maxRate = $ratesQuery->max('base_price');
+            $rates = $ratesQuery->where('base_price', $maxRate)->get();
+        } elseif ($setting->shippingRate == 'Only Lower') {
+            $minRate = $ratesQuery->min('base_price');
+            $rates = $ratesQuery->where('base_price', $minRate)->get();
+        } else {
+            $rates = $ratesQuery->get();
+        }
 
         foreach ($rates as $rate) {
             $response['rates'][] = [

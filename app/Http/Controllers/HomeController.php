@@ -41,13 +41,25 @@ class HomeController extends Controller
         // Parse the JSON response
         $jsonResponse = $response->json();
 
-        return view('welcome', compact('shop','host'));
+        // Define the REST API endpoint
+        $apiEndpoint = "https://{$shop}/admin/api/2024-04/shop.json";
+
+        // Make HTTP GET request to Shopify REST API endpoint
+        $shopJsonResponse = Http::withHeaders($customHeaders)->get($apiEndpoint);
+
+        $shopJson = $shopJsonResponse->json();
+
+        if(!empty($shopJson['shop']['currency'])){
+            User::where('id',$token['id'])->update(['shop_currency'=>$shopJson['shop']['currency']]);
+        }
+
+        return view('welcome', compact('shop', 'host'));
     }
 
     public function common(Request $request)
     {
         $shop = $request->input('shop');
         $host = $request->input('host');
-        return view('welcome', compact('shop','host'));
+        return view('welcome', compact('shop', 'host'));
     }
 }

@@ -154,7 +154,7 @@ class ApiController extends Controller
         $response = [];
 
         if (!empty($setting) && !$setting->status) {
-            // Log::info($setting);
+            Log::info($setting);
             return response()->json($response);
         }
 
@@ -162,23 +162,23 @@ class ApiController extends Controller
             $query->where('status', 1);
         })->pluck('zone_id');
 
-        // Log::info($zoneIds);
+        Log::info($zoneIds);
 
-        $rates = Rate::whereIn('zone_id', $zoneIds)
+        $ratesQuery = Rate::whereIn('zone_id', $zoneIds)
             ->where('user_id', $userId)
             ->where('status', 1)
-            ->with('zone:id,currency')->get();
+            ->with('zone:id,currency');
 
         // Check the setting for shipping rate and get the appropriate rate
-        // if ($setting->shippingRate == 'Only Higher') {
-        //     $maxRate = $ratesQuery->max('base_price');
-        //     $rates = $ratesQuery->where('base_price', $maxRate)->get();
-        // } elseif ($setting->shippingRate == 'Only Lower') {
-        //     $minRate = $ratesQuery->min('base_price');
-        //     $rates = $ratesQuery->where('base_price', $minRate)->get();
-        // } else {
-        //     $rates = $ratesQuery->get();
-        // }
+        if ($setting->shippingRate == 'Only Higher') {
+            $maxRate = $ratesQuery->max('base_price');
+            $rates = $ratesQuery->where('base_price', $maxRate)->get();
+        } elseif ($setting->shippingRate == 'Only Lower') {
+            $minRate = $ratesQuery->min('base_price');
+            $rates = $ratesQuery->where('base_price', $minRate)->get();
+        } else {
+            $rates = $ratesQuery->get();
+        }
 
         foreach ($rates as $rate) {
             $response['rates'][] = [
@@ -190,7 +190,7 @@ class ApiController extends Controller
             ];
         }
 
-        // Log::info('Shopify Carrier Service Request rateCount:', ["response" => $response]);
+        Log::info('Shopify Carrier Service Request rateCount:', ["response" => $response]);
 
         return response()->json($response);
     }

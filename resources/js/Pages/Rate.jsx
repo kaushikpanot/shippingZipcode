@@ -54,7 +54,11 @@ function Rate(props) {
     const [showToast, setShowToast] = useState(false);
     const [toastContent, setToastContent] = useState("");
     const [errors, setErrors] = useState({});
+    const [error, setError] = useState('');
+    const [toastActive, setToastActive] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
 
+    const toggleToastActive = useCallback(() => setToastActive((active) => !active), []);
     const handleSwitchChange = useCallback(
         (newChecked) => {
             setFormData((prevState) => ({
@@ -77,25 +81,42 @@ function Rate(props) {
     const [items, setItems] = useState([
         { selectedOption1: 'quantity', selectedOption2: '', inputValue: '' }
     ]);
-    const handleSelectChange = (index, newValue, selectNumber) => {
-        const updatedItems = [...items];
-        if (selectNumber === 1) {
-            updatedItems[index].selectedOption1 = newValue;
-        } else if (selectNumber === 2) {
-            updatedItems[index].selectedOption2 = newValue;
+    console.log(items)
+    const handleSelectChange = (index, newValue, optionNumber) => {
+        const newItems = [...items];
+        if (optionNumber === 1) {
+
+            const isDuplicate = newItems.some((item, idx) => item.selectedOption1 === newValue && idx !== index);
+            if (isDuplicate) {
+                setToastMessage('Already selected');
+                setToastActive(true);
+                return;
+            }
+            newItems[index].selectedOption1 = newValue;
+        } else if (optionNumber === 2) {
+            newItems[index].selectedOption2 = newValue;
         }
-        setItems(updatedItems);
-    };
-    const handleInputChange = (index, newValue) => {
-        console.log('New value:', newValue);
-        const updatedItems = [...items];
-        updatedItems[index].inputValue = newValue;
-        setItems(updatedItems);
+        setError('');
+        setItems(newItems.map((item, idx) => ({ ...item, key: idx })));
     };
     const handleAddItem = () => {
-        const newItem = { selectedOption1: '', selectedOption2: '', inputValue: '' };
+        const newItem = { selectedOption1: 'quantity', selectedOption2: '', inputValue: '' };
         setItems([...items, newItem]);
     };
+    const handleConditionChange = useCallback(
+        (newValue, index) => {
+            setItems(prevItems => {
+                return prevItems.map((item, idx) => {
+                    if (idx === index) {
+                        return { ...item, inputValue: newValue };
+                    }
+                    return item;
+                });
+            });
+        },
+        []
+    );
+
     const handleDeleteItem = (index) => {
         const updatedItems = items.filter((item, i) => i !== index);
         setItems(updatedItems);
@@ -123,10 +144,10 @@ function Rate(props) {
         { label: 'Local Code', value: 'localcode' },
 
         { label: 'Per Product', value: '', disabled: true, className: 'select-header' },
-        { label: 'Quantity', value: 'quantity' },
+        { label: 'Quantity', value: 'quantity2' },
         { label: 'Price', value: 'price' },
-        { label: 'Total', value: 'total' },
-        { label: 'Weight', value: 'weight' },
+        { label: 'Total', value: 'total2' },
+        { label: 'Weight', value: 'weight2' },
         { label: 'Name', value: 'name' },
         { label: 'Tag', value: 'tag' },
         { label: 'SKU', value: 'sku' },
@@ -135,7 +156,7 @@ function Rate(props) {
         { label: 'Properties', value: 'properties' },
 
         { label: 'Customer', value: '', disabled: true, className: 'select-header' },
-        { label: 'Name', value: 'name' },
+        { label: 'Name', value: 'name2' },
         { label: 'Email', value: 'email' },
         { label: 'Phone', value: 'phone' },
         { label: 'Compnay', value: 'company' },
@@ -144,7 +165,7 @@ function Rate(props) {
         { label: 'Address2', value: 'address2' },
         { label: 'City', value: 'city' },
         { label: 'Province COde', value: 'provinceCode' },
-        { label: 'Tag', value: 'tag' },
+        { label: 'Tag', value: 'tag2' },
         { label: 'Previous Orders Count', value: 'previousCount' },
         { label: 'Previous Orders Spent ', value: 'previousSpent' },
 
@@ -153,9 +174,9 @@ function Rate(props) {
         { label: 'Day Is', value: 'dayIs' },
         { label: 'Date', value: 'date' },
         { label: 'Time In', value: 'timeIn' },
-        { label: 'Type', value: 'type' },
-
+        { label: 'Type', value: 'type2' }
     ];
+
 
     const option = [
         { label: 'Equal', value: 'equal' },
@@ -395,14 +416,13 @@ function Rate(props) {
                                     name="condition"
                                     onChange={() => setSelectedCondition('condition4')}
                                 />
+
                             </div>
-
-
                             {selectedCondition !== 'condition1' && (
                                 <div>
                                     <Divider borderColor="border" />
                                     {items.map((item, index) => (
-                                        <div className='conditions' key={index} style={{
+                                        <div key={index} className='conditions' style={{
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '10px',
@@ -423,10 +443,9 @@ function Rate(props) {
                                                 value={item.selectedOption2}
                                             />
                                             <TextField
-                                                key={index}
+                                                value={item.inputValue}
+                                                onChange={(newValue) => handleConditionChange(newValue, index)}
                                                 autoComplete="off"
-                                                value={item?.inputValue || ''}
-                                                onChange={(e) => handleInputChange(index, e.target.value)}
                                             />
                                             {items.length > 1 && (
                                                 <Button
@@ -553,6 +572,9 @@ function Rate(props) {
             </div>
             {showToast && (
                 <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
+            )}
+            {toastActive && (
+                <Toast content={toastMessage} error onDismiss={toggleToastActive} />
             )}
         </Page>
     );

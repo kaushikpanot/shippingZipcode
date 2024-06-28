@@ -231,7 +231,9 @@ function Zone(props) {
         });
         getCountry()
         getCurrency()
-        editAndSet()
+        if (zone_id) {
+            editAndSet();
+        }
     }, [])
     const updateText = useCallback(
         (value) => {

@@ -32,7 +32,6 @@ function Rate(props) {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     let app = "";
-
     const [formData, setFormData] = useState({
         name: '',
         base_price: '',
@@ -43,7 +42,6 @@ function Rate(props) {
         status: 1,
     });
     const [value, setValue] = useState();
-
     const handleChange = useCallback(
         (newValue) => setValue(newValue),
         [],
@@ -52,8 +50,6 @@ function Rate(props) {
     const [selectedStateCondition, setSelectedStateCondition] = useState('all');
     const [selectedZipCondition, setSelectedZipCondition] = useState('allZip');
     const [selectedZipCode, setSelectedZipCode] = useState('include');
-
-
     const [toastDuration, setToastDuration] = useState(3000);
     const [showToast, setShowToast] = useState(false);
     const [toastContent, setToastContent] = useState("");
@@ -68,7 +64,6 @@ function Rate(props) {
         },
         [],
     );
-
     const handleRateFormChange = (field) => (value) => {
         setFormData((prevState) => ({
             ...prevState,
@@ -82,8 +77,6 @@ function Rate(props) {
     const [items, setItems] = useState([
         { selectedOption1: 'quantity', selectedOption2: '', inputValue: '' }
     ]);
-
-
     const handleSelectChange = (index, newValue, selectNumber) => {
         const updatedItems = [...items];
         if (selectNumber === 1) {
@@ -103,8 +96,6 @@ function Rate(props) {
         const newItem = { selectedOption1: '', selectedOption2: '', inputValue: '' };
         setItems([...items, newItem]);
     };
-
-
     const handleDeleteItem = (index) => {
         const updatedItems = items.filter((item, i) => i !== index);
         setItems(updatedItems);
@@ -112,16 +103,12 @@ function Rate(props) {
     const BacktoZone = (zone_id) => {
         navigate(`/Zone/${zone_id}`);
     };
-
     useEffect(() => {
         app = createApp({
             apiKey: SHOPIFY_API_KEY,
             host: props.host,
         });
     }, []);
-
-
-
     const options = [
         { label: 'Cart / Order', value: '', disabled: true, className: 'select-header' },
         { label: 'Quantity', value: 'quantity' },
@@ -134,7 +121,7 @@ function Rate(props) {
         { label: 'Day', value: 'day' },
         { label: 'Time', value: 'time' },
         { label: 'Local Code', value: 'localcode' },
-    
+
         { label: 'Per Product', value: '', disabled: true, className: 'select-header' },
         { label: 'Quantity', value: 'quantity' },
         { label: 'Price', value: 'price' },
@@ -167,9 +154,9 @@ function Rate(props) {
         { label: 'Date', value: 'date' },
         { label: 'Time In', value: 'timeIn' },
         { label: 'Type', value: 'type' },
-    
+
     ];
-    
+
     const option = [
         { label: 'Equal', value: 'equal' },
         { label: 'Does Not Eqaul', value: 'notequal' },
@@ -181,13 +168,11 @@ function Rate(props) {
     const editRate = async () => {
         try {
             const token = await getSessionToken(app);
-
             const response = await axios.get(`${apiCommonURL}/api/rate/${rate_id}/edit`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
             setFormData({
                 name: response.data.rate.name,
                 base_price: response.data.rate.base_price,
@@ -202,7 +187,6 @@ function Rate(props) {
             console.error("Error fetching edit data:", error);
         }
     };
-
     useEffect(() => {
         editRate();
     }, []);
@@ -213,25 +197,21 @@ function Rate(props) {
         if (!formData.base_price) newErrors.base_price = 'Base price is required';
         if (!formData.service_code) newErrors.service_code = 'Service code is required';
         if (!formData.description) newErrors.description = 'Description is required';
-
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             return;
         }
-
         try {
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
             });
             const token = await getSessionToken(app);
-
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
             setToastContent("Rate saved successfully");
             setShowToast(true);
         } catch (error) {
@@ -240,7 +220,6 @@ function Rate(props) {
             setShowToast(true);
         }
     };
-
     if (loading) {
         return (
             <Page
@@ -258,12 +237,10 @@ function Rate(props) {
                                 <SkeletonBodyText lines={2} />
                             </div>
                         </div>
-
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
                         <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                             <Card roundedAbove="sm">
-
                                 <div style={{ marginTop: "2%", }}>
                                     <LegacyCard sectioned>
                                         <SkeletonBodyText lines={2} />
@@ -299,7 +276,6 @@ function Rate(props) {
             primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
             secondaryActions={<Button onClick={() => BacktoZone(zone_id)}>Back</Button>}
         >
-            {/* Other parts of your component */}
             <div style={{ marginTop: '2%', marginBottom: '2%' }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
@@ -436,7 +412,6 @@ function Rate(props) {
                                             <Text variant="headingXs" as="h6">
                                                 Cart / Order
                                             </Text>
-
                                             <Select
                                                 options={options}
                                                 onChange={(newValue) => handleSelectChange(index, newValue, 1)}
@@ -447,14 +422,12 @@ function Rate(props) {
                                                 onChange={(newValue) => handleSelectChange(index, newValue, 2)}
                                                 value={item.selectedOption2}
                                             />
-
                                             <TextField
                                                 key={index}
                                                 autoComplete="off"
                                                 value={item?.inputValue || ''}
                                                 onChange={(e) => handleInputChange(index, e.target.value)}
                                             />
-
                                             {items.length > 1 && (
                                                 <Button
                                                     icon={DeleteIcon}
@@ -479,7 +452,6 @@ function Rate(props) {
                                     </div>
                                 </div>
                             )}
-
                         </LegacyCard>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
@@ -547,7 +519,7 @@ function Rate(props) {
 
                             </div>
                             {selectedZipCondition !== 'allZip' && (
-                                <div style={{  marginTop: "2%" }}>
+                                <div style={{ marginTop: "2%" }}>
 
                                     <TextField
                                         placeholder='364001,364002,364003'
@@ -556,7 +528,6 @@ function Rate(props) {
                                         multiline={4}
                                         autoComplete="off"
                                     />
-
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%" }}>
                                         <RadioButton
                                             label="Include ZipCodes"
@@ -578,7 +549,6 @@ function Rate(props) {
                         </LegacyCard>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-
                 </Grid>
             </div>
             {showToast && (
@@ -586,7 +556,5 @@ function Rate(props) {
             )}
         </Page>
     );
-
 }
-
 export default Rate;

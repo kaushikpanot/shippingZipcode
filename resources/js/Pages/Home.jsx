@@ -11,18 +11,15 @@ import {
     ButtonGroup,
     Modal,
     TextContainer,
-    Banner,
     IndexTable,
     useIndexResourceState,
-    Badge,
     Icon,
     Toast,
     BlockStack,
     InlineGrid,
     SkeletonBodyText,
     SkeletonDisplayText,
-    LegacyCard,
-    Spinner,
+    LegacyCard, 
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
@@ -103,7 +100,6 @@ function Home(props) {
             toggleModal();
             toggleToast();
             getZoneDetails();
-
         } catch (error) {
             console.error('Error deleting zone:', error);
         }
@@ -171,11 +167,7 @@ function Home(props) {
                         );
                     })}
                 </IndexTable.Cell>
-                <IndexTable.Cell>
-
-                    {currency}
-
-                </IndexTable.Cell>
+                <IndexTable.Cell> {currency}</IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
                         <Button icon={EditIcon} variant="primary" onClick={() => handleEditZone(id)} />
@@ -188,9 +180,7 @@ function Home(props) {
 
     if (loading) {
         return (
-            <Page
-                fullWidth
-            >
+            <Page fullWidth>
                 <Grid>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
@@ -221,7 +211,6 @@ function Home(props) {
         <Page
             fullWidth
         >
-
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
@@ -256,8 +245,6 @@ function Home(props) {
                                 />
                             </div>
                             <div style={{ marginTop: "2.5%", position: 'relative' }}>
-                               
-                             
                                     <IndexTable
                                         resourceName={resourceName}
                                         itemCount={filteredZones.length}
@@ -280,8 +267,7 @@ function Home(props) {
                                         }}
                                     >
                                         {rowMarkup}
-                                    </IndexTable>
-                               
+                                    </IndexTable>                           
                             </div>
                         </Card>
                     </Grid.Cell>

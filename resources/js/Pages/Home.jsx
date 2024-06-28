@@ -3,7 +3,7 @@ import axios from 'axios';
 import {
     Page,
     Button,
-    Divider,
+    Link,
     Grid,
     Text,
     TextField,
@@ -11,18 +11,15 @@ import {
     ButtonGroup,
     Modal,
     TextContainer,
-    Banner,
     IndexTable,
     useIndexResourceState,
-    Badge,
     Icon,
     Toast,
     BlockStack,
     InlineGrid,
     SkeletonBodyText,
     SkeletonDisplayText,
-    LegacyCard,
-    Spinner,
+    LegacyCard, 
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
@@ -64,7 +61,7 @@ function Home(props) {
 
     const getZoneDetails = async () => {
         const token = await getSessionToken(app);
-     
+
         setLoading(true)
         try {
             const response = await axios.get(`${apiCommonURL}/api/zones`, {
@@ -76,7 +73,6 @@ function Home(props) {
             setZoneDetails(ruledata);
             setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
             setLoading(false);
-          
         } catch (error) {
             console.error(error, 'error from');
         }
@@ -104,7 +100,6 @@ function Home(props) {
             toggleModal();
             toggleToast();
             getZoneDetails();
-            
         } catch (error) {
             console.error('Error deleting zone:', error);
         }
@@ -145,7 +140,7 @@ function Home(props) {
     const paginatedZones = filteredZones.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const rowMarkup = paginatedZones.map(
-        ({ id, name, countries }, index) => (
+        ({ id, name, countries, currency }, index) => (
             <IndexTable.Row
                 id={id}
                 key={id}
@@ -153,9 +148,13 @@ function Home(props) {
                 position={index}
             >
                 <IndexTable.Cell>
-                    <Text variant="bodyMd" fontWeight="bold" as="span">
-                        {name}
-                    </Text>
+                    <Link
+                        dataPrimaryLink
+                        onClick={() => handleEditZone(id)}>
+                        <Text variant="bodyMd" fontWeight="bold" as="span">
+                            {name}
+                        </Text>
+                    </Link>
                 </IndexTable.Cell>
                 <IndexTable.Cell>
                     {countries.map((countryObj, countryIndex) => {
@@ -168,6 +167,7 @@ function Home(props) {
                         );
                     })}
                 </IndexTable.Cell>
+                <IndexTable.Cell> {currency}</IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
                         <Button icon={EditIcon} variant="primary" onClick={() => handleEditZone(id)} />
@@ -177,12 +177,10 @@ function Home(props) {
             </IndexTable.Row>
         ),
     );
-    
+
     if (loading) {
         return (
-            <Page
-                fullWidth
-            >
+            <Page fullWidth>
                 <Grid>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
@@ -213,7 +211,6 @@ function Home(props) {
         <Page
             fullWidth
         >
-
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
@@ -248,41 +245,29 @@ function Home(props) {
                                 />
                             </div>
                             <div style={{ marginTop: "2.5%", position: 'relative' }}>
-                                {loadingDelete && (
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '80%',
-                                        left: '50%',
-                                        transform: 'translate(-50%, -50%)',
-                                        zIndex: 1,
-                                    }}>
-                                        <Spinner accessibilityLabel="Loading" size="large" />
-                                    </div>
-                                )}
-                                  {!loadingDelete && (
-                                <IndexTable
-                                    resourceName={resourceName}
-                                    itemCount={filteredZones.length}
-                                    selectedItemsCount={
-                                        allResourcesSelected ? 'All' : selectedResources.length
-                                    }
-                                    onSelectionChange={handleSelectionChange}
-                                    headings={[
-                                        { title: 'Zipcode Rule Name' },
-                                        { title: 'Country' },
-                                        { title: 'Action' },
-                                    ]}
-                                    paginated
-                                    pagination={{
-                                        hasPrevious: currentPage > 1,
-                                        hasNext: currentPage < totalPages,
-                                        onNext: handleNextPage,
-                                        onPrevious: handlePreviousPage,
-                                    }}
-                                >
-                                    {rowMarkup}
-                                </IndexTable>
-                                 )}
+                                    <IndexTable
+                                        resourceName={resourceName}
+                                        itemCount={filteredZones.length}
+                                        selectedItemsCount={
+                                            allResourcesSelected ? 'All' : selectedResources.length
+                                        }
+                                        onSelectionChange={handleSelectionChange}
+                                        headings={[
+                                            { title: 'Zipcode Rule Name' },
+                                            { title: 'Country' },
+                                            { title: 'currency' },
+                                            { title: 'Action' },
+                                        ]}
+                                        paginated
+                                        pagination={{
+                                            hasPrevious: currentPage > 1,
+                                            hasNext: currentPage < totalPages,
+                                            onNext: handleNextPage,
+                                            onPrevious: handlePreviousPage,
+                                        }}
+                                    >
+                                        {rowMarkup}
+                                    </IndexTable>                           
                             </div>
                         </Card>
                     </Grid.Cell>

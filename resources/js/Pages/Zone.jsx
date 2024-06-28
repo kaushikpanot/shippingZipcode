@@ -8,7 +8,7 @@ import {
     Divider,
     Grid,
     Text,
-    ChoiceList,
+    Checkbox,
     TextField,
     Select,
     ButtonGroup,
@@ -77,7 +77,18 @@ function Zone(props) {
         currency: "",
         country: [],
         id: "",
+        status: 1,
     });
+    const handleSwitchChange = useCallback(
+        (newChecked) => {
+            setFormData((prevState) => ({
+                ...prevState,
+                status: newChecked ? 1 : 0,
+            }));
+        },
+        [],
+    );
+
     const handleTextFieldChange = useCallback(
         (value) => setTextFieldValue(value),
         [],
@@ -104,17 +115,47 @@ function Zone(props) {
     };
 
     const navigateHome = () => {
-      
-        navigate('/');
+        // 👇️ Navigate to /
+        navigate('/Home');
     };
 
     const handleEditZone = (rate_id) => {
         navigate(`/Zone/${zone_id}/Rate/Edit/${rate_id}`);
     };
+    const editAndSet = async () => {
+
+        try {
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
+            const token = await getSessionToken(app);
+            const response = await axios.post(`${apiCommonURL}/api/zone/detail`, editdata, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            setFormData({
+                name: response.data.zone.name,
+                currency: response.data.zone.currency,
+                id: response.data.zone.id,
+                status: response.data.zone.status,
+            });
+            setSelectedOptions(response.data.zone.country)
+            const ratedata = response.data.rates
+            setTotalPages(Math.ceil(ratedata.length / itemsPerPage));
+            setRate(ratedata)
+
+
+        } catch (error) {
+            console.error('Error occurs', error);
+
+        }
+    }
+    
     const getCountry = async () => {
         try {
             const token = await getSessionToken(app);
-           // console.log("hello",token);
             const response = await axios.get(`${apiCommonURL}/api/country`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -153,37 +194,6 @@ function Zone(props) {
         }
     }
 
-    const editAndSet = async () => {
-
-        try {
-            const app = createApp({
-                apiKey: SHOPIFY_API_KEY,
-                host: props.host,
-            });
-            const token = await getSessionToken(app);
-            const response = await axios.post(`${apiCommonURL}/api/zone/detail`, editdata, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            setFormData({
-                name: response.data.zone.name,
-                currency: response.data.zone.currency,
-                countryCode: response.data.zone.countryCode,
-                id: response.data.zone.id,
-            });
-            setSelectedOptions(response.data.zone.country)
-
-            const ratedata = response.data.rates
-            setTotalPages(Math.ceil(ratedata.length / itemsPerPage));
-            setRate(ratedata)
-           
-
-        } catch (error) {
-            console.error('Error occurs', error);
-
-        }
-    }
     const handleDelete = async () => {
         try {
             setLoadingDelete(true)
@@ -212,8 +222,6 @@ function Zone(props) {
             setLoadingDelete(false)
         }
     };
-
-
 
 
     useEffect(() => {
@@ -335,11 +343,10 @@ function Zone(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
             setToastContent("Zone saved successfully.");
             setShowToast(true);
             setTimeout(() => {
-                navigate('/');
+                navigate('/Home');
             }, 1000);
 
         } catch (error) {
@@ -393,7 +400,7 @@ function Zone(props) {
         return (
             <Page
                 fullWidth
-                title="Add Zone"
+                title={zone_id ? 'Edit Zone' : 'Add Zone'}
                 primaryAction={<Button variant="primary" onClick={saveZone}>Save</Button>}
                 secondaryActions={<Button onClick={navigateHome}>Back</Button>}
             >
@@ -471,7 +478,7 @@ function Zone(props) {
     return (
         <Page
             fullWidth
-            title="Add Zone"
+            title={zone_id ? 'Edit Zone' : 'Add Zone'}
             primaryAction={<Button variant="primary" onClick={saveZone}>Save</Button>}
             secondaryActions={<Button onClick={navigateHome}>Back</Button>}
         >
@@ -492,14 +499,10 @@ function Zone(props) {
                     <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
                         <LegacyCard sectioned>
                             <div className='choice'>
-                                <ChoiceList
-                                    title="Zone Status"
-                                    choices={[
-                                        { label: 'Enable', value: 'enable' },
-                                        { label: 'Disable', value: 'disable' },
-                                    ]}
-                                    selected={selected}
-                                    onChange={handleChange}
+                                <Checkbox
+                                    label={formData.status === 1 ? 'Zone is enabled' : 'Zone is disabled'}
+                                    checked={formData.status === 1}
+                                    onChange={handleSwitchChange}
                                 />
                             </div>
                             <div style={{ marginTop: "2%" }} className='zonetext'>

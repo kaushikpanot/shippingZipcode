@@ -21,8 +21,8 @@ class ApiController extends Controller
     {
         try {
             // Retrieve the Shopify session
-            $shop = $request->attributes->get('shopifySession');
-            // $shop = "krishnalaravel-test.myshopify.com";
+            // $shop = $request->attributes->get('shopifySession');
+            $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -41,38 +41,42 @@ class ApiController extends Controller
                 ], 404);
             }
 
-            // Define the REST API endpoint
-            $restEndpoint = "https://{$shop}/admin/api/2024-04/countries.json";
+            // // Define the REST API endpoint
+            // $restEndpoint = "https://{$shop}/admin/api/2024-04/countries.json";
 
-            // Headers for Shopify API request
-            $customHeaders = [
-                'X-Shopify-Access-Token' => $token,
-            ];
+            // // Headers for Shopify API request
+            // $customHeaders = [
+            //     'X-Shopify-Access-Token' => $token,
+            // ];
 
             // Make HTTP GET request to Shopify REST API endpoint
-            $response = Http::withHeaders($customHeaders)->get($restEndpoint);
+            // $response = Http::withHeaders($customHeaders)->get($restEndpoint);
 
             // Check if the request was successful
-            if ($response->successful()) {
-                // Decode the JSON response
-                $countriesList = $response->json('countries');
+            // if ($response->successful()) {
+            //     // Decode the JSON response
+            //     $countriesList = $response->json('countries');
 
-                $collection = collect($countriesList);
+            //     $collection = collect($countriesList);
 
-                $countries = $collection->map(function ($country) {
-                    unset($country['tax_name'], $country['tax'], $country['provinces']);
-                    return $country;
-                });
+            //     $countries = $collection->map(function ($country) {
+            //         unset($country['tax_name'], $country['tax'], $country['provinces']);
+            //         return $country;
+            //     });
 
-                $responseData = [
-                    'countries' => $countries->all()
-                ];
+            //     $responseData = [
+            //         'countries' => $countries->all()
+            //     ];
 
-                return response()->json($responseData);
-            } else {
-                // Handle non-successful responses
-                return response()->json(['status' => false, 'error' => 'Unable to fetch country list']);
-            }
+            //     return response()->json($responseData);
+            // } else {
+            //     // Handle non-successful responses
+            //     return response()->json(['status' => false, 'error' => 'Unable to fetch country list']);
+            // }
+
+            $countries = json_decode(file_get_contents('http://country.io/names.json'));
+            return response()->json(['status'=>true, 'message'=>'countries list retrieved successfully.', 'countries'=>$countries]);
+
         } catch (RequestException $e) {
             // Handle request-specific exceptions
             Log::error('HTTP request error', ['exception' => $e->getMessage()]);
@@ -87,8 +91,8 @@ class ApiController extends Controller
     {
         try {
             // Retrieve the Shopify session
-            $shop = request()->attributes->get('shopifySession');
-            // $shop = "krishnalaravel-test.myshopify.com";
+            // $shop = request()->attributes->get('shopifySession');
+            $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -121,7 +125,7 @@ class ApiController extends Controller
             if ($response->successful()) {
                 $responseData = [
                     'shop_currency' => $token['shop_currency'],
-                    'currencies' => $response->json('currencies')
+                    'currencies' => $response->json()
                 ];
 
                 return response()->json($responseData);
@@ -165,7 +169,7 @@ class ApiController extends Controller
             $query->where('status', 1);
         })->pluck('zone_id');
 
-        Log::info($zoneIds);
+        // Log::info($zoneIds);
         DB::enableQueryLog();
         $ratesQuery = Rate::whereIn('zone_id', $zoneIds)
             ->where('user_id', $userId)
@@ -175,26 +179,24 @@ class ApiController extends Controller
         // Determine the appropriate rate based on the shipping rate setting
         if ($setting->shippingRate == 'Only Higher') {
             $maxRate = $ratesQuery->max('base_price');
-            $ratesQuery = $ratesQuery->where('base_price', $maxRate);
+            $ratesQuery->where('base_price', $maxRate);
         } elseif ($setting->shippingRate == 'Only Lower') {
             $minRate = $ratesQuery->min('base_price');
-            $ratesQuery = $ratesQuery->where('base_price', $minRate);
+            $ratesQuery->where('base_price', $minRate);
         }
 
-
-        // else {
-        //     $rates = $ratesQuery->get();
-        // }
-
-        // Filter rates by destination zipcode
-        // $rates = $ratesQuery->whereRaw("FIND_IN_SET(?, zipcode)", [$destinationZipcode])->get();
-        $rates = $ratesQuery->where(function ($query) use ($destinationZipcode) {
-            $query->whereRaw("FIND_IN_SET(?, zipcode)", [$destinationZipcode]);
+        $rates = $ratesQuery->orWhere(function ($query) use ($destinationZipcode, $userId) {
+            $query->whereRaw("FIND_IN_SET(?, zipcode)", [$destinationZipcode])
+                ->where('user_id', $userId)
+                ->where('status', 1)
+                ->whereHas('zone', function ($query) {
+                    $query->where('status', 1);
+                });
         })->get();
 
         Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
 
-        Log::info('Shopify Carrier Service Request input:', ['rates1'=>$rates]);
+        // Log::info('Shopify Carrier Service Request input:', ['rates1'=>$rates]);
 
         foreach ($rates as $rate) {
             $response['rates'][] = [

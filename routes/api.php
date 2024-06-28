@@ -27,6 +27,7 @@ Route::middleware(['verify.shopify.jwt'])->group(function () {
 
     Route::controller(ApiController::class)->group(function () {
         Route::get('country', 'getCountryList');
+        Route::post('state', 'getStateList');
         Route::get('currency', 'getCurrencyList');
 
         Route::post('zone/save', 'zoneStore');

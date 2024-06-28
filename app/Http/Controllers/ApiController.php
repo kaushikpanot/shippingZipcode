@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Throwable;
+use CountryState;
 
 class ApiController extends Controller
 {
@@ -21,8 +22,8 @@ class ApiController extends Controller
     {
         try {
             // Retrieve the Shopify session
-            // $shop = $request->attributes->get('shopifySession');
-            $shop = "krishnalaravel-test.myshopify.com";
+            $shop = $request->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -74,9 +75,26 @@ class ApiController extends Controller
             //     return response()->json(['status' => false, 'error' => 'Unable to fetch country list']);
             // }
 
-            $countries = json_decode(file_get_contents('http://country.io/names.json'));
-            return response()->json(['status'=>true, 'message'=>'countries list retrieved successfully.', 'countries'=>$countries]);
+            // Fetch JSON data from the external API
+            // $jsonData = file_get_contents('http://country.io/names.json');
 
+            // Decode JSON data into a PHP associative array
+            // $countriesArray = json_decode($jsonData, true);
+            $countriesArray = CountryState::getCountries();
+
+            // Initialize an empty array to hold the formatted data
+            $countries = [];
+
+            // Iterate over the associative array and format it into an array of objects
+            foreach ($countriesArray as $isoCode => $name) {
+                $countries[] = (object) [
+                    'code' => $isoCode,
+                    'name' => $name,
+                    'nameCode' => $name . " " . "(" . $isoCode . ")"
+                ];
+            }
+
+            return response()->json(['status' => true, 'message' => 'countries list retrieved successfully.', 'countries' => $countries]);
         } catch (RequestException $e) {
             // Handle request-specific exceptions
             Log::error('HTTP request error', ['exception' => $e->getMessage()]);
@@ -87,12 +105,86 @@ class ApiController extends Controller
         }
     }
 
-    public function getCurrencyList()
+    public function getStateList(Request $request)
     {
         try {
             // Retrieve the Shopify session
-            // $shop = request()->attributes->get('shopifySession');
-            $shop = "krishnalaravel-test.myshopify.com";
+            $shop = $request->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
+
+            if (!$shop) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Token not provided.'
+                ], 400);
+            }
+
+            // Fetch the token for the shop
+            $token = User::where('name', $shop)->value('password');
+
+            if (!$token) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not found.'
+                ], 404);
+            }
+
+            // Validate the request input
+            $validated = $request->validate([
+                'country' => 'required|array',
+                'country.*.code' => 'required|string',
+                'country.*.name' => 'required|string',
+            ]);
+
+            $states = [];
+
+            foreach ($validated['country'] as $country) {
+                $stateList = CountryState::getStates($country['code']);
+
+                // Iterate over the associative array and format it into an array of objects
+                foreach ($stateList as $isoCode => $name) {
+                    $states[$country['name']][] = [
+                        'code' => $isoCode,
+                        'name' => $name,
+                        'nameCode' => "$name ($isoCode)"
+                    ];
+                }
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'States list retrieved successfully.',
+                'states' => $states
+            ]);
+        } catch (\ValidationException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid input data.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (RequestException $e) {
+            // Handle request-specific exceptions
+            Log::error('HTTP request error', ['exception' => $e->getMessage()]);
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while processing the request.'
+            ], 500);
+        } catch (Throwable $th) {
+            Log::error('Unexpected error', ['exception' => $th->getMessage()]);
+            return response()->json([
+                'status' => false,
+                'message' => 'An unexpected error occurred.'
+            ], 500);
+        }
+    }
+
+    public function getCurrencyList()
+    {
+        try {
+
+            // Retrieve the Shopify session
+            $shop = request()->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([

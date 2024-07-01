@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Rate;
+use App\Models\RateZipcode;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Zone;
@@ -454,7 +455,7 @@ class ApiController extends Controller
                     'prev_page_url' => $rates->previousPageUrl(),
                 ],
                 'rates' => $rates->items(),
-                'states'=>$state
+                'states' => $state
             ]);
         } catch (\Illuminate\Database\QueryException $ex) {
             Log::error('Database error when retrieving rate list', ['exception' => $ex->getMessage()]);
@@ -620,6 +621,26 @@ class ApiController extends Controller
                 'zone_id.exists' => 'The selected zone ID is invalid.',
             ];
 
+            if (isset($inputData['zipcode'])) {
+                $rules = array_merge($rules, [
+                    'zipcode.stateSelection' => 'required',
+                    'zipcode.state' => 'required_if:zipcode.stateSelection,Custom|array',
+                    'zipcode.state.*' => 'string',
+                    'zipcode.zipcodeSelection' => 'required',
+                    'zipcode.zipcode' => 'required_if:zipcode.zipcodeSelection,Custom|array',
+                    'zipcode.zipcode.*' => 'string',
+                    'zipcode.isInclude' => 'required_if:zipcode.zipcodeSelection,Custom|string',
+                ]);
+
+                $messages = array_merge($messages, [
+                    'zipcode.stateSelection.required' => 'The state selection is required.',
+                    'zipcode.state.required_if' => 'The state field is required when the stateSelection is Custom.',
+                    'zipcode.zipcodeSelection.required' => 'The zipcode selection is required.',
+                    'zipcode.zipcode.required_if' => 'The zipcode field is required when the zipcodeSelection is Custom.',
+                    'zipcode.isInclude.required_if' => 'The inclusion field is required when the zipcodeSelection is Custom.',
+                ]);
+            }
+
             // Validate the request input
             $validator = Validator::make($inputData, $rules, $messages);
 
@@ -628,9 +649,45 @@ class ApiController extends Controller
             }
 
             // Update or create the rate
-            Rate::updateOrCreate(['id' => $request->input('id')], $inputData);
+            $rate = Rate::updateOrCreate(['id' => $request->input('id')], $inputData);
 
-            return response()->json(['status' => true, 'message' => 'Rate added successfully.']);
+            if (isset($inputData['zipcode'])) {
+                $zipcodeData = [
+                    "user_id" => $user_id,
+                    "rate_id" => $rate->id,
+                    "stateSelection" => $inputData['zipcode']['stateSelection'],
+                    "zipcodeSelection" => $inputData['zipcode']['zipcodeSelection']
+                ];
+
+                if($inputData['zipcode']['stateSelection'] == 'Custom' && isset($inputData['zipcode']['state'])){
+                    $zipcodeData['state'] = implode(", ", $inputData['zipcode']['state']);
+                } else {
+                    $zipcodeData['state'] = null;
+                }
+
+                if($inputData['zipcode']['zipcodeSelection'] == 'Custom'){
+                    if(isset($inputData['zipcode']['zipcode'])) {
+                        $zipcodeData['zipcode'] = implode(", ", $inputData['zipcode']['zipcode']);
+                    }
+
+                    if(isset($inputData['zipcode']['isInclude'])) {
+                        $zipcodeData['isInclude'] = $inputData['zipcode']['isInclude'];
+                    }
+                } else {
+                    $zipcodeData['zipcode'] = null;
+                    $zipcodeData['isInclude'] = null;
+                }
+
+                RateZipcode::updateOrCreate(['rate_id' => $rate->id], $zipcodeData);
+            }
+
+            if ($rate->wasRecentlyCreated) {
+                $message = 'Rate added successfully.';
+            } else {
+                $message = 'Rate updated successfully.';
+            }
+
+            return response()->json(['status' => true, 'message' => $message]);
         } catch (\Illuminate\Database\QueryException $ex) {
             Log::error('Database error when adding rate', ['exception' => $ex->getMessage()]);
             return response()->json(['status' => false, 'message' => 'Database error occurred.'], 500);

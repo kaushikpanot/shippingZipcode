@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('getResponse', [ApiController::class, 'getResponse']);
 
-Route::middleware(['verify.shopify.jwt'])->group(function () {
+// Route::middleware(['verify.shopify.jwt'])->group(function () {
     Route::resource('settings', SettingContoller::class);
 
     Route::controller(ApiController::class)->group(function () {
@@ -40,4 +40,4 @@ Route::middleware(['verify.shopify.jwt'])->group(function () {
         Route::get('rate/{id}/edit', 'rateEdit');
         Route::delete('rate/{id}', 'rateDestroy');
     });
-});
+// });

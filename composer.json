@@ -12,8 +12,7 @@
         "kyon147/laravel-shopify": "^21.1",
         "laravel/framework": "^10.0",
         "laravel/sanctum": "^3.2",
-        "laravel/tinker": "^2.8",
-        "nnjeim/world": "^1.1"
+        "laravel/tinker": "^2.8"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

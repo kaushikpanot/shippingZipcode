@@ -410,7 +410,7 @@ class ApiController extends Controller
 
             $zoneId = $request->input('zone_id');
             // Validate if the zone exists
-            $zone = Zone::with('countries:zone_id,countryCode')->find($zoneId);
+            $zone = Zone::with('countries:zone_id,countryCode,country')->find($zoneId);
 
             if (!$zone) {
                 return response()->json([
@@ -420,7 +420,7 @@ class ApiController extends Controller
             }
 
             $zone->country = $zone->countries->pluck('countryCode')->all();
-
+            $state = $this->getState($zone->countries->pluck('country', 'countryCode'));
             unset($zone->countries);
 
             // Initialize the query for fetching rates
@@ -454,6 +454,7 @@ class ApiController extends Controller
                     'prev_page_url' => $rates->previousPageUrl(),
                 ],
                 'rates' => $rates->items(),
+                'states'=>$state
             ]);
         } catch (\Illuminate\Database\QueryException $ex) {
             Log::error('Database error when retrieving rate list', ['exception' => $ex->getMessage()]);
@@ -560,6 +561,26 @@ class ApiController extends Controller
             Log::error('Unexpected zone delete error', ['exception' => $th->getMessage()]);
             return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);
         }
+    }
+
+    private function getState($countrys)
+    {
+        $states = [];
+
+        foreach ($countrys as $code => $country) {
+            $stateList = CountryState::getStates($code);
+            $planCountry = preg_replace('/\s*\([^)]+\)/', '', $country);
+
+            foreach ($stateList as $isoCode => $name) {
+                $states[$planCountry][] = [
+                    'code' => $isoCode,
+                    'name' => $name,
+                    'nameCode' => "$name ($isoCode)"
+                ];
+            }
+        }
+
+        return $states;
     }
 
     public function rateStore(Request $request)
@@ -711,7 +732,7 @@ class ApiController extends Controller
             }
 
             // Validate if the zone exists
-            $rate = Rate::find($id);
+            $rate = Rate::with('zone.countries')->find($id);
 
             if (!$rate) {
                 return response()->json([
@@ -720,10 +741,17 @@ class ApiController extends Controller
                 ], 404);
             }
 
+            $countryList = $rate->zone->countries->pluck('country', 'countryCode');
+
+            $state = $this->getState($countryList);
+
+            unset($rate->zone);
+
             return response()->json([
                 'status' => true,
                 'message' => 'Rate data retrieved successfully.',
-                'rate' => $rate
+                'rate' => $rate,
+                'states' => $state
             ]);
         } catch (Throwable $th) {
             Log::error('Unexpected zone edit error', ['exception' => $th->getMessage()]);

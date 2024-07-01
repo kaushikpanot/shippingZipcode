@@ -789,7 +789,7 @@ class ApiController extends Controller
             }
 
             // Validate if the zone exists
-            $rate = Rate::with('zone.countries')->find($id);
+            $rate = Rate::with('zone.countries')->with('zipcode')->find($id);
 
             if (!$rate) {
                 return response()->json([

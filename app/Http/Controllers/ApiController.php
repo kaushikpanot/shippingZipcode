@@ -587,8 +587,8 @@ class ApiController extends Controller
     public function rateStore(Request $request)
     {
         try {
-            // $shop = $request->attributes->get('shopifySession');
-            $shop = "krishnalaravel-test.myshopify.com";
+            $shop = $request->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -789,7 +789,7 @@ class ApiController extends Controller
             }
 
             // Validate if the zone exists
-            $rate = Rate::with('zone.countries')->find($id);
+            $rate = Rate::with('zone.countries')->with('zipcode')->find($id);
 
             if (!$rate) {
                 return response()->json([

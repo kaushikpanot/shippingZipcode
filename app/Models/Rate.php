@@ -17,4 +17,9 @@ class Rate extends Model
     {
         return $this->belongsTo(Zone::class);
     }
+
+    public function zipcode()
+    {
+        return $this->hasOne(RateZipcode::class);
+    }
 }

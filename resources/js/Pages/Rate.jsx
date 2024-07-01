@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -16,7 +16,9 @@ import {
     Card,
     RadioButton,
     Select,
-    Autocomplete
+    Autocomplete,
+    LegacyStack ,
+    Tag
 } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon } from '@shopify/polaris-icons';
 import '../../../public/css/style.css';
@@ -31,8 +33,10 @@ function Rate(props) {
     const { rate_id, zone_id } = useParams();
     const [loading, setLoading] = useState(false);
     const [state, setState] = useState([])
+    const [title, setTitle] = useState([])
     const [selectedOptions, setSelectedOptions] = useState([]);
     const [inputValue, setInputValue] = useState('');
+    const [options, setOptions] = useState([]);
     const navigate = useNavigate();
     let app = "";
     const [formData, setFormData] = useState({
@@ -42,45 +46,96 @@ function Rate(props) {
         description: '',
         zone_id: zone_id,
         id: "",
+        zipcode: {
+            stateSelection: "Custom",
+            state: [],
+            zipcodeSelection: "All",
+        },
         status: 1,
     });
+
+   
     const [value, setValue] = useState();
     const handleChange = useCallback(
         (newValue) => setValue(newValue),
         [],
     );
-
-
-    const getCountry = async () => {
+    const editRate = async () => {
         try {
             const token = await getSessionToken(app);
-            const response = await axios.get(`${apiCommonURL}/api/country`, {
+            const response = await axios.get(`${apiCommonURL}/api/rate/${rate_id}/edit`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            console.log(response.data)
+
+            const allStates = response.data.states;
+            const formattedOptions = [];
+
+
+            for (const country in allStates) {
+                if (allStates.hasOwnProperty(country)) {
+                    const countryData = allStates[country];
+
+                    const stateOptions = countryData.map(state => ({
+                        value: state.code,
+                        label: `${state.name} (${state.code})`
+                    }));
+
+                    formattedOptions.push({
+                        title: country,
+                        options: stateOptions
+                    });
+                    setOptions(formattedOptions);
+
+                }
+            }
+            setState(formattedOptions.map(section => section.options).flat());
+
+            setFormData({
+                name: response.data.rate.name,
+                base_price: response.data.rate.base_price,
+                service_code: response.data.rate.service_code,
+                description: response.data.rate.description,
+                id: response.data.rate.id,
+                zone_id: response.data.rate.zone_id,
+                status: response.data.rate.status,
+            });
+
+            // setLoading(false); 
+
         } catch (error) {
-            console.error("Error fetching country:", error);
+            console.error("Error fetching edit data:", error);
         }
-    }
+    };
+
+
     const updateText = useCallback(
         (value) => {
             setInputValue(value);
 
             if (value === '') {
-                getCountry();
+                setOptions(options); // Reset options to initial state
                 return;
             }
 
             const filterRegex = new RegExp(value, 'i');
-            const resultOptions = country.filter((option) =>
-                option.label.match(filterRegex),
-            );
+            const resultOptions = [];
 
-            setState(resultOptions);
+            options.forEach((opt) => {
+                const filteredOptions = opt.options.filter((option) =>
+                    option.label.match(filterRegex),
+                );
+
+                resultOptions.push({
+                    title: opt.title,
+                    options: filteredOptions,
+                });
+            });
+
+            setOptions(resultOptions);
         },
-        [state],
+        [options],
     );
 
     const removeTag = useCallback(
@@ -90,11 +145,12 @@ function Rate(props) {
         },
         [selectedOptions],
     );
+
     const verticalContentMarkup =
         selectedOptions.length > 0 ? (
             <LegacyStack spacing="extraTight" alignment="center">
                 {selectedOptions.map((option) => {
-                    const tagLabel = country.find(opt => opt.value === option)?.label || option;
+                    const tagLabel = state.find(opt => opt.value === option)?.label || option;
                     return (
                         <Tag key={option} onRemove={removeTag(option)}>
                             {tagLabel}
@@ -103,17 +159,23 @@ function Rate(props) {
                 })}
             </LegacyStack>
         ) : null;
+
     const textField = (
         <Autocomplete.TextField
             onChange={updateText}
-
             value={inputValue}
             placeholder="Search State"
             verticalContent={verticalContentMarkup}
-
             autoComplete="off"
         />
-    );
+    ); <Autocomplete
+        allowMultiple
+        options={options}
+        selected={selectedOptions}
+        textField={textField}
+        onSelect={setSelectedOptions}
+        listTitle="Suggested Countries"
+    />
 
 
 
@@ -130,15 +192,21 @@ function Rate(props) {
     const [toastMessage, setToastMessage] = useState('');
 
     const toggleToastActive = useCallback(() => setToastActive((active) => !active), []);
-    const handleSwitchChange = useCallback(
-        (newChecked) => {
+    const handleStatusChange = useCallback(
+        (newStatus) => {
+            const statusValue = newStatus === 'Enabled' ? 1 : 0;
             setFormData((prevState) => ({
                 ...prevState,
-                status: newChecked ? 1 : 0,
+                status: statusValue,
             }));
         },
         [],
     );
+
+    const statusOptions = [
+        { label: 'Enabled', value: 'Enabled' },
+        { label: 'Disabled', value: 'Disabled' },
+    ];
     const handleRateFormChange = (field) => (value) => {
         setFormData((prevState) => ({
             ...prevState,
@@ -192,7 +260,7 @@ function Rate(props) {
             host: props.host,
         });
     }, []);
-    const options = [
+    const validations = [
         { label: 'Cart / Order', value: '', disabled: true, className: 'select-header' },
         { label: 'Quantity', value: 'quantity' },
         { label: 'Total', value: 'total' },
@@ -248,32 +316,21 @@ function Rate(props) {
         { label: 'Between', value: 'between' },
     ];
 
-    const editRate = async () => {
-        try {
-            const token = await getSessionToken(app);
-            const response = await axios.get(`${apiCommonURL}/api/rate/${rate_id}/edit`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            setFormData({
-                name: response.data.rate.name,
-                base_price: response.data.rate.base_price,
-                service_code: response.data.rate.service_code,
-                description: response.data.rate.description,
-                id: response.data.rate.id,
-                zone_id: response.data.rate.zone_id,
-                status: response.data.rate.status,
-            });
-            // setLoading(false)
-        } catch (error) {
-            console.error("Error fetching edit data:", error);
-        }
-    };
+
     useEffect(() => {
         editRate();
     }, []);
-
+  
+    useEffect(() => {
+        setFormData(prevFormData => ({
+            ...prevFormData,
+            zipcode: {
+                ...prevFormData.zipcode,
+                state: selectedOptions,          
+                stateSelection: selectedStateCondition  
+            }
+        }));
+    }, [selectedOptions, selectedStateCondition]);
     const saveRate = async () => {
         const newErrors = {};
         if (!formData.name) newErrors.name = 'Rate name is required';
@@ -295,6 +352,7 @@ function Rate(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
+            console.log(formData)
             setToastContent("Rate saved successfully");
             setShowToast(true);
         } catch (error) {
@@ -374,11 +432,12 @@ function Rate(props) {
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
                         <LegacyCard sectioned>
-                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: "2%" }}>
-                                <Checkbox
-                                    label={formData.status === 1 ? 'Rate is enabled' : 'Rate is disabled'}
-                                    checked={formData.status === 1}
-                                    onChange={handleSwitchChange}
+                            <div style={{  marginBottom: "2%" }}>
+                            <Select
+                                    label="Rate status"
+                                    options={statusOptions}
+                                    onChange={handleStatusChange}
+                                    value={formData.status === 1 ? 'Enabled' : 'Disabled'}
                                 />
                             </div>
                             <Divider borderColor="border" />
@@ -495,7 +554,7 @@ function Rate(props) {
                                                 Cart / Order
                                             </Text>
                                             <Select
-                                                options={options}
+                                                options={validations}
                                                 onChange={(newValue) => handleSelectChange(index, newValue, 1)}
                                                 value={item.selectedOption1}
                                             />
@@ -584,7 +643,7 @@ function Rate(props) {
 
                                     <Autocomplete
                                         allowMultiple
-                                        options={state}
+                                        options={options}
                                         selected={selectedOptions}
                                         textField={textField}
                                         onSelect={setSelectedOptions}

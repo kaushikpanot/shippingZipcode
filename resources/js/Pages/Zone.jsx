@@ -79,15 +79,21 @@ function Zone(props) {
         id: "",
         status: 1,
     });
-    const handleSwitchChange = useCallback(
-        (newChecked) => {
+    const handleStatusChange = useCallback(
+        (newStatus) => {
+            const statusValue = newStatus === 'Enabled' ? 1 : 0;
             setFormData((prevState) => ({
                 ...prevState,
-                status: newChecked ? 1 : 0,
+                status: statusValue,
             }));
         },
         [],
     );
+
+    const statusOptions = [
+        { label: 'Enabled', value: 'Enabled' },
+        { label: 'Disabled', value: 'Disabled' },
+    ];
 
     const handleTextFieldChange = useCallback(
         (value) => setTextFieldValue(value),
@@ -152,7 +158,7 @@ function Zone(props) {
 
         }
     }
-    
+
     const getCountry = async () => {
         try {
             const token = await getSessionToken(app);
@@ -501,10 +507,11 @@ function Zone(props) {
                     <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
                         <LegacyCard sectioned>
                             <div className='choice'>
-                                <Checkbox
-                                    label={formData.status === 1 ? 'Zone is enabled' : 'Zone is disabled'}
-                                    checked={formData.status === 1}
-                                    onChange={handleSwitchChange}
+                                <Select
+                                    label="Zone status"
+                                    options={statusOptions}
+                                    onChange={handleStatusChange}
+                                    value={formData.status === 1 ? 'Enabled' : 'Disabled'}
                                 />
                             </div>
                             <div style={{ marginTop: "2%" }} className='zonetext'>

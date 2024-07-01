@@ -587,8 +587,8 @@ class ApiController extends Controller
     public function rateStore(Request $request)
     {
         try {
-            // $shop = $request->attributes->get('shopifySession');
-            $shop = "krishnalaravel-test.myshopify.com";
+            $shop = $request->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([

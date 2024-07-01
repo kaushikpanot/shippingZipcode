@@ -591,7 +591,7 @@ function Zone(props) {
                                         />
                                     </div>
                                     <div style={{ marginTop: "2.5%" }}>
-                                        {loadingDelete ? <Spinner accessibilityLabel="Loading" size="large" /> : null}
+                                        {/* {loadingDelete ? <Spinner accessibilityLabel="Loading" size="large" /> : null} */}
                                         <IndexTable
                                             resourceName={resourceName}
                                             itemCount={rate.length}

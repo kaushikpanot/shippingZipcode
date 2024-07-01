@@ -17,7 +17,7 @@ import {
     RadioButton,
     Select,
     Autocomplete,
-    LegacyStack ,
+    LegacyStack,
     Tag
 } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon } from '@shopify/polaris-icons';
@@ -37,6 +37,7 @@ function Rate(props) {
     const [selectedOptions, setSelectedOptions] = useState([]);
     const [inputValue, setInputValue] = useState('');
     const [options, setOptions] = useState([]);
+    const [zipcodeValue, setZipcodeValue] = useState('');
     const navigate = useNavigate();
     let app = "";
     const [formData, setFormData] = useState({
@@ -47,18 +48,20 @@ function Rate(props) {
         zone_id: zone_id,
         id: "",
         zipcode: {
-            stateSelection: "Custom",
+            stateSelection: "All",
             state: [],
             zipcodeSelection: "All",
+            zipcode: []
+
         },
         status: 1,
     });
 
-   
-    const [value, setValue] = useState();
+
+
     const handleChange = useCallback(
-        (newValue) => setValue(newValue),
-        [],
+        (newValue) => setZipcodeValue(newValue),
+        []
     );
     const editRate = async () => {
         try {
@@ -180,8 +183,8 @@ function Rate(props) {
 
 
     const [selectedCondition, setSelectedCondition] = useState('condition1');
-    const [selectedStateCondition, setSelectedStateCondition] = useState('all');
-    const [selectedZipCondition, setSelectedZipCondition] = useState('allZip');
+    const [selectedStateCondition, setSelectedStateCondition] = useState('All');
+    const [selectedZipCondition, setSelectedZipCondition] = useState('All');
     const [selectedZipCode, setSelectedZipCode] = useState('include');
     const [toastDuration, setToastDuration] = useState(3000);
     const [showToast, setShowToast] = useState(false);
@@ -320,17 +323,20 @@ function Rate(props) {
     useEffect(() => {
         editRate();
     }, []);
-  
+
     useEffect(() => {
         setFormData(prevFormData => ({
             ...prevFormData,
             zipcode: {
                 ...prevFormData.zipcode,
-                state: selectedOptions,          
-                stateSelection: selectedStateCondition  
+                state: selectedOptions,
+                stateSelection: selectedStateCondition,
+                zipcodeSelection: selectedZipCondition,
+                isInclude: selectedZipCode,
+                 zipcode: zipcodeValue.split(',').map(zip => zip.trim()) 
             }
         }));
-    }, [selectedOptions, selectedStateCondition]);
+    }, [selectedOptions, selectedStateCondition, selectedZipCondition, selectedZipCode, zipcodeValue]);
     const saveRate = async () => {
         const newErrors = {};
         if (!formData.name) newErrors.name = 'Rate name is required';
@@ -352,7 +358,7 @@ function Rate(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            console.log(formData)
+           
             setToastContent("Rate saved successfully");
             setShowToast(true);
         } catch (error) {
@@ -432,8 +438,8 @@ function Rate(props) {
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
                         <LegacyCard sectioned>
-                            <div style={{  marginBottom: "2%" }}>
-                            <Select
+                            <div style={{ marginBottom: "2%" }}>
+                                <Select
                                     label="Rate status"
                                     options={statusOptions}
                                     onChange={handleStatusChange}
@@ -623,21 +629,21 @@ function Rate(props) {
                                 </Text>
                                 <RadioButton
                                     label="Custom"
-                                    checked={selectedStateCondition === 'custome'}
-                                    id="custome"
-                                    name="custome"
-                                    onChange={() => setSelectedStateCondition('custome')}
+                                    checked={selectedStateCondition === 'Custom'}
+                                    id="Custom"
+                                    name="stateSelection"
+                                    onChange={() => setSelectedStateCondition('Custom')}
                                 />
                                 <RadioButton
                                     label="All"
-                                    checked={selectedStateCondition === 'all'}
-                                    id="all"
-                                    name="all"
-                                    onChange={() => setSelectedStateCondition('all')}
+                                    checked={selectedStateCondition === 'All'}
+                                    id="All"
+                                    name="stateSelection"
+                                    onChange={() => setSelectedStateCondition('All')}
                                 />
                             </div>
 
-                            {selectedStateCondition !== 'all' && (
+                            {selectedStateCondition !== 'All' && (
                                 <div style={{ marginTop: "2%", marginBottom: "2%" }}>
 
 
@@ -660,26 +666,26 @@ function Rate(props) {
                                 </Text>
                                 <RadioButton
                                     label="Custom"
-                                    checked={selectedZipCondition === 'customeZip'}
+                                    checked={selectedZipCondition === 'Custom'}
                                     id="customeZip"
-                                    name="customeZip"
-                                    onChange={() => setSelectedZipCondition('customeZip')}
+                                    name="zipcodeSelection"
+                                    onChange={() => setSelectedZipCondition('Custom')}
                                 />
                                 <RadioButton
                                     label="All"
-                                    checked={selectedZipCondition === 'allZip'}
-                                    id="allZip"
-                                    name="allZip"
-                                    onChange={() => setSelectedZipCondition('allZip')}
+                                    checked={selectedZipCondition === 'All'}
+                                    id="AllZip"
+                                    name="zipcodeSelection"
+                                    onChange={() => setSelectedZipCondition('All')}
                                 />
 
                             </div>
-                            {selectedZipCondition !== 'allZip' && (
+                            {selectedZipCondition !== 'All' && (
                                 <div style={{ marginTop: "2%" }}>
 
                                     <TextField
                                         placeholder='364001,364002,364003'
-                                        value={value}
+                                        value={zipcodeValue}
                                         onChange={handleChange}
                                         multiline={4}
                                         autoComplete="off"
@@ -687,17 +693,17 @@ function Rate(props) {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%" }}>
                                         <RadioButton
                                             label="Include ZipCodes"
-                                            checked={selectedZipCode === 'include'}
+                                            checked={selectedZipCode === 'Include'}
                                             id="include"
-                                            name="include"
-                                            onChange={() => setSelectedZipCode('include')}
+                                            name="isInclude"
+                                            onChange={() => setSelectedZipCode('Include')}
                                         />
                                         <RadioButton
                                             label="Exclude ZipCodes"
-                                            checked={selectedZipCode === 'exclude'}
+                                            checked={selectedZipCode === 'Exclude'}
                                             id="exclude"
-                                            name="exclude"
-                                            onChange={() => setSelectedZipCode('exclude')}
+                                            name="isInclude"
+                                            onChange={() => setSelectedZipCode('Exclude')}
                                         />
                                     </div>
                                 </div>

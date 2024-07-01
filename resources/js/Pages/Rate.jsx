@@ -71,7 +71,7 @@ function Rate(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
+c
             const allStates = response.data.states;
             const formattedOptions = [];
 

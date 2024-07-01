@@ -39,6 +39,18 @@ function Rate(props) {
     const [options, setOptions] = useState([]);
     const [zipcodeValue, setZipcodeValue] = useState('');
     const navigate = useNavigate();
+    const [selectedCondition, setSelectedCondition] = useState('condition1');
+    const [selectedStateCondition, setSelectedStateCondition] = useState('All');
+    const [selectedZipCondition, setSelectedZipCondition] = useState('All');
+    const [selectedZipCode, setSelectedZipCode] = useState('include');
+    const [toastDuration, setToastDuration] = useState(3000);
+    const [showToast, setShowToast] = useState(false);
+    const [toastContent, setToastContent] = useState("");
+    const [errors, setErrors] = useState({});
+    const [error, setError] = useState('');
+    const [toastActive, setToastActive] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+
     let app = "";
     const [formData, setFormData] = useState({
         name: '',
@@ -60,41 +72,59 @@ function Rate(props) {
 
 
     const handleChange = useCallback(
-        (newValue) => setZipcodeValue(newValue),
+        (event) => {
+            setZipcodeValue(event.target.value);
+        },
         []
     );
+
     const editRate = async () => {
         try {
             const token = await getSessionToken(app);
+    
             const response = await axios.get(`${apiCommonURL}/api/rate/${rate_id}/edit`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-c
+    
             const allStates = response.data.states;
             const formattedOptions = [];
-
-
+    
             for (const country in allStates) {
                 if (allStates.hasOwnProperty(country)) {
                     const countryData = allStates[country];
-
+    
                     const stateOptions = countryData.map(state => ({
                         value: state.code,
-                        label: `${state.name} (${state.code})`
+                        label: `${state.name} (${state.code})`  // Display full name with code
                     }));
-
+    
                     formattedOptions.push({
                         title: country,
                         options: stateOptions
                     });
-                    setOptions(formattedOptions);
-
                 }
             }
+    
+            // Update state with formatted options
+            setOptions(formattedOptions);
+    
+            // Flatten state options for selection
             setState(formattedOptions.map(section => section.options).flat());
-
+    
+            // Set other form data and state values
+            setSelectedZipCondition(response.data.rate.zipcode.zipcodeSelection);
+            setSelectedStateCondition(response.data.rate.zipcode.stateSelection);
+            setSelectedZipCode(response.data.rate.zipcode.isInclude);
+            setSelectedOptions(response.data.rate.zipcode.state);
+    
+            // Convert zip codes to string and update state
+            const zipCodes = response.data.rate.zipcode.zipcode.map(zip => zip.toString());
+            const combinedZipCodes = zipCodes.join(',');
+            setZipcodeValue(combinedZipCodes);
+    
+            // Set form data
             setFormData({
                 name: response.data.rate.name,
                 base_price: response.data.rate.base_price,
@@ -103,14 +133,17 @@ c
                 id: response.data.rate.id,
                 zone_id: response.data.rate.zone_id,
                 status: response.data.rate.status,
+                selectedZipCondition: response.data.rate.zipcode.zipcodeSelection,
             });
-
+    
             // setLoading(false); 
-
+    
         } catch (error) {
             console.error("Error fetching edit data:", error);
         }
     };
+    
+    
 
 
     const updateText = useCallback(
@@ -171,28 +204,10 @@ c
             verticalContent={verticalContentMarkup}
             autoComplete="off"
         />
-    ); <Autocomplete
-        allowMultiple
-        options={options}
-        selected={selectedOptions}
-        textField={textField}
-        onSelect={setSelectedOptions}
-        listTitle="Suggested Countries"
-    />
+    );
 
 
 
-    const [selectedCondition, setSelectedCondition] = useState('condition1');
-    const [selectedStateCondition, setSelectedStateCondition] = useState('All');
-    const [selectedZipCondition, setSelectedZipCondition] = useState('All');
-    const [selectedZipCode, setSelectedZipCode] = useState('include');
-    const [toastDuration, setToastDuration] = useState(3000);
-    const [showToast, setShowToast] = useState(false);
-    const [toastContent, setToastContent] = useState("");
-    const [errors, setErrors] = useState({});
-    const [error, setError] = useState('');
-    const [toastActive, setToastActive] = useState(false);
-    const [toastMessage, setToastMessage] = useState('');
 
     const toggleToastActive = useCallback(() => setToastActive((active) => !active), []);
     const handleStatusChange = useCallback(
@@ -333,7 +348,7 @@ c
                 stateSelection: selectedStateCondition,
                 zipcodeSelection: selectedZipCondition,
                 isInclude: selectedZipCode,
-                 zipcode: zipcodeValue.split(',').map(zip => zip.trim()) 
+                zipcode: zipcodeValue.split(',').map(zip => zip.trim())
             }
         }));
     }, [selectedOptions, selectedStateCondition, selectedZipCondition, selectedZipCode, zipcodeValue]);
@@ -358,7 +373,7 @@ c
                     'Authorization': `Bearer ${token}`
                 }
             });
-           
+
             setToastContent("Rate saved successfully");
             setShowToast(true);
         } catch (error) {

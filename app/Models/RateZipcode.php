@@ -12,4 +12,22 @@ class RateZipcode extends Model
     protected $fillable = ["user_id", "rate_id", "stateSelection", "state", "zipcodeSelection", "zipcode", "isInclude"];
 
     protected $hidden = ['created_at', 'updated_at'];
+
+    public function getStateAttribute($value)
+    {
+        if (is_null($value)) {
+            return null;
+        }
+
+        return explode(',', $value);
+    }
+
+    public function getZipcodeAttribute($value)
+    {
+        if (is_null($value)) {
+            return null;
+        }
+
+        return explode(',', $value);
+    }
 }

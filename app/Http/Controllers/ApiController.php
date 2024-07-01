@@ -9,10 +9,12 @@ use App\Models\Zone;
 use App\Models\ZoneCountry;
 use Illuminate\Http\Request;
 use GuzzleHttp\Exception\RequestException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Throwable;
+use CountryState;
 
 class ApiController extends Controller
 {
@@ -40,38 +42,59 @@ class ApiController extends Controller
                 ], 404);
             }
 
-            // Define the REST API endpoint
-            $restEndpoint = "https://{$shop}/admin/api/2024-04/countries.json";
+            // // Define the REST API endpoint
+            // $restEndpoint = "https://{$shop}/admin/api/2024-04/countries.json";
 
-            // Headers for Shopify API request
-            $customHeaders = [
-                'X-Shopify-Access-Token' => $token,
-            ];
+            // // Headers for Shopify API request
+            // $customHeaders = [
+            //     'X-Shopify-Access-Token' => $token,
+            // ];
 
             // Make HTTP GET request to Shopify REST API endpoint
-            $response = Http::withHeaders($customHeaders)->get($restEndpoint);
+            // $response = Http::withHeaders($customHeaders)->get($restEndpoint);
 
             // Check if the request was successful
-            if ($response->successful()) {
-                // Decode the JSON response
-                $countriesList = $response->json('countries');
+            // if ($response->successful()) {
+            //     // Decode the JSON response
+            //     $countriesList = $response->json('countries');
 
-                $collection = collect($countriesList);
+            //     $collection = collect($countriesList);
 
-                $countries = $collection->map(function ($country) {
-                    unset($country['tax_name'], $country['tax'], $country['provinces']);
-                    return $country;
-                });
+            //     $countries = $collection->map(function ($country) {
+            //         unset($country['tax_name'], $country['tax'], $country['provinces']);
+            //         return $country;
+            //     });
 
-                $responseData = [
-                    'countries' => $countries->all()
+            //     $responseData = [
+            //         'countries' => $countries->all()
+            //     ];
+
+            //     return response()->json($responseData);
+            // } else {
+            //     // Handle non-successful responses
+            //     return response()->json(['status' => false, 'error' => 'Unable to fetch country list']);
+            // }
+
+            // Fetch JSON data from the external API
+            // $jsonData = file_get_contents('http://country.io/names.json');
+
+            // Decode JSON data into a PHP associative array
+            // $countriesArray = json_decode($jsonData, true);
+            $countriesArray = CountryState::getCountries();
+
+            // Initialize an empty array to hold the formatted data
+            $countries = [];
+
+            // Iterate over the associative array and format it into an array of objects
+            foreach ($countriesArray as $isoCode => $name) {
+                $countries[] = (object) [
+                    'code' => $isoCode,
+                    'name' => $name,
+                    'nameCode' => $name . " " . "(" . $isoCode . ")"
                 ];
-
-                return response()->json($responseData);
-            } else {
-                // Handle non-successful responses
-                return response()->json(['status' => false, 'error' => 'Unable to fetch country list']);
             }
+
+            return response()->json(['status' => true, 'message' => 'countries list retrieved successfully.', 'countries' => $countries]);
         } catch (RequestException $e) {
             // Handle request-specific exceptions
             Log::error('HTTP request error', ['exception' => $e->getMessage()]);
@@ -82,9 +105,83 @@ class ApiController extends Controller
         }
     }
 
+    public function getStateList(Request $request)
+    {
+        try {
+            // Retrieve the Shopify session
+            $shop = $request->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
+
+            if (!$shop) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Token not provided.'
+                ], 400);
+            }
+
+            // Fetch the token for the shop
+            $token = User::where('name', $shop)->value('password');
+
+            if (!$token) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not found.'
+                ], 404);
+            }
+
+            // Validate the request input
+            $validated = $request->validate([
+                'country' => 'required|array',
+                'country.*.code' => 'required|string',
+                'country.*.name' => 'required|string',
+            ]);
+
+            $states = [];
+
+            foreach ($validated['country'] as $country) {
+                $stateList = CountryState::getStates($country['code']);
+
+                // Iterate over the associative array and format it into an array of objects
+                foreach ($stateList as $isoCode => $name) {
+                    $states[$country['name']][] = [
+                        'code' => $isoCode,
+                        'name' => $name,
+                        'nameCode' => "$name ($isoCode)"
+                    ];
+                }
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'States list retrieved successfully.',
+                'states' => $states
+            ]);
+        } catch (\ValidationException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid input data.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (RequestException $e) {
+            // Handle request-specific exceptions
+            Log::error('HTTP request error', ['exception' => $e->getMessage()]);
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while processing the request.'
+            ], 500);
+        } catch (Throwable $th) {
+            Log::error('Unexpected error', ['exception' => $th->getMessage()]);
+            return response()->json([
+                'status' => false,
+                'message' => 'An unexpected error occurred.'
+            ], 500);
+        }
+    }
+
     public function getCurrencyList()
     {
         try {
+
             // Retrieve the Shopify session
             $shop = request()->attributes->get('shopifySession');
             // $shop = "krishnalaravel-test.myshopify.com";
@@ -120,7 +217,7 @@ class ApiController extends Controller
             if ($response->successful()) {
                 $responseData = [
                     'shop_currency' => $token['shop_currency'],
-                    'currencies' => $response->json('currencies')
+                    'currencies' => $response->json()
                 ];
 
                 return response()->json($responseData);
@@ -141,42 +238,57 @@ class ApiController extends Controller
     public function getResponse(Request $request)
     {
         $input = $request->input();
+
         $shopDomain = $request->header();
         // Construct the response data
         $originCompanyName = $shopDomain['x-shopify-shop-domain'][0];
 
         $originCountryName = $input['rate']['origin']['country'];
-       
+
+        $destinationZipcode = $input['rate']['destination']['postal_code'];
+
         $userId = User::where('name', $originCompanyName)->value('id');
 
         $setting = Setting::where('user_id', $userId)->first();
-        
-        if(!empty($setting) && !$setting->status) {
-            Log::info($setting);
-            return response()->json("Shipping not available");
+
+        $response = [];
+
+        if (!empty($setting) && !$setting->status) {
+            return response()->json($response);
         }
 
         $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $originCountryName)->whereHas('zone', function ($query) {
             $query->where('status', 1);
         })->pluck('zone_id');
 
-        Log::info($zoneIds);
-
+        // Log::info($zoneIds);
+        DB::enableQueryLog();
         $ratesQuery = Rate::whereIn('zone_id', $zoneIds)
             ->where('user_id', $userId)
             ->where('status', 1)
             ->with('zone:id,currency');
 
-        // Check the setting for shipping rate and get the appropriate rate
+        // Determine the appropriate rate based on the shipping rate setting
         if ($setting->shippingRate == 'Only Higher') {
             $maxRate = $ratesQuery->max('base_price');
-            $rates = $ratesQuery->where('base_price', $maxRate)->get();
+            $ratesQuery->where('base_price', $maxRate);
         } elseif ($setting->shippingRate == 'Only Lower') {
             $minRate = $ratesQuery->min('base_price');
-            $rates = $ratesQuery->where('base_price', $minRate)->get();
-        } else {
-            $rates = $ratesQuery->get();
+            $ratesQuery->where('base_price', $minRate);
         }
+
+        $rates = $ratesQuery->orWhere(function ($query) use ($destinationZipcode, $userId) {
+            $query->whereRaw("FIND_IN_SET(?, zipcode)", [$destinationZipcode])
+                ->where('user_id', $userId)
+                ->where('status', 1)
+                ->whereHas('zone', function ($query) {
+                    $query->where('status', 1);
+                });
+        })->get();
+
+        Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
+
+        // Log::info('Shopify Carrier Service Request input:', ['rates1'=>$rates]);
 
         foreach ($rates as $rate) {
             $response['rates'][] = [
@@ -188,7 +300,7 @@ class ApiController extends Controller
             ];
         }
 
-        Log::info('Shopify Carrier Service Request rateCount:', ["response" => $response]);
+        // Log::info('Shopify Carrier Service response:', ["response" => $response]);
 
         return response()->json($response);
     }
@@ -453,8 +565,8 @@ class ApiController extends Controller
     public function rateStore(Request $request)
     {
         try {
-            $shop = $request->attributes->get('shopifySession');
-            // $shop = "krishnalaravel-test.myshopify.com";
+            // $shop = $request->attributes->get('shopifySession');
+            $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([

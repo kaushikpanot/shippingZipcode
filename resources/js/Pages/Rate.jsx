@@ -16,7 +16,7 @@ import {
     Card,
     RadioButton,
     Select,
-    FormLayout,
+    Autocomplete
 } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon } from '@shopify/polaris-icons';
 import '../../../public/css/style.css';
@@ -30,6 +30,9 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 function Rate(props) {
     const { rate_id, zone_id } = useParams();
     const [loading, setLoading] = useState(false);
+    const [state, setState] = useState([])
+    const [selectedOptions, setSelectedOptions] = useState([]);
+    const [inputValue, setInputValue] = useState('');
     const navigate = useNavigate();
     let app = "";
     const [formData, setFormData] = useState({
@@ -46,6 +49,74 @@ function Rate(props) {
         (newValue) => setValue(newValue),
         [],
     );
+
+
+    const getCountry = async () => {
+        try {
+            const token = await getSessionToken(app);
+            const response = await axios.get(`${apiCommonURL}/api/country`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            console.log(response.data)
+        } catch (error) {
+            console.error("Error fetching country:", error);
+        }
+    }
+    const updateText = useCallback(
+        (value) => {
+            setInputValue(value);
+
+            if (value === '') {
+                getCountry();
+                return;
+            }
+
+            const filterRegex = new RegExp(value, 'i');
+            const resultOptions = country.filter((option) =>
+                option.label.match(filterRegex),
+            );
+
+            setState(resultOptions);
+        },
+        [state],
+    );
+
+    const removeTag = useCallback(
+        (tag) => () => {
+            const newSelectedOptions = selectedOptions.filter(option => option !== tag);
+            setSelectedOptions(newSelectedOptions);
+        },
+        [selectedOptions],
+    );
+    const verticalContentMarkup =
+        selectedOptions.length > 0 ? (
+            <LegacyStack spacing="extraTight" alignment="center">
+                {selectedOptions.map((option) => {
+                    const tagLabel = country.find(opt => opt.value === option)?.label || option;
+                    return (
+                        <Tag key={option} onRemove={removeTag(option)}>
+                            {tagLabel}
+                        </Tag>
+                    );
+                })}
+            </LegacyStack>
+        ) : null;
+    const textField = (
+        <Autocomplete.TextField
+            onChange={updateText}
+
+            value={inputValue}
+            placeholder="Search State"
+            verticalContent={verticalContentMarkup}
+
+            autoComplete="off"
+        />
+    );
+
+
+
     const [selectedCondition, setSelectedCondition] = useState('condition1');
     const [selectedStateCondition, setSelectedStateCondition] = useState('all');
     const [selectedZipCondition, setSelectedZipCondition] = useState('allZip');
@@ -81,23 +152,14 @@ function Rate(props) {
     const [items, setItems] = useState([
         { selectedOption1: 'quantity', selectedOption2: '', inputValue: '' }
     ]);
-    console.log(items)
-    const handleSelectChange = (index, newValue, optionNumber) => {
-        const newItems = [...items];
-        if (optionNumber === 1) {
-
-            const isDuplicate = newItems.some((item, idx) => item.selectedOption1 === newValue && idx !== index);
-            if (isDuplicate) {
-                setToastMessage('Already selected');
-                setToastActive(true);
-                return;
-            }
-            newItems[index].selectedOption1 = newValue;
-        } else if (optionNumber === 2) {
-            newItems[index].selectedOption2 = newValue;
+    const handleSelectChange = (index, newValue, selectNumber) => {
+        const updatedItems = [...items];
+        if (selectNumber === 1) {
+            updatedItems[index].selectedOption1 = newValue;
+        } else if (selectNumber === 2) {
+            updatedItems[index].selectedOption2 = newValue;
         }
-        setError('');
-        setItems(newItems.map((item, idx) => ({ ...item, key: idx })));
+        setItems(updatedItems);
     };
     const handleAddItem = () => {
         const newItem = { selectedOption1: 'quantity', selectedOption2: '', inputValue: '' };
@@ -515,6 +577,22 @@ function Rate(props) {
                                     onChange={() => setSelectedStateCondition('all')}
                                 />
                             </div>
+
+                            {selectedStateCondition !== 'all' && (
+                                <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+
+
+                                    <Autocomplete
+                                        allowMultiple
+                                        options={state}
+                                        selected={selectedOptions}
+                                        textField={textField}
+                                        onSelect={setSelectedOptions}
+                                        listTitle="Suggested Countries"
+                                    />
+                                </div>
+                            )}
+
                             <Divider borderColor="border" />
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%", }}>

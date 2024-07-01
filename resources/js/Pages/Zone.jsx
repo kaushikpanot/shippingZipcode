@@ -161,8 +161,8 @@ function Zone(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            const countryData = response.data;
-            const stateList = countryData.countries.map(state => ({
+            const countryData = response.data.countries;
+            const stateList = countryData.map(state => ({
                 label: `${state.name} (${state.code})`,
                 value: state.code
             }));
@@ -181,9 +181,9 @@ function Zone(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            const countryData = response.data.currencies;
+            const currencyes = response.data.currencies.currencies;
 
-            const currency = countryData.map(cuency => ({
+            const currency = currencyes.map(cuency => ({
                 label: cuency.currency,
                 value: cuency.currency
             }))

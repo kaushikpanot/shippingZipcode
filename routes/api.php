@@ -42,5 +42,6 @@ Route::middleware(['verify.shopify.jwt'])->group(function () {
         Route::delete('rate/{id}', 'rateDestroy');
 
         Route::get('shop/location', 'getShopLocation');
+        Route::post('products', 'getProductList');
     });
 });

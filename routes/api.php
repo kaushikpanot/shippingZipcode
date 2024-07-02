@@ -38,6 +38,7 @@ Route::middleware(['verify.shopify.jwt'])->group(function () {
         Route::post('rate/save', 'rateStore');
         Route::get('rates/{zone_id}/{name?}', 'rateList');
         Route::get('rate/{id}/edit', 'rateEdit');
+        Route::get('rate/{zoneId}/create', 'rateCreate');
         Route::delete('rate/{id}', 'rateDestroy');
     });
 });

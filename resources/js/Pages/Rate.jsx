@@ -61,21 +61,21 @@ function Rate(props) {
     const [endDate, setEndDate] = useState(new Date());
     const [isStartDatePickerVisible, setIsStartDatePickerVisible] = useState(false);
     const [isEndDatePickerVisible, setIsEndDatePickerVisible] = useState(false);
-  
+
     const handleMonthChange = useCallback((month, year) => {
-      setMonth(month);
-      setYear(year);
+        setMonth(month);
+        setYear(year);
     }, []);
     const handleStartDateChange = useCallback((selectedDate) => {
-      setStartDate(selectedDate.start);
-      setIsStartDatePickerVisible(false);   
+        setStartDate(selectedDate.start);
+        setIsStartDatePickerVisible(false);
     }, []);
     const handleEndDateChange = useCallback((selectedDate) => {
-      setEndDate(selectedDate.start);
-      setIsEndDatePickerVisible(false); 
+        setEndDate(selectedDate.start);
+        setIsEndDatePickerVisible(false);
     }, []);
-  
-  
+
+
 
 
     let app = "";
@@ -94,13 +94,21 @@ function Rate(props) {
 
         },
         status: 1,
-        tag: ' '
+        tag: ''
     });
-    const [checked, setChecked] = useState(false);
-    const handleCheckChange = useCallback(
-        (newChecked) => setChecked(newChecked),
-        [],
-    );
+
+
+    const [checkedState, setCheckedState] = useState({
+        checked1: false,
+        checked2: true
+    });
+
+    const handleCheckChange = (checkbox) => {
+        setCheckedState({
+            ...checkedState,
+            [checkbox]: !checkedState[checkbox]
+        });
+    };
 
 
 
@@ -139,21 +147,17 @@ function Rate(props) {
             }
             setOptions(formattedOptions);
             setState(formattedOptions.map(section => section.options).flat());
-            setSelectedZipCondition(response.data.rate.zipcode.zipcodeSelection);
-            setSelectedStateCondition(response.data.rate.zipcode.stateSelection);
-            setSelectedZipCode(response.data.rate.zipcode.isInclude);
-            setSelectedOptions(response.data.rate.zipcode.state);
 
-            // const stateData = response.data.rate.zipcode.state;
-            // const stateList = stateData.map(state => ({
-            //     label: `${state.name} (${state.code})`,
-            //     value: state.code
-            // }));
-            // setCountry(stateList);
+            if (response.data.rate.zipcode) {
+                setSelectedZipCondition(response.data.rate.zipcode.zipcodeSelection);
+                setSelectedStateCondition(response.data.rate.zipcode.stateSelection);
+                setSelectedZipCode(response.data.rate.zipcode.isInclude);
+                setSelectedOptions(response.data.rate.zipcode.state);
 
-            const zipCodes = response.data.rate.zipcode.zipcode.map(zip => zip.toString());
-            const combinedZipCodes = zipCodes.join(',');
-            setZipcodeValue(combinedZipCodes);
+                const zipCodes = response.data.rate.zipcode.zipcode.map(zip => zip.toString());
+                const combinedZipCodes = zipCodes.join(',');
+                setZipcodeValue(combinedZipCodes);
+            }
 
 
             setFormData({
@@ -173,7 +177,20 @@ function Rate(props) {
             console.error("Error fetching edit data:", error);
         }
     };
+    const getLocation = async () => {
+        try {
+            const token = await getSessionToken(app);
 
+            const response = await axios.get(`${apiCommonURL}/api/shop/location`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            console.log(response.data)
+        } catch (error) {
+            console.error("Error fetching edit data:", error);
+        }
+    };
     const updateText = useCallback(
         (value) => {
             setInputValue(value);
@@ -376,6 +393,7 @@ function Rate(props) {
 
     useEffect(() => {
         editRate();
+        getLocation();
     }, []);
 
     useEffect(() => {
@@ -809,10 +827,10 @@ function Rate(props) {
                         <LegacyCard sectioned>
                             <Checkbox
                                 label="Based On Cart"
-                                checked={checked}
-                                onChange={handleCheckChange}
+                                checked={checkedState.checked1}
+                                onChange={() => handleCheckChange('checked1')}
                             />
-                            {checked && (
+                            {checkedState.checked1 && (
                                 <div style={{ marginTop: "2%" }}>
                                     <Divider borderColor="border" />
                                     <div style={{ marginBottom: "2%" }}></div>
@@ -1202,6 +1220,52 @@ function Rate(props) {
                 </Grid>
 
             </div>
+            <Divider borderColor="border" />
+            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                <Grid>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                        <div style={{ paddingTop: '5%' }}>
+                            <Text variant="headingLg" as="h5">
+                                Origin Locations
+                            </Text>
+                            <p style={{ paddingTop: '5%', fontSize: '14px' }}>
+                                Rate applies on selected locations
+                            </p>
+                        </div>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                        <LegacyCard sectioned>
+                            <Text variant="headingSm" as="h6">
+                                Ship From Locations
+                            </Text>
+                            <div style={{ alignItems: 'center', paddingTop: '2%' }}>
+                                <Checkbox
+                                    label="Select All Location"
+                                    checked={checkedState.checked2}
+                                    onChange={() => handleCheckChange('checked2')}
+                                />
+                                {!checkedState.checked2 && (
+                                    <div style={{ marginTop: "1%" }}>
+                                        <Card>
+                                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                <Checkbox
+                                                // checked={checked}
+                                                // onChange={onChange}
+                                                />
+                                                <div style={{ marginLeft: '10px' }}>pakistan</div>
+                                            </div>
+                                        </Card>
+                                    </div>
+                                )}
+                            </div>
+
+                        </LegacyCard>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                </Grid>
+
+            </div>
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
@@ -1239,44 +1303,44 @@ function Rate(props) {
                                 />
                             </div>
                             {selectedByschedule === 'Yes' && (
-                                 
-                                 <div style={{ display: 'flex', gap: '10px', marginTop:"2%" }}>
-                                   <div style={{ flex: 1 }}>
-                                     <TextField
-                                       label="Start Date"
-                                       value={startDate.toLocaleDateString()}
-                                       onFocus={() => setIsStartDatePickerVisible(true)}
-                                       readOnly
-                                     />
-                                     {isStartDatePickerVisible && (
-                                       <DatePicker
-                                         month={month}
-                                         year={year}
-                                         onChange={handleStartDateChange}
-                                         onMonthChange={handleMonthChange}
-                                         selected={{ start: startDate, end: startDate }}
-                                       />
-                                     )}
-                                   </div>
-                                   <div style={{ flex: 1 }}>
-                                     <TextField
-                                       label="End Date"
-                                       value={endDate.toLocaleDateString()}
-                                       onFocus={() => setIsEndDatePickerVisible(true)}
-                                       readOnly
-                                     />
-                                     {isEndDatePickerVisible && (
-                                       <DatePicker
-                                         month={month}
-                                         year={year}
-                                         onChange={handleEndDateChange}
-                                         onMonthChange={handleMonthChange}
-                                         selected={{ start: endDate, end: endDate }}
-                                       />
-                                     )}
-                                   </div>
-                                 </div>
-                               
+
+                                <div style={{ display: 'flex', gap: '10px', marginTop: "2%" }}>
+                                    <div style={{ flex: 1 }}>
+                                        <TextField
+                                            label="Start Date"
+                                            value={startDate.toLocaleDateString()}
+                                            onFocus={() => setIsStartDatePickerVisible(true)}
+                                            readOnly
+                                        />
+                                        {isStartDatePickerVisible && (
+                                            <DatePicker
+                                                month={month}
+                                                year={year}
+                                                onChange={handleStartDateChange}
+                                                onMonthChange={handleMonthChange}
+                                                selected={{ start: startDate, end: startDate }}
+                                            />
+                                        )}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <TextField
+                                            label="End Date"
+                                            value={endDate.toLocaleDateString()}
+                                            onFocus={() => setIsEndDatePickerVisible(true)}
+                                            readOnly
+                                        />
+                                        {isEndDatePickerVisible && (
+                                            <DatePicker
+                                                month={month}
+                                                year={year}
+                                                onChange={handleEndDateChange}
+                                                onMonthChange={handleMonthChange}
+                                                selected={{ start: endDate, end: endDate }}
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+
                             )}
                         </LegacyCard>
                     </Grid.Cell>
@@ -1284,6 +1348,8 @@ function Rate(props) {
                 </Grid>
 
             </div>
+
+
             {showToast && (
                 <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
             )}

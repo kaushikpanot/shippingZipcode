@@ -247,6 +247,7 @@ class ApiController extends Controller
         $originCountryName = $input['rate']['origin']['country'];
 
         $destinationZipcode = $input['rate']['destination']['postal_code'];
+        $destinationProvince = $input['rate']['destination']['province'];
 
         $userId = User::where('name', $originCompanyName)->value('id');
 
@@ -264,10 +265,7 @@ class ApiController extends Controller
 
         // Log::info($zoneIds);
         DB::enableQueryLog();
-        $ratesQuery = Rate::whereIn('zone_id', $zoneIds)
-            ->where('user_id', $userId)
-            ->where('status', 1)
-            ->with('zone:id,currency');
+        $ratesQuery = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode');
 
         // Determine the appropriate rate based on the shipping rate setting
         if ($setting->shippingRate == 'Only Higher') {
@@ -278,20 +276,41 @@ class ApiController extends Controller
             $ratesQuery->where('base_price', $minRate);
         }
 
-        $rates = $ratesQuery->orWhere(function ($query) use ($destinationZipcode, $userId) {
-            $query->whereRaw("FIND_IN_SET(?, zipcode)", [$destinationZipcode])
-                ->where('user_id', $userId)
-                ->where('status', 1)
-                ->whereHas('zone', function ($query) {
-                    $query->where('status', 1);
-                });
-        })->get();
+        $rates = $ratesQuery->get();
+
+        $filteredRates = $rates->map(function ($rate) use ($destinationProvince, $destinationZipcode) {
+            $zipcode = optional($rate->zipcode);
+
+            // Check state selection
+            if ($zipcode->stateSelection === 'Custom') {
+                $states = $zipcode->state;
+                if (!in_array($destinationProvince, $states)) {
+                    return null;
+                }
+            }
+
+            // Check zipcode selection
+            if ($zipcode->zipcodeSelection === 'Custom') {
+                $zipcodes = $zipcode->zipcode;
+                if ($zipcode->isInclude === 'Include') {
+                    if (!in_array($destinationZipcode, $zipcodes)) {
+                        return null;
+                    }
+                } elseif ($zipcode->isInclude === 'Exclude') {
+                    if (in_array($destinationZipcode, $zipcodes)) {
+                        return null;
+                    }
+                }
+            }
+
+            return $rate;
+        })->filter();
 
         Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
 
-        // Log::info('Shopify Carrier Service Request input:', ['rates1'=>$rates]);
+        Log::info('Shopify Carrier Service Request input:', ['rates1' => $filteredRates]);
 
-        foreach ($rates as $rate) {
+        foreach ($filteredRates as $rate) {
             $response['rates'][] = [
                 'service_name' => $rate->name,
                 'service_code' => $rate->service_code,
@@ -301,7 +320,7 @@ class ApiController extends Controller
             ];
         }
 
-        // Log::info('Shopify Carrier Service response:', ["response" => $response]);
+        Log::info('Shopify Carrier Service response:', ["response" => $response]);
 
         return response()->json($response);
     }
@@ -421,7 +440,6 @@ class ApiController extends Controller
             }
 
             $zone->country = $zone->countries->pluck('countryCode')->all();
-            $state = $this->getState($zone->countries->pluck('country', 'countryCode'));
             unset($zone->countries);
 
             // Initialize the query for fetching rates
@@ -454,8 +472,7 @@ class ApiController extends Controller
                     'next_page_url' => $rates->nextPageUrl(),
                     'prev_page_url' => $rates->previousPageUrl(),
                 ],
-                'rates' => $rates->items(),
-                'states' => $state
+                'rates' => $rates->items()
             ]);
         } catch (\Illuminate\Database\QueryException $ex) {
             Log::error('Database error when retrieving rate list', ['exception' => $ex->getMessage()]);
@@ -584,6 +601,58 @@ class ApiController extends Controller
         return $states;
     }
 
+    public function rateCreate($zoneId)
+    {
+        try {
+            $shop = request()->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
+
+            if (!$shop) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Token not provided.'
+                ], 400);
+            }
+
+            // Validate if shop exists in the User table
+            $user = User::where('name', $shop)->first();
+
+            if (!$user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not found.'
+                ], 404);
+            }
+
+            $zone = Zone::with('countries:zone_id,countryCode,country')->find($zoneId);
+
+            if (!$zone) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Zone not found.'
+                ], 404);
+            }
+
+            $states = $this->getState($zone->countries->pluck('country', 'countryCode'));
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Rate create data retrieved successfully.',
+                'states' => $states
+            ]);
+        } catch (\Illuminate\Database\QueryException $ex) {
+            Log::error('Database error when retrieving rate list', ['exception' => $ex->getMessage()]);
+            return response()->json(['status' => false, 'message' => 'Database error occurred.'], 500);
+        } catch (Throwable $th) {
+            Log::error('Unexpected zone edit error', ['exception' => $th->getMessage()]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'An unexpected error occurred.'
+            ], 500);
+        }
+    }
+
     public function rateStore(Request $request)
     {
         try {
@@ -625,10 +694,8 @@ class ApiController extends Controller
                 $rules = array_merge($rules, [
                     'zipcode.stateSelection' => 'required',
                     'zipcode.state' => 'required_if:zipcode.stateSelection,Custom|array',
-                    'zipcode.state.*' => 'string',
                     'zipcode.zipcodeSelection' => 'required',
                     'zipcode.zipcode' => 'required_if:zipcode.zipcodeSelection,Custom|array',
-                    'zipcode.zipcode.*' => 'string',
                     'zipcode.isInclude' => 'required_if:zipcode.zipcodeSelection,Custom|string',
                 ]);
 
@@ -659,18 +726,18 @@ class ApiController extends Controller
                     "zipcodeSelection" => $inputData['zipcode']['zipcodeSelection']
                 ];
 
-                if($inputData['zipcode']['stateSelection'] == 'Custom' && isset($inputData['zipcode']['state'])){
+                if ($inputData['zipcode']['stateSelection'] == 'Custom' && isset($inputData['zipcode']['state'])) {
                     $zipcodeData['state'] = implode(", ", $inputData['zipcode']['state']);
                 } else {
                     $zipcodeData['state'] = null;
                 }
 
-                if($inputData['zipcode']['zipcodeSelection'] == 'Custom'){
-                    if(isset($inputData['zipcode']['zipcode'])) {
+                if ($inputData['zipcode']['zipcodeSelection'] == 'Custom') {
+                    if (isset($inputData['zipcode']['zipcode'])) {
                         $zipcodeData['zipcode'] = implode(", ", $inputData['zipcode']['zipcode']);
                     }
 
-                    if(isset($inputData['zipcode']['isInclude'])) {
+                    if (isset($inputData['zipcode']['isInclude'])) {
                         $zipcodeData['isInclude'] = $inputData['zipcode']['isInclude'];
                     }
                 } else {

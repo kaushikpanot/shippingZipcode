@@ -18,7 +18,9 @@ import {
     Select,
     Autocomplete,
     LegacyStack,
-    Tag
+    Tag,
+    FormLayout,
+    DatePicker
 } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon } from '@shopify/polaris-icons';
 import '../../../public/css/style.css';
@@ -33,7 +35,6 @@ function Rate(props) {
     const { rate_id, zone_id } = useParams();
     const [loading, setLoading] = useState(false);
     const [state, setState] = useState([])
-    const [title, setTitle] = useState([])
     const [selectedOptions, setSelectedOptions] = useState([]);
     const [inputValue, setInputValue] = useState('');
     const [options, setOptions] = useState([]);
@@ -41,15 +42,41 @@ function Rate(props) {
     const navigate = useNavigate();
     const [selectedCondition, setSelectedCondition] = useState('condition1');
     const [selectedStateCondition, setSelectedStateCondition] = useState('All');
+    const [selectedByCart, setSelectedByCart] = useState('weight');
+    const [selectedByschedule, setSelectedByschedule] = useState('No');
+    const [selectedByAmount, setSelectedByAmount] = useState('unit');
     const [selectedZipCondition, setSelectedZipCondition] = useState('All');
     const [selectedZipCode, setSelectedZipCode] = useState('include');
     const [toastDuration, setToastDuration] = useState(3000);
     const [showToast, setShowToast] = useState(false);
     const [toastContent, setToastContent] = useState("");
     const [errors, setErrors] = useState({});
-    const [error, setError] = useState('');
     const [toastActive, setToastActive] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
+
+
+    const [month, setMonth] = useState(new Date().getMonth());
+    const [year, setYear] = useState(new Date().getFullYear());
+    const [startDate, setStartDate] = useState(new Date());
+    const [endDate, setEndDate] = useState(new Date());
+    const [isStartDatePickerVisible, setIsStartDatePickerVisible] = useState(false);
+    const [isEndDatePickerVisible, setIsEndDatePickerVisible] = useState(false);
+  
+    const handleMonthChange = useCallback((month, year) => {
+      setMonth(month);
+      setYear(year);
+    }, []);
+    const handleStartDateChange = useCallback((selectedDate) => {
+      setStartDate(selectedDate.start);
+      setIsStartDatePickerVisible(false);   
+    }, []);
+    const handleEndDateChange = useCallback((selectedDate) => {
+      setEndDate(selectedDate.start);
+      setIsEndDatePickerVisible(false); 
+    }, []);
+  
+  
+
 
     let app = "";
     const [formData, setFormData] = useState({
@@ -67,64 +94,68 @@ function Rate(props) {
 
         },
         status: 1,
+        tag: ' '
     });
-
-
-
-    const handleChange = useCallback(
-        (event) => {
-            setZipcodeValue(event.target.value);
-        },
-        []
+    const [checked, setChecked] = useState(false);
+    const handleCheckChange = useCallback(
+        (newChecked) => setChecked(newChecked),
+        [],
     );
+
+
+
+
+    const handleChange = useCallback((value) => {
+        setZipcodeValue(value);
+    }, []);;
 
     const editRate = async () => {
         try {
             const token = await getSessionToken(app);
-    
+
             const response = await axios.get(`${apiCommonURL}/api/rate/${rate_id}/edit`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-    
+
             const allStates = response.data.states;
             const formattedOptions = [];
-    
+
             for (const country in allStates) {
                 if (allStates.hasOwnProperty(country)) {
                     const countryData = allStates[country];
-    
+
                     const stateOptions = countryData.map(state => ({
                         value: state.code,
-                        label: `${state.name} (${state.code})`  // Display full name with code
+                        label: `${state.name} (${state.code})`
                     }));
-    
+
                     formattedOptions.push({
                         title: country,
                         options: stateOptions
                     });
                 }
             }
-    
-            // Update state with formatted options
             setOptions(formattedOptions);
-    
-            // Flatten state options for selection
             setState(formattedOptions.map(section => section.options).flat());
-    
-            // Set other form data and state values
             setSelectedZipCondition(response.data.rate.zipcode.zipcodeSelection);
             setSelectedStateCondition(response.data.rate.zipcode.stateSelection);
             setSelectedZipCode(response.data.rate.zipcode.isInclude);
             setSelectedOptions(response.data.rate.zipcode.state);
-    
-            // Convert zip codes to string and update state
+
+            // const stateData = response.data.rate.zipcode.state;
+            // const stateList = stateData.map(state => ({
+            //     label: `${state.name} (${state.code})`,
+            //     value: state.code
+            // }));
+            // setCountry(stateList);
+
             const zipCodes = response.data.rate.zipcode.zipcode.map(zip => zip.toString());
             const combinedZipCodes = zipCodes.join(',');
             setZipcodeValue(combinedZipCodes);
-    
-            // Set form data
+
+
             setFormData({
                 name: response.data.rate.name,
                 base_price: response.data.rate.base_price,
@@ -133,18 +164,15 @@ function Rate(props) {
                 id: response.data.rate.id,
                 zone_id: response.data.rate.zone_id,
                 status: response.data.rate.status,
-                selectedZipCondition: response.data.rate.zipcode.zipcodeSelection,
+
             });
-    
+
             // setLoading(false); 
-    
+
         } catch (error) {
             console.error("Error fetching edit data:", error);
         }
     };
-    
-    
-
 
     const updateText = useCallback(
         (value) => {
@@ -235,22 +263,33 @@ function Rate(props) {
             [field]: '',
         }));
     };
+
     const [items, setItems] = useState([
-        { selectedOption1: 'quantity', selectedOption2: '', inputValue: '' }
+        { selectedOption1: 'quantity', selectedOption2: 'equal', inputValue: '', unit: 'items' }
     ]);
-    const handleSelectChange = (index, newValue, selectNumber) => {
+    const handleSelectChange = (index, newValue, isSecondSelect) => {
+        const selectedOption = validations.find(option => option.value === newValue) || {};
+        const updatedItem = {
+            ...items[index],
+            selectedOption1: isSecondSelect ? items[index].selectedOption1 : newValue,
+            selectedOption2: isSecondSelect ? newValue : items[index].selectedOption2,
+            unit: selectedOption.unit || items[index].unit || '',
+        };
+
         const updatedItems = [...items];
-        if (selectNumber === 1) {
-            updatedItems[index].selectedOption1 = newValue;
-        } else if (selectNumber === 2) {
-            updatedItems[index].selectedOption2 = newValue;
-        }
+        updatedItems[index] = updatedItem;
+
+
+        handleSelectChange
         setItems(updatedItems);
     };
+
     const handleAddItem = () => {
-        const newItem = { selectedOption1: 'quantity', selectedOption2: '', inputValue: '' };
+        const newItem = { selectedOption1: 'quantity', selectedOption2: 'equal', inputValue: '', unit: 'items' };
+        const updatedItems = [...items, newItem];
         setItems([...items, newItem]);
     };
+
     const handleConditionChange = useCallback(
         (newValue, index) => {
             setItems(prevItems => {
@@ -280,13 +319,13 @@ function Rate(props) {
     }, []);
     const validations = [
         { label: 'Cart / Order', value: '', disabled: true, className: 'select-header' },
-        { label: 'Quantity', value: 'quantity' },
-        { label: 'Total', value: 'total' },
-        { label: 'Sale Product Total', value: 's&ptotal' },
-        { label: 'Non Sale Product Total', value: 'ns&ptotal' },
-        { label: 'Weight', value: 'weight' },
+        { label: 'Quantity', value: 'quantity', unit: 'items' },
+        { label: 'Total', value: 'total', unit: '.Rs' },
+        { label: 'Sale Product Total', value: 's&ptotal', unit: '.Rs' },
+        { label: 'Non Sale Product Total', value: 'ns&ptotal', unit: '.Rs' },
+        { label: 'Weight', value: 'weight', unit: 'kg' },
         { label: 'Line Item', value: 'lineitem' },
-        { label: 'Distance', value: 'distance' },
+        { label: 'Distance', value: 'distance', unit: 'km' },
         { label: 'Day', value: 'day' },
         { label: 'Time', value: 'time' },
         { label: 'Local Code', value: 'localcode' },
@@ -340,11 +379,19 @@ function Rate(props) {
     }, []);
 
     useEffect(() => {
+        const selectedStates = selectedOptions.map(option => ({
+            name: state.find(state => state.value === option)?.label || '',
+            code: option
+        }));
+
+
+
         setFormData(prevFormData => ({
             ...prevFormData,
             zipcode: {
                 ...prevFormData.zipcode,
-                state: selectedOptions,
+
+                state: selectedStates,
                 stateSelection: selectedStateCondition,
                 zipcodeSelection: selectedZipCondition,
                 isInclude: selectedZipCode,
@@ -352,6 +399,7 @@ function Rate(props) {
             }
         }));
     }, [selectedOptions, selectedStateCondition, selectedZipCondition, selectedZipCode, zipcodeValue]);
+
     const saveRate = async () => {
         const newErrors = {};
         if (!formData.name) newErrors.name = 'Rate name is required';
@@ -368,12 +416,13 @@ function Rate(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
+
+            console.log(formData)
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
             setToastContent("Rate saved successfully");
             setShowToast(true);
         } catch (error) {
@@ -382,6 +431,9 @@ function Rate(props) {
             setShowToast(true);
         }
     };
+
+
+
     if (loading) {
         return (
             <Page
@@ -576,19 +628,24 @@ function Rate(props) {
                                             </Text>
                                             <Select
                                                 options={validations}
-                                                onChange={(newValue) => handleSelectChange(index, newValue, 1)}
+                                                onChange={(newValue) => handleSelectChange(index, newValue, false)}
                                                 value={item.selectedOption1}
                                             />
                                             <Select
                                                 options={option}
-                                                onChange={(newValue) => handleSelectChange(index, newValue, 2)}
+                                                onChange={(newValue) => handleSelectChange(index, newValue, true)}
                                                 value={item.selectedOption2}
                                             />
                                             <TextField
                                                 value={item.inputValue}
                                                 onChange={(newValue) => handleConditionChange(newValue, index)}
                                                 autoComplete="off"
+                                                suffix={item.unit ? item.unit : ''}
                                             />
+                                            {items.length > 1 && (
+                                                <Divider borderColor="border-inverse" />
+                                            )}
+
                                             {items.length > 1 && (
                                                 <Button
                                                     icon={DeleteIcon}
@@ -629,11 +686,12 @@ function Rate(props) {
                                 Set State/ZipCode
                             </Text>
                             <p style={{ paddingTop: '7%', fontSize: '14px' }}>
-                                Specify rate calculation based on Order Weight, Order Quantity with surcharge value.
+                                No need to add All ZipCode if you select states.
                             </p>
                             <p style={{ paddingTop: '1%', fontSize: '14px' }}>
-                                Surcharge calculation will add on Base Price which is available on top of the page.
+                                If you want to exclude the specific Zipcode from that state then you can use exclude ZipCode on Allow Zipcode settings.
                             </p>
+
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
@@ -701,10 +759,11 @@ function Rate(props) {
                                     <TextField
                                         placeholder='364001,364002,364003'
                                         value={zipcodeValue}
-                                        onChange={handleChange}
+                                        onChange={(newValue) => handleChange(newValue)}
                                         multiline={4}
                                         autoComplete="off"
                                     />
+
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%" }}>
                                         <RadioButton
                                             label="Include ZipCodes"
@@ -727,6 +786,503 @@ function Rate(props) {
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
+            </div>
+
+            <Divider borderColor="border" />
+            <div style={{ marginTop: "2%", marginBottom: "2%", }}>
+                <Grid>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                        <div style={{ paddingTop: '7%' }}>
+                            <Text variant="headingLg" as="h5">
+                                Rate Based On/Surcharge
+                            </Text>
+                            <p style={{ paddingTop: '7%', fontSize: '14px' }}>
+                                Specify rate calculation based on Order Weight, Order Quantity with surcharge value.
+                            </p>
+                            <p style={{ paddingTop: '1%', fontSize: '14px' }}>
+                                Surcharge calculation will add on Base Price which is available on top of the page.
+                            </p>
+                        </div>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                        <LegacyCard sectioned>
+                            <Checkbox
+                                label="Based On Cart"
+                                checked={checked}
+                                onChange={handleCheckChange}
+                            />
+                            {checked && (
+                                <div style={{ marginTop: "2%" }}>
+                                    <Divider borderColor="border" />
+                                    <div style={{ marginBottom: "2%" }}></div>
+                                    <Text variant="headingSm" as="h6">
+                                        By Cart Surcharge
+                                    </Text>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '35%', paddingTop: '1%' }}>
+                                        <RadioButton
+                                            label="Item Weight"
+                                            checked={selectedByCart === 'weight'}
+                                            id="weight"
+                                            name="weight"
+                                            onChange={() => setSelectedByCart('weight')}
+                                        />
+                                        <RadioButton
+                                            label="Item Qty"
+                                            checked={selectedByCart === 'Qty'}
+                                            id="Qty"
+                                            name="Qty"
+                                            onChange={() => setSelectedByCart('Qty')}
+                                        />
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '24.6%', marginBottom: "2%" }}>
+                                        <RadioButton
+                                            label="Cart Total Percentage"
+                                            checked={selectedByCart === 'Percentage'}
+                                            id="Percentage"
+                                            name="Percentage"
+                                            onChange={() => setSelectedByCart('Percentage')}
+                                        />
+                                        <RadioButton
+                                            label="Based On Distance"
+                                            checked={selectedByCart === 'Distance'}
+                                            id="Distance"
+                                            name="Distance"
+                                            onChange={() => setSelectedByCart('Distance')}
+                                        />
+                                    </div>
+                                    {selectedByCart === 'Distance' && (
+                                        <div>
+                                            <p style={{ color: 'gray', fontSize: "13px" }}> Note: Please make sure Origin and Destination country must be same to use distance base shipping rate.</p>
+                                        </div>
+                                    )}
+                                    <div style={{ marginBottom: "3%" }}></div>
+                                    <Text variant="headingSm" as="h6">
+                                        By Product Surcharge
+                                    </Text>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '40%', paddingTop: '1%' }}>
+                                        <RadioButton
+                                            label="Product"
+                                            checked={selectedByCart === 'Product'}
+                                            id="Product"
+                                            name="Product"
+                                            onChange={() => setSelectedByCart('Product')}
+                                        />
+                                        <RadioButton
+                                            label="Vendor"
+                                            checked={selectedByCart === 'Vendor'}
+                                            id="Vendor"
+                                            name="Vendor"
+                                            onChange={() => setSelectedByCart('Vendor')}
+                                        />
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '41%' }}>
+                                        <RadioButton
+                                            label="Variant"
+                                            checked={selectedByCart === 'Variant'}
+                                            id="Variant"
+                                            name="Variant"
+                                            onChange={() => setSelectedByCart('Variant')}
+                                        />
+                                        <RadioButton
+                                            label="Product Tag"
+                                            checked={selectedByCart === 'Tag'}
+                                            id="Tag"
+                                            name="Tag"
+                                            onChange={() => setSelectedByCart('Tag')}
+                                        />
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '33.8%' }}>
+                                        <RadioButton
+                                            label="Product Type"
+                                            checked={selectedByCart === 'Type'}
+                                            id="Type"
+                                            name="Type"
+                                            onChange={() => setSelectedByCart('Type')}
+                                        />
+                                        <RadioButton
+                                            label="Product SKU"
+                                            checked={selectedByCart === 'SKU'}
+                                            id="SKU"
+                                            name="SKU"
+                                            onChange={() => setSelectedByCart('SKU')}
+                                        />
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '24.9%' }}>
+                                        <RadioButton
+                                            label="Product Collection Id"
+                                            checked={selectedByCart === 'Collection'}
+                                            id="Collection"
+                                            name="Collection"
+                                            onChange={() => setSelectedByCart('Collection')}
+                                        />
+                                        <RadioButton
+                                            label="Variant Metafields"
+                                            checked={selectedByCart === 'Metafields'}
+                                            id="Metafields"
+                                            name="Metafields"
+                                            onChange={() => setSelectedByCart('Metafields')}
+                                        />
+                                    </div>
+
+                                    <div style={{ marginBottom: "2%" }}></div>
+                                    <Divider borderColor="border" />
+                                    <div style={{ marginTop: "3%" }}></div>
+                                    {selectedByCart === 'weight' && (
+                                        <div >
+                                            <FormLayout>
+                                                <FormLayout.Group>
+                                                    <TextField
+                                                        type="text"
+                                                        label="Charge Per Weight"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="Rs."
+                                                        placeholder='0.00'
+                                                    />
+                                                    <TextField
+                                                        type="number"
+                                                        label="Unit For Weight"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="kg"
+                                                        placeholder='5.00'
+                                                    />
+                                                </FormLayout.Group>
+                                            </FormLayout>
+                                            <div style={{ marginTop: "4%" }}></div>
+                                            <Text variant="headingSm" as="h6">
+                                                By Product Surcharge:
+                                            </Text>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10%', paddingTop: '1%', marginBottom: "4%" }}>
+                                                <RadioButton
+                                                    label="Divided by each unit"
+                                                    checked={selectedByAmount === 'unit'}
+                                                    id="unit"
+                                                    name="unit"
+                                                    onChange={() => setSelectedByAmount('unit')}
+                                                />
+                                                <RadioButton
+                                                    label="Surcharge add by every more then unit"
+                                                    checked={selectedByAmount === 'units'}
+                                                    id="units"
+                                                    name="units"
+                                                    onChange={() => setSelectedByAmount('units')}
+                                                />
+                                            </div>
+                                            <FormLayout>
+                                                <FormLayout.Group>
+                                                    <TextField
+                                                        type="text"
+                                                        label="Minimum Charge Price"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="Rs."
+                                                        placeholder='0'
+                                                    />
+                                                    <TextField
+                                                        type="number"
+                                                        label="Maximum Charge Price"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="Rs."
+                                                        placeholder='0'
+                                                    />
+                                                </FormLayout.Group>
+                                            </FormLayout>
+                                        </div>
+                                    )}
+                                    {selectedByCart === 'Qty' && (
+                                        <div >
+                                            <FormLayout>
+                                                <FormLayout.Group>
+                                                    <TextField
+                                                        type="text"
+                                                        label="Charge Per Qty"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="Rs."
+                                                        placeholder='0.00'
+                                                    />
+                                                    <TextField
+                                                        type="number"
+                                                        label="Unit For Qty"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="Qty"
+                                                        placeholder='0'
+                                                    />
+                                                </FormLayout.Group>
+                                            </FormLayout>
+                                            <div style={{ marginTop: "4%" }}></div>
+                                            <Text variant="headingSm" as="h6">
+                                                By Product Surcharge:
+                                            </Text>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10%', paddingTop: '1%', marginBottom: "4%" }}>
+                                                <RadioButton
+                                                    label="Divided by each unit"
+                                                    checked={selectedByAmount === 'unit'}
+                                                    id="unit"
+                                                    name="unit"
+                                                    onChange={() => setSelectedByAmount('unit')}
+                                                />
+                                                <RadioButton
+                                                    label="Surcharge add by every more then unit"
+                                                    checked={selectedByAmount === 'units'}
+                                                    id="units"
+                                                    name="units"
+                                                    onChange={() => setSelectedByAmount('units')}
+                                                />
+                                            </div>
+                                            <FormLayout>
+                                                <FormLayout.Group>
+                                                    <TextField
+                                                        type="text"
+                                                        label="Minimum Charge Price"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="Rs."
+                                                        placeholder='0'
+                                                    />
+                                                    <TextField
+                                                        type="number"
+                                                        label="Maximum Charge Price"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="Rs."
+                                                        placeholder='0'
+                                                    />
+                                                </FormLayout.Group>
+                                            </FormLayout>
+                                        </div>
+                                    )}
+                                    {selectedByCart === 'Percentage' && (
+                                        <div >
+                                            <FormLayout>
+                                                <TextField
+                                                    type="text"
+                                                    label="Cart Total Percentage"
+                                                    onChange={() => { }}
+                                                    autoComplete="off"
+                                                    prefix="%"
+                                                    placeholder='0.00'
+                                                />
+                                                <FormLayout.Group>
+                                                    <TextField
+                                                        type="text"
+                                                        label="Charge Per Weight"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="Rs."
+                                                        placeholder='0'
+                                                    />
+                                                    <TextField
+                                                        type="number"
+                                                        label="Unit For Weight"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="kg"
+                                                        placeholder='0'
+                                                    />
+                                                </FormLayout.Group>
+                                            </FormLayout>
+                                        </div>
+                                    )}
+                                    {selectedByCart === 'Distance' && (
+                                        <div >
+                                            <FormLayout>
+                                                <FormLayout.Group>
+                                                    <TextField
+                                                        type="text"
+                                                        label="Charge Per Distance"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="Rs."
+                                                        placeholder='0.00'
+                                                    />
+                                                    <TextField
+                                                        type="number"
+                                                        label="Unit For Distance"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="km"
+                                                        placeholder='0'
+                                                    />
+                                                </FormLayout.Group>
+                                            </FormLayout>
+                                            <div style={{ marginTop: "4%" }}></div>
+                                            <Text variant="headingSm" as="h6">
+                                                By Product Surcharge:
+                                            </Text>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10%', paddingTop: '1%', marginBottom: "4%" }}>
+                                                <RadioButton
+                                                    label="Divided by each unit"
+                                                    checked={selectedByAmount === 'unit'}
+                                                    id="unit"
+                                                    name="unit"
+                                                    onChange={() => setSelectedByAmount('unit')}
+                                                />
+                                                <RadioButton
+                                                    label="Surcharge add by every more then unit"
+                                                    checked={selectedByAmount === 'units'}
+                                                    id="units"
+                                                    name="units"
+                                                    onChange={() => setSelectedByAmount('units')}
+                                                />
+                                            </div>
+                                            <FormLayout>
+                                                <FormLayout.Group>
+                                                    <TextField
+                                                        type="text"
+                                                        label="Minimum Charge Price"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="Rs."
+                                                        placeholder='0'
+                                                    />
+                                                    <TextField
+                                                        type="number"
+                                                        label="Maximum Charge Price"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="Rs."
+                                                        placeholder='0'
+                                                    />
+                                                </FormLayout.Group>
+                                            </FormLayout>
+                                        </div>
+                                    )}
+                                    {selectedByCart === 'Variant' && (
+                                        <div>
+                                            <Text variant="headingMd" as="h6">
+                                                You can select variant for this rate after save
+                                            </Text>
+                                            <div style={{ marginTop: "3%", marginBottom: "5%" }}>
+                                                <Button variant="primary" >Click Here</Button>
+
+                                            </div>
+
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                        </LegacyCard>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                </Grid>
+            </div>
+
+            <Divider borderColor="border" />
+            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                <Grid>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                        <div style={{ paddingTop: '5%' }}>
+                            <Text variant="headingLg" as="h5">
+                                Merge rate
+                            </Text>
+                            <p style={{ paddingTop: '5%', fontSize: '14px' }}>
+                                We recommend using the same Shipping Tag for all related Shipping rates when merge shipping rates.
+                            </p>
+                        </div>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                        <LegacyCard sectioned>
+                            <TextField
+                                label="Merge rate tag"
+                                value={formData.tag}
+                                onChange={handleRateFormChange('tag')}
+                                autoComplete="off"
+                                placeholder='tag1,tag2,tag3'
+                            />
+                        </LegacyCard>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                </Grid>
+
+            </div>
+
+            <Divider borderColor="border" />
+            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                <Grid>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                        <div style={{ paddingTop: '5%' }}>
+                            <Text variant="headingLg" as="h5">
+                                Schedule Rate
+                            </Text>
+                            <p style={{ paddingTop: '5%', fontSize: '14px' }}>
+                                Rate applies on selected locations
+                            </p>
+                        </div>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                        <LegacyCard sectioned>
+                            <Text variant="headingSm" as="h6">
+                                Do you want to apply schedule rate?
+                            </Text>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15%', paddingTop: '2%' }}>
+                                <RadioButton
+                                    label="Yes"
+                                    checked={selectedByschedule === 'Yes'}
+                                    id="Yes"
+                                    name="Yes"
+                                    onChange={() => setSelectedByschedule('Yes')}
+                                />
+                                <RadioButton
+                                    label="No"
+                                    checked={selectedByschedule === 'No'}
+                                    id="No"
+                                    name="No"
+                                    onChange={() => setSelectedByschedule('No')}
+                                />
+                            </div>
+                            {selectedByschedule === 'Yes' && (
+                                 
+                                 <div style={{ display: 'flex', gap: '10px', marginTop:"2%" }}>
+                                   <div style={{ flex: 1 }}>
+                                     <TextField
+                                       label="Start Date"
+                                       value={startDate.toLocaleDateString()}
+                                       onFocus={() => setIsStartDatePickerVisible(true)}
+                                       readOnly
+                                     />
+                                     {isStartDatePickerVisible && (
+                                       <DatePicker
+                                         month={month}
+                                         year={year}
+                                         onChange={handleStartDateChange}
+                                         onMonthChange={handleMonthChange}
+                                         selected={{ start: startDate, end: startDate }}
+                                       />
+                                     )}
+                                   </div>
+                                   <div style={{ flex: 1 }}>
+                                     <TextField
+                                       label="End Date"
+                                       value={endDate.toLocaleDateString()}
+                                       onFocus={() => setIsEndDatePickerVisible(true)}
+                                       readOnly
+                                     />
+                                     {isEndDatePickerVisible && (
+                                       <DatePicker
+                                         month={month}
+                                         year={year}
+                                         onChange={handleEndDateChange}
+                                         onMonthChange={handleMonthChange}
+                                         selected={{ start: endDate, end: endDate }}
+                                       />
+                                     )}
+                                   </div>
+                                 </div>
+                               
+                            )}
+                        </LegacyCard>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                </Grid>
+
             </div>
             {showToast && (
                 <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />

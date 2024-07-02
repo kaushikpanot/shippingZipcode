@@ -262,34 +262,43 @@ class ApiController extends Controller
             $query->where('status', 1);
         })->pluck('zone_id');
 
-        // Log::info($zoneIds);
+
+        $whereArray = [
+            ["user_id", "=", $userId],
+            ["status", "=", 1],
+        ];
+        $whereInArray = [];
+        $whereNotInArray = [];
+
         DB::enableQueryLog();
-        $ratesQuery = Rate::whereIn('zone_id', $zoneIds)
-            ->where('user_id', $userId)
-            ->where('status', 1)
-            ->with('zone:id,currency');
+        $ratesQuery = Rate::with('zipcode')->whereIn('zone_id', $zoneIds)->with('zone:id,currency');
 
         // Determine the appropriate rate based on the shipping rate setting
         if ($setting->shippingRate == 'Only Higher') {
             $maxRate = $ratesQuery->max('base_price');
-            $ratesQuery->where('base_price', $maxRate);
+            array_push($whereArray, ['base_price', "=", $maxRate]);
         } elseif ($setting->shippingRate == 'Only Lower') {
             $minRate = $ratesQuery->min('base_price');
-            $ratesQuery->where('base_price', $minRate);
+            array_push($whereArray, ['base_price', "=", $minRate]);
         }
 
-        $rates = $ratesQuery->orWhere(function ($query) use ($destinationZipcode, $userId) {
-            $query->whereRaw("FIND_IN_SET(?, zipcode)", [$destinationZipcode])
-                ->where('user_id', $userId)
-                ->where('status', 1)
-                ->whereHas('zone', function ($query) {
-                    $query->where('status', 1);
-                });
-        })->get();
+        // $whereArray
+
+       $rates = $ratesQuery->where($whereArray)->get();
+
+        // $rates = $ratesQuery->orWhere(function ($query) use ($destinationZipcode, $userId) {
+        //     $query->whereRaw("FIND_IN_SET(?, zipcode)", [$destinationZipcode])
+        //         ->where('user_id', $userId)
+        //         ->where('status', 1)
+        //         ->whereHas('zone', function ($query) {
+        //             $query->where('status', 1);
+        //         });
+        // })->get();
 
         Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
 
-        // Log::info('Shopify Carrier Service Request input:', ['rates1'=>$rates]);
+        Log::info('Shopify Carrier Service Request input:', ['rates1'=>$whereArray]);
+        Log::info($zoneIds);
 
         foreach ($rates as $rate) {
             $response['rates'][] = [

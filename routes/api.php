@@ -40,5 +40,7 @@ Route::middleware(['verify.shopify.jwt'])->group(function () {
         Route::get('rate/{id}/edit', 'rateEdit');
         Route::get('rate/{zoneId}/create', 'rateCreate');
         Route::delete('rate/{id}', 'rateDestroy');
+
+        Route::get('shop/location', 'getShopLocation');
     });
 });

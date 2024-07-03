@@ -204,28 +204,17 @@ class ApiController extends Controller
                 ], 404);
             }
 
-            // Define the REST API endpoint
-            $restEndpoint = "https://{$shop}/admin/api/2024-04/currencies.json";
+            $jsonFileData = file_get_contents(public_path('countries_states.json'));
 
-            // Headers for Shopify API request
-            $customHeaders = [
-                'X-Shopify-Access-Token' => $token['password'],
-            ];
+            $countryData = collect(json_decode($jsonFileData, true));
 
-            // Make HTTP GET request to Shopify REST API endpoint
-            $response = Http::withHeaders($customHeaders)->get($restEndpoint);
-            // Check if the request was successful
-            if ($response->successful()) {
-                $responseData = [
-                    'shop_currency' => $token['shop_currency'],
-                    'currencies' => $response->json()
-                ];
+            $filterCurrency = $countryData->map(function ($currency) {
+                $currencies['currency'] = $currency['currency_name'] . " ({$currency['currency']} {$currency['currency_symbol']})";
+                return $currencies;
+            });
 
-                return response()->json($responseData);
-            } else {
-                // Handle non-successful responses
-                return response()->json(['status' => false, 'error' => 'Unable to fetch Currency list']);
-            }
+            return response()->json(['status'=>true, 'message'=>'Currencies retrieved successfully.', 'currencies' => $filterCurrency]);
+
         } catch (RequestException $e) {
             // Handle request-specific exceptions
             Log::error('HTTP request error', ['exception' => $e->getMessage()]);
@@ -978,6 +967,116 @@ class ApiController extends Controller
             return response()->json(['status' => false, 'message' => 'An unexpected error occurred:']);
         } catch (Throwable $th) {
             Log::error('Unexpected error', ['exception' => $th->getMessage()]);
+            return response()->json(['status' => false, 'message' => 'An unexpected error occurred:']);
+        }
+    }
+
+    public function getProductList(Request $request)
+    {
+        try {
+            $shop = $request->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
+
+            if (!$shop) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Token not provided.'
+                ], 400);
+            }
+
+            $post = $request->input();
+
+            // Retrieve the Shopify access token based on the store name
+            $token = User::where('name', $shop)->first();
+
+            if (!$token) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not found.'
+                ], 404);
+            }
+
+            // Determine the query string based on cursor parameters
+            if (isset($post['endCursor'])) {
+                $querystring = 'first: 10, after: "' . $post['endCursor'] . '"';
+            } elseif (isset($post['startCursor'])) {
+                $querystring = 'last: 10, before: "' . $post['startCursor'] . '"';
+            } else {
+                $querystring = 'first: 10';
+            }
+
+            // Determine the query parameter
+            $queryParam = isset($post['query']) ? 'query:"' . $post['query'] . '"' : '';
+
+            // GraphQL query to fetch products
+            $query = <<<GRAPHQL
+            {
+                products($querystring, sortKey: CREATED_AT, reverse: true, $queryParam) {
+                    edges {
+                        node {
+                            id
+                            title
+                            images(first: 1) {
+                                edges {
+                                    node {
+                                        originalSrc
+                                        altText
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    pageInfo {
+                        hasNextPage
+                        hasPreviousPage
+                        endCursor
+                        startCursor
+                    }
+                }
+            }
+            GRAPHQL;
+
+            // Shopify GraphQL endpoint
+            $graphqlEndpoint = "https://$shop/admin/api/2023-07/graphql.json";
+
+            // Headers for Shopify API request
+            $customHeaders = [
+                'X-Shopify-Access-Token' => $token['password'],
+            ];
+
+            // Make HTTP POST request to Shopify GraphQL endpoint
+            $response = Http::withHeaders($customHeaders)->post($graphqlEndpoint, [
+                'query' => $query,
+            ]);
+
+            // Parse the JSON response
+            $jsonResponse = $response->json();
+
+            // Prepare the response data
+            $data = [];
+            if (isset($jsonResponse['data'])) {
+                $collectionsArray = [];
+                foreach ($jsonResponse['data']['products']['edges'] as $value) {
+                    $product = $value['node'];
+                    $itemArray = [
+                        'id' => str_replace('gid://shopify/Product/', '', $product['id']),
+                        'title' => ucfirst($product['title']),
+                        'image' => isset($product['images']['edges'][0]['node']['originalSrc']) ? $product['images']['edges'][0]['node']['originalSrc'] : null
+                    ];
+                    $collectionsArray[] = $itemArray;
+                }
+
+                $data['products'] = $collectionsArray;
+                $data['hasNextPage'] = $jsonResponse['data']['products']['pageInfo']['hasNextPage'];
+                $data['hasPreviousPage'] = $jsonResponse['data']['products']['pageInfo']['hasPreviousPage'];
+                $data['endCursor'] = $jsonResponse['data']['products']['pageInfo']['endCursor'];
+                $data['startCursor'] = $jsonResponse['data']['products']['pageInfo']['startCursor'];
+            }
+
+            // Return the JSON response
+            return response()->json($data);
+        } catch (\Throwable $e) {
+            Log::error('Unexpected get product api error', ['exception' => $e->getMessage()]);
             return response()->json(['status' => false, 'message' => 'An unexpected error occurred:']);
         }
     }

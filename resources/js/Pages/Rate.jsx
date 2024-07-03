@@ -104,20 +104,21 @@ function Rate(props) {
     const editRate = async () => {
         try {
             const token = await getSessionToken(app);
-
+    
             const response = await axios.get(`${apiCommonURL}/api/rate/${rate_id}/edit`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
+            console.log(response.data);
+    
             const allStates = response.data.states;
             const formattedOptions = [];
-
+    
             for (const country in allStates) {
                 if (allStates.hasOwnProperty(country)) {
                     const countryData = allStates[country];
-
+    
                     const stateOptions = countryData.map(state => ({
                         value: state.code,
                         label: `${state.name} (${state.code})`
@@ -128,15 +129,14 @@ function Rate(props) {
                     });
                 }
             }
+    
             setOptions(formattedOptions);
             setState(formattedOptions.map(section => section.options).flat());
-
             if (response.data.rate.zipcode) {
-                const zipCodes = response.data.rate.zipcode.zipcode.map(zip => zip.toString());
+                const zipCodes = response.data.rate.zipcode.zipcode?.map(zip => zip.toString()) || [];
                 const combinedZipCodes = zipCodes.join(',');
-                setZipcodeValue(combinedZipCodes)
-                setSelectedOptions(response.data.rate.zipcode.state)
-
+                setZipcodeValue(combinedZipCodes);
+    
                 setCheckState(prevState => ({
                     ...prevState,
                     selectedZipCondition: response.data.rate.zipcode.zipcodeSelection,
@@ -144,10 +144,19 @@ function Rate(props) {
                     selectedZipCode: response.data.rate.zipcode.isInclude,
                 }));
             }
-
-
-
-
+    
+            if (response.data.rate.cart_condition) {
+                setCheckState(prevState => ({
+                    ...prevState,
+                    selectedCondition: response.data.rate.cart_condition.conditionMatch,
+                }));
+                setItems(response.data.rate.cart_condition.cartCondition)
+            }
+    
+            if (response.data.rate.zipcode.state) {
+                setSelectedOptions(response.data.rate.zipcode.state);
+            }
+    
             setFormData({
                 name: response.data.rate.name,
                 base_price: response.data.rate.base_price,
@@ -156,16 +165,15 @@ function Rate(props) {
                 id: response.data.rate.id,
                 zone_id: response.data.rate.zone_id,
                 status: response.data.rate.status,
-
             });
-
+    
             // setLoading(false); 
-
+    
         } catch (error) {
             console.error("Error fetching edit data:", error);
         }
     };
-
+    
 
     const getLocation = async () => {
         try {
@@ -223,7 +231,7 @@ function Rate(props) {
             setInputValue(value);
 
             if (value === '') {
-                setOptions(options); // Reset options to initial state
+                setOptions(options); 
                 return;
             }
 
@@ -435,7 +443,7 @@ function Rate(props) {
         },
         cart_condition: {
             conditionMatch: checkstate.selectedCondition,
-            cartCondtion: items
+            cartCondition: items
 
         },
         status: 1,
@@ -452,7 +460,7 @@ function Rate(props) {
             cart_condition: {
                 ...prevFormData.cart_condition,
                 conditionMatch: checkstate.selectedCondition,
-                cartCondtion: items,
+                cartCondition: items,
             },
             zipcode: {
                 ...prevFormData.zipcode,

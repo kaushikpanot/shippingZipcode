@@ -209,11 +209,12 @@ class ApiController extends Controller
             $countryData = collect(json_decode($jsonFileData, true));
 
             $filterCurrency = $countryData->map(function ($currency) {
-                $currencies['currency'] = $currency['currency_name'] . " ({$currency['currency']} {$currency['currency_symbol']})";
-                return $currencies;
-            });
+                return [
+                    'currency' => $currency['currency_name'] . " ({$currency['currency']} {$currency['currency_symbol']})"
+                ];
+            })->unique('currency')->values();
 
-            return response()->json(['status'=>true, 'message'=>'Currencies retrieved successfully.', 'currencies' => $filterCurrency]);
+            return response()->json(['status'=>true, 'message'=>'Currencies retrieved successfully.', 'shop_currency' => $token['shop_currency'], 'currencies' => $filterCurrency]);
 
         } catch (RequestException $e) {
             // Handle request-specific exceptions
@@ -253,7 +254,7 @@ class ApiController extends Controller
         })->pluck('zone_id');
 
         // Log::info($zoneIds);
-        DB::enableQueryLog();
+        // DB::enableQueryLog();
         $ratesQuery = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode');
 
         // Determine the appropriate rate based on the shipping rate setting
@@ -272,7 +273,12 @@ class ApiController extends Controller
 
             // Check state selection
             if ($zipcode->stateSelection === 'Custom') {
-                $states = $zipcode->state;
+                $stateArr = $zipcode->state;
+                $stateCollection = collect($stateArr);
+                $states = $stateCollection->map(function ($state) {
+                    return $state->code;
+                })->all();
+                // $states = $zipcode->state;
                 if (!in_array($destinationProvince, $states)) {
                     return null;
                 }
@@ -295,8 +301,8 @@ class ApiController extends Controller
             return $rate;
         })->filter();
 
-        Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
-
+        // Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
+        // Log::info('Query logs:', ['states' => $states]);
         Log::info('Shopify Carrier Service Request input:', ['rates1' => $filteredRates]);
 
         foreach ($filteredRates as $rate) {
@@ -716,14 +722,17 @@ class ApiController extends Controller
                 ];
 
                 if ($inputData['zipcode']['stateSelection'] == 'Custom' && isset($inputData['zipcode']['state'])) {
-                    $zipcodeData['state'] = implode(", ", $inputData['zipcode']['state']);
+                    // $stateArr = $inputData['zipcode']['state'];
+                    // $stateCollection = collect($stateArr);
+                    // $zipcodeData['state'] = $stateCollection->pluck('code')->implode(', ');
+                    $zipcodeData['state'] = json_encode($inputData['zipcode']['state']);
                 } else {
                     $zipcodeData['state'] = null;
                 }
 
                 if ($inputData['zipcode']['zipcodeSelection'] == 'Custom') {
                     if (isset($inputData['zipcode']['zipcode'])) {
-                        $zipcodeData['zipcode'] = implode(", ", $inputData['zipcode']['zipcode']);
+                        $zipcodeData['zipcode'] = implode(",", $inputData['zipcode']['zipcode']);
                     }
 
                     if (isset($inputData['zipcode']['isInclude'])) {

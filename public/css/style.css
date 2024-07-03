@@ -1,11 +1,13 @@
-.Polaris-Button{
+.Polaris-Button {
   min-height: 30px;
-  }
-  .conditions>.Polaris-Select{
-   margin-top: 100px;
-  }
-.select-header {
- font-weight: bolder;
-  color: rgb(1, 10, 14);
 }
 
+.conditions>.Polaris-Select {
+  margin-top: 100px;
+  width: 200px;
+}
+
+.select-header {
+  font-weight: bolder;
+  color: rgb(1, 10, 14);
+}

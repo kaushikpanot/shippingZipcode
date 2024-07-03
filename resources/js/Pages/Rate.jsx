@@ -45,6 +45,9 @@ function Rate(props) {
     const [selectedByCart, setSelectedByCart] = useState('weight');
     const [selectedByschedule, setSelectedByschedule] = useState('No');
     const [selectedByAmount, setSelectedByAmount] = useState('unit');
+    const [selectedByUpdatePriceType, setSelectedByUpdatePriceType] = useState('Fixed');
+    const [selectedByUpdatePriceEffect, setSelectedByUpdatePriceEffect] = useState('increase');
+
     const [selectedZipCondition, setSelectedZipCondition] = useState('All');
     const [selectedZipCode, setSelectedZipCode] = useState('include');
     const [toastDuration, setToastDuration] = useState(3000);
@@ -100,7 +103,8 @@ function Rate(props) {
 
     const [checkedState, setCheckedState] = useState({
         checked1: false,
-        checked2: true
+        checked2: true,
+        checked3: false
     });
 
     const handleCheckChange = (checkbox) => {
@@ -138,7 +142,6 @@ function Rate(props) {
                         value: state.code,
                         label: `${state.name} (${state.code})`
                     }));
-
                     formattedOptions.push({
                         title: country,
                         options: stateOptions
@@ -153,6 +156,7 @@ function Rate(props) {
                 setSelectedStateCondition(response.data.rate.zipcode.stateSelection);
                 setSelectedZipCode(response.data.rate.zipcode.isInclude);
                 setSelectedOptions(response.data.rate.zipcode.state);
+                console.log(response.data.rate.zipcode.state)
 
                 const zipCodes = response.data.rate.zipcode.zipcode.map(zip => zip.toString());
                 const combinedZipCodes = zipCodes.join(',');
@@ -223,7 +227,6 @@ function Rate(props) {
             }
             setOptions(formattedOptions);
             setState(formattedOptions.map(section => section.options).flat());
-            console.log(response.data)
 
         } catch (error) {
             console.error("Error fetching shop location:", error);
@@ -290,10 +293,6 @@ function Rate(props) {
             autoComplete="off"
         />
     );
-
-
-
-
     const toggleToastActive = useCallback(() => setToastActive((active) => !active), []);
     const handleStatusChange = useCallback(
         (newStatus) => {
@@ -343,7 +342,6 @@ function Rate(props) {
 
     const handleAddItem = () => {
         const newItem = { selectedOption1: 'quantity', selectedOption2: 'equal', inputValue: '', unit: 'items' };
-        const updatedItems = [...items, newItem];
         setItems([...items, newItem]);
     };
 
@@ -1290,17 +1288,17 @@ function Rate(props) {
                                     <div style={{ marginTop: "1%" }}>
                                         <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                                             {locations.map(location => (
-                                                <div key={location.id} style={{ width: '50%',height:"5%", padding: '5px' }}>
+                                                <div key={location.id} style={{ width: '50%', height: "5%", padding: '5px' }}>
                                                     <LegacyCard>
-                                                        <div style={{ display: 'flex', alignItems: 'center', padding:"10px", }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', padding: "10px", }}>
                                                             <Checkbox
                                                             // checked={checked}
                                                             // onChange={onChange}
                                                             />
-                                                            <div style={{marginLeft:"5%"}}>
+                                                            <div style={{ marginLeft: "5%" }}>
                                                                 <h2>{location.name}</h2>
                                                                 <p>{location.address1 || '-'}</p>
-                                                                
+
                                                             </div>
                                                         </div>
                                                     </ LegacyCard>
@@ -1404,6 +1402,181 @@ function Rate(props) {
                 </Grid>
 
             </div>
+
+            <Divider borderColor="border" />
+            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                <Grid>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                        <div style={{ paddingTop: '5%' }}>
+                            <Text variant="headingLg" as="h5">
+                                Send another rate
+                            </Text>
+                            <p style={{ paddingTop: '5%', fontSize: '14px' }}>
+                                By selecting the Send Another Rate option it will allow to set another additional rate.
+                            </p>
+                        </div>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                        <LegacyCard sectioned>
+
+                            <div style={{ alignItems: 'center' }}>
+                                <Checkbox
+                                    label="Send Another Rate"
+                                    checked={checkedState.checked3}
+                                    onChange={() => handleCheckChange('checked3')}
+                                />
+                                {checkedState.checked3 && (
+                                    <div style={{ marginTop: "3%" }}>
+                                        <FormLayout>
+                                            <FormLayout.Group>
+                                                <TextField
+                                                    type="text"
+                                                    label="Another Rate Name"
+                                                    onChange={() => { }}
+                                                    autoComplete="off"
+                                                    prefix="Rs."
+                                                    placeholder='Enter Rate Name'
+                                                />
+                                                <TextField
+                                                    type="text"
+                                                    label="Another Rate Description"
+                                                    onChange={() => { }}
+                                                    autoComplete="off"
+                                                    prefix="kg"
+                                                    placeholder='Enter Desription'
+                                                />
+                                            </FormLayout.Group>
+                                        </FormLayout>
+
+
+                                        <div style={{ marginTop: '3%' }}>
+                                            <Divider borderColor="border" />
+                                        </div>
+
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8%', paddingTop: '3%', marginBottom: "4%" }}>
+                                            <Text variant="headingSm" as="h6">
+                                                Update Price Type :
+                                            </Text>
+
+                                            <RadioButton
+                                                label="Fixed"
+                                                checked={selectedByUpdatePriceType === 'Fixed'}
+                                                id="Fixed"
+                                                name="Fixed"
+                                                onChange={() => setSelectedByUpdatePriceType('Fixed')}
+                                            />
+                                            <RadioButton
+                                                label="Percentage"
+                                                checked={selectedByUpdatePriceType === 'Pr'}
+                                                id="Pr"
+                                                name="Pr"
+                                                onChange={() => setSelectedByUpdatePriceType('Pr')}
+                                            />
+                                            <RadioButton
+                                                label="Static   "
+                                                checked={selectedByUpdatePriceType === 'Static'}
+                                                id="Static"
+                                                name="Static"
+                                                onChange={() => setSelectedByUpdatePriceType('Static')}
+                                            />
+                                        </div>
+
+                                        <div style={{ marginTop: '3%' }}>
+                                            <Divider borderColor="border" />
+                                        </div>
+                                        {selectedByUpdatePriceType !== 'Static' && (
+                                            <div style={{ marginTop: '3%' }}>
+                                                <FormLayout>
+                                                    <FormLayout.Group>
+                                                        <div>
+                                                            <Text variant="headingSm" as="h6">
+                                                                Update Price Type :
+                                                            </Text>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8%', paddingTop: '2%', marginBottom: "4%" }}>
+                                                                <RadioButton
+                                                                    label="Increase"
+                                                                    checked={selectedByUpdatePriceEffect === 'increase'}
+                                                                    id="increase"
+                                                                    name="increase"
+                                                                    onChange={() => setSelectedByUpdatePriceEffect('increase')}
+                                                                />
+                                                                <RadioButton
+                                                                    label="Decrease"
+                                                                    checked={selectedByUpdatePriceEffect === 'decrease'}
+                                                                    id="decrease"
+                                                                    name="decrease"
+                                                                    onChange={() => setSelectedByUpdatePriceEffect('decrease')}
+                                                                />
+
+                                                            </div>
+                                                        </div>
+                                                        <TextField
+                                                            type="text"
+                                                            label="Adjustment Price"
+                                                            onChange={() => { }}
+                                                            autoComplete="off"
+                                                            prefix="kg"
+                                                            placeholder='00'
+                                                        />
+                                                    </FormLayout.Group>
+                                                </FormLayout>
+                                            </div>
+                                        )}
+
+
+                                        {selectedByUpdatePriceType === 'Static' && (
+                                            <div>
+                                                <TextField
+                                                    type="text"
+                                                    label="Adjustment Price"
+                                                    onChange={() => { }}
+                                                    autoComplete="off"
+                                                    prefix="Rs."
+                                                    placeholder='0'
+                                                />
+
+                                            </div>
+                                        )}
+                                        <div style={{ marginTop: '3%' }}>
+                                            <Divider borderColor="border" />
+                                        </div>
+
+                                        <div style={{ marginTop: '3%' }}>
+                                            <FormLayout>
+                                                <FormLayout.Group>
+                                                    <TextField
+                                                        type="text"
+                                                        label="Service Code"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="Rs."
+                                                        placeholder='Enter Service Code'
+                                                    />
+                                                    <TextField
+                                                        type="text"
+                                                        label="Another merge rate tag"
+                                                        onChange={() => { }}
+                                                        autoComplete="off"
+                                                        prefix="kg"
+                                                        placeholder='tag1,tag2,tag3'
+                                                    />
+                                                </FormLayout.Group>
+                                            </FormLayout>
+                                        </div>
+
+
+
+                                    </div>
+                                )}
+                            </div>
+
+                        </LegacyCard>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                </Grid>
+
+            </div>      Send another rate
 
 
             {showToast && (

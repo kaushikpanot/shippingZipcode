@@ -110,8 +110,7 @@ function Zone(props) {
         }));
 
     };
-    const [selected, setSelected] = useState(['enable']);
-    const handleChange = useCallback((value) => setSelected(value), []);
+  
     const toastMarkup = toastActive ? (
         <Toast content="Rate deleted" onDismiss={toggleToast} />
     ) : null;
@@ -124,7 +123,6 @@ function Zone(props) {
         // 👇️ Navigate to /
         navigate('/Home');
     };
-
     const handleEditZone = (rate_id) => {
         navigate(`/Zone/${zone_id}/Rate/Edit/${rate_id}`);
     };
@@ -148,6 +146,7 @@ function Zone(props) {
                 status: response.data.zone.status,
             });
             setSelectedOptions(response.data.zone.country)
+            console.log(response.data.zone.country)
             const ratedata = response.data.rates
             setTotalPages(Math.ceil(ratedata.length / itemsPerPage));
             setRate(ratedata)
@@ -332,7 +331,6 @@ function Zone(props) {
             });
             const token = await getSessionToken(app);
 
-            // Map selected options to array of { name, code } objects
             const selectedCountries = selectedOptions.map(option => {
                 const selectedCountry = country.find(country => country.value === option);
                 return {

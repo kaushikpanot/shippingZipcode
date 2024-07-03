@@ -9,7 +9,7 @@ class Rate extends Model
 {
     use HasFactory;
 
-    protected $fillable = ["user_id", "zone_id", "name", "base_price", "service_code", "description", "status"];
+    protected $fillable = ["user_id", "zone_id", "name", "base_price", "service_code", "description", "status", "conditionMatch", "cart_condition"];
 
     protected $hidden = ['created_at', 'updated_at'];
 
@@ -21,5 +21,19 @@ class Rate extends Model
     public function zipcode()
     {
         return $this->hasOne(RateZipcode::class);
+    }
+
+    public function setCartConditionAttribute($value)
+    {
+        $this->attributes['cart_condition'] = json_encode($value);
+    }
+
+    public function getCartConditionAttribute($value)
+    {
+        if (is_null($value)) {
+            return null;
+        }
+
+        return json_decode($value, true);
     }
 }

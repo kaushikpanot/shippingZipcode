@@ -53,7 +53,7 @@ function Rate(props) {
     const [errors, setErrors] = useState({});
     const [toastActive, setToastActive] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
-
+    const [locations, setLocations] = useState([]);
 
     const [month, setMonth] = useState(new Date().getMonth());
     const [year, setYear] = useState(new Date().getFullYear());
@@ -177,6 +177,8 @@ function Rate(props) {
             console.error("Error fetching edit data:", error);
         }
     };
+
+
     const getLocation = async () => {
         try {
             const token = await getSessionToken(app);
@@ -186,11 +188,49 @@ function Rate(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            console.log(response.data)
+            setLocations(response.data.locations);
+
         } catch (error) {
-            console.error("Error fetching edit data:", error);
+            console.error("Error fetching shop location:", error);
         }
     };
+    const getstate = async () => {
+        try {
+            const token = await getSessionToken(app);
+
+            const response = await axios.get(`${apiCommonURL}/api/rate/${zone_id}/create`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const allStates = response.data.states;
+            const formattedOptions = [];
+
+            for (const country in allStates) {
+                if (allStates.hasOwnProperty(country)) {
+                    const countryData = allStates[country];
+
+                    const stateOptions = countryData.map(state => ({
+                        value: state.code,
+                        label: `${state.name} (${state.code})`
+                    }));
+
+                    formattedOptions.push({
+                        title: country,
+                        options: stateOptions
+                    });
+                }
+            }
+            setOptions(formattedOptions);
+            setState(formattedOptions.map(section => section.options).flat());
+            console.log(response.data)
+
+        } catch (error) {
+            console.error("Error fetching shop location:", error);
+        }
+    };
+
+
     const updateText = useCallback(
         (value) => {
             setInputValue(value);
@@ -394,6 +434,7 @@ function Rate(props) {
     useEffect(() => {
         editRate();
         getLocation();
+        getstate();
     }, []);
 
     useEffect(() => {
@@ -1247,15 +1288,30 @@ function Rate(props) {
                                 />
                                 {!checkedState.checked2 && (
                                     <div style={{ marginTop: "1%" }}>
-                                        <Card>
-                                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                                                <Checkbox
-                                                // checked={checked}
-                                                // onChange={onChange}
-                                                />
-                                                <div style={{ marginLeft: '10px' }}>pakistan</div>
-                                            </div>
-                                        </Card>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                                            {locations.map(location => (
+                                                <div key={location.id} style={{ width: '50%',height:"5%", padding: '5px' }}>
+                                                    <LegacyCard>
+                                                        <div style={{ display: 'flex', alignItems: 'center', padding:"10px", }}>
+                                                            <Checkbox
+                                                            // checked={checked}
+                                                            // onChange={onChange}
+                                                            />
+                                                            <div style={{marginLeft:"5%"}}>
+                                                                <h2>{location.name}</h2>
+                                                                <p>{location.address1 || '-'}</p>
+                                                                
+                                                            </div>
+                                                        </div>
+                                                    </ LegacyCard>
+                                                </div>
+                                            ))}
+                                            {locations.length === 0 && (
+                                                <Card>
+                                                    <p>No locations found</p>
+                                                </Card>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>

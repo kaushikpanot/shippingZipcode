@@ -19,7 +19,7 @@ class RateZipcode extends Model
             return null;
         }
 
-        return explode(',', $value);
+        return json_decode($value);
     }
 
     public function getZipcodeAttribute($value)

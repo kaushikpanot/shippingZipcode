@@ -40,16 +40,20 @@ function Rate(props) {
     const [options, setOptions] = useState([]);
     const [zipcodeValue, setZipcodeValue] = useState('');
     const navigate = useNavigate();
-    const [selectedCondition, setSelectedCondition] = useState('condition1');
-    const [selectedStateCondition, setSelectedStateCondition] = useState('All');
-    const [selectedByCart, setSelectedByCart] = useState('weight');
-    const [selectedByschedule, setSelectedByschedule] = useState('No');
-    const [selectedByAmount, setSelectedByAmount] = useState('unit');
-    const [selectedByUpdatePriceType, setSelectedByUpdatePriceType] = useState('Fixed');
-    const [selectedByUpdatePriceEffect, setSelectedByUpdatePriceEffect] = useState('increase');
-
-    const [selectedZipCondition, setSelectedZipCondition] = useState('All');
-    const [selectedZipCode, setSelectedZipCode] = useState('include');
+    const [checkstate, setCheckState] = useState({
+        selectedCondition: 'notAny',
+        selectedStateCondition: 'All',
+        selectedByCart: 'weight',
+        selectedByschedule: 'No',
+        selectedByAmount: 'unit',
+        selectedByUpdatePriceType: 'Fixed',
+        selectedByUpdatePriceEffect: 'increase',
+        selectedZipCondition: 'All',
+        selectedZipCode: 'include',
+    });
+    const handlecheckedChange = (key, value) => {
+        setCheckState(prevState => ({ ...prevState, [key]: value }));
+    };
     const [toastDuration, setToastDuration] = useState(3000);
     const [showToast, setShowToast] = useState(false);
     const [toastContent, setToastContent] = useState("");
@@ -82,23 +86,7 @@ function Rate(props) {
 
 
     let app = "";
-    const [formData, setFormData] = useState({
-        name: '',
-        base_price: '',
-        service_code: '',
-        description: '',
-        zone_id: zone_id,
-        id: "",
-        zipcode: {
-            stateSelection: "All",
-            state: [],
-            zipcodeSelection: "All",
-            zipcode: []
-
-        },
-        status: 1,
-        tag: ''
-    });
+  
 
 
     const [checkedState, setCheckedState] = useState({
@@ -113,9 +101,6 @@ function Rate(props) {
             [checkbox]: !checkedState[checkbox]
         });
     };
-
-
-
 
     const handleChange = useCallback((value) => {
         setZipcodeValue(value);
@@ -152,16 +137,20 @@ function Rate(props) {
             setState(formattedOptions.map(section => section.options).flat());
 
             if (response.data.rate.zipcode) {
-                setSelectedZipCondition(response.data.rate.zipcode.zipcodeSelection);
-                setSelectedStateCondition(response.data.rate.zipcode.stateSelection);
-                setSelectedZipCode(response.data.rate.zipcode.isInclude);
-                setSelectedOptions(response.data.rate.zipcode.state);
-                console.log(response.data.rate.zipcode.state)
-
                 const zipCodes = response.data.rate.zipcode.zipcode.map(zip => zip.toString());
                 const combinedZipCodes = zipCodes.join(',');
-                setZipcodeValue(combinedZipCodes);
+                setZipcodeValue( combinedZipCodes)
+                setSelectedOptions( response.data.rate.zipcode.state)
+
+                setCheckState(prevState => ({
+                    ...prevState,
+                    selectedZipCondition: response.data.rate.zipcode.zipcodeSelection,
+                    selectedStateCondition: response.data.rate.zipcode.stateSelection,
+                    selectedZipCode: response.data.rate.zipcode.isInclude,
+                }));
             }
+
+
 
 
             setFormData({
@@ -321,14 +310,15 @@ function Rate(props) {
     };
 
     const [items, setItems] = useState([
-        { selectedOption1: 'quantity', selectedOption2: 'equal', inputValue: '', unit: 'items' }
+        { name: 'quantity', condition: 'equal', value: '', unit: 'items' }
     ]);
+
     const handleSelectChange = (index, newValue, isSecondSelect) => {
         const selectedOption = validations.find(option => option.value === newValue) || {};
         const updatedItem = {
             ...items[index],
-            selectedOption1: isSecondSelect ? items[index].selectedOption1 : newValue,
-            selectedOption2: isSecondSelect ? newValue : items[index].selectedOption2,
+            name: isSecondSelect ? items[index].name : newValue,
+            condition: isSecondSelect ? newValue : items[index].condition,
             unit: selectedOption.unit || items[index].unit || '',
         };
 
@@ -341,7 +331,7 @@ function Rate(props) {
     };
 
     const handleAddItem = () => {
-        const newItem = { selectedOption1: 'quantity', selectedOption2: 'equal', inputValue: '', unit: 'items' };
+        const newItem = { name: 'quantity', condition: 'equal', value: '', unit: 'items' };
         setItems([...items, newItem]);
     };
 
@@ -350,7 +340,7 @@ function Rate(props) {
             setItems(prevItems => {
                 return prevItems.map((item, idx) => {
                     if (idx === index) {
-                        return { ...item, inputValue: newValue };
+                        return { ...item, value: newValue };
                     }
                     return item;
                 });
@@ -434,28 +424,52 @@ function Rate(props) {
         getLocation();
         getstate();
     }, []);
+    const [formData, setFormData] = useState({
+        name: '',
+        base_price: '',
+        service_code: '',
+        description: '',
+        zone_id: zone_id,
+        id: "",
+        zipcode: {
+            stateSelection: "All",
+            state: [],
+            zipcodeSelection: "All",
+            zipcode: []
 
+        },
+        condition: {
+            conditionMatch: checkstate.selectedCondition,
+            cartCondtion: items
+
+        },
+        status: 1,
+        tag: ''
+    });
     useEffect(() => {
         const selectedStates = selectedOptions.map(option => ({
-            name: state.find(state => state.value === option)?.label || '',
-            code: option
+          name: state.find(state => state.value === option)?.label || '',
+          code: option
         }));
-
-
-
+      
         setFormData(prevFormData => ({
-            ...prevFormData,
-            zipcode: {
-                ...prevFormData.zipcode,
-
-                state: selectedStates,
-                stateSelection: selectedStateCondition,
-                zipcodeSelection: selectedZipCondition,
-                isInclude: selectedZipCode,
-                zipcode: zipcodeValue.split(',').map(zip => zip.trim())
-            }
+          ...prevFormData,
+          condition: {
+            ...prevFormData.condition,
+            conditionMatch: checkstate.selectedCondition,
+            cartCondtion: items,
+          },
+          zipcode: {
+            ...prevFormData.zipcode,
+            state: selectedStates,
+            stateSelection: checkstate.selectedStateCondition,
+            zipcodeSelection: checkstate.selectedZipCondition,
+            isInclude: checkstate.selectedZipCode,
+            zipcode: zipcodeValue.split(',').map(zip => zip.trim())
+          }
         }));
-    }, [selectedOptions, selectedStateCondition, selectedZipCondition, selectedZipCode, zipcodeValue]);
+      }, [selectedOptions, items, zipcodeValue, checkstate.selectedCondition, checkstate.selectedStateCondition, checkstate.selectedZipCondition, checkstate.selectedZipCode, state]);
+      
 
     const saveRate = async () => {
         const newErrors = {};
@@ -641,35 +655,35 @@ function Rate(props) {
                                 </Text>
                                 <RadioButton
                                     label="Not Any Condition"
-                                    checked={selectedCondition === 'condition1'}
-                                    id="condition1"
-                                    name="condition"
-                                    onChange={() => setSelectedCondition('condition1')}
+                                    checked={checkstate.selectedCondition === 'notAny'}
+                                    id="notAny"
+                                    name="conditionMatch"
+                                    onChange={() => handlecheckedChange('selectedCondition', 'notAny')}
                                 />
                                 <RadioButton
                                     label="All"
-                                    checked={selectedCondition === 'condition2'}
-                                    id="condition2"
-                                    name="condition"
-                                    onChange={() => setSelectedCondition('condition2')}
+                                    checked={checkstate.selectedCondition === 'All'}
+                                    id="AllCondition"
+                                    name="conditionMatch"
+                                    onChange={() => handlecheckedChange('selectedCondition', 'All')}
                                 />
                                 <RadioButton
                                     label="Any"
-                                    checked={selectedCondition === 'condition3'}
-                                    id="condition3"
-                                    name="condition"
-                                    onChange={() => setSelectedCondition('condition3')}
+                                    checked={checkstate.selectedCondition === 'Any'}
+                                    id="Any"
+                                    name="conditionMatch"
+                                    onChange={() => handlecheckedChange('selectedCondition', 'Any')}
                                 />
                                 <RadioButton
                                     label="NOT All"
-                                    checked={selectedCondition === 'condition4'}
-                                    id="condition4"
-                                    name="condition"
-                                    onChange={() => setSelectedCondition('condition4')}
+                                    checked={checkstate.selectedCondition === 'notAll'}
+                                    id="notAll"
+                                    name="conditionMatch"
+                                    onChange={() => handlecheckedChange('selectedCondition', 'notAll')}
                                 />
 
                             </div>
-                            {selectedCondition !== 'condition1' && (
+                            {checkstate.selectedCondition !== 'notAny' && (
                                 <div>
                                     <Divider borderColor="border" />
                                     {items.map((item, index) => (
@@ -686,15 +700,15 @@ function Rate(props) {
                                             <Select
                                                 options={validations}
                                                 onChange={(newValue) => handleSelectChange(index, newValue, false)}
-                                                value={item.selectedOption1}
+                                                value={item.name}
                                             />
                                             <Select
                                                 options={option}
                                                 onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                value={item.selectedOption2}
+                                                value={item.condition}
                                             />
                                             <TextField
-                                                value={item.inputValue}
+                                                value={item.value}
                                                 onChange={(newValue) => handleConditionChange(newValue, index)}
                                                 autoComplete="off"
                                                 suffix={item.unit ? item.unit : ''}
@@ -759,21 +773,21 @@ function Rate(props) {
                                 </Text>
                                 <RadioButton
                                     label="Custom"
-                                    checked={selectedStateCondition === 'Custom'}
+                                    checked={checkstate.selectedStateCondition === 'Custom'}
                                     id="Custom"
                                     name="stateSelection"
-                                    onChange={() => setSelectedStateCondition('Custom')}
+                                    onChange={() => handlecheckedChange('selectedStateCondition', 'Custom')}
                                 />
                                 <RadioButton
                                     label="All"
-                                    checked={selectedStateCondition === 'All'}
+                                    checked={checkstate.selectedStateCondition === 'All'}
                                     id="All"
                                     name="stateSelection"
-                                    onChange={() => setSelectedStateCondition('All')}
+                                    onChange={() => handlecheckedChange('selectedStateCondition', 'All')}
                                 />
                             </div>
 
-                            {selectedStateCondition !== 'All' && (
+                            {checkstate.selectedStateCondition !== 'All' && (
                                 <div style={{ marginTop: "2%", marginBottom: "2%" }}>
 
 
@@ -796,21 +810,21 @@ function Rate(props) {
                                 </Text>
                                 <RadioButton
                                     label="Custom"
-                                    checked={selectedZipCondition === 'Custom'}
+                                    checked={checkstate.selectedZipCondition === 'Custom'}
                                     id="customeZip"
                                     name="zipcodeSelection"
-                                    onChange={() => setSelectedZipCondition('Custom')}
+                                    onChange={() => handlecheckedChange('selectedZipCondition', 'Custom')}
                                 />
                                 <RadioButton
                                     label="All"
-                                    checked={selectedZipCondition === 'All'}
+                                    checked={checkstate.selectedZipCondition === 'All'}
                                     id="AllZip"
                                     name="zipcodeSelection"
-                                    onChange={() => setSelectedZipCondition('All')}
+                                    onChange={() => handlecheckedChange('selectedZipCondition', 'All')}
                                 />
 
                             </div>
-                            {selectedZipCondition !== 'All' && (
+                            {checkstate.selectedZipCondition !== 'All' && (
                                 <div style={{ marginTop: "2%" }}>
 
                                     <TextField
@@ -824,17 +838,17 @@ function Rate(props) {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%" }}>
                                         <RadioButton
                                             label="Include ZipCodes"
-                                            checked={selectedZipCode === 'Include'}
+                                            checked={checkstate.selectedZipCode === 'Include'}
                                             id="include"
                                             name="isInclude"
-                                            onChange={() => setSelectedZipCode('Include')}
+                                            onChange={() => handlecheckedChange('selectedZipCode', 'Include')}
                                         />
                                         <RadioButton
                                             label="Exclude ZipCodes"
-                                            checked={selectedZipCode === 'Exclude'}
+                                            checked={checkstate.selectedZipCode === 'Exclude'}
                                             id="exclude"
                                             name="isInclude"
-                                            onChange={() => setSelectedZipCode('Exclude')}
+                                            onChange={() => handlecheckedChange('selectedZipCode', 'Exclude')}
                                         />
                                     </div>
                                 </div>
@@ -879,36 +893,36 @@ function Rate(props) {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '35%', paddingTop: '1%' }}>
                                         <RadioButton
                                             label="Item Weight"
-                                            checked={selectedByCart === 'weight'}
+                                            checked={checkstate.selectedByCart === 'weight'}
                                             id="weight"
                                             name="weight"
-                                            onChange={() => setSelectedByCart('weight')}
+                                            onChange={() => handlecheckedChange('selectedByCart', 'weight')}
                                         />
                                         <RadioButton
                                             label="Item Qty"
-                                            checked={selectedByCart === 'Qty'}
+                                            checked={checkstate.selectedByCart === 'Qty'}
                                             id="Qty"
                                             name="Qty"
-                                            onChange={() => setSelectedByCart('Qty')}
+                                            onChange={() => handlecheckedChange('selectedByCart', 'Qty')}
                                         />
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '24.6%', marginBottom: "2%" }}>
                                         <RadioButton
                                             label="Cart Total Percentage"
-                                            checked={selectedByCart === 'Percentage'}
+                                            checked={checkstate.selectedByCart === 'Percentage'}
                                             id="Percentage"
                                             name="Percentage"
-                                            onChange={() => setSelectedByCart('Percentage')}
+                                            onChange={() => handlecheckedChange('selectedByCart', 'Percentage')}
                                         />
                                         <RadioButton
                                             label="Based On Distance"
-                                            checked={selectedByCart === 'Distance'}
+                                            checked={checkstate.selectedByCart === 'Distance'}
                                             id="Distance"
                                             name="Distance"
-                                            onChange={() => setSelectedByCart('Distance')}
+                                            onChange={() => handlecheckedChange('selectedByCart', 'Distance')}
                                         />
                                     </div>
-                                    {selectedByCart === 'Distance' && (
+                                    {checkstate.selectedByCart === 'Distance' && (
                                         <div>
                                             <p style={{ color: 'gray', fontSize: "13px" }}> Note: Please make sure Origin and Destination country must be same to use distance base shipping rate.</p>
                                         </div>
@@ -920,72 +934,72 @@ function Rate(props) {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '40%', paddingTop: '1%' }}>
                                         <RadioButton
                                             label="Product"
-                                            checked={selectedByCart === 'Product'}
+                                            checked={checkstate.selectedByCart === 'Product'}
                                             id="Product"
                                             name="Product"
-                                            onChange={() => setSelectedByCart('Product')}
+                                            onChange={() => handlecheckedChange('selectedByCart', 'Product')}
                                         />
                                         <RadioButton
                                             label="Vendor"
-                                            checked={selectedByCart === 'Vendor'}
+                                            checked={checkstate.selectedByCart === 'Vendor'}
                                             id="Vendor"
                                             name="Vendor"
-                                            onChange={() => setSelectedByCart('Vendor')}
+                                            onChange={() => handlecheckedChange('selectedByCart', 'Vendor')}
                                         />
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '41%' }}>
                                         <RadioButton
                                             label="Variant"
-                                            checked={selectedByCart === 'Variant'}
+                                            checked={checkstate.selectedByCart === 'Variant'}
                                             id="Variant"
                                             name="Variant"
-                                            onChange={() => setSelectedByCart('Variant')}
+                                            onChange={() => handlecheckedChange('selectedByCart', 'Variant')}
                                         />
                                         <RadioButton
                                             label="Product Tag"
-                                            checked={selectedByCart === 'Tag'}
+                                            checked={checkstate.selectedByCart === 'Tag'}
                                             id="Tag"
                                             name="Tag"
-                                            onChange={() => setSelectedByCart('Tag')}
+                                            onChange={() => handlecheckedChange('selectedByCart', 'Tag')}
                                         />
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '33.8%' }}>
                                         <RadioButton
                                             label="Product Type"
-                                            checked={selectedByCart === 'Type'}
+                                            checked={checkstate.selectedByCart === 'Type'}
                                             id="Type"
                                             name="Type"
-                                            onChange={() => setSelectedByCart('Type')}
+                                            onChange={() => handlecheckedChange('selectedByCart', 'Type')}
                                         />
                                         <RadioButton
                                             label="Product SKU"
-                                            checked={selectedByCart === 'SKU'}
+                                            checked={checkstate.selectedByCart === 'SKU'}
                                             id="SKU"
                                             name="SKU"
-                                            onChange={() => setSelectedByCart('SKU')}
+                                            onChange={() => handlecheckedChange('selectedByCart', 'SKU')}
                                         />
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '24.9%' }}>
                                         <RadioButton
                                             label="Product Collection Id"
-                                            checked={selectedByCart === 'Collection'}
+                                            checked={checkstate.selectedByCart === 'Collection'}
                                             id="Collection"
                                             name="Collection"
-                                            onChange={() => setSelectedByCart('Collection')}
+                                            onChange={() => handlecheckedChange('selectedByCart', 'Collection')}
                                         />
                                         <RadioButton
                                             label="Variant Metafields"
-                                            checked={selectedByCart === 'Metafields'}
+                                            checked={checkedState.selectedByCart === 'Metafields'}
                                             id="Metafields"
                                             name="Metafields"
-                                            onChange={() => setSelectedByCart('Metafields')}
+                                            onChange={() => handlecheckedChange('selectedByCart', 'Metafields')}
                                         />
                                     </div>
 
                                     <div style={{ marginBottom: "2%" }}></div>
                                     <Divider borderColor="border" />
                                     <div style={{ marginTop: "3%" }}></div>
-                                    {selectedByCart === 'weight' && (
+                                    {checkstate.selectedByCart === 'weight' && (
                                         <div >
                                             <FormLayout>
                                                 <FormLayout.Group>
@@ -1014,17 +1028,17 @@ function Rate(props) {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10%', paddingTop: '1%', marginBottom: "4%" }}>
                                                 <RadioButton
                                                     label="Divided by each unit"
-                                                    checked={selectedByAmount === 'unit'}
+                                                    checked={checkstate.selectedByAmount === 'unit'}
                                                     id="unit"
                                                     name="unit"
-                                                    onChange={() => setSelectedByAmount('unit')}
+                                                    onChange={() => handlecheckedChange('selectedByAmount', 'unit')}
                                                 />
                                                 <RadioButton
                                                     label="Surcharge add by every more then unit"
-                                                    checked={selectedByAmount === 'units'}
+                                                    checked={checkstate.selectedByAmount === 'units'}
                                                     id="units"
                                                     name="units"
-                                                    onChange={() => setSelectedByAmount('units')}
+                                                    onChange={() => handlecheckedChange('selectedByAmount', 'units')}
                                                 />
                                             </div>
                                             <FormLayout>
@@ -1049,7 +1063,7 @@ function Rate(props) {
                                             </FormLayout>
                                         </div>
                                     )}
-                                    {selectedByCart === 'Qty' && (
+                                    {checkstate.selectedByCart === 'Qty' && (
                                         <div >
                                             <FormLayout>
                                                 <FormLayout.Group>
@@ -1078,17 +1092,17 @@ function Rate(props) {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10%', paddingTop: '1%', marginBottom: "4%" }}>
                                                 <RadioButton
                                                     label="Divided by each unit"
-                                                    checked={selectedByAmount === 'unit'}
+                                                    checked={checkstate.selectedByAmount === 'unit'}
                                                     id="unit"
                                                     name="unit"
-                                                    onChange={() => setSelectedByAmount('unit')}
+                                                    onChange={() => handlecheckedChange('selectedByAmount', 'unit')}
                                                 />
                                                 <RadioButton
                                                     label="Surcharge add by every more then unit"
-                                                    checked={selectedByAmount === 'units'}
+                                                    checked={checkstate.selectedByAmount === 'units'}
                                                     id="units"
                                                     name="units"
-                                                    onChange={() => setSelectedByAmount('units')}
+                                                    onChange={() => handlecheckedChange('selectedByAmount', 'units')}
                                                 />
                                             </div>
                                             <FormLayout>
@@ -1113,7 +1127,7 @@ function Rate(props) {
                                             </FormLayout>
                                         </div>
                                     )}
-                                    {selectedByCart === 'Percentage' && (
+                                    {checkstate.selectedByCart === 'Percentage' && (
                                         <div >
                                             <FormLayout>
                                                 <TextField
@@ -1145,7 +1159,7 @@ function Rate(props) {
                                             </FormLayout>
                                         </div>
                                     )}
-                                    {selectedByCart === 'Distance' && (
+                                    {checkstate.selectedByCart === 'Distance' && (
                                         <div >
                                             <FormLayout>
                                                 <FormLayout.Group>
@@ -1174,17 +1188,17 @@ function Rate(props) {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10%', paddingTop: '1%', marginBottom: "4%" }}>
                                                 <RadioButton
                                                     label="Divided by each unit"
-                                                    checked={selectedByAmount === 'unit'}
+                                                    checked={checkstate.selectedByAmount === 'unit'}
                                                     id="unit"
                                                     name="unit"
-                                                    onChange={() => setSelectedByAmount('unit')}
+                                                    onChange={() => handlecheckedChange('selectedByAmount', 'unit')}
                                                 />
                                                 <RadioButton
                                                     label="Surcharge add by every more then unit"
-                                                    checked={selectedByAmount === 'units'}
+                                                    checked={checkstate.selectedByAmount === 'units'}
                                                     id="units"
                                                     name="units"
-                                                    onChange={() => setSelectedByAmount('units')}
+                                                    onChange={() => handlecheckedChange('selectedByAmount', 'units')}
                                                 />
                                             </div>
                                             <FormLayout>
@@ -1209,7 +1223,7 @@ function Rate(props) {
                                             </FormLayout>
                                         </div>
                                     )}
-                                    {selectedByCart === 'Variant' && (
+                                    {checkstate.selectedByCart === 'Variant' && (
                                         <div>
                                             <Text variant="headingMd" as="h6">
                                                 You can select variant for this rate after save
@@ -1259,6 +1273,8 @@ function Rate(props) {
                 </Grid>
 
             </div>
+
+
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
@@ -1343,20 +1359,20 @@ function Rate(props) {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15%', paddingTop: '2%' }}>
                                 <RadioButton
                                     label="Yes"
-                                    checked={selectedByschedule === 'Yes'}
+                                    checked={checkstate.selectedByschedule === 'Yes'}
                                     id="Yes"
                                     name="Yes"
-                                    onChange={() => setSelectedByschedule('Yes')}
+                                    onChange={() => handlecheckedChange('selectedByschedule', 'Yes')}
                                 />
                                 <RadioButton
                                     label="No"
-                                    checked={selectedByschedule === 'No'}
+                                    checked={checkstate.selectedByschedule === 'No'}
                                     id="No"
                                     name="No"
-                                    onChange={() => setSelectedByschedule('No')}
+                                    onChange={() => handlecheckedChange('selectedByschedule', 'No')}
                                 />
                             </div>
-                            {selectedByschedule === 'Yes' && (
+                            {checkstate.selectedByschedule === 'Yes' && (
 
                                 <div style={{ display: 'flex', gap: '10px', marginTop: "2%" }}>
                                     <div style={{ flex: 1 }}>
@@ -1461,31 +1477,31 @@ function Rate(props) {
 
                                             <RadioButton
                                                 label="Fixed"
-                                                checked={selectedByUpdatePriceType === 'Fixed'}
+                                                checked={checkstate.selectedByUpdatePriceType === 'Fixed'}
                                                 id="Fixed"
                                                 name="Fixed"
-                                                onChange={() => setSelectedByUpdatePriceType('Fixed')}
+                                                onChange={() => handlecheckedChange('selectedByUpdatePriceType', 'Fixed')}
                                             />
                                             <RadioButton
                                                 label="Percentage"
-                                                checked={selectedByUpdatePriceType === 'Pr'}
+                                                checked={checkstate.selectedByUpdatePriceType === 'Pr'}
                                                 id="Pr"
                                                 name="Pr"
-                                                onChange={() => setSelectedByUpdatePriceType('Pr')}
+                                                onChange={() => handlecheckedChange('selectedByUpdatePriceType', 'Pr')}
                                             />
                                             <RadioButton
-                                                label="Static   "
-                                                checked={selectedByUpdatePriceType === 'Static'}
+                                                label="Static"
+                                                checked={checkstate.selectedByUpdatePriceType === 'Static'}
                                                 id="Static"
                                                 name="Static"
-                                                onChange={() => setSelectedByUpdatePriceType('Static')}
+                                                onChange={() => handlecheckedChange('selectedByUpdatePriceType', 'Static')}
                                             />
                                         </div>
 
                                         <div style={{ marginTop: '3%' }}>
                                             <Divider borderColor="border" />
                                         </div>
-                                        {selectedByUpdatePriceType !== 'Static' && (
+                                        {checkstate.selectedByUpdatePriceType !== 'Static' && (
                                             <div style={{ marginTop: '3%' }}>
                                                 <FormLayout>
                                                     <FormLayout.Group>
@@ -1496,17 +1512,17 @@ function Rate(props) {
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8%', paddingTop: '2%', marginBottom: "4%" }}>
                                                                 <RadioButton
                                                                     label="Increase"
-                                                                    checked={selectedByUpdatePriceEffect === 'increase'}
+                                                                    checked={checkstate.selectedByUpdatePriceEffect === 'increase'}
                                                                     id="increase"
                                                                     name="increase"
-                                                                    onChange={() => setSelectedByUpdatePriceEffect('increase')}
+                                                                    onChange={() => handlecheckedChange('selectedByUpdatePriceEffect', 'increase')}
                                                                 />
                                                                 <RadioButton
                                                                     label="Decrease"
-                                                                    checked={selectedByUpdatePriceEffect === 'decrease'}
+                                                                    checked={checkstate.selectedByUpdatePriceEffect === 'decrease'}
                                                                     id="decrease"
                                                                     name="decrease"
-                                                                    onChange={() => setSelectedByUpdatePriceEffect('decrease')}
+                                                                    onChange={() => handlecheckedChange('selectedByUpdatePriceEffect', 'decrease')}
                                                                 />
 
                                                             </div>
@@ -1525,7 +1541,7 @@ function Rate(props) {
                                         )}
 
 
-                                        {selectedByUpdatePriceType === 'Static' && (
+                                        {checkstate.selectedByUpdatePriceType === 'Static' && (
                                             <div>
                                                 <TextField
                                                     type="text"

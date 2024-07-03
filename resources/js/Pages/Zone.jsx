@@ -146,7 +146,6 @@ function Zone(props) {
                 status: response.data.zone.status,
             });
             setSelectedOptions(response.data.zone.country)
-            console.log(response.data.zone.country)
             const ratedata = response.data.rates
             setTotalPages(Math.ceil(ratedata.length / itemsPerPage));
             setRate(ratedata)
@@ -186,13 +185,14 @@ function Zone(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            const currencyes = response.data.currencies.currencies;
+            const currencyes = response.data.currencies;
 
             const currency = currencyes.map(cuency => ({
                 label: cuency.currency,
                 value: cuency.currency
             }))
             setCurrencys(currency)
+          
             setLoading(false)
         } catch (error) {
             console.error("Error fetching country:", error);

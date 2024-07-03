@@ -204,28 +204,17 @@ class ApiController extends Controller
                 ], 404);
             }
 
-            // Define the REST API endpoint
-            $restEndpoint = "https://{$shop}/admin/api/2024-04/currencies.json";
+            $jsonFileData = file_get_contents(public_path('countries_states.json'));
 
-            // Headers for Shopify API request
-            $customHeaders = [
-                'X-Shopify-Access-Token' => $token['password'],
-            ];
+            $countryData = collect(json_decode($jsonFileData, true));
 
-            // Make HTTP GET request to Shopify REST API endpoint
-            $response = Http::withHeaders($customHeaders)->get($restEndpoint);
-            // Check if the request was successful
-            if ($response->successful()) {
-                $responseData = [
-                    'shop_currency' => $token['shop_currency'],
-                    'currencies' => $response->json()
-                ];
+            $filterCurrency = $countryData->map(function ($currency) {
+                $currencies['currency'] = $currency['currency_name'] . " ({$currency['currency']} {$currency['currency_symbol']})";
+                return $currencies;
+            });
 
-                return response()->json($responseData);
-            } else {
-                // Handle non-successful responses
-                return response()->json(['status' => false, 'error' => 'Unable to fetch Currency list']);
-            }
+            return response()->json(['status'=>true, 'message'=>'Currencies retrieved successfully.', 'currencies' => $filterCurrency]);
+
         } catch (RequestException $e) {
             // Handle request-specific exceptions
             Log::error('HTTP request error', ['exception' => $e->getMessage()]);

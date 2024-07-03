@@ -703,6 +703,22 @@ class ApiController extends Controller
                 ]);
             }
 
+            if (isset($inputData['cart_condition'])){
+                $rules = array_merge($rules, [
+                    'cart_condition.conditionMatch' => 'required|in:Not Any Condition,All,Any,NOT All',
+                    'cart_condition.cartCondition' => 'required|array',
+                ]);
+
+                $messages = array_merge($messages, [
+                    'cart_condition.conditionMatch.required' => 'The condition match field is required.',
+                    'cart_condition.conditionMatch.in' => 'The condition must be one of the following: Not Any Condition, All, Any, NOT All.',
+                    'cart_condition.cartCondition.required' => 'The cart condition field is required.',
+                    'cart_condition.cartCondition.array' => 'The cart condition must be an array.',
+                ]);
+
+                $inputData['conditionMatch'] = $inputData['cart_condition']['conditionMatch'];
+            }
+
             // Validate the request input
             $validator = Validator::make($inputData, $rules, $messages);
 

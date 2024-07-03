@@ -36,8 +36,8 @@ function Rate(props) {
     const [loading, setLoading] = useState(false);
     const [state, setState] = useState([])
     const [selectedOptions, setSelectedOptions] = useState([]);
-    const [inputValue, setInputValue] = useState('');
     const [options, setOptions] = useState([]);
+    const [inputValue, setInputValue] = useState('');
     const [zipcodeValue, setZipcodeValue] = useState('');
     const navigate = useNavigate();
     const [checkstate, setCheckState] = useState({
@@ -82,12 +82,7 @@ function Rate(props) {
         setIsEndDatePickerVisible(false);
     }, []);
 
-
-
-
     let app = "";
-  
-
 
     const [checkedState, setCheckedState] = useState({
         checked1: false,
@@ -104,7 +99,7 @@ function Rate(props) {
 
     const handleChange = useCallback((value) => {
         setZipcodeValue(value);
-    }, []);;
+    }, []);
 
     const editRate = async () => {
         try {
@@ -139,8 +134,8 @@ function Rate(props) {
             if (response.data.rate.zipcode) {
                 const zipCodes = response.data.rate.zipcode.zipcode.map(zip => zip.toString());
                 const combinedZipCodes = zipCodes.join(',');
-                setZipcodeValue( combinedZipCodes)
-                setSelectedOptions( response.data.rate.zipcode.state)
+                setZipcodeValue(combinedZipCodes)
+                setSelectedOptions(response.data.rate.zipcode.state)
 
                 setCheckState(prevState => ({
                     ...prevState,
@@ -438,7 +433,7 @@ function Rate(props) {
             zipcode: []
 
         },
-        condition: {
+        cart_condition: {
             conditionMatch: checkstate.selectedCondition,
             cartCondtion: items
 
@@ -448,28 +443,28 @@ function Rate(props) {
     });
     useEffect(() => {
         const selectedStates = selectedOptions.map(option => ({
-          name: state.find(state => state.value === option)?.label || '',
-          code: option
+            name: state.find(state => state.value === option)?.label || '',
+            code: option
         }));
-      
+
         setFormData(prevFormData => ({
-          ...prevFormData,
-          condition: {
-            ...prevFormData.condition,
-            conditionMatch: checkstate.selectedCondition,
-            cartCondtion: items,
-          },
-          zipcode: {
-            ...prevFormData.zipcode,
-            state: selectedStates,
-            stateSelection: checkstate.selectedStateCondition,
-            zipcodeSelection: checkstate.selectedZipCondition,
-            isInclude: checkstate.selectedZipCode,
-            zipcode: zipcodeValue.split(',').map(zip => zip.trim())
-          }
+            ...prevFormData,
+            cart_condition: {
+                ...prevFormData.cart_condition,
+                conditionMatch: checkstate.selectedCondition,
+                cartCondtion: items,
+            },
+            zipcode: {
+                ...prevFormData.zipcode,
+                state: selectedStates,
+                stateSelection: checkstate.selectedStateCondition,
+                zipcodeSelection: checkstate.selectedZipCondition,
+                isInclude: checkstate.selectedZipCode,
+                zipcode: zipcodeValue.split(',').map(zip => zip.trim())
+            }
         }));
-      }, [selectedOptions, items, zipcodeValue, checkstate.selectedCondition, checkstate.selectedStateCondition, checkstate.selectedZipCondition, checkstate.selectedZipCode, state]);
-      
+    }, [selectedOptions, items, zipcodeValue, checkstate.selectedCondition, checkstate.selectedStateCondition, checkstate.selectedZipCondition, checkstate.selectedZipCode, state]);
+
 
     const saveRate = async () => {
         const newErrors = {};
@@ -767,42 +762,47 @@ function Rate(props) {
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
                         <LegacyCard sectioned>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: "2%", paddingTop: '3%' }}>
-                                <Text variant="headingXs" as="h6">
-                                    State Selection
-                                </Text>
-                                <RadioButton
-                                    label="Custom"
-                                    checked={checkstate.selectedStateCondition === 'Custom'}
-                                    id="Custom"
-                                    name="stateSelection"
-                                    onChange={() => handlecheckedChange('selectedStateCondition', 'Custom')}
-                                />
-                                <RadioButton
-                                    label="All"
-                                    checked={checkstate.selectedStateCondition === 'All'}
-                                    id="All"
-                                    name="stateSelection"
-                                    onChange={() => handlecheckedChange('selectedStateCondition', 'All')}
-                                />
+
+                            <div>
+                                {state.length > 0 && (
+                                    <>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '2%', paddingTop: '2%' }}>
+                                            <Text variant="headingXs" as="h6">
+                                                State Selection
+                                            </Text>
+                                            <RadioButton
+                                                label="Custom"
+                                                checked={checkstate.selectedStateCondition === 'Custom'}
+                                                id="Custom"
+                                                name="stateSelection"
+                                                onChange={() => handlecheckedChange('selectedStateCondition', 'Custom')}
+                                            />
+                                            <RadioButton
+                                                label="All"
+                                                checked={checkstate.selectedStateCondition === 'All'}
+                                                id="All"
+                                                name="stateSelection"
+                                                onChange={() => handlecheckedChange('selectedStateCondition', 'All')}
+                                            />
+                                        </div>
+
+                                        {checkstate.selectedStateCondition !== 'All' && (
+                                            <div style={{ marginTop: '2%', marginBottom: '2%' }}>
+                                                <Autocomplete
+                                                    allowMultiple
+                                                    options={options}
+                                                    selected={selectedOptions}
+                                                    textField={textField}
+                                                    onSelect={setSelectedOptions}
+                                                    listTitle="Suggested Countries"
+                                                />
+                                            </div>
+                                        )}
+
+                                        <Divider borderColor="border" />
+                                    </>
+                                )}
                             </div>
-
-                            {checkstate.selectedStateCondition !== 'All' && (
-                                <div style={{ marginTop: "2%", marginBottom: "2%" }}>
-
-
-                                    <Autocomplete
-                                        allowMultiple
-                                        options={options}
-                                        selected={selectedOptions}
-                                        textField={textField}
-                                        onSelect={setSelectedOptions}
-                                        listTitle="Suggested Countries"
-                                    />
-                                </div>
-                            )}
-
-                            <Divider borderColor="border" />
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%", }}>
                                 <Text variant="headingXs" as="h6">
@@ -1592,7 +1592,7 @@ function Rate(props) {
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
 
-            </div>      Send another rate
+            </div>
 
 
             {showToast && (

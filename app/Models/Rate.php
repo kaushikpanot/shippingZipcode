@@ -9,7 +9,7 @@ class Rate extends Model
 {
     use HasFactory;
 
-    protected $fillable = ["user_id", "zone_id", "name", "base_price", "service_code", "description", "status", "conditionMatch", "cart_condition"];
+    protected $fillable = ["user_id", "zone_id", "name", "base_price", "service_code", "description", "status", "conditionMatch", "cart_condition", "merge_rate_tag"];
 
     protected $hidden = ['created_at', 'updated_at'];
 

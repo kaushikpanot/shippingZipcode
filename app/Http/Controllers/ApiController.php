@@ -182,7 +182,6 @@ class ApiController extends Controller
     public function getCurrencyList()
     {
         try {
-
             // Retrieve the Shopify session
             $shop = request()->attributes->get('shopifySession');
             // $shop = "krishnalaravel-test.myshopify.com";
@@ -209,10 +208,14 @@ class ApiController extends Controller
             $countryData = collect(json_decode($jsonFileData, true));
 
             $filterCurrency = $countryData->map(function ($currency) {
+
                 return [
-                    'currency' => $currency['currency_name'] . " ({$currency['currency']} {$currency['currency_symbol']})"
+                    'code'=> $currency['currency'],
+                    'symbol' => $currency['currency_symbol'],
+                    'currency' => $currency['currency_name'],
+                    'currency_code_symbol' => $currency['currency_name'] . " ({$currency['currency']} {$currency['currency_symbol']})"
                 ];
-            })->unique('currency')->values();
+            })->unique('currency_code_symbol')->values();
 
             return response()->json(['status'=>true, 'message'=>'Currencies retrieved successfully.', 'shop_currency' => $token['shop_currency'], 'currencies' => $filterCurrency]);
 
@@ -705,13 +708,13 @@ class ApiController extends Controller
 
             if (isset($inputData['cart_condition'])){
                 $rules = array_merge($rules, [
-                    'cart_condition.conditionMatch' => 'required|in:Not Any Condition,All,Any,NOT All',
+                    'cart_condition.conditionMatch' => 'required|in:0,1,2,3',
                     'cart_condition.cartCondition' => 'required|array',
                 ]);
 
                 $messages = array_merge($messages, [
                     'cart_condition.conditionMatch.required' => 'The condition match field is required.',
-                    'cart_condition.conditionMatch.in' => 'The condition must be one of the following: Not Any Condition, All, Any, NOT All.',
+                    'cart_condition.conditionMatch.in' => 'The condition must be one of the following: 0=Not Any Condition, 1=All, 2=Any, 3=NOT All',
                     'cart_condition.cartCondition.required' => 'The cart condition field is required.',
                     'cart_condition.cartCondition.array' => 'The cart condition must be an array.',
                 ]);

@@ -188,8 +188,8 @@ function Zone(props) {
             const currencyes = response.data.currencies;
 
             const currency = currencyes.map(cuency => ({
-                label: cuency.currency,
-                value: cuency.currency
+                label: cuency.currency_code_symbol,
+                value: cuency.code
             }))
             setCurrencys(currency)
             setFormData(prevState => ({

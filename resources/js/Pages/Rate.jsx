@@ -51,6 +51,7 @@ function Rate(props) {
         selectedByUpdatePriceEffect: 'increase',
         selectedZipCondition: 'All',
         selectedZipCode: 'include',
+        selectedMultiplyLine: 'Yes'
     });
     const handlecheckedChange = (key, value) => {
         setCheckState(prevState => ({ ...prevState, [key]: value }));
@@ -111,7 +112,6 @@ function Rate(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            console.log(response.data);
 
             const allStates = response.data.states;
             const formattedOptions = [];
@@ -145,6 +145,10 @@ function Rate(props) {
                     selectedZipCode: response.data.rate.zipcode.isInclude,
                 }));
             }
+            if (response.data.rate.zipcode.state) {
+                const fetchedSelectedOptions = response.data.rate.zipcode.state.map(state => state.code);
+                setSelectedOptions(fetchedSelectedOptions);
+            }
 
             if (response.data.rate.cart_condition) {
                 setCheckState(prevState => ({
@@ -153,10 +157,6 @@ function Rate(props) {
                 }));
                 setItems(response.data.rate.cart_condition.cartCondition)
             }
-
-            const fetchedSelectedOptions = response.data.rate.zipcode.state.map(state => state.code);
-            setSelectedOptions(fetchedSelectedOptions);
-            console.log(response.data.rate.zipcode.state)
             setFormData({
                 name: response.data.rate.name,
                 base_price: response.data.rate.base_price,
@@ -190,9 +190,27 @@ function Rate(props) {
             console.error("Error fetching shop location:", error);
         }
     };
+
+    const getProduct = async () => {
+        try {
+            const token = await getSessionToken(app);
+            console.log(token)
+            const response = await axios.post(`${apiCommonURL}/api/products`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            setLocations(response.data.locations);
+
+        } catch (error) {
+            console.error("Error fetching Products", error);
+        }
+    };
+
     const getstate = async () => {
         try {
             const token = await getSessionToken(app);
+
 
             const response = await axios.get(`${apiCommonURL}/api/rate/${zone_id}/create`, {
                 headers: {
@@ -224,7 +242,13 @@ function Rate(props) {
             console.error("Error fetching shop location:", error);
         }
     };
+    useEffect(() => {
+        editRate();
+        getLocation();
+        getstate();
+        getProduct()
 
+    }, []);
 
     const updateText = useCallback(
         (value) => {
@@ -422,11 +446,7 @@ function Rate(props) {
     ];
 
 
-    useEffect(() => {
-        editRate();
-        getLocation();
-        getstate();
-    }, []);
+
     const [formData, setFormData] = useState({
         name: '',
         base_price: '',
@@ -490,7 +510,7 @@ function Rate(props) {
             });
             const token = await getSessionToken(app);
 
-            console.log(formData)
+
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -682,7 +702,7 @@ function Rate(props) {
                                 />
 
                             </div>
-                            {checkstate.selectedCondition !== 'notAny' && (
+                            {checkstate.selectedCondition !== 0 && (
                                 <div>
                                     <Divider borderColor="border" />
                                     {items.map((item, index) => (
@@ -884,7 +904,7 @@ function Rate(props) {
                                 checked={checkedState.checked1}
                                 onChange={() => handleCheckChange('checked1')}
                             />
-                            {checkedState.checked1 && (
+                            {!checkedState.checked1 && (
                                 <div style={{ marginTop: "2%" }}>
                                     <Divider borderColor="border" />
                                     <div style={{ marginBottom: "2%" }}></div>
@@ -998,7 +1018,7 @@ function Rate(props) {
                                     </div>
 
                                     <div style={{ marginBottom: "2%" }}></div>
-                                    <Divider borderColor="border" />
+                                    <Divider borderColor="border-inverse" />
                                     <div style={{ marginTop: "3%" }}></div>
                                     {checkstate.selectedByCart === 'weight' && (
                                         <div >
@@ -1236,6 +1256,219 @@ function Rate(props) {
 
                                         </div>
                                     )}
+                                    {checkstate.selectedByCart === 'Product' && (
+                                        <div>
+
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5%' }}>
+                                                <Text variant="headingSm" as="h6">
+                                                    Multiply line item QTY price:
+                                                </Text>
+                                                <RadioButton
+                                                    label="Yes"
+                                                    checked={checkstate.selectedMultiplyLine === 'Yes'}
+                                                    id="Yes"
+                                                    name="Yes"
+                                                    onChange={() => handlecheckedChange('selectedMultiplyLine', 'Yes')}
+                                                />
+                                                <RadioButton
+                                                    label="No"
+                                                    checked={checkstate.selectedMultiplyLine === 'no'}
+                                                    id="no"
+                                                    name="SKU"
+                                                    onChange={() => handlecheckedChange('selectedMultiplyLine', 'no')}
+                                                />
+                                                <RadioButton
+                                                    label="Percentage"
+                                                    checked={checkstate.selectedMultiplyLine === 'pr'}
+                                                    id="pr"
+                                                    name="pr"
+                                                    onChange={() => handlecheckedChange('selectedMultiplyLine', 'pr')}
+                                                />
+                                            </div>
+
+
+                                            {checkstate.selectedMultiplyLine !== 'no' && (
+                                                <div style={{ marginTop: "4%" }}>
+                                                    <Divider borderColor="border" />
+
+                                                    {checkstate.selectedMultiplyLine === 'pr' && (
+                                                        <div style={{ marginTop: "2%" }}>
+                                                            <TextField
+                                                                type="text"
+                                                                label="Cart Total Percentage"
+                                                                onChange={() => { }}
+                                                                autoComplete="off"
+                                                                placeholder='0.00'
+                                                                prefix='%'
+                                                            />
+
+                                                            <div style={{ marginTop: "2%", marginBottom: "3%" }}>
+                                                                <FormLayout>
+                                                                    <FormLayout.Group>
+                                                                        <TextField
+                                                                            type="text"
+                                                                            label="Minimum Charge Price"
+                                                                            onChange={() => { }}
+                                                                            autoComplete="off"
+                                                                            placeholder='0'
+                                                                        />
+                                                                        <TextField
+                                                                            type="text"
+                                                                            label="Maximum Charge Price"
+                                                                            onChange={() => { }}
+                                                                            autoComplete="off"
+                                                                            placeholder='0'
+                                                                        />
+                                                                    </FormLayout.Group>
+                                                                </FormLayout>
+                                                            </div>
+
+                                                            <Divider borderColor="border" />
+
+                                                        </div>
+                                                    )}
+
+
+                                                    <div style={{ marginTop: "2%" }}>
+                                                        <FormLayout>
+                                                            <FormLayout.Group>
+                                                                <TextField
+                                                                    type="text"
+                                                                    label="Full Product Title"
+                                                                    onChange={() => { }}
+                                                                    autoComplete="off"
+                                                                    placeholder='Enter Full Product Title'
+                                                                />
+                                                                <TextField
+                                                                    type="text"
+                                                                    label="Enter Collection ID"
+                                                                    onChange={() => { }}
+                                                                    autoComplete="off"
+                                                                    placeholder='Enter Collection ID'
+                                                                />
+                                                            </FormLayout.Group>
+                                                        </FormLayout>
+                                                    </div>
+                                                    <div style={{ marginTop: "2%" }}>
+                                                        <FormLayout>
+                                                            <FormLayout.Group>
+                                                                <TextField
+                                                                    type="text"
+                                                                    label="Full Product Type"
+                                                                    onChange={() => { }}
+                                                                    autoComplete="off"
+                                                                    placeholder='Enter Full Product Type'
+                                                                />
+                                                                <TextField
+                                                                    type="text"
+                                                                    label="Full Product Vendor"
+                                                                    onChange={() => { }}
+                                                                    autoComplete="off"
+                                                                    placeholder='Enter Full Product Vendor'
+                                                                />
+                                                            </FormLayout.Group>
+                                                        </FormLayout>
+                                                    </div>
+                                                    <p style={{ marginTop: "2%" }}>Note: Please enter the exact term for product title, collection id, product type, and product vendor that needs to be searched.
+                                                    </p>
+                                                    <div style={{ marginTop: "2%", width: '20%' }}>
+                                                        <Button variant="primary" >Search Product</Button></div>
+                                                </div>
+                                            )}
+
+                                        </div>
+                                    )}
+                                    {checkstate.selectedByCart === 'Vendor' && (
+                                        <div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5%' }}>
+                                                <Text variant="headingSm" as="h6">
+                                                    Multiply line item QTY price:
+                                                </Text>
+                                                <RadioButton
+                                                    label="Yes"
+                                                    checked={checkstate.selectedMultiplyLine === 'Yes'}
+                                                    id="Yes"
+                                                    name="Yes"
+                                                    onChange={() => handlecheckedChange('selectedMultiplyLine', 'Yes')}
+                                                />
+                                                <RadioButton
+                                                    label="No"
+                                                    checked={checkstate.selectedMultiplyLine === 'no'}
+                                                    id="no"
+                                                    name="SKU"
+                                                    onChange={() => handlecheckedChange('selectedMultiplyLine', 'no')}
+                                                />
+                                                <RadioButton
+                                                    label="Percentage"
+                                                    checked={checkstate.selectedMultiplyLine === 'pr'}
+                                                    id="pr"
+                                                    name="pr"
+                                                    onChange={() => handlecheckedChange('selectedMultiplyLine', 'pr')}
+                                                />
+                                            </div>
+
+                                            {checkstate.selectedMultiplyLine !== 'no' && (
+                                                <div style={{ marginTop: "4%" }}>
+                                                    <Divider borderColor="border" />
+
+                                                    {checkstate.selectedMultiplyLine === 'pr' && (
+                                                        <div style={{ marginTop: "2%" }}>
+                                                            <TextField
+                                                                type="text"
+                                                                label="Cart Total Percentage"
+                                                                onChange={() => { }}
+                                                                autoComplete="off"
+                                                                placeholder='0.00'
+                                                                prefix='%'
+                                                            />
+
+                                                            <div style={{ marginTop: "2%", marginBottom: "3%" }}>
+                                                                <FormLayout>
+                                                                    <FormLayout.Group>
+                                                                        <TextField
+                                                                            type="text"
+                                                                            label="Minimum Charge Price"
+                                                                            onChange={() => { }}
+                                                                            autoComplete="off"
+                                                                            placeholder='0'
+                                                                        />
+                                                                        <TextField
+                                                                            type="text"
+                                                                            label="Maximum Charge Price"
+                                                                            onChange={() => { }}
+                                                                            autoComplete="off"
+                                                                            placeholder='0'
+                                                                        />
+                                                                    </FormLayout.Group>
+                                                                </FormLayout>
+                                                            </div>
+
+                                                            <Divider borderColor="border" />
+
+                                                        </div>
+                                                    )}
+
+
+                                                    <div style={{ marginTop: "2%" }}>
+                                                        <TextField
+                                                            type="text"
+                                                            label="Vendor Name  "
+                                                            onChange={() => { }}
+                                                            autoComplete="off"
+                                                            placeholder='Enter Multiple vendor Name with Comma Seprate(,)'
+                                                            multiline={4}
+                                                            monospaced
+                                                            helpText='Note: Please enter the exact term of multiple Vendor Name with comma separator(,).'
+                                                        />
+                                                    </div>
+
+
+
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
                                 </div>
                             )}
 

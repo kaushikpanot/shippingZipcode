@@ -91,7 +91,33 @@ class SettingContoller extends Controller
                 ], 404);
             }
 
-            $setting = Setting::updateOrCreate(['user_id' => $user_id], $request->input());
+            $inputData = $request->input();
+            $inputData['user_id'] = $user_id;
+
+            $rules = [
+                'status' => 'required|boolean',
+                'mix_merge_rate_1' => 'required_if:mix_merge_rate,0',
+            ];
+
+            $messages = [
+                'status.required' => 'The status is required.',
+                'status.boolean' => 'The status field must be true (1) or false (0).',
+                'mix_merge_rate_1.required_if' => 'The mix merge rate 1 is required when mix merge rate is yes.',
+            ];
+
+            // Validate the request input
+            $validator = Validator::make($inputData, $rules, $messages);
+
+            if ($validator->fails()) {
+                return response()->json(['status' => false, 'errors' => $validator->errors()], 422);
+            }
+
+            if($inputData['mix_merge_rate_1']){
+                $inputData['additional_description_of_mix_rate'] = null;
+                $inputData['max_price_of_auto_product_base_mix_rate'] = null;
+            }
+
+            $setting = Setting::updateOrCreate(['user_id' => $user_id], $inputData);
 
             if ($setting->wasRecentlyCreated) {
                 $message = 'Setting created successfully.';

@@ -184,8 +184,8 @@ class ApiController extends Controller
         try {
 
             // Retrieve the Shopify session
-            $shop = request()->attributes->get('shopifySession');
-            // $shop = "krishnalaravel-test.myshopify.com";
+            // $shop = request()->attributes->get('shopifySession');
+            $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -209,10 +209,14 @@ class ApiController extends Controller
             $countryData = collect(json_decode($jsonFileData, true));
 
             $filterCurrency = $countryData->map(function ($currency) {
+
                 return [
-                    'currency' => $currency['currency_name'] . " ({$currency['currency']} {$currency['currency_symbol']})"
+                    'code'=> $currency['currency'],
+                    'symbol' => $currency['currency_symbol'],
+                    'currency' => $currency['currency_name'],
+                    'currency_code_symbol' => $currency['currency_name'] . " ({$currency['currency']} {$currency['currency_symbol']})"
                 ];
-            })->unique('currency')->values();
+            })->unique('currency_code_symbol')->values();
 
             return response()->json(['status'=>true, 'message'=>'Currencies retrieved successfully.', 'shop_currency' => $token['shop_currency'], 'currencies' => $filterCurrency]);
 

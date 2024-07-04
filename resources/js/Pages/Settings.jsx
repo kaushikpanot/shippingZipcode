@@ -1,5 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Toast, Select, Page, Button, Grid, Divider, LegacyCard, RadioButton, Text, Banner, TextField, FormLayout } from '@shopify/polaris';
+import { 
+  Toast, Select, Page, Button, Grid, Divider, 
+  LegacyCard, RadioButton, Text, Banner, TextField, FormLayout 
+} from '@shopify/polaris';
 import axios from 'axios';
 import '../../../public/css/style.css';
 import createApp from '@shopify/app-bridge';
@@ -9,51 +12,36 @@ const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 const Settings = (props) => {
-  const [value, setValue] = useState(0);
-  const [selected, setSelected] = useState('today');
-  const [select, setSelect] = useState('Append Description');
   const [active, setActive] = useState(false);
-  const [checkstate, setCheckState] = useState({
-    selectedByMergeRate: 0,
-    selectedByYesNo: 0
+
+  const [settings, setSettings] = useState({
+    status: 0,
+    shippingRate: 'All',
+    rateModifierTitle: 'Append Description',
+    mix_merge_rate: 0,
+    mix_merge_rate_1: 0,
+    additional_description_of_mix_rate: '',
+    max_price_of_auto_product_base_mix_rate: ''
   });
-  const handlecheckedChange = (key, value) => {
-    setCheckState(prevState => ({ ...prevState, [key]: value }));
-  };
+
   const app = createApp({
     apiKey: SHOPIFY_API_KEY,
     host: props.host,
   });
 
-  const handleChange = useCallback((newValue) => {
-    setValue(newValue);
+  const handleInputChange = useCallback((field) => (value) => {
+    setSettings((prevState) => ({
+      ...prevState,
+      [field]: value,
+    }));
   }, []);
 
-  const handleSelectChange = useCallback(
-    (value) => setSelected(value),
-    []
-  );
-
-  const handleSelectChanges = useCallback(
-    (value) => setSelect(value),
-    []
-  );
-
-  const toggleActive = useCallback(() => setActive((active) => !active), []);
-
-  const options = [
-    { label: 'All', value: 'All' },
-    { label: 'Only Higher', value: 'Only Higher' },
-    { label: 'Only Lower', value: 'Only Lower' },
-  ];
-
-  const option = [
-    { label: 'Append Description', value: 'Append Description' },
-    { label: 'Replace Description', value: 'Replace Description' },
-    { label: 'Append Title', value: 'Append Title' },
-    { label: 'Replace Title', value: 'Replace Title' },
-    { label: 'Replace Title and Description', value: 'Replace Title and Description' },
-  ];
+  const handleCheckedChange = (key, value) => {
+    setSettings((prevState) => ({
+      ...prevState,
+      [key]: value,
+    }));
+  };
 
   const getSettingData = async () => {
     try {
@@ -65,9 +53,7 @@ const Settings = (props) => {
       });
 
       const data = response.data.settings;
-      setValue(data.status);
-      setSelected(data.shippingRate);
-      setSelect(data.rateModifierTitle);
+      setSettings(data);
 
     } catch (error) {
       console.error("Error fetching settings data:", error);
@@ -78,41 +64,25 @@ const Settings = (props) => {
     getSettingData();
   }, []);
 
-  const [settings, setSettings] = useState({
-    status: value,
-    shippingRate: selected,
-    rateModifierTitle: select,
-    mix_merge_rate: checkstate.selectedByMergeRate,
-    mix_merge_rate_1: checkstate.selectedByYesNo,
-    additional_description_of_mix_rate: '',
-    max_price_of_auto_product_base_mix_rate: ''
-
-  });
-
-  const handleRateFormChange = (field) => (value) => {
-    setSettings((prevState) => ({
-      ...prevState,
-      [field]: value,
-    }));
-
-  };
   const handleSaveSettings = async () => {
     const token = await getSessionToken(app);
-    console.log(settings)
     try {
+      console.log('Settings to be saved:', settings);
       const response = await axios.post(`${apiCommonURL}/api/settings`, settings, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      toggleActive();
+      console.log('Response from save settings:', response);
+      setActive(true);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error saving settings:', error);
     }
   };
+  
 
   const toastMarkup = active ? (
-    <Toast content="Setting saved successfully." onDismiss={toggleActive} />
+    <Toast content="Setting saved successfully." onDismiss={() => setActive(false)} />
   ) : null;
 
   return (
@@ -141,18 +111,18 @@ const Settings = (props) => {
               <RadioButton
                 label="Enable"
                 helpText="Enable Shipping Rates by ZipCode APP"
-                checked={value === 1}
+                checked={settings.status === 1}
                 id="enabled"
-                name="accounts"
-                onChange={() => handleChange(1)}
+                name="status"
+                onChange={() => handleInputChange('status')(1)}
               />
               <RadioButton
                 label="Disable"
                 helpText="Disable Shipping Rates by ZipCode APP"
                 id="disabled"
-                name="accounts"
-                checked={value === 0}
-                onChange={() => handleChange(0)}
+                name="status"
+                checked={settings.status === 0}
+                onChange={() => handleInputChange('status')(0)}
               />
             </LegacyCard>
           </Grid.Cell>
@@ -168,26 +138,33 @@ const Settings = (props) => {
             </div>
           </Grid.Cell>
           <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-            <LegacyCard>
-              <div style={{ padding: '5%' }}>
-                <Select
-                  label="Display Shipping Rate"
-                  options={options}
-                  onChange={handleSelectChange}
-                  value={selected}
-                /><br />
-                <Select
-                  label="Rate Modifier Title Settings"
-                  options={option}
-                  onChange={handleSelectChanges}
-                  value={select}
-                />
-              </div>
+            <LegacyCard sectioned>
+              <Select
+                label="Display Shipping Rate"
+                options={[
+                  { label: 'All', value: 'All' },
+                  { label: 'Only Higher', value: 'Only Higher' },
+                  { label: 'Only Lower', value: 'Only Lower' },
+                ]}
+                onChange={handleInputChange('shippingRate')}
+                value={settings.shippingRate}
+              /><br />
+              <Select
+                label="Rate Modifier Title Settings"
+                options={[
+                  { label: 'Append Description', value: 'Append Description' },
+                  { label: 'Replace Description', value: 'Replace Description' },
+                  { label: 'Append Title', value: 'Append Title' },
+                  { label: 'Replace Title', value: 'Replace Title' },
+                  { label: 'Replace Title and Description', value: 'Replace Title and Description' },
+                ]}
+                onChange={handleInputChange('rateModifierTitle')}
+                value={settings.rateModifierTitle}
+              />
             </LegacyCard>
           </Grid.Cell>
         </Grid>
       </div>
-
       <Divider borderColor="border" />
       <div style={{ marginTop: '2%', marginBottom: "3%" }}>
         <Grid>
@@ -198,7 +175,6 @@ const Settings = (props) => {
             <div style={{ marginTop: '5%' }}>
               <ul>
                 <li>When product rate set combine it with all product rates & additive with normal rate.</li>
-
               </ul>
             </div>
           </Grid.Cell>
@@ -213,24 +189,23 @@ const Settings = (props) => {
                 <Text variant="headingXs" as="h6">
                   Do you want to combine all product/tag/SKU/type/vendor shipping rates into one rate?
                 </Text>
-
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20%', marginTop: "2%" }}>
                   <RadioButton
                     label="Yes (Automatic)"
-                    checked={checkstate.selectedByMergeRate === 1}
+                    checked={settings.mix_merge_rate === 0}
                     id="yes"
-                    name="yes"
-                    onChange={() => handlecheckedChange('selectedByMergeRate', 1)}
+                    name="mix_merge_rate"
+                    onChange={() => handleCheckedChange('mix_merge_rate', 0)}
                   />
                   <RadioButton
                     label="No (Manually - Using merge rate)"
-                    checked={checkstate.selectedByMergeRate === 0}
+                    checked={settings.mix_merge_rate === 1}
                     id="No"
-                    name="No"
-                    onChange={() => handlecheckedChange('selectedByMergeRate', 0)}
+                    name="mix_merge_rate"
+                    onChange={() => handleCheckedChange('mix_merge_rate', 1)}
                   />
                 </div>
-                {checkstate.selectedByMergeRate !== 0 && (
+                {settings.mix_merge_rate !== 1 && (
                   <div style={{ marginTop: '3%' }}>
                     <p>
                       Applicable only if you set shipping rates based on product. If the cart contains some products with rate and some items without rate then a default rate like weight-based will come along with product-based rate.
@@ -238,41 +213,38 @@ const Settings = (props) => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '20%', marginTop: "2%" }}>
                       <RadioButton
                         label="Yes"
-                        checked={checkstate.selectedByYesNo === 1}
+                        checked={settings.mix_merge_rate_1 === 0}
                         id="yesMix"
-                        name="yesMix"
-                        onChange={() => handlecheckedChange('selectedByYesNo', 1)}
+                        name="mix_merge_rate_1"
+                        onChange={() => handleCheckedChange('mix_merge_rate_1', 0)}
                       />
                       <RadioButton
                         label="No"
-                        checked={checkstate.selectedByYesNo === 0}
+                        checked={settings.mix_merge_rate_1 === 1}
                         id="NoMix"
-                        name="NoMix"
-                        onChange={() => handlecheckedChange('selectedByYesNo', 0)}
+                        name="mix_merge_rate_1"
+                        onChange={() => handleCheckedChange('mix_merge_rate_1', 1)}
                       />
                     </div>
-                    {checkstate.selectedByYesNo !== 0 && (
+                    {settings.mix_merge_rate_1 !== 1 && (
                       <div style={{ marginTop: "3%" }}>
                         <FormLayout>
                           <TextField
                             label="Additional Description of Mix Rate"
                             value={settings.additional_description_of_mix_rate}
-                            onChange={handleRateFormChange('additional_description_of_mix_rate')}
-                            autoComplete="off"
-                            placeholder='Include With oroduct base rate'
+                            onChange={handleInputChange('additional_description_of_mix_rate')}
+                            
                           />
                           <TextField
-                            label="Maximum Price of Auto Product Base Mix Rate (optional)"
+                            label="Maximum Price of Auto Product Base Mix Rate"
                             value={settings.max_price_of_auto_product_base_mix_rate}
-                            onChange={handleRateFormChange('max_price_of_auto_product_base_mix_rate')}
-                            autoComplete="off"
-                            placeholder='0.00'
+                            onChange={handleInputChange('max_price_of_auto_product_base_mix_rate')}
+                            type="number"
                           />
                         </FormLayout>
                       </div>
                     )}
                   </div>
-
                 )}
               </div>
             </LegacyCard>

@@ -20,7 +20,8 @@ import {
     LegacyStack,
     Tag,
     FormLayout,
-    DatePicker
+    DatePicker,
+    Layout,
 } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon } from '@shopify/polaris-icons';
 import '../../../public/css/style.css';
@@ -41,7 +42,7 @@ function Rate(props) {
     const [zipcodeValue, setZipcodeValue] = useState('');
     const navigate = useNavigate();
     const [checkstate, setCheckState] = useState({
-        selectedCondition: 'notAny',
+        selectedCondition: 0,
         selectedStateCondition: 'All',
         selectedByCart: 'weight',
         selectedByschedule: 'No',
@@ -153,10 +154,9 @@ function Rate(props) {
                 setItems(response.data.rate.cart_condition.cartCondition)
             }
 
-            if (response.data.rate.zipcode.state) {
-                setSelectedOptions(response.data.rate.zipcode.state);
-            }
-
+            const fetchedSelectedOptions = response.data.rate.zipcode.state.map(state => state.code);
+            setSelectedOptions(fetchedSelectedOptions);
+            console.log(response.data.rate.zipcode.state)
             setFormData({
                 name: response.data.rate.name,
                 base_price: response.data.rate.base_price,
@@ -443,7 +443,7 @@ function Rate(props) {
         },
         cart_condition: {
             conditionMatch: checkstate.selectedCondition,
-            cartCondition: item
+            cartCondition: items
         },
         status: 1,
         tag: ''
@@ -564,8 +564,8 @@ function Rate(props) {
             secondaryActions={<Button onClick={() => BacktoZone(zone_id)}>Back</Button>}
         >
             <div style={{ marginTop: '2%', marginBottom: '2%' }}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                <Layout>
+                    <Layout.Section variant="oneThird">
                         <div style={{ paddingTop: '10%' }}>
                             <Text variant="headingLg" as="h5">
                                 Rate details
@@ -574,8 +574,8 @@ function Rate(props) {
                                 Specify which rates should apply in this zone
                             </p>
                         </div>
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                    </Layout.Section>
+                    <Layout.Section>
                         <LegacyCard sectioned>
                             <div style={{ marginBottom: "2%" }}>
                                 <Select
@@ -629,8 +629,8 @@ function Rate(props) {
                                 />
                             </div>
                         </LegacyCard>
-                    </Grid.Cell>
-                </Grid>
+                    </Layout.Section>
+                </Layout>
             </div>
 
             <Divider borderColor="border" />
@@ -654,31 +654,31 @@ function Rate(props) {
                                 </Text>
                                 <RadioButton
                                     label="Not Any Condition"
-                                    checked={checkstate.selectedCondition === 'notAny'}
+                                    checked={checkstate.selectedCondition === 0}
                                     id="notAny"
                                     name="conditionMatch"
-                                    onChange={() => handlecheckedChange('selectedCondition', 'notAny')}
+                                    onChange={() => handlecheckedChange('selectedCondition', 0)}
                                 />
                                 <RadioButton
                                     label="All"
-                                    checked={checkstate.selectedCondition === 'All'}
+                                    checked={checkstate.selectedCondition === 1}
                                     id="AllCondition"
                                     name="conditionMatch"
-                                    onChange={() => handlecheckedChange('selectedCondition', 'All')}
+                                    onChange={() => handlecheckedChange('selectedCondition', 1)}
                                 />
                                 <RadioButton
                                     label="Any"
-                                    checked={checkstate.selectedCondition === 'Any'}
+                                    checked={checkstate.selectedCondition === 2}
                                     id="Any"
                                     name="conditionMatch"
-                                    onChange={() => handlecheckedChange('selectedCondition', 'Any')}
+                                    onChange={() => handlecheckedChange('selectedCondition', 2)}
                                 />
                                 <RadioButton
                                     label="NOT All"
-                                    checked={checkstate.selectedCondition === 'notAll'}
+                                    checked={checkstate.selectedCondition === 3}
                                     id="notAll"
                                     name="conditionMatch"
-                                    onChange={() => handlecheckedChange('selectedCondition', 'notAll')}
+                                    onChange={() => handlecheckedChange('selectedCondition', 3)}
                                 />
 
                             </div>

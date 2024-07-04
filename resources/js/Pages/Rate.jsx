@@ -104,21 +104,21 @@ function Rate(props) {
     const editRate = async () => {
         try {
             const token = await getSessionToken(app);
-    
+
             const response = await axios.get(`${apiCommonURL}/api/rate/${rate_id}/edit`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
             console.log(response.data);
-    
+
             const allStates = response.data.states;
             const formattedOptions = [];
-    
+
             for (const country in allStates) {
                 if (allStates.hasOwnProperty(country)) {
                     const countryData = allStates[country];
-    
+
                     const stateOptions = countryData.map(state => ({
                         value: state.code,
                         label: `${state.name} (${state.code})`
@@ -129,14 +129,14 @@ function Rate(props) {
                     });
                 }
             }
-    
+
             setOptions(formattedOptions);
             setState(formattedOptions.map(section => section.options).flat());
             if (response.data.rate.zipcode) {
                 const zipCodes = response.data.rate.zipcode.zipcode?.map(zip => zip.toString()) || [];
                 const combinedZipCodes = zipCodes.join(',');
                 setZipcodeValue(combinedZipCodes);
-    
+
                 setCheckState(prevState => ({
                     ...prevState,
                     selectedZipCondition: response.data.rate.zipcode.zipcodeSelection,
@@ -144,7 +144,7 @@ function Rate(props) {
                     selectedZipCode: response.data.rate.zipcode.isInclude,
                 }));
             }
-    
+
             if (response.data.rate.cart_condition) {
                 setCheckState(prevState => ({
                     ...prevState,
@@ -152,11 +152,11 @@ function Rate(props) {
                 }));
                 setItems(response.data.rate.cart_condition.cartCondition)
             }
-    
+
             if (response.data.rate.zipcode.state) {
                 setSelectedOptions(response.data.rate.zipcode.state);
             }
-    
+
             setFormData({
                 name: response.data.rate.name,
                 base_price: response.data.rate.base_price,
@@ -166,14 +166,14 @@ function Rate(props) {
                 zone_id: response.data.rate.zone_id,
                 status: response.data.rate.status,
             });
-    
+
             // setLoading(false); 
-    
+
         } catch (error) {
             console.error("Error fetching edit data:", error);
         }
     };
-    
+
 
     const getLocation = async () => {
         try {
@@ -231,7 +231,7 @@ function Rate(props) {
             setInputValue(value);
 
             if (value === '') {
-                setOptions(options); 
+                setOptions(options);
                 return;
             }
 
@@ -443,8 +443,7 @@ function Rate(props) {
         },
         cart_condition: {
             conditionMatch: checkstate.selectedCondition,
-            cartCondition: items
-
+            cartCondition: item
         },
         status: 1,
         tag: ''
@@ -559,14 +558,13 @@ function Rate(props) {
     }
     return (
         <Page
-            fullWidth
+
             title={rate_id ? 'Edit Rate' : 'Add Rate'}
             primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
             secondaryActions={<Button onClick={() => BacktoZone(zone_id)}>Back</Button>}
         >
             <div style={{ marginTop: '2%', marginBottom: '2%' }}>
                 <Grid>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '10%' }}>
                             <Text variant="headingLg" as="h5">
@@ -577,7 +575,7 @@ function Rate(props) {
                             </p>
                         </div>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
                             <div style={{ marginBottom: "2%" }}>
                                 <Select
@@ -632,14 +630,12 @@ function Rate(props) {
                             </div>
                         </LegacyCard>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
             </div>
 
             <Divider borderColor="border" />
             <div style={{ marginTop: '2%', marginBottom: '2%' }}>
                 <Grid>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '10%' }}>
                             <Text variant="headingLg" as="h5">
@@ -650,7 +646,7 @@ function Rate(props) {
                             </p>
                         </div>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: "2%", }}>
                                 <Text variant="headingXs" as="h6">
@@ -746,14 +742,12 @@ function Rate(props) {
                             )}
                         </LegacyCard>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
             </div>
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%", }}>
                 <Grid>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '7%' }}>
                             <Text variant="headingLg" as="h5">
@@ -768,7 +762,7 @@ function Rate(props) {
 
                         </div>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
 
                             <div>
@@ -863,14 +857,13 @@ function Rate(props) {
                             )}
                         </LegacyCard>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
             </div>
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%", }}>
                 <Grid>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '7%' }}>
                             <Text variant="headingLg" as="h5">
@@ -884,7 +877,7 @@ function Rate(props) {
                             </p>
                         </div>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
                             <Checkbox
                                 label="Based On Cart"
@@ -898,7 +891,7 @@ function Rate(props) {
                                     <Text variant="headingSm" as="h6">
                                         By Cart Surcharge
                                     </Text>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '35%', paddingTop: '1%' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '30%', paddingTop: '1%' }}>
                                         <RadioButton
                                             label="Item Weight"
                                             checked={checkstate.selectedByCart === 'weight'}
@@ -914,7 +907,7 @@ function Rate(props) {
                                             onChange={() => handlecheckedChange('selectedByCart', 'Qty')}
                                         />
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '24.6%', marginBottom: "2%" }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '21.5%', marginBottom: "2%" }}>
                                         <RadioButton
                                             label="Cart Total Percentage"
                                             checked={checkstate.selectedByCart === 'Percentage'}
@@ -939,7 +932,7 @@ function Rate(props) {
                                     <Text variant="headingSm" as="h6">
                                         By Product Surcharge
                                     </Text>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '40%', paddingTop: '1%' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '35.5%', paddingTop: '1%' }}>
                                         <RadioButton
                                             label="Product"
                                             checked={checkstate.selectedByCart === 'Product'}
@@ -955,7 +948,7 @@ function Rate(props) {
                                             onChange={() => handlecheckedChange('selectedByCart', 'Vendor')}
                                         />
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '41%' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '36.5%' }}>
                                         <RadioButton
                                             label="Variant"
                                             checked={checkstate.selectedByCart === 'Variant'}
@@ -971,7 +964,7 @@ function Rate(props) {
                                             onChange={() => handlecheckedChange('selectedByCart', 'Tag')}
                                         />
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '33.8%' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '30.8%' }}>
                                         <RadioButton
                                             label="Product Type"
                                             checked={checkstate.selectedByCart === 'Type'}
@@ -987,7 +980,7 @@ function Rate(props) {
                                             onChange={() => handlecheckedChange('selectedByCart', 'SKU')}
                                         />
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '24.9%' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '23.5%' }}>
                                         <RadioButton
                                             label="Product Collection Id"
                                             checked={checkstate.selectedByCart === 'Collection'}
@@ -997,7 +990,7 @@ function Rate(props) {
                                         />
                                         <RadioButton
                                             label="Variant Metafields"
-                                            checked={checkedState.selectedByCart === 'Metafields'}
+                                            checked={checkstate.selectedByCart === 'Metafields'}
                                             id="Metafields"
                                             name="Metafields"
                                             onChange={() => handlecheckedChange('selectedByCart', 'Metafields')}
@@ -1248,14 +1241,12 @@ function Rate(props) {
 
                         </LegacyCard>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
             </div>
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '5%' }}>
                             <Text variant="headingLg" as="h5">
@@ -1266,7 +1257,7 @@ function Rate(props) {
                             </p>
                         </div>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
                             <TextField
                                 label="Merge rate tag"
@@ -1277,7 +1268,6 @@ function Rate(props) {
                             />
                         </LegacyCard>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
 
             </div>
@@ -1286,7 +1276,6 @@ function Rate(props) {
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '5%' }}>
                             <Text variant="headingLg" as="h5">
@@ -1297,7 +1286,7 @@ function Rate(props) {
                             </p>
                         </div>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
                             <Text variant="headingSm" as="h6">
                                 Ship From Locations
@@ -1340,7 +1329,6 @@ function Rate(props) {
 
                         </LegacyCard>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
 
             </div>
@@ -1348,7 +1336,6 @@ function Rate(props) {
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '5%' }}>
                             <Text variant="headingLg" as="h5">
@@ -1359,7 +1346,7 @@ function Rate(props) {
                             </p>
                         </div>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
                             <Text variant="headingSm" as="h6">
                                 Do you want to apply schedule rate?
@@ -1422,7 +1409,6 @@ function Rate(props) {
                             )}
                         </LegacyCard>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
 
             </div>
@@ -1430,7 +1416,6 @@ function Rate(props) {
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '5%' }}>
                             <Text variant="headingLg" as="h5">
@@ -1441,7 +1426,7 @@ function Rate(props) {
                             </p>
                         </div>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
 
                             <div style={{ alignItems: 'center' }}>
@@ -1478,7 +1463,7 @@ function Rate(props) {
                                             <Divider borderColor="border" />
                                         </div>
 
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8%', paddingTop: '3%', marginBottom: "4%" }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8%', marginTop: '3%', }}>
                                             <Text variant="headingSm" as="h6">
                                                 Update Price Type :
                                             </Text>
@@ -1597,7 +1582,6 @@ function Rate(props) {
 
                         </LegacyCard>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
 
             </div>

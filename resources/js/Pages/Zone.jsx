@@ -192,7 +192,11 @@ function Zone(props) {
                 value: cuency.currency
             }))
             setCurrencys(currency)
-          
+            setFormData(prevState => ({
+                ...prevState,
+                currency: response.data.shop_currency,  
+              }));
+          console.log(response.data)
             setLoading(false)
         } catch (error) {
             console.error("Error fetching country:", error);
@@ -361,11 +365,8 @@ function Zone(props) {
             setShowToast(true);
         }
     }
-
-
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
         useIndexResourceState(rate);
-
 
     const filteredZones = rate.filter(zone =>
         zone.name.toLowerCase().includes(textFieldValue.toLowerCase())
@@ -541,7 +542,6 @@ function Zone(props) {
                                     options={currencys}
                                     onChange={handleZoneDataChange('currency')}
                                     value={formData.currency}
-
                                 />
                             </div>
                         </LegacyCard>

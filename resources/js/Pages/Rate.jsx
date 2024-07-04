@@ -194,7 +194,6 @@ function Rate(props) {
     const getProduct = async () => {
         try {
             const token = await getSessionToken(app);
-            console.log(token)
             const response = await axios.post(`${apiCommonURL}/api/products`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -1467,6 +1466,96 @@ function Rate(props) {
                                                 </div>
                                             )}
                                         </div>
+                                    )}
+                                    {checkstate.selectedByCart === 'Tag' && (
+                                          <div>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '5%' }}>
+                                              <Text variant="headingSm" as="h6">
+                                                  Multiply line item QTY price:
+                                              </Text>
+                                              <RadioButton
+                                                  label="Yes"
+                                                  checked={checkstate.selectedMultiplyLine === 'Yes'}
+                                                  id="Yes"
+                                                  name="Yes"
+                                                  onChange={() => handlecheckedChange('selectedMultiplyLine', 'Yes')}
+                                              />
+                                              <RadioButton
+                                                  label="No"
+                                                  checked={checkstate.selectedMultiplyLine === 'no'}
+                                                  id="no"
+                                                  name="SKU"
+                                                  onChange={() => handlecheckedChange('selectedMultiplyLine', 'no')}
+                                              />
+                                              <RadioButton
+                                                  label="Percentage"
+                                                  checked={checkstate.selectedMultiplyLine === 'pr'}
+                                                  id="pr"
+                                                  name="pr"
+                                                  onChange={() => handlecheckedChange('selectedMultiplyLine', 'pr')}
+                                              />
+                                          </div>
+
+                                          {checkstate.selectedMultiplyLine !== 'no' && (
+                                              <div style={{ marginTop: "4%" }}>
+                                                  <Divider borderColor="border" />
+
+                                                  {checkstate.selectedMultiplyLine === 'pr' && (
+                                                      <div style={{ marginTop: "2%" }}>
+                                                          <TextField
+                                                              type="text"
+                                                              label="Cart Total Percentage"
+                                                              onChange={() => { }}
+                                                              autoComplete="off"
+                                                              placeholder='0.00'
+                                                              prefix='%'
+                                                          />
+
+                                                          <div style={{ marginTop: "2%", marginBottom: "3%" }}>
+                                                              <FormLayout>
+                                                                  <FormLayout.Group>
+                                                                      <TextField
+                                                                          type="text"
+                                                                          label="Minimum Charge Price"
+                                                                          onChange={() => { }}
+                                                                          autoComplete="off"
+                                                                          placeholder='0'
+                                                                      />
+                                                                      <TextField
+                                                                          type="text"
+                                                                          label="Maximum Charge Price"
+                                                                          onChange={() => { }}
+                                                                          autoComplete="off"
+                                                                          placeholder='0'
+                                                                      />
+                                                                  </FormLayout.Group>
+                                                              </FormLayout>
+                                                          </div>
+
+                                                          <Divider borderColor="border" />
+
+                                                      </div>
+                                                  )}
+
+
+                                                  <div style={{ marginTop: "2%" }}>
+                                                      <TextField
+                                                          type="text"
+                                                          label="Vendor Tag  "
+                                                          onChange={() => { }}
+                                                          autoComplete="off"
+                                                          placeholder='Enter Multiple Product Tag Name with Comma Seprate(,)'
+                                                          multiline={4}
+                                                          monospaced
+                                                          helpText='Note: Please enter the exact term of multiple Product Tag Name with comma separator(,).'
+                                                      />
+                                                  </div>
+
+
+
+                                              </div>
+                                          )}
+                                      </div>
                                     )}
 
                                 </div>

@@ -22,8 +22,12 @@ import {
     FormLayout,
     DatePicker,
     Layout,
+    useIndexResourceState,
+    IndexTable,
+    Thumbnail,
+    Icon
 } from '@shopify/polaris';
-import { DeleteIcon, PlusIcon } from '@shopify/polaris-icons';
+import { DeleteIcon, PlusIcon,SearchIcon } from '@shopify/polaris-icons';
 import '../../../public/css/style.css';
 import createApp from '@shopify/app-bridge';
 import { getSessionToken } from "@shopify/app-bridge-utils";
@@ -41,6 +45,7 @@ function Rate(props) {
     const [inputValue, setInputValue] = useState('');
     const [zipcodeValue, setZipcodeValue] = useState('');
     const navigate = useNavigate();
+    const [product, setProduct] = useState();
     const [checkstate, setCheckState] = useState({
         selectedCondition: 0,
         selectedStateCondition: 'All',
@@ -50,7 +55,7 @@ function Rate(props) {
         selectedByUpdatePriceType: 'Fixed',
         selectedByUpdatePriceEffect: 'increase',
         selectedZipCondition: 'All',
-        selectedZipCode: 'include',
+        selectedZipCode: 'Include',
         selectedMultiplyLine: 'Yes'
     });
     const handlecheckedChange = (key, value) => {
@@ -63,13 +68,20 @@ function Rate(props) {
     const [toastActive, setToastActive] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
     const [locations, setLocations] = useState([]);
-
+    const [showTable, setShowTable] = useState(false);
+    const [value, setValue] = useState('');
     const [month, setMonth] = useState(new Date().getMonth());
     const [year, setYear] = useState(new Date().getFullYear());
     const [startDate, setStartDate] = useState(new Date());
     const [endDate, setEndDate] = useState(new Date());
     const [isStartDatePickerVisible, setIsStartDatePickerVisible] = useState(false);
     const [isEndDatePickerVisible, setIsEndDatePickerVisible] = useState(false);
+    const [startCursor, setStartCursor] = useState('');
+    const [endCursor, setEndCursor] = useState('');
+    const [hasNextPage, setHasNextPage] = useState(false);
+    const [hasPreviousPage, setHasPreviousPage] = useState(false);
+    const [products, setProducts] = useState([]);
+    const [filteredProducts, setFilteredProducts] = useState([]);
 
     const handleMonthChange = useCallback((month, year) => {
         setMonth(month);
@@ -191,24 +203,112 @@ function Rate(props) {
         }
     };
 
-    const getProduct = async () => {
+
+    const handlesearchChange = useCallback(
+        (newValue) => {
+            setValue(newValue);
+            if (newValue === '') {
+                setFilteredProducts(products);
+            } else {
+                const lowerCaseValue = newValue.toLowerCase();
+                setFilteredProducts(products.filter(product =>
+                    product.title.toLowerCase().includes(lowerCaseValue)
+                ));
+            }
+        },
+        [products]
+    );
+    const handleClearButtonClick = useCallback(() => {
+        setValue('');
+        setFilteredProducts(products);
+    }, [products]);
+
+    const fetchProducts = async () => {
+        const token = await getSessionToken(app);
         try {
-            const token = await getSessionToken(app);
-            console.log(token,'token')
-            console.log('hello')
-            const response = await axios.post(`${apiCommonURL}/api/products`, {
+            const productResponse = await axios.post(`${apiCommonURL}/api/products`, {
+                startCursor,
+                endCursor
+            }, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            console.log(response.data)
-            console.log('hello after api ca;l')
+            const productData = productResponse.data;
+            setProducts(productData.products);
+            setFilteredProducts(productData.products);
+            setStartCursor(productData.startCursor);
+            setEndCursor(productData.endCursor);
+            setHasNextPage(productData.hasNextPage);
+            setHasPreviousPage(productData.hasPreviousPage);
+            console.log(productResponse.data, 'product');
         } catch (error) {
-            console.error("Error fetching products", error);
+            console.error('Error fetching data:', error);
         }
     };
 
+    const resourceName = {
+        singular: 'order',
+        plural: 'products',
+    };
+    const handleSearchClick = () => {
+        setShowTable(true);
 
+    };
+
+
+    const { selectedResources, allResourcesSelected, handleSelectionChange } =
+        useIndexResourceState(filteredProducts);
+
+    const rowMarkup = filteredProducts.map(({ id, title, image }, index) => (
+        <IndexTable.Row
+            id={id}
+            key={id}
+            selected={selectedResources.includes(id)}
+            position={index}
+        >
+            <IndexTable.Cell>
+
+                <Thumbnail
+                    source={image}
+                    size="large"
+                    alt="Black choker necklace"
+                />
+
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+
+
+                <Text fontWeight="bold" as="span">
+                    {title}
+                </Text>
+
+
+            </IndexTable.Cell>
+            {/* <IndexTable.Cell>
+                <div style={{ width: "53%",position:"relative" }}>
+                    <Select
+                        options={options}
+                        onChange={handleSelectChange}
+                        value={selected}
+                        
+                    />
+                </div>
+            </IndexTable.Cell> */}
+        </IndexTable.Row>
+    ));
+
+    const handleNextPage = () => {
+        if (hasNextPage) {
+            fetchProducts(endCursor);
+        }
+    };
+
+    const handlePreviousPage = () => {
+        if (hasPreviousPage) {
+            fetchProducts(startCursor);
+        }
+    };
 
     const getstate = async () => {
         try {
@@ -446,7 +546,7 @@ function Rate(props) {
         editRate();
         getLocation();
         getstate();
-        getProduct()
+        fetchProducts()
     }, []);
     const [formData, setFormData] = useState({
         name: '',
@@ -905,7 +1005,7 @@ function Rate(props) {
                                 checked={checkedState.checked1}
                                 onChange={() => handleCheckChange('checked1')}
                             />
-                            {!checkedState.checked1 && (
+                            {checkedState.checked1 && (
                                 <div style={{ marginTop: "2%" }}>
                                     <Divider borderColor="border" />
                                     <div style={{ marginBottom: "2%" }}></div>
@@ -1372,8 +1472,51 @@ function Rate(props) {
                                                     </div>
                                                     <p style={{ marginTop: "2%" }}>Note: Please enter the exact term for product title, collection id, product type, and product vendor that needs to be searched.
                                                     </p>
-                                                    <div style={{ marginTop: "2%", width: '20%' }}>
+                                                    <div style={{ marginTop: "2%", width: '20%' }} onClick={handleSearchClick}>
                                                         <Button variant="primary" >Search Product</Button></div>
+
+                                                    <div style={{ marginTop: "4%" }}>
+                                                        {showTable && (
+
+                                                            <div>
+                                                                <div>
+                                                                <TextField
+                                    placeholder='search'
+                                    onChange={handlesearchChange}
+                                    value={value}
+                                    type="text"
+                                    prefix={<Icon source={SearchIcon} color="inkLighter" />}
+                                    autoComplete="off"
+                                    clearButton
+                                    onClearButtonClick={handleClearButtonClick}
+                                />
+                                                                </div>
+                                                            <div style={{ marginTop: "4%" }}>
+                                                                <IndexTable
+                                                                    resourceName={resourceName}
+                                                                    itemCount={filteredProducts.length}
+                                                                    selectedItemsCount={
+                                                                        allResourcesSelected ? 'All' : selectedResources.length
+                                                                    }
+                                                                    onSelectionChange={handleSelectionChange}
+                                                                    headings={[
+                                                                        { title: 'Image' },
+                                                                        { title: 'Title' },
+                                                                        
+                                                                    ]}
+                                                                    pagination={{
+                                                                        hasNext: hasNextPage,
+                                                                        hasPrevious: hasPreviousPage,
+                                                                        onNext: handleNextPage,
+                                                                        onPrevious: handlePreviousPage,
+                                                                    }}
+                                                                >
+                                                                    {rowMarkup}
+                                                                </IndexTable>
+                                                            </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
 
@@ -1737,10 +1880,10 @@ function Rate(props) {
 
                                                 </div>
                                             )}
-                                            
+
                                         </div>
                                     )}
-                                     {checkstate.selectedByCart === 'Collection' && (
+                                    {checkstate.selectedByCart === 'Collection' && (
                                         <div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '5%' }}>
                                                 <Text variant="headingSm" as="h6">
@@ -1828,7 +1971,7 @@ function Rate(props) {
 
                                                 </div>
                                             )}
-                                            
+
                                         </div>
                                     )}
                                     {checkstate.selectedByCart === 'Metafields' && (
@@ -1919,7 +2062,7 @@ function Rate(props) {
 
                                                 </div>
                                             )}
-                                            
+
                                         </div>
                                     )}
                                 </div>

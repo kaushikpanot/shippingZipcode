@@ -69,6 +69,7 @@ function Home(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
+            console.log(response.data)
             const ruledata = response.data.zones;
             setZoneDetails(ruledata);
             setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
@@ -77,26 +78,9 @@ function Home(props) {
             console.error(error, 'error from');
         }
     };
-    const getProduct = async () => {
-        try {
-            const token = await getSessionToken(app);
-            
-            console.log('hello')
-            const response = await axios.post(`${apiCommonURL}/api/products`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            console.log(token,'token')
-            console.log(response.data)
-            console.log('hello after api ca;l')
-        } catch (error) {
-            console.error("Error fetching products", error);
-        }
-    };
+   
     useEffect(() => {
         getZoneDetails();
-        getProduct();
     }, []);
 
     const handleEditZone = (zone_id) => {

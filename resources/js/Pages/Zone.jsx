@@ -196,7 +196,6 @@ function Zone(props) {
                 ...prevState,
                 currency: response.data.shop_currency,  
               }));
-          console.log(response.data)
             setLoading(false)
         } catch (error) {
             console.error("Error fetching country:", error);

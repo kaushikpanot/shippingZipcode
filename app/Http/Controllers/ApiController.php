@@ -183,8 +183,8 @@ class ApiController extends Controller
     {
         try {
             // Retrieve the Shopify session
-            $shop = request()->attributes->get('shopifySession');
-            // $shop = "krishnalaravel-test.myshopify.com";
+            // $shop = request()->attributes->get('shopifySession');
+            $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -210,15 +210,14 @@ class ApiController extends Controller
             $filterCurrency = $countryData->map(function ($currency) {
 
                 return [
-                    'code'=> $currency['currency'],
+                    'code' => $currency['currency'],
                     'symbol' => $currency['currency_symbol'],
                     'currency' => $currency['currency_name'],
                     'currency_code_symbol' => $currency['currency_name'] . " ({$currency['currency']} {$currency['currency_symbol']})"
                 ];
             })->unique('currency_code_symbol')->values();
 
-            return response()->json(['status'=>true, 'message'=>'Currencies retrieved successfully.', 'shop_currency' => $token['shop_currency'], 'currencies' => $filterCurrency]);
-
+            return response()->json(['status' => true, 'message' => 'Currencies retrieved successfully.', 'shop_currency' => $token['shop_currency'], 'currencies' => $filterCurrency]);
         } catch (RequestException $e) {
             // Handle request-specific exceptions
             Log::error('HTTP request error', ['exception' => $e->getMessage()]);
@@ -677,10 +676,8 @@ class ApiController extends Controller
 
             $inputData['user_id'] = $user_id;
 
-            // Validation rules and custom messages
             $rules = [
                 'zone_id' => 'required|exists:zones,id',
-                // Add other validation rules here if necessary
             ];
 
             $messages = [
@@ -706,7 +703,7 @@ class ApiController extends Controller
                 ]);
             }
 
-            if (isset($inputData['cart_condition'])){
+            if (isset($inputData['cart_condition'])) {
                 $rules = array_merge($rules, [
                     'cart_condition.conditionMatch' => 'required|in:0,1,2,3',
                     'cart_condition.cartCondition' => 'required|array',
@@ -720,6 +717,25 @@ class ApiController extends Controller
                 ]);
 
                 $inputData['conditionMatch'] = $inputData['cart_condition']['conditionMatch'];
+            }
+
+            if (isset($inputData['scheduleRate'])) {
+                $rules = array_merge($rules, [
+                    'scheduleRate.schedule_start_date_time' => 'required_if:scheduleRate.schedule_rate,1|date',
+                    'scheduleRate.schedule_end_date_time' => 'required_if:scheduleRate.schedule_rate,1|date',
+                ]);
+
+                $messages = array_merge($messages, [
+                    'scheduleRate.schedule_start_date_time.required_if' => 'The schedule start date and time is required when schedule rate is set to Yes.',
+                    'scheduleRate.schedule_start_date_time.date' => 'The schedule start date and time must be a valid date and time.',
+                    'scheduleRate.schedule_end_date_time.required_if' => 'The schedule end date and time is required when schedule rate is set to Yes.',
+                    'scheduleRate.schedule_end_date_time.date' => 'The schedule end date and time must be a valid date and time.',
+                ]);
+
+                $inputData['schedule_rate'] = $inputData['scheduleRate']['schedule_rate'];
+                $inputData['schedule_start_date_time'] = $inputData['scheduleRate']['schedule_start_date_time'];
+                $inputData['schedule_end_date_time'] = $inputData['scheduleRate']['schedule_end_date_time'];
+                unset($inputData['scheduleRate']);
             }
 
             // Validate the request input
@@ -741,9 +757,6 @@ class ApiController extends Controller
                 ];
 
                 if ($inputData['zipcode']['stateSelection'] == 'Custom' && isset($inputData['zipcode']['state'])) {
-                    // $stateArr = $inputData['zipcode']['state'];
-                    // $stateCollection = collect($stateArr);
-                    // $zipcodeData['state'] = $stateCollection->pluck('code')->implode(', ');
                     $zipcodeData['state'] = json_encode($inputData['zipcode']['state']);
                 } else {
                     $zipcodeData['state'] = null;
@@ -886,6 +899,18 @@ class ApiController extends Controller
 
             $state = $this->getState($countryList);
 
+            if ($rate->schedule_rate) {
+                $rate->scheduleRate = [
+                    "schedule_rate" => $rate->schedule_rate,
+                    "schedule_start_date_time" => $rate->schedule_start_date_time,
+                    "schedule_end_date_time" => $rate->schedule_end_date_time
+                ];
+
+                unset($rate->schedule_rate);
+                unset($rate->schedule_start_date_time);
+                unset($rate->schedule_end_date_time);
+            }
+
             unset($rate->zone);
 
             return response()->json([
@@ -1002,8 +1027,8 @@ class ApiController extends Controller
     public function getProductList(Request $request)
     {
         try {
-            $shop = $request->attributes->get('shopifySession');
-            // $shop = "krishnalaravel-test.myshopify.com";
+            // $shop = $request->attributes->get('shopifySession');
+            $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -1044,6 +1069,14 @@ class ApiController extends Controller
                         node {
                             id
                             title
+                            variants(first: 1) {
+                                edges {
+                                    node {
+                                        id
+                                        price
+                                    }
+                                }
+                            }
                             images(first: 1) {
                                 edges {
                                     node {
@@ -1076,7 +1109,6 @@ class ApiController extends Controller
             $response = Http::withHeaders($customHeaders)->post($graphqlEndpoint, [
                 'query' => $query,
             ]);
-
             // Parse the JSON response
             $jsonResponse = $response->json();
 
@@ -1086,10 +1118,16 @@ class ApiController extends Controller
                 $collectionsArray = [];
                 foreach ($jsonResponse['data']['products']['edges'] as $value) {
                     $product = $value['node'];
+                    // Fetch the first variant's price
+                    $price = null;
+                    if (isset($product['variants']['edges'][0]['node']['price'])) {
+                        $price = $product['variants']['edges'][0]['node']['price'];
+                    }
                     $itemArray = [
                         'id' => str_replace('gid://shopify/Product/', '', $product['id']),
                         'title' => ucfirst($product['title']),
-                        'image' => isset($product['images']['edges'][0]['node']['originalSrc']) ? $product['images']['edges'][0]['node']['originalSrc'] : null
+                        'image' => isset($product['images']['edges'][0]['node']['originalSrc']) ? $product['images']['edges'][0]['node']['originalSrc'] : null,
+                        'price'=>$price
                     ];
                     $collectionsArray[] = $itemArray;
                 }

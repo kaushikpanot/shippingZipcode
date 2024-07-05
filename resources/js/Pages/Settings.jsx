@@ -46,6 +46,7 @@ const Settings = (props) => {
   const getSettingData = async () => {
     try {
       const token = await getSessionToken(app);
+      console.log(token)
       const response = await axios.get(`${apiCommonURL}/api/settings`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -67,13 +68,11 @@ const Settings = (props) => {
   const handleSaveSettings = async () => {
     const token = await getSessionToken(app);
     try {
-      console.log('Settings to be saved:', settings);
       const response = await axios.post(`${apiCommonURL}/api/settings`, settings, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      console.log('Response from save settings:', response);
       setActive(true);
     } catch (error) {
       console.error('Error saving settings:', error);

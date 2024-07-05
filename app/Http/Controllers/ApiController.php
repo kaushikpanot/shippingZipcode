@@ -677,10 +677,8 @@ class ApiController extends Controller
 
             $inputData['user_id'] = $user_id;
 
-            // Validation rules and custom messages
             $rules = [
                 'zone_id' => 'required|exists:zones,id',
-                // Add other validation rules here if necessary
             ];
 
             $messages = [
@@ -722,6 +720,25 @@ class ApiController extends Controller
                 $inputData['conditionMatch'] = $inputData['cart_condition']['conditionMatch'];
             }
 
+            if (isset($inputData['scheduleRate'])) {
+                $rules = array_merge($rules, [
+                    'scheduleRate.schedule_start_date_time' => 'required_if:scheduleRate.schedule_rate,1|date',
+                    'scheduleRate.schedule_end_date_time' => 'required_if:scheduleRate.schedule_rate,1|date',
+                ]);
+
+                $messages = array_merge($messages, [
+                    'scheduleRate.schedule_start_date_time.required_if' => 'The schedule start date and time is required when schedule rate is set to Yes.',
+                    'scheduleRate.schedule_start_date_time.date' => 'The schedule start date and time must be a valid date and time.',
+                    'scheduleRate.schedule_end_date_time.required_if' => 'The schedule end date and time is required when schedule rate is set to Yes.',
+                    'scheduleRate.schedule_end_date_time.date' => 'The schedule end date and time must be a valid date and time.',
+                ]);
+
+                $inputData['schedule_rate'] = $inputData['scheduleRate']['schedule_rate'];
+                $inputData['schedule_start_date_time'] = $inputData['scheduleRate']['schedule_start_date_time'];
+                $inputData['schedule_end_date_time'] = $inputData['scheduleRate']['schedule_end_date_time'];
+                unset($inputData['scheduleRate']);
+            }
+
             // Validate the request input
             $validator = Validator::make($inputData, $rules, $messages);
 
@@ -741,9 +758,6 @@ class ApiController extends Controller
                 ];
 
                 if ($inputData['zipcode']['stateSelection'] == 'Custom' && isset($inputData['zipcode']['state'])) {
-                    // $stateArr = $inputData['zipcode']['state'];
-                    // $stateCollection = collect($stateArr);
-                    // $zipcodeData['state'] = $stateCollection->pluck('code')->implode(', ');
                     $zipcodeData['state'] = json_encode($inputData['zipcode']['state']);
                 } else {
                     $zipcodeData['state'] = null;
@@ -885,6 +899,18 @@ class ApiController extends Controller
             $countryList = $rate->zone->countries->pluck('country', 'countryCode');
 
             $state = $this->getState($countryList);
+
+            if($rate->schedule_rate){
+                $rate->scheduleRate = [
+                    "schedule_rate" => $rate->schedule_rate,
+                    "schedule_start_date_time" => $rate->schedule_start_date_time,
+                    "schedule_end_date_time" => $rate->schedule_end_date_time
+                ];
+
+                unset($rate->schedule_rate);
+                unset($rate->schedule_start_date_time);
+                unset($rate->schedule_end_date_time);
+            }
 
             unset($rate->zone);
 

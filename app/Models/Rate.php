@@ -94,11 +94,19 @@ class Rate extends Model
 
     public function getScheduleStartDateTimeAttribute($value)
     {
+        if (is_null($value)) {
+            return null;
+        }
+
         return $this->getDateTimeAttribute($value, 'schedule_start_date_time');
     }
 
     public function getScheduleEndDateTimeAttribute($value)
     {
+        if (is_null($value)) {
+            return null;
+        }
+
         return $this->getDateTimeAttribute($value, 'schedule_end_date_time');
     }
 }

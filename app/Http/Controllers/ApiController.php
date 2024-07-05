@@ -445,7 +445,7 @@ class ApiController extends Controller
             // If a name parameter is provided, filter the results based on it
             $filter_param = $request->input('filter_param');
 
-            if (@$filter_param) {
+            if(@$filter_param) {
                 $ratesQuery->where(function ($query) use ($filter_param) {
                     $query->where('name', 'like', '%' . $filter_param . '%')
                         ->orWhere('service_code', 'like', '%' . $filter_param . '%');
@@ -455,7 +455,7 @@ class ApiController extends Controller
             // Fetch the rates, with optional pagination
             $per_page = $request->input('per_page', 10);
             $rates = $ratesQuery->paginate($per_page);
-
+            // dd($rates->items());
 
             return response()->json([
                 'status' => true,
@@ -653,8 +653,8 @@ class ApiController extends Controller
     public function rateStore(Request $request)
     {
         try {
-            $shop = $request->attributes->get('shopifySession');
-            // $shop = "krishnalaravel-test.myshopify.com";
+            // $shop = $request->attributes->get('shopifySession');
+            $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -664,7 +664,7 @@ class ApiController extends Controller
             }
 
             $inputData = $request->all();
-
+            // dd($inputData);
             $user_id = User::where('name', $shop)->value('id');
 
             if (!$user_id) {

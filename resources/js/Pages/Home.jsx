@@ -69,11 +69,12 @@ function Home(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            console.log(response.data)
+         
             const ruledata = response.data.zones;
             setZoneDetails(ruledata);
             setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
             setLoading(false);
+            console.log(response.data)
         } catch (error) {
             console.error(error, 'error from');
         }

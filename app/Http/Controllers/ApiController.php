@@ -745,6 +745,12 @@ class ApiController extends Controller
                 return response()->json(['status' => false, 'errors' => $validator->errors()], 422);
             }
 
+            $inputData['rate_based_on_surcharge'] = $inputData['rate_based_on_surcharge'] ?? null;
+            $inputData['rate_tier'] = $inputData['rate_tier'] ?? null;
+            $inputData['exclude_rate_for_products'] = $inputData['exclude_rate_for_products'] ?? null;
+            $inputData['rate_modifiers'] = $inputData['rate_modifiers'] ?? null;
+
+
             // Update or create the rate
             $rate = Rate::updateOrCreate(['id' => $request->input('id')], $inputData);
 
@@ -866,7 +872,6 @@ class ApiController extends Controller
         try {
             // Assuming this is how you get the shop
             $shop = request()->attributes->get('shopifySession');
-            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([

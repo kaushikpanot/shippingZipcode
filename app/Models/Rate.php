@@ -11,7 +11,7 @@ class Rate extends Model
 {
     use HasFactory;
 
-    protected $fillable = ["user_id", "zone_id", "name", "base_price", "service_code", "description", "status", "conditionMatch", "cart_condition", "merge_rate_tag", "schedule_rate", "schedule_start_date_time", "schedule_end_date_time"];
+    protected $fillable = ["user_id", "zone_id", "name", "base_price", "service_code", "description", "status", "conditionMatch", "cart_condition", "rate_based_on_surcharge", "merge_rate_tag", "schedule_rate", "schedule_start_date_time", "schedule_end_date_time"];
 
     protected $hidden = ['created_at', 'updated_at'];
 
@@ -94,11 +94,45 @@ class Rate extends Model
 
     public function getScheduleStartDateTimeAttribute($value)
     {
+        if (is_null($value)) {
+            return null;
+        }
+
         return $this->getDateTimeAttribute($value, 'schedule_start_date_time');
     }
 
     public function getScheduleEndDateTimeAttribute($value)
     {
+        if (is_null($value)) {
+            return null;
+        }
+
         return $this->getDateTimeAttribute($value, 'schedule_end_date_time');
+    }
+
+    // Mutator for rate_based_on_surcharge
+    public function setRateBasedOnSurchargeAttribute($value)
+    {
+        if (!empty($value)) {
+            // Check if $value is an array or an object and JSON encode it
+            if (is_array($value) || is_object($value)) {
+                $this->attributes['rate_based_on_surcharge'] = json_encode($value);
+            } else {
+                // If $value is already a JSON string, assign it directly
+                $this->attributes['rate_based_on_surcharge'] = $value;
+            }
+        } else {
+            // If $value is null or empty, set the attribute to null or handle accordingly
+            $this->attributes['rate_based_on_surcharge'] = null;
+        }
+    }
+
+    public function getRateBasedOnSurchargeAttribute($value)
+    {
+        if (is_null($value)) {
+            return null;
+        }
+
+        return json_decode($value, true); // true to return as an associative array
     }
 }

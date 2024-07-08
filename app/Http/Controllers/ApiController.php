@@ -183,8 +183,8 @@ class ApiController extends Controller
     {
         try {
             // Retrieve the Shopify session
-            // $shop = request()->attributes->get('shopifySession');
-            $shop = "krishnalaravel-test.myshopify.com";
+            $shop = request()->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -1027,8 +1027,8 @@ class ApiController extends Controller
     public function getProductList(Request $request)
     {
         try {
-            // $shop = $request->attributes->get('shopifySession');
-            $shop = "krishnalaravel-test.myshopify.com";
+            $shop = $request->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([

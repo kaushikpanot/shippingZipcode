@@ -54,8 +54,8 @@ function Rate(props) {
         selectedByCart: 'weight',
         selectedByschedule: 0,
         selectedByAmount: 'unit',
-        selectedByUpdatePriceType: 'Fixed',
-        selectedByUpdatePriceEffect: 'increase',
+        selectedByUpdatePriceType: 0,
+        selectedByUpdatePriceEffect: 0,
         selectedZipCondition: 'All',
         selectedZipCode: 'Include',
         selectedMultiplyLine: 'Yes',
@@ -81,8 +81,8 @@ function Rate(props) {
 
     const [month, setMonth] = useState(new Date().getMonth());
     const [year, setYear] = useState(new Date().getFullYear());
-    const [startDate, setStartDate] = useState(new Date());
-    const [endDate, setEndDate] = useState(new Date());
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null);
     const [isStartDatePickerVisible, setIsStartDatePickerVisible] = useState(false);
     const [isEndDatePickerVisible, setIsEndDatePickerVisible] = useState(false);
 
@@ -92,18 +92,40 @@ function Rate(props) {
     const [hasPreviousPage, setHasPreviousPage] = useState(false);
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
-
-
+   
     const formatDate = (date) => {
-        if (!(date instanceof Date) || isNaN(date.getTime())) {
+        if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
             return '';
         }
         const day = date.getDate();
         const month = date.getMonth() + 1;
         const year = date.getFullYear();
-
+    
         return `${day}-${month}-${year}`;
     };
+    
+    const formattedStartDate = formatDate(startDate);
+    const formattedEndDate = formatDate(endDate);
+    const handleMonthChange = useCallback((month, year) => {
+        setMonth(month);
+        setYear(year);
+    }, []);
+    
+   const handleStartDateChange = useCallback((selectedDate) => {
+    if (selectedDate && selectedDate.start) {
+        setStartDate(selectedDate.start);
+        setIsStartDatePickerVisible(false);
+    }
+}, []);
+
+const handleEndDateChange = useCallback((selectedDate) => {
+    if (selectedDate && selectedDate.start) {
+        setEndDate(selectedDate.start);
+        setIsEndDatePickerVisible(false);
+    }
+}, []);
+
+
     const [selectedTierType, setSelectedTierType] = useState('selected');
     const [tiers, setTiers] = useState([
         { minWeight: '', maxWeight: '', basePrice: '' }
@@ -166,6 +188,7 @@ function Rate(props) {
         }));
     };
 
+
     const handleAddRateModifier = () => {
         const newId = rateModifiers.length ? rateModifiers[rateModifiers.length - 1].id + 1 : 1;
         setRateModifiers((prevModifiers) => [
@@ -181,6 +204,7 @@ function Rate(props) {
                 behaviour: 'Stack',
                 modifierType: 'Fixed',
                 adjustment: '',
+                effect: 'Decrease'
             },
         ]);
         setOpen((prevState) => ({
@@ -263,28 +287,6 @@ function Rate(props) {
         { label: 'Saturday', value: 'saturday' },
     ];
 
-
-
-
-
-    const formattedStartDate = formatDate(startDate);
-    const formattedEndDate = formatDate(endDate);
-
-
-    const handleMonthChange = useCallback((month, year) => {
-        setMonth(month);
-        setYear(year);
-    }, []);
-    const handleStartDateChange = useCallback((selectedDate) => {
-        setStartDate(selectedDate.start);
-        setIsStartDatePickerVisible(false);
-    }, []);
-    const handleEndDateChange = useCallback((selectedDate) => {
-        setEndDate(selectedDate.start);
-        setIsEndDatePickerVisible(false);
-    }, []);
-
-
     let app = "";
 
     const [checkedState, setCheckedState] = useState({
@@ -356,7 +358,10 @@ function Rate(props) {
                 setSelectedRate(response.data.rate.exclude_rate_for_products.set_exclude_products)
                 SetExclude_Rate(response.data.rate.exclude_rate_for_products)
             }
+            if (response.data.rate.rate_modifiers) {
+                setRateModifiers(response.data.rate.rate_modifiers)
 
+            }
             if (response.data.rate.cart_condition) {
                 setCheckState(prevState => ({
                     ...prevState,
@@ -761,6 +766,24 @@ function Rate(props) {
         description: '',
 
     })
+    const[send_another_rate,setsend_another_rate]= useState({
+        another_rate_name:'',
+        another_rate_description:'',
+        update_price_type: checkstate.selectedByUpdatePriceType,
+        update_price_effect: checkstate.selectedByUpdatePriceEffect,
+        adjustment_price:'',
+        service_code:"",
+        another_merge_rate_tag:''
+    })
+    const [exclude_Rate, SetExclude_Rate] = useState({
+        set_exclude_products: selectedRate,
+        exclude_products_radio: checkstate.exclude_products_radio,
+        product_title: '',
+        collection_id: '',
+        product_type: '',
+        product_vendor: '',
+    })
+
     const [formData, setFormData] = useState({
         name: '',
         base_price: '',
@@ -773,7 +796,6 @@ function Rate(props) {
             state: [],
             zipcodeSelection: "All",
             zipcode: []
-
         },
         cart_condition: {
             conditionMatch: checkstate.selectedCondition,
@@ -785,10 +807,11 @@ function Rate(props) {
         },
         scheduleRate: {
             schedule_rate: checkstate.selectedByschedule,
-            schedule_start_date_time: formattedStartDate,
-            schedule_end_date_time: formattedEndDate
+            ...(formattedStartDate && formattedEndDate && {
+                schedule_start_date_time: formattedStartDate,
+                schedule_end_date_time: formattedEndDate
+            })
         },
-
         rate_based_on_surcharge: {
             cart_and_product_surcharge: checkstate.selectedByCart,
             based_on_cart: checkedState.checked1,
@@ -796,11 +819,13 @@ function Rate(props) {
             selectedMultiplyLine: checkstate.selectedMultiplyLine,
             rate_based_on_surcharge
         },
-
+        send_another_rate:send_another_rate,
+        rate_modifiers: rateModifiers,
         exclude_rate_for_products: exclude_Rate,
         status: 1,
         merge_rate_tag: ''
     });
+    
 
     const removeEmptyFields = (obj) => {
         return Object.keys(obj).reduce((acc, key) => {
@@ -812,6 +837,10 @@ function Rate(props) {
     };
     const handleRateFormChange = (field) => (value) => {
         setFormData((prevState) => ({
+            ...prevState,
+            [field]: value,
+        }));
+        setsend_another_rate((prevState) => ({
             ...prevState,
             [field]: value,
         }));
@@ -876,11 +905,12 @@ function Rate(props) {
                 tier_type: selectedTierType,
                 rateTier: tiers
             },
-
+            send_another_rate:send_another_rate,
             exclude_rate_for_products: exclude_Rate,
+            rate_modifiers: rateModifiers,
         }));
     }, [selectedOptions, items, zipcodeValue, checkstate.selectedCondition, checkstate.selectedStateCondition, checkstate.selectedZipCondition, checkstate.selectedZipCode, state, checkstate.selectedByschedule, startDate,
-        endDate, checkstate.selectedByCart, rate_based_on_surcharge, checkedState.checked1, checkstate.selectedByAmount, checkstate.selectedMultiplyLine, selectedTierType, tiers, exclude_Rate]);
+        endDate, checkstate.selectedByCart, rate_based_on_surcharge, checkedState.checked1, checkstate.selectedByAmount, checkstate.selectedMultiplyLine, selectedTierType, tiers, exclude_Rate, rateModifiers,send_another_rate]);
 
 
     const saveRate = async () => {
@@ -2125,226 +2155,263 @@ function Rate(props) {
                             <LegacyCard sectioned>
 
                                 {rateModifiers.map((modifier) => (
-                                    <div style={{marginBottom:"3%"}}>
-                                    <Box key={modifier.id} borderColor="border" borderWidth="025">
-                                        <div style={{ padding: '10px' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                <Button
-                                                    onClick={handleToggle(modifier.id)}
-                                                    ariaExpanded={open[modifier.id]}
-                                                    ariaControls={`collapsible-${modifier.id}`}
-                                                    icon={SelectIcon}
-                                                />
-                                                <Button
-                                                    onClick={() => handleRemoveRateModifier(modifier.id)}
-                                                    destructive
-                                                >
-                                                    Remove Rate Modifier
-                                                </Button>
-                                            </div>
-                                            <Collapsible
-                                                open={open[modifier.id]}
-                                                id={`collapsible-${modifier.id}`}
-                                                transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
-                                                expandOnPrint
-                                            >
-                                                 <Divider borderColor="border" />
-                                                <div style={{marginTop:"2%"}}>
-                                                <FormLayout>
-                                                    <FormLayout.Group>
-                                                        <TextField
-                                                            type="text"
-                                                            label="Rate Modifier Name"
-                                                            value={modifier.name}
-                                                            onChange={handleRateModifierChange(modifier.id, 'name')}
-                                                            autoComplete="off"
-                                                            placeholder="Rate Modifier Name"
-                                                        />
-                                                        <TextField
-                                                            type="text"
-                                                            label="Title"
-                                                            value={modifier.title}
-                                                            onChange={handleRateModifierChange(modifier.id, 'title')}
-                                                            autoComplete="off"
-                                                            placeholder="Rate Modifier Title -Optional"
-                                                            helpText="Text that will be appended to the rate description"
-                                                        />
-                                                    </FormLayout.Group>
-                                                </FormLayout>
-                                                </div>
-                                                <div style={{ marginTop: '2%' }}>
-                                                    <Divider borderColor="border" />
-                                                </div>
-
-                                                <div
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '5%',
-                                                        marginTop: '3%',
-                                                    }}
-                                                >
-                                                    <Text variant="headingXs" as="h6">
-                                                        Type:
-                                                    </Text>
-                                                    <RadioButton
-                                                        label="None"
-                                                        checked={modifier.type === 'None'}
-                                                        id="None"
-                                                        name="type"
-                                                        onChange={() =>
-                                                            handleRateModifierChange(modifier.id, 'type')('None')
-                                                        }
+                                    <div style={{ marginBottom: "3%" }}>
+                                        <Box key={modifier.id} borderColor="border" borderWidth="025">
+                                            <div style={{ padding: '10px' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Button
+                                                        onClick={handleToggle(modifier.id)}
+                                                        ariaExpanded={open[modifier.id]}
+                                                        ariaControls={`collapsible-${modifier.id}`}
+                                                        icon={SelectIcon}
                                                     />
-                                                    <RadioButton
-                                                        label="AND"
-                                                        checked={modifier.type === 'AND'}
-                                                        id="AND"
-                                                        name="type"
-                                                        onChange={() =>
-                                                            handleRateModifierChange(modifier.id, 'type')('AND')
-                                                        }
-                                                    />
-                                                    <RadioButton
-                                                        label="OR"
-                                                        checked={modifier.type === 'OR'}
-                                                        id="OR"
-                                                        name="type"
-                                                        onChange={() =>
-                                                            handleRateModifierChange(modifier.id, 'type')('OR')
-                                                        }
-                                                    />
-                                                </div>
-                                                <div style={{ marginTop: '2%' }}></div>
-                                                <FormLayout>
-                                                    <FormLayout.Group>
-                                                        <Select
-                                                            label="Apply this rate modifier when"
-                                                            options={rateModifiersOptions}
-                                                            value={modifier.rateModifier}
-                                                            onChange={handleRateModifierChange(modifier.id, 'rateModifier')}
-                                                        />
-                                                        <Select
-                                                            label="Select Operator"
-                                                            options={rateOperatorOptions}
-                                                            value={modifier.rateOperator}
-                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
-                                                        />
-                                                    </FormLayout.Group>
-                                                </FormLayout>
-                                                <div style={{ marginTop: '4%', marginBottom: '3%' }}>
-                                                    <Select
-                                                        options={rateDayOptions}
-                                                        value={modifier.rateDay}
-                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay')}
-                                                    />
-                                                </div>
-                                                <Divider borderColor="border" />
-
-                                                <div
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '5%',
-                                                        marginTop: '3%',
-                                                        marginBottom: '3%',
-                                                    }}
-                                                >
-                                                    <Text variant="headingXs" as="h6">
-                                                        Behaviour :
-                                                    </Text>
-                                                    <RadioButton
-                                                        label="Stack"
-                                                        checked={modifier.behaviour === 'Stack'}
-                                                        id="Stack"
-                                                        name="behaviour"
-                                                        onChange={() =>
-                                                            handleRateModifierChange(modifier.id, 'behaviour')('Stack')
-                                                        }
-                                                    />
-                                                    <RadioButton
-                                                        label="None"
-                                                        checked={modifier.behaviour === 'None'}
-                                                        id="None"
-                                                        name="behaviour"
-                                                        onChange={() =>
-                                                            handleRateModifierChange(modifier.id, 'behaviour')('None')
-                                                        }
-                                                    />
-                                                    <RadioButton
-                                                        label="Remove Rate"
-                                                        checked={modifier.behaviour === 'RemoveRate'}
-                                                        id="RemoveRate"
-                                                        name="behaviour"
-                                                        onChange={() =>
-                                                            handleRateModifierChange(modifier.id, 'behaviour')('RemoveRate')
-                                                        }
-                                                    />
-                                                    <RadioButton
-                                                        label="Show Only"
-                                                        checked={modifier.behaviour === 'ShowOnly'}
-                                                        id="ShowOnly"
-                                                        name="behaviour"
-                                                        onChange={() =>
-                                                            handleRateModifierChange(modifier.id, 'behaviour')('ShowOnly')
-                                                        }
-                                                    />
-                                                </div>
-                                                <Divider borderColor="border" />
-
-                                                <div
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '2%',
-                                                        marginTop: '3%',
-                                                        marginBottom: '3%',
-                                                    }}
-                                                >
-                                                    <Text variant="headingXs" as="h6">
-                                                        Modifier Type :
-                                                    </Text>
-                                                    <RadioButton
-                                                        label="Fixed"
-                                                        checked={modifier.modifierType === 'Fixed'}
-                                                        id="Fixed"
-                                                        name="modifierType"
-                                                        onChange={() =>
-                                                            handleRateModifierChange(modifier.id, 'modifierType')('Fixed')
-                                                        }
-                                                    />
-                                                    <RadioButton
-                                                        label="Percentage"
-                                                        checked={modifier.modifierType === 'Percentage'}
-                                                        id="Percentage"
-                                                        name="modifierType"
-                                                        onChange={() =>
-                                                            handleRateModifierChange(modifier.id, 'modifierType')('Percentage')
-                                                        }
-                                                    />
-                                                </div>
-                                                <FormLayout>
-                                                    <TextField
-                                                        type="text"
-                                                        label="Adjustment"
-                                                        value={modifier.adjustment}
-                                                        onChange={handleRateModifierChange(modifier.id, 'adjustment')}
-                                                        autoComplete="off"
-                                                        placeholder="00"
-                                                    />
-                                                </FormLayout>
-                                                <Divider borderColor="border" />
-                                                <div style={{ marginTop: '2%' }}>
                                                     <p
                                                         style={{ color: '#ef5350', fontWeight: 'bold', cursor: 'pointer' }}
                                                         onClick={() => handleRemoveRateModifier(modifier.id)}
                                                     >
                                                         Remove Rate Modifier
                                                     </p>
+
                                                 </div>
-                                            </Collapsible>
-                                        </div>
-                                    </Box>
+                                                <Collapsible
+                                                    open={open[modifier.id]}
+                                                    id={`collapsible-${modifier.id}`}
+                                                    transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
+                                                    expandOnPrint
+                                                >
+                                                    <div style={{ marginTop: "3%" }}></div>
+                                                    <Divider borderColor="border" />
+                                                    <div style={{ marginTop: "2%" }}>
+                                                        <FormLayout>
+                                                            <FormLayout.Group>
+                                                                <TextField
+                                                                    type="text"
+                                                                    label="Rate Modifier Name"
+                                                                    value={modifier.name}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'name')}
+                                                                    autoComplete="off"
+                                                                    placeholder="Rate Modifier Name"
+                                                                />
+                                                                <TextField
+                                                                    type="text"
+                                                                    label="Title"
+                                                                    value={modifier.title}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'title')}
+                                                                    autoComplete="off"
+                                                                    placeholder="Rate Modifier Title -Optional"
+                                                                    helpText="Text that will be appended to the rate description"
+                                                                />
+                                                            </FormLayout.Group>
+                                                        </FormLayout>
+                                                    </div>
+                                                    <div style={{ marginTop: '2%' }}>
+                                                        <Divider borderColor="border" />
+                                                    </div>
+
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '5%',
+                                                            marginTop: '3%',
+                                                        }}
+                                                    >
+                                                        <Text variant="headingXs" as="h6">
+                                                            Type:
+                                                        </Text>
+                                                        <RadioButton
+                                                            label="None"
+                                                            checked={modifier.type === 'None'}
+                                                            id="None"
+                                                            name="type"
+                                                            onChange={() =>
+                                                                handleRateModifierChange(modifier.id, 'type')('None')
+                                                            }
+                                                        />
+                                                        <RadioButton
+                                                            label="AND"
+                                                            checked={modifier.type === 'AND'}
+                                                            id="AND"
+                                                            name="type"
+                                                            onChange={() =>
+                                                                handleRateModifierChange(modifier.id, 'type')('AND')
+                                                            }
+                                                        />
+                                                        <RadioButton
+                                                            label="OR"
+                                                            checked={modifier.type === 'OR'}
+                                                            id="OR"
+                                                            name="type"
+                                                            onChange={() =>
+                                                                handleRateModifierChange(modifier.id, 'type')('OR')
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <div style={{ marginTop: '2%' }}></div>
+                                                    <FormLayout>
+                                                        <FormLayout.Group>
+                                                            <Select
+                                                                label="Apply this rate modifier when"
+                                                                options={rateModifiersOptions}
+                                                                value={modifier.rateModifier}
+                                                                onChange={handleRateModifierChange(modifier.id, 'rateModifier')}
+                                                            />
+                                                            <Select
+                                                                label="Select Operator"
+                                                                options={rateOperatorOptions}
+                                                                value={modifier.rateOperator}
+                                                                onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                            />
+                                                        </FormLayout.Group>
+                                                    </FormLayout>
+                                                    <div style={{ marginTop: '4%', marginBottom: '3%' }}>
+                                                        <Select
+                                                            options={rateDayOptions}
+                                                            value={modifier.rateDay}
+                                                            onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                        />
+                                                    </div>
+                                                    <Divider borderColor="border" />
+
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '5%',
+                                                            marginTop: '3%',
+                                                            marginBottom: '3%',
+                                                        }}
+                                                    >
+                                                        <Text variant="headingXs" as="h6">
+                                                            Behaviour :
+                                                        </Text>
+                                                        <RadioButton
+                                                            label="Stack"
+                                                            checked={modifier.behaviour === 'Stack'}
+                                                            id="Stack"
+                                                            name="behaviour"
+                                                            onChange={() =>
+                                                                handleRateModifierChange(modifier.id, 'behaviour')('Stack')
+                                                            }
+                                                        />
+                                                        <RadioButton
+                                                            label="Terminate"
+                                                            checked={modifier.behaviour === 'Terminate'}
+                                                            id="Terminate"
+                                                            name="behaviour"
+                                                            onChange={() =>
+                                                                handleRateModifierChange(modifier.id, 'behaviour')('Terminate')
+                                                            }
+                                                        />
+
+                                                    </div>
+                                                    <Divider borderColor="border" />
+
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '2%',
+                                                            marginTop: '3%',
+                                                            marginBottom: '3%',
+                                                        }}
+                                                    >
+                                                        <Text variant="headingXs" as="h6">
+                                                            Modifier Type :
+                                                        </Text>
+                                                        <RadioButton
+                                                            label="Fixed"
+                                                            checked={modifier.modifierType === 'Fixed'}
+                                                            id="Fixed"
+                                                            name="modifierType"
+                                                            onChange={() =>
+                                                                handleRateModifierChange(modifier.id, 'modifierType')('Fixed')
+                                                            }
+                                                        />
+                                                        <RadioButton
+                                                            label="Percentage"
+                                                            checked={modifier.modifierType === 'Percentage'}
+                                                            id="Percentage"
+                                                            name="modifierType"
+                                                            onChange={() =>
+                                                                handleRateModifierChange(modifier.id, 'modifierType')('Percentage')
+                                                            }
+                                                        />
+                                                        <RadioButton
+                                                            label="Static"
+                                                            checked={modifier.modifierType === 'Static'}
+                                                            id="Static"
+                                                            name="modifierType"
+                                                            onChange={() =>
+                                                                handleRateModifierChange(modifier.id, 'modifierType')('Static')
+                                                            }
+                                                        />
+                                                        <RadioButton
+                                                            label="Remove Rate"
+                                                            checked={modifier.modifierType === 'RemoveRate'}
+                                                            id="RemoveRate"
+                                                            name="modifierType"
+                                                            onChange={() =>
+                                                                handleRateModifierChange(modifier.id, 'modifierType')('RemoveRate')
+                                                            }
+                                                        />
+                                                        <RadioButton
+                                                            label="Show Only"
+                                                            checked={modifier.modifierType === 'ShowOnly'}
+                                                            id="ShowOnly"
+                                                            name="modifierType"
+                                                            onChange={() =>
+                                                                handleRateModifierChange(modifier.id, 'modifierType')('ShowOnly')
+                                                            }
+                                                        />
+                                                    </div>
+
+                                                    <Divider borderColor="border" />
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+
+                                                        marginTop: '3%',
+                                                        marginBottom: '3%',
+                                                        justifyContent: "space-between"
+                                                    }}>
+                                                        <Text variant="headingXs" as="h6">
+                                                            Effect :
+                                                        </Text>
+                                                        <RadioButton
+                                                            label="Increase"
+                                                            checked={modifier.effect === 'Increase'}
+                                                            id="Increase"
+                                                            name="effect"
+                                                            onChange={() =>
+                                                                handleRateModifierChange(modifier.id, 'effect')('Increase')
+                                                            }
+                                                        />
+                                                        <RadioButton
+                                                            label="Decrease"
+                                                            checked={modifier.effect === 'Decrease'}
+                                                            id="Decrease"
+                                                            name="effect"
+                                                            onChange={() =>
+                                                                handleRateModifierChange(modifier.id, 'effect')('Decrease')
+                                                            }
+                                                        />
+                                                        <FormLayout>
+                                                            <TextField
+                                                                type="text"
+                                                                label="Adjustment"
+                                                                value={modifier.adjustment}
+                                                                onChange={handleRateModifierChange(modifier.id, 'adjustment')}
+                                                                autoComplete="off"
+                                                                placeholder="00"
+                                                            />
+                                                        </FormLayout>
+                                                    </div>
+
+
+                                                </Collapsible>
+                                            </div>
+                                        </Box>
                                     </div>
                                 ))}
                                 <div style={{ marginTop: "3%" }}>
@@ -2555,17 +2622,19 @@ function Rate(props) {
                                                 <TextField
                                                     type="text"
                                                     label="Another Rate Name"
-                                                    onChange={() => { }}
+                                                    value={send_another_rate.another_rate_name}
+                                                    onChange={handleRateFormChange('another_rate_name')}
                                                     autoComplete="off"
-                                                    prefix="Rs."
+                                                   
                                                     placeholder='Enter Rate Name'
                                                 />
                                                 <TextField
                                                     type="text"
                                                     label="Another Rate Description"
-                                                    onChange={() => { }}
+                                                    value={send_another_rate.another_rate_description}
+                                                    onChange={handleRateFormChange('another_rate_description')}
                                                     autoComplete="off"
-                                                    prefix="kg"
+                                                    
                                                     placeholder='Enter Desription'
                                                 />
                                             </FormLayout.Group>
@@ -2583,31 +2652,31 @@ function Rate(props) {
 
                                             <RadioButton
                                                 label="Fixed"
-                                                checked={checkstate.selectedByUpdatePriceType === 'Fixed'}
-                                                id="Fixed"
-                                                name="Fixed"
-                                                onChange={() => handlecheckedChange('selectedByUpdatePriceType', 'Fixed')}
+                                                checked={checkstate.selectedByUpdatePriceType === 0}
+                                                id="Fixe"
+                                                name="Fixe"
+                                                onChange={() => handlecheckedChange('selectedByUpdatePriceType', 0)}
                                             />
                                             <RadioButton
                                                 label="Percentage"
-                                                checked={checkstate.selectedByUpdatePriceType === 'Pr'}
+                                                checked={checkstate.selectedByUpdatePriceType === 1}
                                                 id="Pr"
                                                 name="Pr"
-                                                onChange={() => handlecheckedChange('selectedByUpdatePriceType', 'Pr')}
+                                                onChange={() => handlecheckedChange('selectedByUpdatePriceType', 1)}
                                             />
                                             <RadioButton
                                                 label="Static"
-                                                checked={checkstate.selectedByUpdatePriceType === 'Static'}
-                                                id="Static"
+                                                checked={checkstate.selectedByUpdatePriceType === 2}
+                                                id="Statics"
                                                 name="Static"
-                                                onChange={() => handlecheckedChange('selectedByUpdatePriceType', 'Static')}
+                                                onChange={() => handlecheckedChange('selectedByUpdatePriceType', 2)}
                                             />
                                         </div>
 
                                         <div style={{ marginTop: '3%' }}>
                                             <Divider borderColor="border" />
                                         </div>
-                                        {checkstate.selectedByUpdatePriceType !== 'Static' && (
+                                        {checkstate.selectedByUpdatePriceType !== 3 && (
                                             <div style={{ marginTop: '3%' }}>
                                                 <FormLayout>
                                                     <FormLayout.Group>
@@ -2618,17 +2687,17 @@ function Rate(props) {
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8%', paddingTop: '2%', marginBottom: "4%" }}>
                                                                 <RadioButton
                                                                     label="Increase"
-                                                                    checked={checkstate.selectedByUpdatePriceEffect === 'increase'}
+                                                                    checked={checkstate.selectedByUpdatePriceEffect === 0}
                                                                     id="increase"
                                                                     name="increase"
-                                                                    onChange={() => handlecheckedChange('selectedByUpdatePriceEffect', 'increase')}
+                                                                    onChange={() => handlecheckedChange('selectedByUpdatePriceEffect', 0)}
                                                                 />
                                                                 <RadioButton
                                                                     label="Decrease"
-                                                                    checked={checkstate.selectedByUpdatePriceEffect === 'decrease'}
+                                                                    checked={checkstate.selectedByUpdatePriceEffect === 1}
                                                                     id="decrease"
                                                                     name="decrease"
-                                                                    onChange={() => handlecheckedChange('selectedByUpdatePriceEffect', 'decrease')}
+                                                                    onChange={() => handlecheckedChange('selectedByUpdatePriceEffect', 1)}
                                                                 />
 
                                                             </div>
@@ -2636,9 +2705,10 @@ function Rate(props) {
                                                         <TextField
                                                             type="text"
                                                             label="Adjustment Price"
-                                                            onChange={() => { }}
+                                                            value={send_another_rate.adjustment_price}
+                                                            onChange={handleRateFormChange('adjustment_price')}
                                                             autoComplete="off"
-                                                            prefix="kg"
+                                                           
                                                             placeholder='00'
                                                         />
                                                     </FormLayout.Group>
@@ -2647,14 +2717,15 @@ function Rate(props) {
                                         )}
 
 
-                                        {checkstate.selectedByUpdatePriceType === 'Static' && (
+                                        {checkstate.selectedByUpdatePriceType === 2 && (
                                             <div>
                                                 <TextField
                                                     type="text"
                                                     label="Adjustment Price"
-                                                    onChange={() => { }}
+                                                    value={send_another_rate.adjustment_price}
+                                                    onChange={handleRateFormChange('adjustment_price')}
                                                     autoComplete="off"
-                                                    prefix="Rs."
+                                                    
                                                     placeholder='0'
                                                 />
 
@@ -2670,17 +2741,19 @@ function Rate(props) {
                                                     <TextField
                                                         type="text"
                                                         label="Service Code"
-                                                        onChange={() => { }}
+                                                        value={send_another_rate.service_code}
+                                                            onChange={handleRateFormChange('service_code')}
                                                         autoComplete="off"
-                                                        prefix="Rs."
+                                                       
                                                         placeholder='Enter Service Code'
                                                     />
                                                     <TextField
                                                         type="text"
                                                         label="Another merge rate tag"
-                                                        onChange={() => { }}
+                                                        value={send_another_rate.another_merge_rate_tag}
+                                                            onChange={handleRateFormChange('another_merge_rate_tag')}
                                                         autoComplete="off"
-                                                        prefix="kg"
+                                                        
                                                         placeholder='tag1,tag2,tag3'
                                                     />
                                                 </FormLayout.Group>

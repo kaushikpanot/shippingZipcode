@@ -183,8 +183,8 @@ class ApiController extends Controller
     {
         try {
             // Retrieve the Shopify session
-            // $shop = request()->attributes->get('shopifySession');
-            $shop = "krishnalaravel-test.myshopify.com";
+            $shop = request()->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -752,7 +752,6 @@ class ApiController extends Controller
             $inputData['rate_modifiers'] = $inputData['rate_modifiers'] ?? null;
             $inputData['send_another_rate'] = $inputData['send_another_rate'] ?? null;
 
-
             // Update or create the rate
             $rate = Rate::updateOrCreate(['id' => $request->input('id')], $inputData);
 
@@ -1034,8 +1033,8 @@ class ApiController extends Controller
     public function getProductList(Request $request)
     {
         try {
-            // $shop = $request->attributes->get('shopifySession');
-            $shop = "krishnalaravel-test.myshopify.com";
+            $shop = $request->attributes->get('shopifySession');
+            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([

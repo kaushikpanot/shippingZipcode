@@ -235,7 +235,7 @@ class ApiController extends Controller
         $shopDomain = $request->header();
         // Construct the response data
         $originCompanyName = $shopDomain['x-shopify-shop-domain'][0];
-
+        // dd($originCompanyName);
         $originCountryName = $input['rate']['origin']['country'];
 
         $destinationZipcode = $input['rate']['destination']['postal_code'];
@@ -255,6 +255,7 @@ class ApiController extends Controller
             $query->where('status', 1);
         })->pluck('zone_id');
 
+        Log::info(['originCompanyName'=>$originCompanyName]);
         // Log::info($zoneIds);
         // DB::enableQueryLog();
         $ratesQuery = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode');
@@ -745,6 +746,12 @@ class ApiController extends Controller
                 return response()->json(['status' => false, 'errors' => $validator->errors()], 422);
             }
 
+            $inputData['rate_based_on_surcharge'] = $inputData['rate_based_on_surcharge'] ?? null;
+            $inputData['rate_tier'] = $inputData['rate_tier'] ?? null;
+            $inputData['exclude_rate_for_products'] = $inputData['exclude_rate_for_products'] ?? null;
+            $inputData['rate_modifiers'] = $inputData['rate_modifiers'] ?? null;
+            $inputData['send_another_rate'] = $inputData['send_another_rate'] ?? null;
+
             // Update or create the rate
             $rate = Rate::updateOrCreate(['id' => $request->input('id')], $inputData);
 
@@ -864,7 +871,6 @@ class ApiController extends Controller
     public function rateEdit($id)
     {
         try {
-            // Assuming this is how you get the shop
             $shop = request()->attributes->get('shopifySession');
             // $shop = "krishnalaravel-test.myshopify.com";
 

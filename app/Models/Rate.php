@@ -11,7 +11,7 @@ class Rate extends Model
 {
     use HasFactory;
 
-    protected $fillable = ["user_id", "zone_id", "name", "base_price", "service_code", "description", "status", "conditionMatch", "cart_condition", "rate_based_on_surcharge", "merge_rate_tag", "schedule_rate", "schedule_start_date_time", "schedule_end_date_time"];
+    protected $fillable = ["user_id", "zone_id", "name", "base_price", "service_code", "description", "status", "conditionMatch", "cart_condition", "rate_based_on_surcharge", "rate_tier", "exclude_rate_for_products", "rate_modifiers", "merge_rate_tag", "schedule_rate", "schedule_start_date_time", "schedule_end_date_time", "send_another_rate"];
 
     protected $hidden = ['created_at', 'updated_at'];
 
@@ -128,6 +128,97 @@ class Rate extends Model
     }
 
     public function getRateBasedOnSurchargeAttribute($value)
+    {
+        if (is_null($value)) {
+            return null;
+        }
+
+        return json_decode($value, true); // true to return as an associative array
+    }
+
+    public function setRateTierAttribute($value)
+    {
+        if (!empty($value)) {
+            // Check if $value is an array or an object and JSON encode it
+            if (is_array($value) || is_object($value)) {
+                $this->attributes['rate_tier'] = json_encode($value);
+            } else {
+                // If $value is already a JSON string, assign it directly
+                $this->attributes['rate_tier'] = $value;
+            }
+        } else {
+            // If $value is null or empty, set the attribute to null or handle accordingly
+            $this->attributes['rate_tier'] = null;
+        }
+    }
+
+    public function getRateTierAttribute($value)
+    {
+        if (is_null($value)) {
+            return null;
+        }
+
+        return json_decode($value, true); // true to return as an associative array
+    }
+
+    public function setExcludeRateForProductsAttribute($value)
+    {
+        if (!empty($value)) {
+            if (is_array($value) || is_object($value)) {
+                $this->attributes['exclude_rate_for_products'] = json_encode($value);
+            } else {
+                $this->attributes['exclude_rate_for_products'] = $value;
+            }
+        } else {
+            $this->attributes['exclude_rate_for_products'] = null;
+        }
+    }
+
+    public function getExcludeRateForProductsAttribute($value)
+    {
+        if (is_null($value)) {
+            return null;
+        }
+
+        return json_decode($value, true); // true to return as an associative array
+    }
+
+    public function setRateModifiersAttribute($value)
+    {
+        if (!empty($value)) {
+            if (is_array($value) || is_object($value)) {
+                $this->attributes['rate_modifiers'] = json_encode($value);
+            } else {
+                $this->attributes['rate_modifiers'] = $value;
+            }
+        } else {
+            $this->attributes['rate_modifiers'] = null;
+        }
+    }
+
+    public function getRateModifiersAttribute($value)
+    {
+        if (is_null($value)) {
+            return null;
+        }
+
+        return json_decode($value, true); // true to return as an associative array
+    }
+
+    public function setSendAnotherRateAttribute($value)
+    {
+        if (!empty($value)) {
+            if (is_array($value) || is_object($value)) {
+                $this->attributes['send_another_rate'] = json_encode($value);
+            } else {
+                $this->attributes['send_another_rate'] = $value;
+            }
+        } else {
+            $this->attributes['send_another_rate'] = null;
+        }
+    }
+
+    public function getSendAnotherRateAttribute($value)
     {
         if (is_null($value)) {
             return null;

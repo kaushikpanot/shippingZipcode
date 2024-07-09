@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { 
-  Toast, Select, Page, Button, Grid, Divider, 
-  LegacyCard, RadioButton, Text, Banner, TextField, FormLayout 
+import {
+  Toast, Select, Page, Button, Grid, Divider,
+  LegacyCard, RadioButton, Text, Banner, TextField, FormLayout
 } from '@shopify/polaris';
 import axios from 'axios';
 import '../../../public/css/style.css';
@@ -55,7 +55,7 @@ const Settings = (props) => {
 
       const data = response.data.settings;
       setSettings(data);
-console.log(data)
+      console.log(data)
     } catch (error) {
       console.error("Error fetching settings data:", error);
     }
@@ -78,7 +78,7 @@ console.log(data)
       console.error('Error saving settings:', error);
     }
   };
-  
+
 
   const toastMarkup = active ? (
     <Toast content="Setting saved successfully." onDismiss={() => setActive(false)} />
@@ -232,7 +232,7 @@ console.log(data)
                             label="Additional Description of Mix Rate"
                             value={settings.additional_description_of_mix_rate}
                             onChange={handleInputChange('additional_description_of_mix_rate')}
-                            
+
                           />
                           <TextField
                             label="Maximum Price of Auto Product Base Mix Rate"

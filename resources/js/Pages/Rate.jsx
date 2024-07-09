@@ -56,11 +56,12 @@ function Rate(props) {
         selectedByUpdatePriceEffect: 'increase',
         selectedZipCondition: 'All',
         selectedZipCode: 'Include',
-        selectedMultiplyLine: 'Yes'
+        selectedMultiplyLine: 'Yes',
+        selectedPriceReplace: 'BasePrice'
     });
     const handlecheckedChange = (key, value) => {
         setCheckState(prevState => ({ ...prevState, [key]: value }));
-        
+
     };
 
     const [toastDuration, setToastDuration] = useState(3000);
@@ -87,6 +88,7 @@ function Rate(props) {
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
 
+
     const formatDate = (date) => {
         if (!(date instanceof Date) || isNaN(date.getTime())) {
             return '';
@@ -97,6 +99,36 @@ function Rate(props) {
 
         return `${day}-${month}-${year}`;
     };
+    const [selectedTierType, setSelectedTierType] = useState('selected');
+    const [tiers, setTiers] = useState([
+        { minWeight: '', maxWeight: '', basePrice: '' }
+    ]);
+
+    const handleInputChange = (index, field, value) => {
+        const newTiers = [...tiers];
+        newTiers[index][field] = value;
+        setTiers(newTiers);
+    };
+
+    const addTier = () => {
+        setTiers([...tiers, { minWeight: '', maxWeight: '', basePrice: '' }]);
+    };
+    const removeTier = (index) => {
+        const newTiers = tiers.filter((_, i) => i !== index);
+        setTiers(newTiers);
+    };
+
+    const handleTierSelectChange = (value) => {
+        setSelectedTierType(value);
+    };
+
+    const tierOptions = [
+        { label: 'Select Tier Type', value: 'selected' },
+        { label: 'Order Price', value: 'order_price' },
+        { label: 'Order Weight', value: 'order_weight' },
+        { label: 'Order Quantity', value: 'order_quantity' },
+        { label: 'Order Distance', value: 'order_distance' }
+    ];
 
 
     const formattedStartDate = formatDate(startDate);
@@ -190,6 +222,24 @@ function Rate(props) {
                 }));
                 setItems(response.data.rate.cart_condition.cartCondition)
             }
+
+            if (response.data.rate.rate_based_on_surcharge) {
+                setCheckState(prevState => ({
+                    ...prevState,
+                    selectedByCart: response.data.rate.rate_based_on_surcharge.cart_and_product_surcharge,
+                    selectedByAmount: response.data.rate.rate_based_on_surcharge.selectedByAmount,
+                    selectedMultiplyLine: response.data.rate.rate_based_on_surcharge.selectedMultiplyLine
+
+                }));
+                setCheckedState(prevState => ({
+                    ...prevState,
+                    checked1: response.data.rate.rate_based_on_surcharge.based_on_cart,
+
+                }))
+                Setrate_based_on_surcharge(response.data.rate.rate_based_on_surcharge.rate_based_on_surcharge)
+            }
+
+
             setFormData({
                 name: response.data.rate.name,
                 base_price: response.data.rate.base_price,
@@ -201,8 +251,8 @@ function Rate(props) {
                 merge_rate_tag: response.data.rate.merge_rate_tag
             });
 
-            if (response.data.rate.scheduleRate) {
 
+            if (response.data.rate.scheduleRate) {
                 const startDateFromServer = new Date(response.data.rate.scheduleRate.schedule_start_date_time);
                 const endDateFromServer = new Date(response.data.rate.scheduleRate.schedule_end_date_time);
 
@@ -555,14 +605,19 @@ function Rate(props) {
     }, []);
 
 
-        const [rate_based_on_surcharge, Setrate_based_on_surcharge] = useState({
-            based_on_cart: checkedState.checked1,
-            charge_per_wight: '',
-            unit_for: '',
-            min_charge_price: '',
-            max_charge_price: '',
-            cart_total_percentage: ''
-        })
+    const [rate_based_on_surcharge, Setrate_based_on_surcharge] = useState({
+        charge_per_wight: '',
+        unit_for: '',
+        min_charge_price: '',
+        max_charge_price: '',
+        cart_total_percentage: '',
+        product_title: '',
+        collecion_id: '',
+        product_type: '',
+        product_vendor: '',
+        description: '',
+
+    })
     const [formData, setFormData] = useState({
         name: '',
         base_price: '',
@@ -581,15 +636,21 @@ function Rate(props) {
             conditionMatch: checkstate.selectedCondition,
             cartCondition: items
         },
+        rate_tier: {
+            tier_type: selectedTierType,
+            rateTier: tiers
+        },
         scheduleRate: {
             schedule_rate: checkstate.selectedByschedule,
             schedule_start_date_time: formattedStartDate,
             schedule_end_date_time: formattedEndDate
-
         },
 
         rate_based_on_surcharge: {
             cart_and_product_surcharge: checkstate.selectedByCart,
+            based_on_cart: checkedState.checked1,
+            selectedByAmount: checkstate.selectedByAmount,
+            selectedMultiplyLine: checkstate.selectedMultiplyLine,
             rate_based_on_surcharge
         },
         status: 1,
@@ -609,7 +670,7 @@ function Rate(props) {
             ...prevState,
             [field]: value,
         }));
-    
+
         Setrate_based_on_surcharge((prevState) => {
             const updatedState = {
                 ...prevState,
@@ -617,14 +678,14 @@ function Rate(props) {
             };
             return removeEmptyFields(updatedState);
         });
-    
+
         setErrors((prevErrors) => ({
             ...prevErrors,
             [field]: '',
         }));
     };
-    
-    
+
+
 
     useEffect(() => {
         const selectedStates = selectedOptions.map(option => ({
@@ -657,11 +718,19 @@ function Rate(props) {
             rate_based_on_surcharge: {
                 ...prevFormData.rate_based_on_surcharge,
                 cart_and_product_surcharge: checkstate.selectedByCart,
+                based_on_cart: checkedState.checked1,
+                selectedByAmount: checkstate.selectedByAmount,
+                selectedMultiplyLine: checkstate.selectedMultiplyLine,
                 rate_based_on_surcharge
+            },
+            rate_tier: {
+                ...prevFormData.rate_tier,
+                tier_type: selectedTierType,
+                rateTier: tiers
             },
         }));
     }, [selectedOptions, items, zipcodeValue, checkstate.selectedCondition, checkstate.selectedStateCondition, checkstate.selectedZipCondition, checkstate.selectedZipCode, state, checkstate.selectedByschedule, startDate,
-        endDate, checkedState.checked1, checkstate.selectedByCart, rate_based_on_surcharge]);
+        endDate, checkstate.selectedByCart, rate_based_on_surcharge, checkedState.checked1, checkstate.selectedByAmount, checkstate.selectedMultiplyLine,selectedTierType,tiers]);
 
 
     const saveRate = async () => {
@@ -1100,7 +1169,7 @@ function Rate(props) {
                                 checked={checkedState.checked1}
                                 onChange={() => handleCheckChange('checked1')}
                             />
-                            {!checkedState.checked1 && (
+                            {checkedState.checked1 && (
                                 <div style={{ marginTop: "2%" }}>
                                     <Divider borderColor="border" />
                                     <div style={{ marginBottom: "2%" }}></div>
@@ -1318,15 +1387,18 @@ function Rate(props) {
                                                     <TextField
                                                         type="text"
                                                         label="Charge Per Weight"
-                                                        onChange={() => { }}
+                                                        value={rate_based_on_surcharge.charge_per_wight}
+                                                        onChange={handleRateFormChange('charge_per_wight')}
                                                         autoComplete="off"
                                                         prefix="Rs."
                                                         placeholder='0'
+
                                                     />
                                                     <TextField
                                                         type="number"
                                                         label="Unit For Weight"
-                                                        onChange={() => { }}
+                                                        value={rate_based_on_surcharge.unit_for}
+                                                        onChange={handleRateFormChange('unit_for')}
                                                         autoComplete="off"
                                                         prefix="kg"
                                                         placeholder='0'
@@ -1387,10 +1459,11 @@ function Rate(props) {
                                                             <TextField
                                                                 type="text"
                                                                 label="Cart Total Percentage"
-                                                                onChange={() => { }}
                                                                 autoComplete="off"
                                                                 placeholder='0.00'
                                                                 prefix='%'
+                                                                value={rate_based_on_surcharge.cart_total_percentage}
+                                                                onChange={handleRateFormChange('cart_total_percentage')}
                                                             />
 
                                                             <div style={{ marginTop: "2%", marginBottom: "3%" }}>
@@ -1399,16 +1472,18 @@ function Rate(props) {
                                                                         <TextField
                                                                             type="text"
                                                                             label="Minimum Charge Price"
-                                                                            onChange={() => { }}
                                                                             autoComplete="off"
                                                                             placeholder='0'
+                                                                            value={rate_based_on_surcharge.min_charge_price}
+                                                                            onChange={handleRateFormChange('min_charge_price')}
                                                                         />
                                                                         <TextField
                                                                             type="text"
                                                                             label="Maximum Charge Price"
-                                                                            onChange={() => { }}
                                                                             autoComplete="off"
                                                                             placeholder='0'
+                                                                            value={rate_based_on_surcharge.max_charge_price}
+                                                                            onChange={handleRateFormChange('max_charge_price')}
                                                                         />
                                                                     </FormLayout.Group>
                                                                 </FormLayout>
@@ -1426,16 +1501,18 @@ function Rate(props) {
                                                                 <TextField
                                                                     type="text"
                                                                     label="Full Product Title"
-                                                                    onChange={() => { }}
                                                                     autoComplete="off"
                                                                     placeholder='Enter Full Product Title'
+                                                                    value={rate_based_on_surcharge.product_title}
+                                                                    onChange={handleRateFormChange('product_title')}
                                                                 />
                                                                 <TextField
                                                                     type="text"
                                                                     label="Enter Collection ID"
-                                                                    onChange={() => { }}
                                                                     autoComplete="off"
                                                                     placeholder='Enter Collection ID'
+                                                                    value={rate_based_on_surcharge.collecion_id}
+                                                                    onChange={handleRateFormChange('collection_id')}
                                                                 />
                                                             </FormLayout.Group>
                                                         </FormLayout>
@@ -1446,16 +1523,18 @@ function Rate(props) {
                                                                 <TextField
                                                                     type="text"
                                                                     label="Full Product Type"
-                                                                    onChange={() => { }}
                                                                     autoComplete="off"
                                                                     placeholder='Enter Full Product Type'
+                                                                    value={rate_based_on_surcharge.product_type}
+                                                                    onChange={handleRateFormChange('product_type')}
                                                                 />
                                                                 <TextField
                                                                     type="text"
                                                                     label="Full Product Vendor"
-                                                                    onChange={() => { }}
                                                                     autoComplete="off"
                                                                     placeholder='Enter Full Product Vendor'
+                                                                    value={rate_based_on_surcharge.product_vendor}
+                                                                    onChange={handleRateFormChange('product_vendor')}
                                                                 />
                                                             </FormLayout.Group>
                                                         </FormLayout>
@@ -1554,10 +1633,11 @@ function Rate(props) {
                                                             <TextField
                                                                 type="text"
                                                                 label="Cart Total Percentage"
-                                                                onChange={() => { }}
                                                                 autoComplete="off"
                                                                 placeholder='0.00'
                                                                 prefix='%'
+                                                                value={rate_based_on_surcharge.cart_total_percentage}
+                                                                onChange={handleRateFormChange('cart_total_percentage')}
                                                             />
 
                                                             <div style={{ marginTop: "2%", marginBottom: "3%" }}>
@@ -1566,16 +1646,18 @@ function Rate(props) {
                                                                         <TextField
                                                                             type="text"
                                                                             label="Minimum Charge Price"
-                                                                            onChange={() => { }}
                                                                             autoComplete="off"
                                                                             placeholder='0'
+                                                                            value={rate_based_on_surcharge.min_charge_price}
+                                                                            onChange={handleRateFormChange('min_charge_price')}
                                                                         />
                                                                         <TextField
                                                                             type="text"
                                                                             label="Maximum Charge Price"
-                                                                            onChange={() => { }}
                                                                             autoComplete="off"
                                                                             placeholder='0'
+                                                                            value={rate_based_on_surcharge.max_charge_price}
+                                                                            onChange={handleRateFormChange('max_charge_price')}
                                                                         />
                                                                     </FormLayout.Group>
                                                                 </FormLayout>
@@ -1585,6 +1667,7 @@ function Rate(props) {
 
                                                         </div>
                                                     )}
+
 
 
                                                     <div style={{ marginTop: "2%" }}>
@@ -1598,7 +1681,7 @@ function Rate(props) {
                                                                                 checkstate.selectedByCart === 'Collection' ? 'Product Collection ID' :
                                                                                     "Variant Metafields"
                                                             }
-                                                            onChange={() => { }}
+
                                                             autoComplete="off"
                                                             placeholder=
                                                             {
@@ -1615,6 +1698,9 @@ function Rate(props) {
                                                                         checkstate.selectedByCart === 'Collection' ? 'Product Collection Id' : 'Variant Metafields'
                                                                 } with comma separator(,).`
                                                             }
+
+                                                            value={rate_based_on_surcharge.description}
+                                                            onChange={handleRateFormChange('description')}
                                                         />
                                                     </div>
 
@@ -1632,6 +1718,94 @@ function Rate(props) {
                         </LegacyCard>
                     </Grid.Cell>
                 </Grid>
+            </div>
+
+
+            <Divider borderColor="border" />
+            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                <Grid>
+                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                        <div style={{ paddingTop: '5%' }}>
+                            <Text variant="headingLg" as="h5">
+                                Rate Tier
+                            </Text>
+                            <div style={{ marginTop: '5%' }}>
+                                <ul>
+                                    <li>Set different Base Rate Price according to order weight, total or qty.</li>
+                                    <li>Order price will count without applying the discount code.</li>
+                                    <li>When a tier is not found then the system will select the Base Rate which is set on top of the page.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                        <LegacyCard sectioned>
+                            <div>
+                                <Select
+                                    options={tierOptions}
+                                    onChange={handleTierSelectChange}
+                                    value={selectedTierType}
+                                    helpText="Note: Please make sure Origin and Destination country must be same to use distance base shipping rate."
+                                />
+
+                                {selectedTierType !== 'selected' && (
+                                    <div>
+                                        <div style={{ marginTop: '2%' }}><Divider borderColor="border" />
+                                        </div>
+                                        {tiers.map((tier, index) => (
+                                            <div style={{ marginTop: '2%' }} key={index}>
+                                                <FormLayout>
+                                                    <FormLayout.Group condensed>
+                                                        <TextField
+                                                            label={`Minimum ${selectedTierType === 'order_weight' ? 'Weight' : selectedTierType === 'order_quantity' ? 'Quantity' : selectedTierType === 'order_distance' ? 'Distance' : 'Price'}`}
+                                                            value={tier.minWeight}
+                                                            onChange={(value) => handleInputChange(index, 'minWeight', value)}
+                                                            autoComplete="off"
+                                                            prefix="kg"
+                                                            placeholder="0.00"
+                                                        />
+                                                        <TextField
+                                                            label={`Maximum ${selectedTierType === 'order_weight' ? 'Weight' : selectedTierType === 'order_quantity' ? 'Quantity' : selectedTierType === 'order_distance' ? 'Distance' : 'Price'}`}
+                                                            value={tier.maxWeight}
+                                                            onChange={(value) => handleInputChange(index, 'maxWeight', value)}
+                                                            autoComplete="off"
+                                                            prefix="kg"
+                                                            placeholder="0.00"
+                                                        />
+                                                        <TextField
+                                                            label='Base Price'
+                                                            value={tier.basePrice}
+                                                            onChange={(value) => handleInputChange(index, 'basePrice', value)}
+                                                            autoComplete="off"
+                                                            prefix="Rs."
+                                                            placeholder="0.00"
+                                                        />
+                                                    </FormLayout.Group>
+                                                    <div style={{ marginTop: "2%" }}>
+                                                        <p style={{ color: "#ef5350", fontWeight: "bold", cursor: "pointer" }} onClick={() => removeTier(index)}>
+                                                            Remove Tier
+                                                        </p>
+                                                    </div>
+                                                </FormLayout>
+                                                {index < tiers.length - 1 && <div style={{ marginTop: "2%" }}> <Divider /></div>}
+                                            </div>
+                                        ))}
+                                        <div style={{ marginTop: '2%' }}>
+                                            <Button
+                                                icon={PlusIcon}
+                                                onClick={addTier}
+                                                variant='primary'
+                                            >
+                                                Add Tier
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </LegacyCard>
+                    </Grid.Cell>
+                </Grid>
+
             </div>
 
             <Divider borderColor="border" />

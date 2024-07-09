@@ -285,7 +285,6 @@ function Rate(props) {
     }, []);
 
 
-
     let app = "";
 
     const [checkedState, setCheckedState] = useState({
@@ -762,16 +761,6 @@ function Rate(props) {
         description: '',
 
     })
-
-    const [exclude_Rate, SetExclude_Rate] = useState({
-        set_exclude_products: selectedRate,
-        exclude_products_radio: checkstate.exclude_products_radio,
-        product_title: '',
-        collection_id: '',
-        product_type: '',
-        product_vendor: '',
-    })
-
     const [formData, setFormData] = useState({
         name: '',
         base_price: '',

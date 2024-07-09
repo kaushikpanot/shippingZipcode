@@ -69,15 +69,17 @@ function Home(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
+         
             const ruledata = response.data.zones;
             setZoneDetails(ruledata);
             setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
             setLoading(false);
+            console.log(response.data)
         } catch (error) {
             console.error(error, 'error from');
         }
     };
-
+   
     useEffect(() => {
         getZoneDetails();
     }, []);

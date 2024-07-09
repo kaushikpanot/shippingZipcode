@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('rates', function (Blueprint $table) {
-            $table->longText('rate_based_on_surcharge')->after('cart_condition')->nullable();
+            $table->longText('send_another_rate')->after('schedule_end_date_time')->nullable();
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('rates', function (Blueprint $table) {
-            //
+            $table->dropColumn('send_another_rate');
         });
     }
 };

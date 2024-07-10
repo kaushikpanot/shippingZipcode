@@ -79,12 +79,7 @@ function Rate(props) {
     const [showTable, setShowTable] = useState(false);
     const [value, setValue] = useState('');
 
-    const [month, setMonth] = useState(new Date().getMonth());
-    const [year, setYear] = useState(new Date().getFullYear());
-    const [startDate, setStartDate] = useState(null);
-    const [endDate, setEndDate] = useState(null);
-    const [isStartDatePickerVisible, setIsStartDatePickerVisible] = useState(false);
-    const [isEndDatePickerVisible, setIsEndDatePickerVisible] = useState(false);
+
 
     const [startCursor, setStartCursor] = useState('');
     const [endCursor, setEndCursor] = useState('');
@@ -92,39 +87,14 @@ function Rate(props) {
     const [hasPreviousPage, setHasPreviousPage] = useState(false);
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
-   
-    const formatDate = (date) => {
-        if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
-            return '';
-        }
-        const day = date.getDate();
-        const month = date.getMonth() + 1;
-        const year = date.getFullYear();
-    
-        return `${day}-${month}-${year}`;
+
+    const [dates, setDates] = useState({ startDate: '', endDate: '' });
+    const handleDateChange = (key, value) => {
+        setDates(prevDates => ({
+            ...prevDates,
+            [key]: value,
+        }));
     };
-    
-    const formattedStartDate = formatDate(startDate);
-    const formattedEndDate = formatDate(endDate);
-    const handleMonthChange = useCallback((month, year) => {
-        setMonth(month);
-        setYear(year);
-    }, []);
-    
-   const handleStartDateChange = useCallback((selectedDate) => {
-    if (selectedDate && selectedDate.start) {
-        setStartDate(selectedDate.start);
-        setIsStartDatePickerVisible(false);
-    }
-}, []);
-
-const handleEndDateChange = useCallback((selectedDate) => {
-    if (selectedDate && selectedDate.start) {
-        setEndDate(selectedDate.start);
-        setIsEndDatePickerVisible(false);
-    }
-}, []);
-
 
     const [selectedTierType, setSelectedTierType] = useState('selected');
     const [tiers, setTiers] = useState([
@@ -353,6 +323,10 @@ const handleEndDateChange = useCallback((selectedDate) => {
                 const fetchedSelectedOptions = response.data.rate.zipcode.state.map(state => state.code);
                 setSelectedOptions(fetchedSelectedOptions);
             }
+            if (response.data.rate.zipcode.state) {
+                const fetchedSelectedOptions = response.data.rate.zipcode.state.map(state => state.code);
+                setSelectedOptions(fetchedSelectedOptions);
+            }
 
             if (response.data.rate.exclude_rate_for_products) {
                 setSelectedRate(response.data.rate.exclude_rate_for_products.set_exclude_products)
@@ -402,19 +376,19 @@ const handleEndDateChange = useCallback((selectedDate) => {
                 merge_rate_tag: response.data.rate.merge_rate_tag
             });
 
-            if (response.data.rate.scheduleRate) {
-                const startDateFromServer = new Date(response.data.rate.scheduleRate.schedule_start_date_time);
-                const endDateFromServer = new Date(response.data.rate.scheduleRate.schedule_end_date_time);
+            // if (response.data.rate.scheduleRate) {
+            //     const startDateFromServer = new Date(response.data.rate.scheduleRate.schedule_start_date_time);
+            //     const endDateFromServer = new Date(response.data.rate.scheduleRate.schedule_end_date_time);
 
-                setStartDate(startDateFromServer);
-                setEndDate(endDateFromServer);
+            //     setStartDate(startDateFromServer);
+            //     setEndDate(endDateFromServer);
 
-                setCheckState(prevState => ({
-                    ...prevState,
-                    selectedByschedule: response.data.rate.scheduleRate.schedule_rate,
-                }));
+            //     setCheckState(prevState => ({
+            //         ...prevState,
+            //         selectedByschedule: response.data.rate.scheduleRate.schedule_rate,
+            //     }));
 
-            }
+            // }
 
         } catch (error) {
             console.error("Error fetching edit data:", error);
@@ -766,14 +740,14 @@ const handleEndDateChange = useCallback((selectedDate) => {
         description: '',
 
     })
-    const[send_another_rate,setsend_another_rate]= useState({
-        another_rate_name:'',
-        another_rate_description:'',
+    const [send_another_rate, setsend_another_rate] = useState({
+        another_rate_name: '',
+        another_rate_description: '',
         update_price_type: checkstate.selectedByUpdatePriceType,
         update_price_effect: checkstate.selectedByUpdatePriceEffect,
-        adjustment_price:'',
-        service_code:"",
-        another_merge_rate_tag:''
+        adjustment_price: '',
+        service_code: "",
+        another_merge_rate_tag: ''
     })
     const [exclude_Rate, SetExclude_Rate] = useState({
         set_exclude_products: selectedRate,
@@ -807,10 +781,7 @@ const handleEndDateChange = useCallback((selectedDate) => {
         },
         scheduleRate: {
             schedule_rate: checkstate.selectedByschedule,
-            ...(formattedStartDate && formattedEndDate && {
-                schedule_start_date_time: formattedStartDate,
-                schedule_end_date_time: formattedEndDate
-            })
+
         },
         rate_based_on_surcharge: {
             cart_and_product_surcharge: checkstate.selectedByCart,
@@ -819,13 +790,13 @@ const handleEndDateChange = useCallback((selectedDate) => {
             selectedMultiplyLine: checkstate.selectedMultiplyLine,
             rate_based_on_surcharge
         },
-        send_another_rate:send_another_rate,
         rate_modifiers: rateModifiers,
         exclude_rate_for_products: exclude_Rate,
         status: 1,
         merge_rate_tag: ''
     });
-    
+
+
 
     const removeEmptyFields = (obj) => {
         return Object.keys(obj).reduce((acc, key) => {
@@ -888,8 +859,7 @@ const handleEndDateChange = useCallback((selectedDate) => {
             scheduleRate: {
                 ...prevFormData.scheduleRate,
                 schedule_rate: checkstate.selectedByschedule,
-                schedule_start_date_time: formattedStartDate,
-                schedule_end_date_time: formattedEndDate
+
 
             },
             rate_based_on_surcharge: {
@@ -905,12 +875,12 @@ const handleEndDateChange = useCallback((selectedDate) => {
                 tier_type: selectedTierType,
                 rateTier: tiers
             },
-            send_another_rate:send_another_rate,
+            send_another_rate: send_another_rate,
             exclude_rate_for_products: exclude_Rate,
             rate_modifiers: rateModifiers,
         }));
-    }, [selectedOptions, items, zipcodeValue, checkstate.selectedCondition, checkstate.selectedStateCondition, checkstate.selectedZipCondition, checkstate.selectedZipCode, state, checkstate.selectedByschedule, startDate,
-        endDate, checkstate.selectedByCart, rate_based_on_surcharge, checkedState.checked1, checkstate.selectedByAmount, checkstate.selectedMultiplyLine, selectedTierType, tiers, exclude_Rate, rateModifiers,send_another_rate]);
+    }, [selectedOptions, items, zipcodeValue, checkstate.selectedCondition, checkstate.selectedStateCondition, checkstate.selectedZipCondition, checkstate.selectedZipCode, state, checkstate.selectedByschedule,
+        checkstate.selectedByCart, rate_based_on_surcharge, checkedState.checked1, checkstate.selectedByAmount, checkstate.selectedMultiplyLine, selectedTierType, tiers, exclude_Rate, rateModifiers, send_another_rate]);
 
 
     const saveRate = async () => {
@@ -2548,44 +2518,24 @@ const handleEndDateChange = useCallback((selectedDate) => {
                                 />
                             </div>
                             {checkstate.selectedByschedule === 1 && (
+                                <FormLayout>
 
-                                <div style={{ display: 'flex', gap: '10px', marginTop: "2%" }}>
-                                    <div style={{ flex: 1 }}>
+
+                                    <FormLayout.Group>
                                         <TextField
                                             label="Start Date"
-                                            value={formatDate(startDate)}
-                                            onFocus={() => setIsStartDatePickerVisible(true)}
-                                            readOnly
+                                            value={dates.startDate}
+                                            onChange={(value) => handleDateChange('startDate', value)}
+                                            type="date"
                                         />
-                                        {isStartDatePickerVisible && (
-                                            <DatePicker
-                                                month={month}
-                                                year={year}
-                                                onChange={handleStartDateChange}
-                                                onMonthChange={handleMonthChange}
-                                                selected={{ start: startDate, end: startDate }}
-                                            />
-                                        )}
-                                    </div>
-                                    <div style={{ flex: 1 }}>
                                         <TextField
                                             label="End Date"
-                                            value={formatDate(endDate)}
-                                            onFocus={() => setIsEndDatePickerVisible(true)}
-                                            readOnly
+                                            value={dates.endDate}
+                                            onChange={(value) => handleDateChange('endDate', value)}
+                                            type="date"
                                         />
-                                        {isEndDatePickerVisible && (
-                                            <DatePicker
-                                                month={month}
-                                                year={year}
-                                                onChange={handleEndDateChange}
-                                                onMonthChange={handleMonthChange}
-                                                selected={{ start: endDate, end: endDate }}
-                                            />
-                                        )}
-                                    </div>
-                                </div>
-
+                                    </FormLayout.Group>
+                                </FormLayout>
                             )}
                         </LegacyCard>
                     </Grid.Cell>
@@ -2625,7 +2575,7 @@ const handleEndDateChange = useCallback((selectedDate) => {
                                                     value={send_another_rate.another_rate_name}
                                                     onChange={handleRateFormChange('another_rate_name')}
                                                     autoComplete="off"
-                                                   
+
                                                     placeholder='Enter Rate Name'
                                                 />
                                                 <TextField
@@ -2634,7 +2584,7 @@ const handleEndDateChange = useCallback((selectedDate) => {
                                                     value={send_another_rate.another_rate_description}
                                                     onChange={handleRateFormChange('another_rate_description')}
                                                     autoComplete="off"
-                                                    
+
                                                     placeholder='Enter Desription'
                                                 />
                                             </FormLayout.Group>
@@ -2708,7 +2658,7 @@ const handleEndDateChange = useCallback((selectedDate) => {
                                                             value={send_another_rate.adjustment_price}
                                                             onChange={handleRateFormChange('adjustment_price')}
                                                             autoComplete="off"
-                                                           
+
                                                             placeholder='00'
                                                         />
                                                     </FormLayout.Group>
@@ -2725,7 +2675,7 @@ const handleEndDateChange = useCallback((selectedDate) => {
                                                     value={send_another_rate.adjustment_price}
                                                     onChange={handleRateFormChange('adjustment_price')}
                                                     autoComplete="off"
-                                                    
+
                                                     placeholder='0'
                                                 />
 
@@ -2742,18 +2692,18 @@ const handleEndDateChange = useCallback((selectedDate) => {
                                                         type="text"
                                                         label="Service Code"
                                                         value={send_another_rate.service_code}
-                                                            onChange={handleRateFormChange('service_code')}
+                                                        onChange={handleRateFormChange('service_code')}
                                                         autoComplete="off"
-                                                       
+
                                                         placeholder='Enter Service Code'
                                                     />
                                                     <TextField
                                                         type="text"
                                                         label="Another merge rate tag"
                                                         value={send_another_rate.another_merge_rate_tag}
-                                                            onChange={handleRateFormChange('another_merge_rate_tag')}
+                                                        onChange={handleRateFormChange('another_merge_rate_tag')}
                                                         autoComplete="off"
-                                                        
+
                                                         placeholder='tag1,tag2,tag3'
                                                     />
                                                 </FormLayout.Group>

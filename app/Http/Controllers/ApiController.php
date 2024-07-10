@@ -238,6 +238,15 @@ class ApiController extends Controller
         // dd($originCompanyName);
         $originCountryName = $input['rate']['origin']['country'];
 
+        $itemQuantitys = $input['rate']['items'];
+
+        $totalQuantity = 0;
+
+        // Iterate through the array and sum up the quantities
+        foreach ($itemQuantitys as $quantity) {
+            $totalQuantity += $quantity['quantity'];
+        }
+
         $destinationZipcode = $input['rate']['destination']['postal_code'];
         $destinationProvince = $input['rate']['destination']['province'];
 
@@ -255,7 +264,6 @@ class ApiController extends Controller
             $query->where('status', 1);
         })->pluck('zone_id');
 
-        Log::info(['originCompanyName'=>$originCompanyName]);
         // Log::info($zoneIds);
         // DB::enableQueryLog();
         $ratesQuery = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode');
@@ -301,12 +309,20 @@ class ApiController extends Controller
                 }
             }
 
+            if($rate->cart_condition['conditionMatch']){
+                $rateCondition = collect($rate->cart_condition['cartCondition']);
+                $filteredCondition = $rateCondition->map(function ($condition){
+                    return $condition;
+                });
+                Log::info('Query logs:', ['conditionMatch' => $filteredCondition]);
+            }
+
             return $rate;
         })->filter();
 
         // Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
-        // Log::info('Query logs:', ['states' => $states]);
-        Log::info('Shopify Carrier Service Request input:', ['rates1' => $filteredRates]);
+        Log::info('Query logs:', ['totalQuantity' => $totalQuantity]);
+        // Log::info('Shopify Carrier Service Request input:', ['filteredRates' => $filteredRates]);
 
         foreach ($filteredRates as $rate) {
             $response['rates'][] = [
@@ -318,7 +334,8 @@ class ApiController extends Controller
             ];
         }
 
-        Log::info('Shopify Carrier Service response:', ["response" => $response]);
+        Log::info('Shopify Carrier Service input:', ["input" => $input]);
+        // Log::info('Shopify Carrier Service response:', ["response" => $response]);
 
         return response()->json($response);
     }
@@ -734,8 +751,15 @@ class ApiController extends Controller
                 ]);
 
                 $inputData['schedule_rate'] = $inputData['scheduleRate']['schedule_rate'];
-                $inputData['schedule_start_date_time'] = $inputData['scheduleRate']['schedule_start_date_time'];
-                $inputData['schedule_end_date_time'] = $inputData['scheduleRate']['schedule_end_date_time'];
+
+                if($inputData['scheduleRate']['schedule_rate']){
+                    $inputData['schedule_start_date_time'] = $inputData['scheduleRate']['schedule_start_date_time'];
+                    $inputData['schedule_end_date_time'] = $inputData['scheduleRate']['schedule_end_date_time'];
+                } else {
+                    $inputData['schedule_start_date_time'] = null;
+                    $inputData['schedule_end_date_time'] = null;
+                }
+
                 unset($inputData['scheduleRate']);
             }
 

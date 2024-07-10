@@ -21,17 +21,24 @@ class Rate extends Model
     ];
 
     // List of possible date formats
+    // protected $dateFormats = [
+    //     'd-m-Y h:i A',
+    //     'd/m/Y h:i A',
+    //     'Y-m-d H:i:s',
+    //     'Y/m/d H:i:s',
+    //     'Y-m-d h:i A',
+    //     'Y/m/d h:i A',
+    //     'Y-m-d',
+    //     'Y/m/d',
+    //     'd-m-Y',
+    //     'd/m/Y',
+    // ];
+
     protected $dateFormats = [
-        'd-m-Y h:i A',
-        'd/m/Y h:i A',
-        'Y-m-d H:i:s',
-        'Y/m/d H:i:s',
-        'Y-m-d h:i A',
-        'Y/m/d h:i A',
+        'd/m/Y',
         'Y-m-d',
         'Y/m/d',
-        'd-m-Y',
-        'd/m/Y',
+        'd-m-Y'
     ];
 
     public function zone()
@@ -63,6 +70,7 @@ class Rate extends Model
     {
         foreach ($this->dateFormats as $format) {
             try {
+                \Log::info('format:', ["format" => $value]);
                 $this->attributes[$attribute] = Carbon::createFromFormat($format, $value)->format('Y-m-d H:i:s');
                 return;
             } catch (Throwable $e) {
@@ -74,15 +82,27 @@ class Rate extends Model
         throw new \InvalidArgumentException("Invalid date format: $value");
     }
 
-    // Mutator for schedule_start_date_time
-    public function setScheduleStartDateTimeAttribute($value)
+    /**
+     * Set the schedule start date and time attribute.
+     *
+     * @param string|null $value The date and time value to set.
+     */
+    public function setScheduleStartDateTimeAttribute(?string $value): void
     {
+        if ($value === null) {
+            return;
+        }
+
         $this->setDateTimeAttribute($value, 'schedule_start_date_time');
     }
 
     // Mutator for schedule_end_date_time
     public function setScheduleEndDateTimeAttribute($value)
     {
+        if ($value === null) {
+            return;
+        }
+
         $this->setDateTimeAttribute($value, 'schedule_end_date_time');
     }
 

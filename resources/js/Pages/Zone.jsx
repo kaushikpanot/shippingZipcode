@@ -72,13 +72,13 @@ function Zone(props) {
         page: "1",
         per_page: '10'
     });
-    const [formData, setFormData] = useState({
-        name: "",
-        currency: "",
-        country: [],
-        id: "",
-        status: 1,
-    });
+        const [formData, setFormData] = useState({
+            name: "",
+            currency: "",
+            country: [],
+            id: "",
+            status: 1,
+        });
     const handleStatusChange = useCallback(
         (newStatus) => {
             const statusValue = newStatus === 'Enabled' ? 1 : 0;
@@ -110,7 +110,7 @@ function Zone(props) {
         }));
 
     };
-  
+
     const toastMarkup = toastActive ? (
         <Toast content="Rate deleted" onDismiss={toggleToast} />
     ) : null;
@@ -126,36 +126,79 @@ function Zone(props) {
     const handleEditZone = (rate_id) => {
         navigate(`/Zone/${zone_id}/Rate/Edit/${rate_id}`);
     };
-    const editAndSet = async () => {
 
+    const editAndSet = async () => {
         try {
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
             });
+
             const token = await getSessionToken(app);
             const response = await axios.post(`${apiCommonURL}/api/zone/detail`, editdata, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            setFormData({
+
+
+
+            setFormData(prevState => ({
+                ...prevState,
                 name: response.data.zone.name,
                 currency: response.data.zone.currency,
                 id: response.data.zone.id,
                 status: response.data.zone.status,
-            });
-            setSelectedOptions(response.data.zone.country)
-            const ratedata = response.data.rates
-            setTotalPages(Math.ceil(ratedata.length / itemsPerPage));
-            setRate(ratedata)
+            }));
 
+            setSelectedOptions(response.data.zone.country);
+
+            const ratedata = response.data.rates;
+            setTotalPages(Math.ceil(ratedata.length / itemsPerPage));
+            setRate(ratedata);
+
+            setLoading(false);
 
         } catch (error) {
             console.error('Error occurs', error);
-
         }
     }
+    const getCurrency = async () => {
+        try {
+            const token = await getSessionToken(app);
+
+            const response = await axios.get(`${apiCommonURL}/api/currency`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const currencyes = response.data.currencies;
+            const currencyOptions = currencyes.map(currency => ({
+                label: currency.currency_code_symbol,
+                value: currency.code
+            }));
+
+            setCurrencys(currencyOptions);
+
+
+            if (!formData.currency) {
+                await new Promise(resolve => setTimeout(resolve, 4000));
+                setFormData(prevState => ({
+                    ...prevState,
+                    currency: response.data.shop_currency,
+                }));
+            }
+
+            setLoading(false);
+
+        } catch (error) {
+            console.error("Error fetching currency:", error);
+        }
+    }
+    
+
+   
+
 
     const getCountry = async () => {
         try {
@@ -175,33 +218,6 @@ function Zone(props) {
             console.error("Error fetching country:", error);
         }
     }
-
-    const getCurrency = async () => {
-        try {
-            const token = await getSessionToken(app);
-
-            const response = await axios.get(`${apiCommonURL}/api/currency`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            const currencyes = response.data.currencies;
-
-            const currency = currencyes.map(cuency => ({
-                label: cuency.currency_code_symbol,
-                value: cuency.code
-            }))
-            setCurrencys(currency)
-            setFormData(prevState => ({
-                ...prevState,
-                currency: response.data.shop_currency,  
-              }));
-            setLoading(false)
-        } catch (error) {
-            console.error("Error fetching country:", error);
-        }
-    }
-
     const handleDelete = async () => {
         try {
             setLoadingDelete(true)
@@ -283,17 +299,8 @@ function Zone(props) {
             </LegacyStack>
         ) : null;
 
-    const textField = (
-        <Autocomplete.TextField
-            onChange={updateText}
-            label="Select Countries"
-            value={inputValue}
-            placeholder="Search countries"
-            verticalContent={verticalContentMarkup}
 
-            autoComplete="off"
-        />
-    );
+
     const handleNextPage = useCallback(() => {
         if (currentPage < totalPages) {
             setCurrentPage(currentPage + 1);
@@ -321,7 +328,12 @@ function Zone(props) {
     const saveZone = async () => {
         try {
             const newErrors = {};
-            if (!formData.name) newErrors.name = 'Zone name is required';
+            if (!formData.name) {
+                newErrors.name = 'Zone name is required';
+            }
+            if (selectedOptions.length === 0) {
+                newErrors.selectedCountries = 'Please select at least one country';
+            }
 
             if (Object.keys(newErrors).length > 0) {
                 setErrors(newErrors);
@@ -364,6 +376,18 @@ function Zone(props) {
             setShowToast(true);
         }
     }
+    const textField = (
+        <Autocomplete.TextField
+            onChange={updateText}
+            label="Select Countries"
+            value={inputValue}
+            placeholder="Search countries"
+            verticalContent={verticalContentMarkup}
+            error={errors.selectedCountries}
+            autoComplete="off"
+        />
+    );
+
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
         useIndexResourceState(rate);
 
@@ -532,7 +556,11 @@ function Zone(props) {
                                     textField={textField}
                                     onSelect={setSelectedOptions}
                                     listTitle="Suggested Countries"
+
                                 />
+                                {/* {errors.selectedCountries && (
+    <p style={{ color: 'red' }}>{errors.selectedCountries}</p>
+)} */}
 
                             </div>
                             <div style={{ marginTop: "2%", marginBottom: "2%" }} className='zonetext'>

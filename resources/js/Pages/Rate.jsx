@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import moment from 'moment';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Page,
@@ -57,7 +58,7 @@ function Rate(props) {
         selectedByUpdatePriceType: 0,
         selectedByUpdatePriceEffect: 0,
         selectedZipCondition: 'All',
-        selectedZipCode: 'Include',
+        selectedZipCode: 'Exclude',
         selectedMultiplyLine: 'Yes',
         selectedPriceReplace: 'BasePrice',
         exclude_products_radio: 0, // 0=Remove rate  1=Reduce only product price, weight and quantity
@@ -66,7 +67,6 @@ function Rate(props) {
     });
     const handlecheckedChange = (key, value) => {
         setCheckState(prevState => ({ ...prevState, [key]: value }));
-
     };
 
     const [toastDuration, setToastDuration] = useState(3000);
@@ -95,7 +95,6 @@ function Rate(props) {
             [key]: value,
         }));
     };
-
     const [selectedTierType, setSelectedTierType] = useState('selected');
     const [tiers, setTiers] = useState([
         { minWeight: '', maxWeight: '', basePrice: '' }
@@ -344,6 +343,20 @@ function Rate(props) {
                 setItems(response.data.rate.cart_condition.cartCondition)
             }
 
+            if (response.data.rate.send_another_rate) {
+                setCheckState(prevState => ({
+                    ...prevState,
+                    selectedByUpdatePriceType: response.data.rate.send_another_rate.update_price_type,
+                    selectedByUpdatePriceEffect: response.data.rate.send_another_rate.update_price_effect,
+                }));
+                setCheckedState(prevState => ({
+                    ...prevState,
+                    checked3: response.data.rate.send_another_rate.send_another_rate,
+
+                }));
+                setsend_another_rate(response.data.rate.send_another_rate)
+            }
+
             if (response.data.rate.rate_based_on_surcharge) {
                 setCheckState(prevState => ({
                     ...prevState,
@@ -376,19 +389,17 @@ function Rate(props) {
                 merge_rate_tag: response.data.rate.merge_rate_tag
             });
 
-            // if (response.data.rate.scheduleRate) {
-            //     const startDateFromServer = new Date(response.data.rate.scheduleRate.schedule_start_date_time);
-            //     const endDateFromServer = new Date(response.data.rate.scheduleRate.schedule_end_date_time);
-
-            //     setStartDate(startDateFromServer);
-            //     setEndDate(endDateFromServer);
-
-            //     setCheckState(prevState => ({
-            //         ...prevState,
-            //         selectedByschedule: response.data.rate.scheduleRate.schedule_rate,
-            //     }));
-
-            // }
+            if (response.data.rate.scheduleRate) {
+                setDates(prevState => ({
+                    ...prevState,
+                    startDate: moment(response.data.rate.scheduleRate.schedule_start_date_time, "DD-MM-YYYY hh:mm A").format("YYYY-MM-DD"),
+                    endDate: moment(response.data.rate.scheduleRate.schedule_end_date_time, "DD-MM-YYYY hh:mm A").format("YYYY-MM-DD"),
+                }));
+                setCheckState(prevState => ({
+                    ...prevState,
+                    selectedByschedule: response.data.rate.scheduleRate.schedule_rate,
+                }));
+            }
 
         } catch (error) {
             console.error("Error fetching edit data:", error);
@@ -609,59 +620,32 @@ function Rate(props) {
     ];
 
 
-    const [items, setItems] = useState([
-        { name: 'quantity', condition: 'equal', value: '', unit: 'items' }
-    ]);
 
-    const handleSelectChange = (index, newValue, isSecondSelect) => {
-        const selectedOption = validations.find(option => option.value === newValue) || {};
-        const updatedItem = {
-            ...items[index],
-            name: isSecondSelect ? items[index].name : newValue,
-            condition: isSecondSelect ? newValue : items[index].condition,
-            unit: selectedOption.unit || items[index].unit || '',
-        };
+    const option = [
+        { label: 'Equal', value: 'equal' },
+        { label: 'Does Not Eqaul', value: 'notequal' },
+        { label: 'Greatre then or Eqaul', value: 'gthenoequal' },
+        { label: 'Less then or Eqaul', value: 'lthenoequal' },
+        { label: 'Between', value: 'between' },
+    ];
 
-        const updatedItems = [...items];
-        updatedItems[index] = updatedItem;
+    const getCategory = (itemName) => {
+        let categoryLabel = '';
+        const item = validations.find(option => option.value === itemName);
 
+        if (item) {
+            const index = validations.indexOf(item);
+            for (let i = index; i >= 0; i--) {
+                if (validations[i].className === 'select-header') {
+                    categoryLabel = validations[i].label;
+                    break;
+                }
+            }
+        }
 
-        handleSelectChange
-        setItems(updatedItems);
+        return categoryLabel;
     };
 
-    const handleAddItem = () => {
-        const newItem = { name: 'quantity', condition: 'equal', value: '', unit: 'items' };
-        setItems([...items, newItem]);
-    };
-
-    const handleConditionChange = useCallback(
-        (newValue, index) => {
-            setItems(prevItems => {
-                return prevItems.map((item, idx) => {
-                    if (idx === index) {
-                        return { ...item, value: newValue };
-                    }
-                    return item;
-                });
-            });
-        },
-        []
-    );
-
-    const handleDeleteItem = (index) => {
-        const updatedItems = items.filter((item, i) => i !== index);
-        setItems(updatedItems);
-    };
-    const BacktoZone = (zone_id) => {
-        navigate(`/Zone/${zone_id}`);
-    };
-    useEffect(() => {
-        app = createApp({
-            apiKey: SHOPIFY_API_KEY,
-            host: props.host,
-        });
-    }, []);
     const validations = [
         { label: 'Cart / Order', value: '', disabled: true, className: 'select-header' },
         { label: 'Quantity', value: 'quantity', unit: 'items' },
@@ -710,13 +694,56 @@ function Rate(props) {
     ];
 
 
-    const option = [
-        { label: 'Equal', value: 'equal' },
-        { label: 'Does Not Eqaul', value: 'notequal' },
-        { label: 'Greatre then or Eqaul', value: 'gthenoequal' },
-        { label: 'Less then or Eqaul', value: 'lthenoequal' },
-        { label: 'Between', value: 'between' },
-    ];
+    const [items, setItems] = useState([
+        { name: 'quantity', condition: 'equal', value2: '', value: '', unit: '', label: getCategory('') }
+    ]);
+    const handleSelectChange = (index, newValue, isSecondSelect) => {
+        const selectedOption = validations.find(option => option.value === newValue) || {};
+        const updatedItem = {
+            ...items[index],
+            name: isSecondSelect ? items[index].name : newValue,
+            condition: isSecondSelect ? newValue : items[index].condition,
+            unit: selectedOption.unit || ''
+        };
+
+        const updatedItems = [...items];
+        updatedItems[index] = updatedItem;
+
+        setItems(updatedItems);
+    };
+
+    const handleAddItem = () => {
+        const newItem = { name: 'quantity', condition: 'equal', value: '', unit: '', label: getCategory('') };
+        setItems([...items, newItem]);
+    };
+
+    const handleConditionChange = useCallback(
+        (newValue, index) => {
+            setItems(prevItems => {
+                return prevItems.map((item, idx) => {
+                    if (idx === index) {
+                        return { ...item, value: newValue };
+                    }
+                    return item;
+                });
+            });
+        },
+        []
+    );
+
+    const handleDeleteItem = (index) => {
+        const updatedItems = items.filter((item, i) => i !== index);
+        setItems(updatedItems);
+    };
+    const BacktoZone = (zone_id) => {
+        navigate(`/Zone/${zone_id}`);
+    };
+    useEffect(() => {
+        app = createApp({
+            apiKey: SHOPIFY_API_KEY,
+            host: props.host,
+        });
+    }, []);
 
 
     useEffect(() => {
@@ -741,6 +768,7 @@ function Rate(props) {
 
     })
     const [send_another_rate, setsend_another_rate] = useState({
+        send_another_rate: checkedState.checked3,
         another_rate_name: '',
         another_rate_description: '',
         update_price_type: checkstate.selectedByUpdatePriceType,
@@ -749,6 +777,17 @@ function Rate(props) {
         service_code: "",
         another_merge_rate_tag: ''
     })
+
+    useEffect(() => {
+        setsend_another_rate(prevState => ({
+            ...prevState,
+            send_another_rate: checkedState.checked3,
+            update_price_type: checkstate.selectedByUpdatePriceType,
+            update_price_effect: checkstate.selectedByUpdatePriceEffect
+        }));
+    }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect]);
+
+
     const [exclude_Rate, SetExclude_Rate] = useState({
         set_exclude_products: selectedRate,
         exclude_products_radio: checkstate.exclude_products_radio,
@@ -781,6 +820,8 @@ function Rate(props) {
         },
         scheduleRate: {
             schedule_rate: checkstate.selectedByschedule,
+            schedule_start_date_time: dates.startDate,
+            schedule_end_date_time: dates.endDate
 
         },
         rate_based_on_surcharge: {
@@ -859,8 +900,8 @@ function Rate(props) {
             scheduleRate: {
                 ...prevFormData.scheduleRate,
                 schedule_rate: checkstate.selectedByschedule,
-
-
+                schedule_start_date_time: dates.startDate,
+                schedule_end_date_time: dates.endDate
             },
             rate_based_on_surcharge: {
                 ...prevFormData.rate_based_on_surcharge,
@@ -879,8 +920,17 @@ function Rate(props) {
             exclude_rate_for_products: exclude_Rate,
             rate_modifiers: rateModifiers,
         }));
-    }, [selectedOptions, items, zipcodeValue, checkstate.selectedCondition, checkstate.selectedStateCondition, checkstate.selectedZipCondition, checkstate.selectedZipCode, state, checkstate.selectedByschedule,
-        checkstate.selectedByCart, rate_based_on_surcharge, checkedState.checked1, checkstate.selectedByAmount, checkstate.selectedMultiplyLine, selectedTierType, tiers, exclude_Rate, rateModifiers, send_another_rate]);
+    }, [
+        selectedOptions, items, zipcodeValue, checkstate.selectedCondition,
+        checkstate.selectedStateCondition, checkstate.selectedZipCondition,
+        checkstate.selectedZipCode, state, checkstate.selectedByschedule,
+        checkstate.selectedByCart, dates, rate_based_on_surcharge,
+        checkedState.checked1, checkstate.selectedByAmount,
+        checkstate.selectedMultiplyLine, selectedTierType, tiers,
+        exclude_Rate, rateModifiers, send_another_rate,
+        checkedState.checked3, checkstate.selectedByUpdatePriceType,
+        checkstate.selectedByUpdatePriceEffect
+    ]);
 
 
     const saveRate = async () => {
@@ -889,6 +939,7 @@ function Rate(props) {
         if (!formData.base_price) newErrors.base_price = 'Base price is required';
         if (!formData.service_code) newErrors.service_code = 'Service code is required';
         if (!formData.description) newErrors.description = 'Description is required';
+
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             return;
@@ -1121,48 +1172,73 @@ function Rate(props) {
                                 <div>
                                     <Divider borderColor="border" />
                                     {items.map((item, index) => (
-                                        <div key={index} className='conditions' style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '10px',
-                                            marginBottom: "2%",
-                                            marginTop: "2%",
-                                        }}>
-                                            <Text variant="headingXs" as="h6">
-                                                Cart / Order
-                                            </Text>
-                                            <Select
-                                                options={validations}
-                                                onChange={(newValue) => handleSelectChange(index, newValue, false)}
-                                                value={item.name}
-                                            />
-                                            <Select
-                                                options={option}
-                                                onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                value={item.condition}
-                                            />
-                                            <TextField
-                                                value={item.value}
-                                                onChange={(newValue) => handleConditionChange(newValue, index)}
-                                                autoComplete="off"
-                                                suffix={item.unit ? item.unit : ''}
-                                            />
-                                            {items.length > 1 && (
-                                                <Divider borderColor="border-inverse" />
-                                            )}
+                                        <div>
+                                            <Grid>
+                                                <Grid.Cell columnSpan={{ xs: 2, sm: 3, md: 3, lg: 2, xl: 2 }}>
 
-                                            {items.length > 1 && (
-                                                <Button
-                                                    icon={DeleteIcon}
-                                                    variant='primary'
-                                                    tone="critical"
-                                                    accessibilityLabel="Delete item"
-                                                    onClick={() => handleDeleteItem(index)}
-                                                />
-                                            )}
+                                                    <div style={{ paddingTop: '20%' }}>
+                                                        <Text variant="headingXs" as="h6">
+                                                            {getCategory(item.name)}
+                                                        </Text>
+
+                                                    </div>
+                                                </Grid.Cell>
+                                                <Grid.Cell columnSpan={{ xs: 110, sm: 3, md: 3, lg: 10, xl: 10 }}>
+
+                                                    <div className='conditions' style={{
+                                                        display: 'flex',
+                                                        gap: '3%',
+                                                        marginTop: "2%",
+                                                        marginBottom: "2%",
+
+                                                    }}>
+                                                        <Select
+                                                            options={validations}
+                                                            onChange={(newValue) => handleSelectChange(index, newValue, false)}
+                                                            value={item.name}
+                                                        />
+                                                        <Select
+                                                            options={option}
+                                                            onChange={(newValue) => handleSelectChange(index, newValue, true)}
+                                                            value={item.condition}
+                                                        />
+
+                                                        <>
+                                                            <TextField
+                                                                value={item.value}
+                                                                onChange={(newValue) => handleConditionChange(newValue, index)}
+                                                                autoComplete="off"
+                                                                suffix={item.unit ? item.unit : ''}
+                                                            />
+                                                            {item.condition === 'between' && (
+                                                                <TextField
+                                                                    value={item.value2}
+                                                                    onChange={(newValue) => handleConditionChange2(newValue, index)}
+                                                                    autoComplete="off"
+                                                                    suffix={item.unit ? item.unit : ''}
+                                                                />
+                                                            )}
+                                                        </>
+
+
+
+                                                        {items.length > 1 && (
+                                                            <Button
+                                                                icon={DeleteIcon}
+                                                                variant='primary'
+                                                                tone="critical"
+                                                                accessibilityLabel="Delete item"
+                                                                onClick={() => handleDeleteItem(index)}
+                                                            />
+                                                        )}
+                                                    </div>
+                                                </Grid.Cell>
+                                            </Grid>
+                                            <Divider borderColor="border" />
                                         </div>
                                     ))}
-                                    <Divider borderColor="border" />
+
+
 
                                     <div style={{ marginTop: "2%" }}>
                                         <Button

@@ -182,14 +182,13 @@ function Zone(props) {
             setCurrencys(currencyOptions);
 
 
-            if (!formData.currency) {
-                await new Promise(resolve => setTimeout(resolve, 4000));
+          
+            if (!zone_id) {
                 setFormData(prevState => ({
                     ...prevState,
-                    currency: response.data.shop_currency,
+                    currency: shop_currency,
                 }));
             }
-
             setLoading(false);
 
         } catch (error) {

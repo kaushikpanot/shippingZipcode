@@ -659,7 +659,7 @@ function Rate(props) {
     const getCategory = (itemName) => {
         let categoryLabel = '';
         const item = validations.find(option => option.value === itemName);
-    
+
         if (item) {
             const index = validations.indexOf(item);
             for (let i = index; i >= 0; i--) {
@@ -669,86 +669,86 @@ function Rate(props) {
                 }
             }
         }
-    
+
         return categoryLabel;
     };
-    
-        const validations = [
-            { label: 'Cart / Order', value: '', disabled: true, className: 'select-header' },
-            { label: 'Quantity', value: 'quantity', unit: 'items',  mainLabel:"'Cart_Order" },
-            { label: 'Total', value: 'total', unit: '.Rs', mainLabel:"'Cart_Order" },
-            { label: 'Sale Product Total', value: 's&ptotal', unit: '.Rs', mainLabel:"'Cart_Order" },
-            { label: 'Non Sale Product Total', value: 'ns&ptotal', unit: '.Rs', mainLabel:"'Cart_Order" },
-            { label: 'Weight', value: 'weight', unit: 'kg', mainLabel:"'Cart_Order" },
-            { label: 'Line Item', value: 'lineitem', mainLabel:"'Cart_Order" },
-            { label: 'Distance', value: 'distance', unit: 'km' , mainLabel:"'Cart_Order"},
-            { label: 'Day', value: 'day', mainLabel:"'Cart_Order" },
-            { label: 'Time', value: 'time', mainLabel:"'Cart_Order" },
-            { label: 'Local Code', value: 'localcode', mainLabel:"'Cart_Order" },
 
-            { label: 'Per Product', value: '', disabled: true, className: 'select-header' },
-            { label: 'Quantity', value: 'quantity2',mainLabel:'Per_Product' },
-            { label: 'Price', value: 'price' ,mainLabel:'Per_Product'},
-            { label: 'Total', value: 'total2',mainLabel:'Per_Product'},
-            { label: 'Weight', value: 'weight2',mainLabel:'Per_Product' },
-            { label: 'Name', value: 'name' ,mainLabel:'Per_Product'},
-            { label: 'Tag', value: 'tag',mainLabel:'Per_Product' },
-            { label: 'SKU', value: 'sku',mainLabel:'Per_Product' },
-            { label: 'Type', value: 'type',mainLabel:'Per_Product' },
-            { label: 'Vendor', value: 'vendor',mainLabel:'Per_Product' },
-            { label: 'Properties', value: 'properties',mainLabel:'Per_Product'},
+    const validations = [
+        { label: 'Cart / Order', value: '', disabled: true, className: 'select-header' },
+        { label: 'Quantity', value: 'quantity', unit: 'items', mainLabel: "Cart_Order" },
+        { label: 'Total', value: 'total', unit: '.Rs', mainLabel: "Cart_Order" },
+        { label: 'Sale Product Total', value: 's&ptotal', unit: '.Rs', mainLabel: "Cart_Order" },
+        { label: 'Non Sale Product Total', value: 'ns&ptotal', unit: '.Rs', mainLabel: "Cart_Order" },
+        { label: 'Weight', value: 'weight', unit: 'kg', mainLabel: "'Cart_Order" },
+        { label: 'Line Item', value: 'lineitem', mainLabel: "Cart_Order" },
+        { label: 'Distance', value: 'distance', unit: 'km', mainLabel: "Cart_Order" },
+        { label: 'Day', value: 'day', mainLabel: "Cart_Order" },
+        { label: 'Time', value: 'time', mainLabel: "Cart_Order" },
+        { label: 'Local Code', value: 'localcode', mainLabel: "'Cart_Order" },
 
-            { label: 'Customer', value: '', disabled: true, className: 'select-header' },
-            { label: 'Name', value: 'name2', mainLabel:'Customer' },
-            { label: 'Email', value: 'email', mainLabel:'Customer'  },
-            { label: 'Phone', value: 'phone', mainLabel:'Customer'  },
-            { label: 'Compnay', value: 'company', mainLabel:'Customer'  },
-            { label: 'Address', value: 'address', mainLabel:'Customer'  },
-            { label: 'Address1', value: 'addrss1' , mainLabel:'Customer' },
-            { label: 'Address2', value: 'address2', mainLabel:'Customer'  },
-            { label: 'City', value: 'city', mainLabel:'Customer'  },
-            { label: 'Province COde', value: 'provinceCode', mainLabel:'Customer'  },
-            { label: 'Tag', value: 'tag2', mainLabel:'Customer'  },
-            { label: 'Previous Orders Count', value: 'previousCount', mainLabel:'Customer'  },
-            { label: 'Previous Orders Spent ', value: 'previousSpent', mainLabel:'Customer'  },
+        { label: 'Per Product', value: '', disabled: true, className: 'select-header' },
+        { label: 'Quantity', value: 'quantity2', mainLabel: 'Per_Product' },
+        { label: 'Price', value: 'price', mainLabel: 'Per_Product' },
+        { label: 'Total', value: 'total2', mainLabel: 'Per_Product' },
+        { label: 'Weight', value: 'weight2', mainLabel: 'Per_Product' },
+        { label: 'Name', value: 'name', mainLabel: 'Per_Product' },
+        { label: 'Tag', value: 'tag', mainLabel: 'Per_Product' },
+        { label: 'SKU', value: 'sku', mainLabel: 'Per_Product' },
+        { label: 'Type', value: 'type', mainLabel: 'Per_Product' },
+        { label: 'Vendor', value: 'vendor', mainLabel: 'Per_Product' },
+        { label: 'Properties', value: 'properties', mainLabel: 'Per_Product' },
 
-            { label: 'Delivery', value: '', disabled: true, className: 'select-header' },
-            { label: 'Day Of Week', value: 'dayOfWeek', mainLabel:"Delivery" },
-            { label: 'Day Is', value: 'dayIs' , mainLabel:"Delivery"},
-            { label: 'Date', value: 'date', mainLabel:"Delivery" },
-            { label: 'Time In', value: 'timeIn', mainLabel:"Delivery" },
-            { label: 'Type', value: 'type2', mainLabel:"Delivery" }
-        ];
+        { label: 'Customer', value: '', disabled: true, className: 'select-header' },
+        { label: 'Name', value: 'name2', mainLabel: 'Customer' },
+        { label: 'Email', value: 'email', mainLabel: 'Customer' },
+        { label: 'Phone', value: 'phone', mainLabel: 'Customer' },
+        { label: 'Compnay', value: 'company', mainLabel: 'Customer' },
+        { label: 'Address', value: 'address', mainLabel: 'Customer' },
+        { label: 'Address1', value: 'addrss1', mainLabel: 'Customer' },
+        { label: 'Address2', value: 'address2', mainLabel: 'Customer' },
+        { label: 'City', value: 'city', mainLabel: 'Customer' },
+        { label: 'Province COde', value: 'provinceCode', mainLabel: 'Customer' },
+        { label: 'Tag', value: 'tag2', mainLabel: 'Customer' },
+        { label: 'Previous Orders Count', value: 'previousCount', mainLabel: 'Customer' },
+        { label: 'Previous Orders Spent ', value: 'previousSpent', mainLabel: 'Customer' },
 
-        const [items, setItems] = useState([]);
-    
-        const handleAddItem = () => {
-            const newItem = { 
-                name: 'quantity', 
-                condition: 'equal', 
-                value: '', 
-                unit: '', 
-                label:'cart/order'
-                
-            };
-            setItems(prevItems => [...prevItems, newItem]);
+        { label: 'Delivery', value: '', disabled: true, className: 'select-header' },
+        { label: 'Day Of Week', value: 'dayOfWeek', mainLabel: "Delivery" },
+        { label: 'Day Is', value: 'dayIs', mainLabel: "Delivery" },
+        { label: 'Date', value: 'date', mainLabel: "Delivery" },
+        { label: 'Time In', value: 'timeIn', mainLabel: "Delivery" },
+        { label: 'Type', value: 'type2', mainLabel: "Delivery" }
+    ];
+
+    const [items, setItems] = useState([]);
+
+    const handleAddItem = () => {
+        const newItem = {
+            name: 'quantity',
+            condition: 'equal',
+            value: '',
+            unit: '',
+            label: 'cart/order'
+
         };
-    console.log(items);
-const handleSelectChange = (index, newValue, isSecondSelect) => {
-    const selectedOption = validations.find(option => option.value === newValue) || {};
-    const updatedItem = {
-        ...items[index],
-        name: isSecondSelect ? items[index].name : newValue,
-        condition: isSecondSelect ? newValue : items[index].condition,
-        unit: selectedOption.unit || '',
-        label:selectedOption.mainLabel
+        setItems(prevItems => [...prevItems, newItem]);
     };
+    console.log(items);
+    const handleSelectChange = (index, newValue, isSecondSelect) => {
+        const selectedOption = validations.find(option => option.value === newValue) || {};
+        const updatedItem = {
+            ...items[index],
+            name: isSecondSelect ? items[index].name : newValue,
+            condition: isSecondSelect ? newValue : items[index].condition,
+            unit: selectedOption.unit || '',
+            label: selectedOption.mainLabel
+        };
 
-    const updatedItems = [...items];
-    updatedItems[index] = updatedItem;
+        const updatedItems = [...items];
+        updatedItems[index] = updatedItem;
 
-    setItems(updatedItems);
-};
+        setItems(updatedItems);
+    };
 
     const handleConditionChange = useCallback(
         (newValue, index, key) => {
@@ -985,7 +985,7 @@ const handleSelectChange = (index, newValue, isSecondSelect) => {
             });
             const token = await getSessionToken(app);
 
-           
+
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -1376,13 +1376,15 @@ const handleSelectChange = (index, newValue, isSecondSelect) => {
 
                                                                 </div>
                                                             )}
-                                                            <div style={{  }}>
-                                                                <Button
-                                                                    icon={DeleteIcon}
-                                                                    variant="primary" tone="critical"
-                                                                    onClick={() => handleDeleteItem(index)}
-                                                                />
-                                                            </div>
+                                                           {items.length > 1 && (
+                                                            <Button
+                                                                icon={DeleteIcon}
+                                                                variant='primary'
+                                                                tone="critical"
+                                                                accessibilityLabel="Delete item"
+                                                                onClick={() => handleDeleteItem(index)}
+                                                            />
+                                                        )}
                                                         </div>
                                                     </Grid.Cell>
                                                 </Grid>

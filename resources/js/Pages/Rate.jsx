@@ -671,22 +671,18 @@ function Rate(props) {
         { label: '12:00', value: '12' },
         { label: '13:00', value: '13' },
         { label: '14:00', value: '14' },
-        { label: '15:00', value: '04' },
-        { label: '16:00', value: '04' },
-        { label: '17:00', value: '04' },
-        { label: '18:00', value: '04' },
-        { label: '19:00', value: '04' },
-        { label: '20:00', value: '04' },
-        { label: '21:00', value: '04' },
-        { label: '22:00', value: '04' },
-        { label: '23:00', value: '04' },
-        { label: '24:00', value: '04' },
-       
-        
-
-
+        { label: '15:00', value: '15' },
+        { label: '16:00', value: '16' },
+        { label: '17:00', value: '17' },
+        { label: '18:00', value: '18' },
+        { label: '19:00', value: '19' },
+        { label: '20:00', value: '20' },
+        { label: '21:00', value: '21' },
+        { label: '22:00', value: '22' },
+        { label: '23:00', value: '23' },
+        { label: '24:00', value: '24' }
     ];
-    const [selectedOption, setSelectedOption] = useState('');
+   
 
     const lineItem = [
         { label: 'ANY product must satisfy this conditin ', value: 'satisfy' },
@@ -1358,7 +1354,7 @@ function Rate(props) {
                                                                         />
                                                                     </div>
                                                                 )}
-                                                                {item.name === 'dayOfWeek' && (
+                                                                {item.name === 'dayOfWeek'   &&(
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                                                         <Checkbox
                                                                             label="Monday"

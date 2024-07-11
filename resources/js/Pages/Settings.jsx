@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   Toast, Select, Page, Button, Grid, Divider,
-  LegacyCard, RadioButton, Text, Banner, TextField, FormLayout
+  LegacyCard, RadioButton, Text, Banner, TextField, FormLayout, List
 } from '@shopify/polaris';
 import axios from 'axios';
 import '../../../public/css/style.css';
@@ -95,15 +95,23 @@ const Settings = (props) => {
       <div style={{ marginTop: '2%' }}>
         <Grid>
           <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-            <div style={{ marginLeft: '5%' }}>
-              <Text variant="headingMd" as="h4" fontWeight="medium">Setting</Text>
+            <div style={{ marginLeft: '%' }}>
+              <Text variant="headingLg" as="h5">Setting</Text>
             </div>
-            <div style={{ marginTop: '5%' }}>
-              <ul>
-                <li>You can enable or disable the app without deleting the App</li>
-                <li>To see the shipping rate when test mode is on, use the first name Cirkle during checkout.</li>
-              </ul>
+            <div style={{ marginTop: '4%' }}>
+              <List>
+                <List.Item>
+
+                  You can enable or disable the app without deleting the App
+                </List.Item>
+                <List.Item>
+                  To see the shipping rate when test mode is on, use the first name Cirkle during checkout.
+
+                </List.Item>
+              </List>
             </div>
+
+
           </Grid.Cell>
           <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
             <LegacyCard title="" sectioned>
@@ -132,8 +140,8 @@ const Settings = (props) => {
       <div style={{ marginTop: '2%', marginBottom: '2%' }}>
         <Grid>
           <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-            <div style={{ marginLeft: '5%' }}>
-              <Text variant="headingMd" as="h4" fontWeight="medium">Display Shipping Rate</Text>
+            <div style={{ marginTop: "5%" }}>
+              <Text variant="headingLg" as="h5">Display Shipping Rate</Text>
             </div>
           </Grid.Cell>
           <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -168,13 +176,15 @@ const Settings = (props) => {
       <div style={{ marginTop: '2%', marginBottom: "3%" }}>
         <Grid>
           <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-            <div style={{ marginLeft: '5%' }}>
-              <Text variant="headingMd" as="h4" fontWeight="medium">Mix/Merge Rate Setting</Text>
-            </div>
             <div style={{ marginTop: '5%' }}>
-              <ul>
-                <li>When product rate set combine it with all product rates & additive with normal rate.</li>
-              </ul>
+              <Text variant="headingLg" as="h5">Mix/Merge Rate Setting</Text>
+            </div>
+            <div style={{ marginTop: '4%' }}>
+              <List>
+                <List.Item>
+                  When product rate set combine it with all product rates & additive with normal rate.
+                </List.Item>
+              </List>
             </div>
           </Grid.Cell>
           <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>

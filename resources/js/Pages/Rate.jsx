@@ -28,7 +28,8 @@ import {
     Thumbnail,
     Icon,
     Box,
-    Collapsible
+    Collapsible,
+    List,
 } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon, SearchIcon, SelectIcon } from '@shopify/polaris-icons';
 import '../../../public/css/style.css';
@@ -88,7 +89,7 @@ function Rate(props) {
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
 
-    const [dates, setDates] = useState({ startDate: '', endDate: '' });
+    const [dates, setDates] = useState({ startDate: '', endDate: '', date: '' });
     const handleDateChange = (key, value) => {
         setDates(prevDates => ({
             ...prevDates,
@@ -620,7 +621,33 @@ function Rate(props) {
     ];
 
 
+    const [dayOfWeekSelection, setDayOfWeekSelection] = useState({
+        monday: false,
+        tuesday: false,
+        wednesday: false,
+        thursday: false,
+        friday: false,
+        saturday: false,
+        sunday: false,
+    });
+    const [deliveryType, setDeliveryType] = useState({
+        local: false,
+        Store: false,
+        Shipping: false,
 
+    });
+
+    const handleCheckboxChange = useCallback((key) => {
+        setDayOfWeekSelection(prevState => ({
+            ...prevState,
+            [key]: !prevState[key]
+        }));
+
+        setDeliveryType(prevState => ({
+            ...prevState,
+            [key]: !prevState[key]
+        }));
+    }, []);
     const option = [
         { label: 'Equal', value: 'equal' },
         { label: 'Does Not Eqaul', value: 'notequal' },
@@ -632,97 +659,103 @@ function Rate(props) {
     const getCategory = (itemName) => {
         let categoryLabel = '';
         const item = validations.find(option => option.value === itemName);
-
+    
         if (item) {
             const index = validations.indexOf(item);
             for (let i = index; i >= 0; i--) {
-                if (validations[i].className === 'select-header') {
+                if (validations[i].className === 'select-header' && validations[i].disabled) {
                     categoryLabel = validations[i].label;
                     break;
                 }
             }
         }
-
+    
         return categoryLabel;
     };
+    
+        const validations = [
+            { label: 'Cart / Order', value: '', disabled: true, className: 'select-header' },
+            { label: 'Quantity', value: 'quantity', unit: 'items',  mainLabel:"'Cart_Order" },
+            { label: 'Total', value: 'total', unit: '.Rs', mainLabel:"'Cart_Order" },
+            { label: 'Sale Product Total', value: 's&ptotal', unit: '.Rs', mainLabel:"'Cart_Order" },
+            { label: 'Non Sale Product Total', value: 'ns&ptotal', unit: '.Rs', mainLabel:"'Cart_Order" },
+            { label: 'Weight', value: 'weight', unit: 'kg', mainLabel:"'Cart_Order" },
+            { label: 'Line Item', value: 'lineitem', mainLabel:"'Cart_Order" },
+            { label: 'Distance', value: 'distance', unit: 'km' , mainLabel:"'Cart_Order"},
+            { label: 'Day', value: 'day', mainLabel:"'Cart_Order" },
+            { label: 'Time', value: 'time', mainLabel:"'Cart_Order" },
+            { label: 'Local Code', value: 'localcode', mainLabel:"'Cart_Order" },
 
-    const validations = [
-        { label: 'Cart / Order', value: '', disabled: true, className: 'select-header' },
-        { label: 'Quantity', value: 'quantity', unit: 'items' },
-        { label: 'Total', value: 'total', unit: '.Rs' },
-        { label: 'Sale Product Total', value: 's&ptotal', unit: '.Rs' },
-        { label: 'Non Sale Product Total', value: 'ns&ptotal', unit: '.Rs' },
-        { label: 'Weight', value: 'weight', unit: 'kg' },
-        { label: 'Line Item', value: 'lineitem' },
-        { label: 'Distance', value: 'distance', unit: 'km' },
-        { label: 'Day', value: 'day' },
-        { label: 'Time', value: 'time' },
-        { label: 'Local Code', value: 'localcode' },
+            { label: 'Per Product', value: '', disabled: true, className: 'select-header' },
+            { label: 'Quantity', value: 'quantity2',mainLabel:'Per_Product' },
+            { label: 'Price', value: 'price' ,mainLabel:'Per_Product'},
+            { label: 'Total', value: 'total2',mainLabel:'Per_Product'},
+            { label: 'Weight', value: 'weight2',mainLabel:'Per_Product' },
+            { label: 'Name', value: 'name' ,mainLabel:'Per_Product'},
+            { label: 'Tag', value: 'tag',mainLabel:'Per_Product' },
+            { label: 'SKU', value: 'sku',mainLabel:'Per_Product' },
+            { label: 'Type', value: 'type',mainLabel:'Per_Product' },
+            { label: 'Vendor', value: 'vendor',mainLabel:'Per_Product' },
+            { label: 'Properties', value: 'properties',mainLabel:'Per_Product'},
 
-        { label: 'Per Product', value: '', disabled: true, className: 'select-header' },
-        { label: 'Quantity', value: 'quantity2' },
-        { label: 'Price', value: 'price' },
-        { label: 'Total', value: 'total2' },
-        { label: 'Weight', value: 'weight2' },
-        { label: 'Name', value: 'name' },
-        { label: 'Tag', value: 'tag' },
-        { label: 'SKU', value: 'sku' },
-        { label: 'Type', value: 'type' },
-        { label: 'Vendor', value: 'vendor' },
-        { label: 'Properties', value: 'properties' },
+            { label: 'Customer', value: '', disabled: true, className: 'select-header' },
+            { label: 'Name', value: 'name2', mainLabel:'Customer' },
+            { label: 'Email', value: 'email', mainLabel:'Customer'  },
+            { label: 'Phone', value: 'phone', mainLabel:'Customer'  },
+            { label: 'Compnay', value: 'company', mainLabel:'Customer'  },
+            { label: 'Address', value: 'address', mainLabel:'Customer'  },
+            { label: 'Address1', value: 'addrss1' , mainLabel:'Customer' },
+            { label: 'Address2', value: 'address2', mainLabel:'Customer'  },
+            { label: 'City', value: 'city', mainLabel:'Customer'  },
+            { label: 'Province COde', value: 'provinceCode', mainLabel:'Customer'  },
+            { label: 'Tag', value: 'tag2', mainLabel:'Customer'  },
+            { label: 'Previous Orders Count', value: 'previousCount', mainLabel:'Customer'  },
+            { label: 'Previous Orders Spent ', value: 'previousSpent', mainLabel:'Customer'  },
 
-        { label: 'Customer', value: '', disabled: true, className: 'select-header' },
-        { label: 'Name', value: 'name2' },
-        { label: 'Email', value: 'email' },
-        { label: 'Phone', value: 'phone' },
-        { label: 'Compnay', value: 'company' },
-        { label: 'Address', value: 'address' },
-        { label: 'Address1', value: 'addrss1' },
-        { label: 'Address2', value: 'address2' },
-        { label: 'City', value: 'city' },
-        { label: 'Province COde', value: 'provinceCode' },
-        { label: 'Tag', value: 'tag2' },
-        { label: 'Previous Orders Count', value: 'previousCount' },
-        { label: 'Previous Orders Spent ', value: 'previousSpent' },
+            { label: 'Delivery', value: '', disabled: true, className: 'select-header' },
+            { label: 'Day Of Week', value: 'dayOfWeek', mainLabel:"Delivery" },
+            { label: 'Day Is', value: 'dayIs' , mainLabel:"Delivery"},
+            { label: 'Date', value: 'date', mainLabel:"Delivery" },
+            { label: 'Time In', value: 'timeIn', mainLabel:"Delivery" },
+            { label: 'Type', value: 'type2', mainLabel:"Delivery" }
+        ];
 
-        { label: 'Delivery', value: '', disabled: true, className: 'select-header' },
-        { label: 'Day Of Week', value: 'dayOfWeek' },
-        { label: 'Day Is', value: 'dayIs' },
-        { label: 'Date', value: 'date' },
-        { label: 'Time In', value: 'timeIn' },
-        { label: 'Type', value: 'type2' }
-    ];
-
-
-    const [items, setItems] = useState([
-        { name: 'quantity', condition: 'equal', value2: '', value: '', unit: '', label: getCategory('') }
-    ]);
-    const handleSelectChange = (index, newValue, isSecondSelect) => {
-        const selectedOption = validations.find(option => option.value === newValue) || {};
-        const updatedItem = {
-            ...items[index],
-            name: isSecondSelect ? items[index].name : newValue,
-            condition: isSecondSelect ? newValue : items[index].condition,
-            unit: selectedOption.unit || ''
+        const [items, setItems] = useState([]);
+    
+        const handleAddItem = () => {
+            const newItem = { 
+                name: 'quantity', 
+                condition: 'equal', 
+                value: '', 
+                unit: '', 
+                label:'cart/order'
+                
+            };
+            setItems(prevItems => [...prevItems, newItem]);
         };
-
-        const updatedItems = [...items];
-        updatedItems[index] = updatedItem;
-
-        setItems(updatedItems);
+    console.log(items);
+const handleSelectChange = (index, newValue, isSecondSelect) => {
+    const selectedOption = validations.find(option => option.value === newValue) || {};
+    const updatedItem = {
+        ...items[index],
+        name: isSecondSelect ? items[index].name : newValue,
+        condition: isSecondSelect ? newValue : items[index].condition,
+        unit: selectedOption.unit || '',
+        label:selectedOption.mainLabel
     };
 
-    const handleAddItem = () => {
-        const newItem = { name: 'quantity', condition: 'equal', value: '', unit: '', label: getCategory('') };
-        setItems([...items, newItem]);
-    };
+    const updatedItems = [...items];
+    updatedItems[index] = updatedItem;
+
+    setItems(updatedItems);
+};
 
     const handleConditionChange = useCallback(
-        (newValue, index) => {
+        (newValue, index, key) => {
             setItems(prevItems => {
                 return prevItems.map((item, idx) => {
                     if (idx === index) {
-                        return { ...item, value: newValue };
+                        return { ...item, [key]: newValue };
                     }
                     return item;
                 });
@@ -795,6 +828,7 @@ function Rate(props) {
         collection_id: '',
         product_type: '',
         product_vendor: '',
+        exclude_products_textbox: ''
     })
 
     const [formData, setFormData] = useState({
@@ -951,7 +985,7 @@ function Rate(props) {
             });
             const token = await getSessionToken(app);
 
-            console.log(formData)
+           
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -991,7 +1025,6 @@ function Rate(props) {
     if (loading) {
         return (
             <Page
-                fullWidth
                 title={rate_id ? 'Edit Rate' : 'Add Rate'}
                 primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
                 secondaryActions={<Button onClick={BacktoZone}>Back</Button>}
@@ -1000,7 +1033,7 @@ function Rate(props) {
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '18%' }}>
                             <SkeletonDisplayText size="small" />
-                            <div style={{ paddingTop: '7%', fontSize: '14px' }}>
+                            <div style={{ paddingTop: '5%', fontSize: '14px' }}>
                                 <SkeletonBodyText lines={2} />
                             </div>
                         </div>
@@ -1056,9 +1089,13 @@ function Rate(props) {
                             <Text variant="headingLg" as="h5">
                                 Rate details
                             </Text>
-                            <p style={{ paddingTop: '7%', fontSize: '14px' }}>
-                                Specify which rates should apply in this zone
-                            </p>
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        Specify which rates should apply in this zone
+                                    </List.Item>
+                                </List>
+                            </div>
                         </div>
                     </Layout.Section>
                     <Layout.Section>
@@ -1127,9 +1164,13 @@ function Rate(props) {
                             <Text variant="headingLg" as="h5">
                                 Conditions
                             </Text>
-                            <p style={{ paddingTop: '7%', fontSize: '14px' }}>
-                                New Condition Scenario
-                            </p>
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        New Condition Scenario
+                                    </List.Item>
+                                </List>
+                            </div>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -1171,72 +1212,184 @@ function Rate(props) {
                             {checkstate.selectedCondition !== 0 && (
                                 <div>
                                     <Divider borderColor="border" />
-                                    {items.map((item, index) => (
-                                        <div>
-                                            <Grid>
-                                                <Grid.Cell columnSpan={{ xs: 2, sm: 3, md: 3, lg: 2, xl: 2 }}>
-
-                                                    <div style={{ paddingTop: '20%' }}>
-                                                        <Text variant="headingXs" as="h6">
-                                                            {getCategory(item.name)}
-                                                        </Text>
-
-                                                    </div>
-                                                </Grid.Cell>
-                                                <Grid.Cell columnSpan={{ xs: 110, sm: 3, md: 3, lg: 10, xl: 10 }}>
-
-                                                    <div className='conditions' style={{
-                                                        display: 'flex',
-                                                        gap: '3%',
-                                                        marginTop: "2%",
-                                                        marginBottom: "2%",
-
-                                                    }}>
-                                                        <Select
-                                                            options={validations}
-                                                            onChange={(newValue) => handleSelectChange(index, newValue, false)}
-                                                            value={item.name}
-                                                        />
-                                                        <Select
-                                                            options={option}
-                                                            onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                            value={item.condition}
-                                                        />
-
-                                                        <>
-                                                            <TextField
-                                                                value={item.value}
-                                                                onChange={(newValue) => handleConditionChange(newValue, index)}
-                                                                autoComplete="off"
-                                                                suffix={item.unit ? item.unit : ''}
+                                    <div>
+                                        {items.map((item, index) => (
+                                            <div key={index}>
+                                                <Grid>
+                                                    <Grid.Cell columnSpan={{ xs: 2, sm: 3, md: 3, lg: 2, xl: 2 }}>
+                                                        <div style={{ paddingTop: '20%', }}>
+                                                            <Text variant="headingXs" as="h6">
+                                                                {getCategory(item.name)}
+                                                            </Text>
+                                                        </div>
+                                                    </Grid.Cell>
+                                                    <Grid.Cell columnSpan={{ xs: 10, sm: 9, md: 9, lg: 10, xl: 10 }}>
+                                                        <div className='conditions' style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '1%',
+                                                            marginTop: "2%",
+                                                            marginBottom: "2%",
+                                                        }}>
+                                                            <Select
+                                                                options={validations}
+                                                                onChange={(newValue) => handleSelectChange(index, newValue, false)}
+                                                                value={item.name}
                                                             />
-                                                            {item.condition === 'between' && (
+                                                            <Select
+                                                                options={option}
+                                                                onChange={(newValue) => handleSelectChange(index, newValue, true)}
+                                                                value={item.condition}
+                                                            />
+                                                            {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && (
                                                                 <TextField
-                                                                    value={item.value2}
-                                                                    onChange={(newValue) => handleConditionChange2(newValue, index)}
+                                                                    value={item.value}
+                                                                    onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
                                                                     autoComplete="off"
                                                                     suffix={item.unit ? item.unit : ''}
                                                                 />
                                                             )}
-                                                        </>
+                                                            {item.condition === 'between' && (
+                                                                <TextField
+                                                                    value={item.value2}
+                                                                    onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
+                                                                    autoComplete="off"
+                                                                    suffix={item.unit ? item.unit : ''}
+                                                                />
+                                                            )}
+                                                            {item.name === 'dayIs' && (
+                                                                <TextField
+                                                                    // value={item.value2}
+                                                                    // onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
+                                                                    autoComplete="off"
+                                                                    suffix={item.unit ? item.unit : ''}
+                                                                    placeholder='Delivery X days from today is'
+                                                                />
+                                                            )}
+                                                            {item.name === 'day' && (
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                                    <Checkbox
+                                                                        label="Monday"
+                                                                        checked={dayOfWeekSelection.monday}
+                                                                        onChange={() => handleCheckboxChange('monday')}
+                                                                    />
+                                                                    <Checkbox
+                                                                        label="Tuesday"
+                                                                        checked={dayOfWeekSelection.tuesday}
+                                                                        onChange={() => handleCheckboxChange('tuesday')}
+                                                                    />
+                                                                    <Checkbox
+                                                                        label="Wednesday"
+                                                                        checked={dayOfWeekSelection.wednesday}
+                                                                        onChange={() => handleCheckboxChange('wednesday')}
+                                                                    />
+                                                                    <Checkbox
+                                                                        label="Thursday"
+                                                                        checked={dayOfWeekSelection.thursday}
+                                                                        onChange={() => handleCheckboxChange('thursday')}
+                                                                    />
+                                                                    <Checkbox
+                                                                        label="Friday"
+                                                                        checked={dayOfWeekSelection.friday}
+                                                                        onChange={() => handleCheckboxChange('friday')}
+                                                                    />
+                                                                    <Checkbox
+                                                                        label="Saturday"
+                                                                        checked={dayOfWeekSelection.saturday}
+                                                                        onChange={() => handleCheckboxChange('saturday')}
+                                                                    />
+                                                                    <Checkbox
+                                                                        label="Sunday"
+                                                                        checked={dayOfWeekSelection.sunday}
+                                                                        onChange={() => handleCheckboxChange('sunday')}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            {item.name === 'dayOfWeek' && (
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                                    <Checkbox
+                                                                        label="Monday"
+                                                                        checked={dayOfWeekSelection.monday}
+                                                                        onChange={() => handleCheckboxChange('monday')}
+                                                                    />
+                                                                    <Checkbox
+                                                                        label="Tuesday"
+                                                                        checked={dayOfWeekSelection.tuesday}
+                                                                        onChange={() => handleCheckboxChange('tuesday')}
+                                                                    />
+                                                                    <Checkbox
+                                                                        label="Wednesday"
+                                                                        checked={dayOfWeekSelection.wednesday}
+                                                                        onChange={() => handleCheckboxChange('wednesday')}
+                                                                    />
+                                                                    <Checkbox
+                                                                        label="Thursday"
+                                                                        checked={dayOfWeekSelection.thursday}
+                                                                        onChange={() => handleCheckboxChange('thursday')}
+                                                                    />
+                                                                    <Checkbox
+                                                                        label="Friday"
+                                                                        checked={dayOfWeekSelection.friday}
+                                                                        onChange={() => handleCheckboxChange('friday')}
+                                                                    />
+                                                                    <Checkbox
+                                                                        label="Saturday"
+                                                                        checked={dayOfWeekSelection.saturday}
+                                                                        onChange={() => handleCheckboxChange('saturday')}
+                                                                    />
+                                                                    <Checkbox
+                                                                        label="Sunday"
+                                                                        checked={dayOfWeekSelection.sunday}
+                                                                        onChange={() => handleCheckboxChange('sunday')}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            {item.name === 'date' && (
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
 
+                                                                    {/* <FormLayout.Group> */}
+                                                                    <TextField
+                                                                        value={dates.date}
+                                                                        onChange={(value) => handleDateChange('date', value)}
+                                                                        type="date"
+                                                                    />
+                                                                    {/* </FormLayout.Group> */}
+                                                                </div>
+                                                            )}
+                                                            {item.name === 'type2' && (
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                                    <Checkbox
+                                                                        label="Local Delivery"
+                                                                        checked={deliveryType.local}
+                                                                        onChange={() => handleCheckboxChange('local')}
+                                                                    />
+                                                                    <Checkbox
+                                                                        label="Store Pickup"
+                                                                        checked={deliveryType.Store}
+                                                                        onChange={() => handleCheckboxChange('Store')}
+                                                                    />
+                                                                    <Checkbox
+                                                                        label="Shipping"
+                                                                        checked={deliveryType.Shipping}
+                                                                        onChange={() => handleCheckboxChange('Shipping')}
+                                                                    />
 
-
-                                                        {items.length > 1 && (
-                                                            <Button
-                                                                icon={DeleteIcon}
-                                                                variant='primary'
-                                                                tone="critical"
-                                                                accessibilityLabel="Delete item"
-                                                                onClick={() => handleDeleteItem(index)}
-                                                            />
-                                                        )}
-                                                    </div>
-                                                </Grid.Cell>
-                                            </Grid>
-                                            <Divider borderColor="border" />
-                                        </div>
-                                    ))}
+                                                                </div>
+                                                            )}
+                                                            <div style={{  }}>
+                                                                <Button
+                                                                    icon={DeleteIcon}
+                                                                    variant="primary" tone="critical"
+                                                                    onClick={() => handleDeleteItem(index)}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </Grid.Cell>
+                                                </Grid>
+                                                <Divider borderColor="border" />
+                                            </div>
+                                        ))}
+                                    </div>
 
 
 
@@ -1264,13 +1417,16 @@ function Rate(props) {
                             <Text variant="headingLg" as="h5">
                                 Set State/ZipCode
                             </Text>
-                            <p style={{ paddingTop: '7%', fontSize: '14px' }}>
-                                No need to add All ZipCode if you select states.
-                            </p>
-                            <p style={{ paddingTop: '1%', fontSize: '14px' }}>
-                                If you want to exclude the specific Zipcode from that state then you can use exclude ZipCode on Allow Zipcode settings.
-                            </p>
-
+                            <div style={{ marginTop: '4%' }}>
+                                <List>
+                                    <List.Item>
+                                        No need to add All ZipCode if you select states.
+                                    </List.Item>
+                                    <List.Item>
+                                        If you want to exclude the specific Zipcode from that state then you can use exclude ZipCode on Allow Zipcode settings.
+                                    </List.Item>
+                                </List>
+                            </div>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -1376,16 +1532,21 @@ function Rate(props) {
                 <Grid>
 
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '7%' }}>
+                        <div style={{ paddingTop: '3%' }}>
                             <Text variant="headingLg" as="h5">
                                 Rate Based On/Surcharge
                             </Text>
-                            <p style={{ paddingTop: '7%', fontSize: '14px' }}>
-                                Specify rate calculation based on Order Weight, Order Quantity with surcharge value.
-                            </p>
-                            <p style={{ paddingTop: '1%', fontSize: '14px' }}>
-                                Surcharge calculation will add on Base Price which is available on top of the page.
-                            </p>
+
+                            <div style={{ marginTop: "4%" }}>
+                                <List type='bullet'>
+                                    <List.Item>
+                                        Specify rate calculation based on Order Weight, Order Quantity with surcharge value.
+                                    </List.Item>
+                                    <List.Item>
+                                        Surcharge calculation will add on Base Price which is available on top of the page.
+                                    </List.Item>
+                                </List>
+                            </div>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -1951,22 +2112,22 @@ function Rate(props) {
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '5%' }}>
+                        <div style={{ paddingTop: '%' }}>
                             <Text variant="headingLg" as="h5">
                                 Rate Tier
                             </Text>
-                            <div style={{ marginTop: '5%' }}>
-                                <ul>
-                                    <li>Set different Base Rate Price according to order weight, total or qty.</li>
-                                    <li>Order price will count without applying the discount code.</li>
-                                    <li>When a tier is not found then the system will select the Base Rate which is set on top of the page.</li>
-                                </ul>
+                            <div style={{ marginTop: '4%' }}>
+                                <List type='bullet'>
+                                    <List.Item>Set different Base Rate Price according to order weight, total or qty.</List.Item>
+                                    <List.Item>Order price will count without applying the discount code.</List.Item>
+                                    <List.Item>When a tier is not found then the system will select the Base Rate which is set on top of the page.</List.Item>
+                                </List>
                             </div>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
-                            <div>
+                            <div >
                                 <Select
                                     options={tierOptions}
                                     onChange={handleTierSelectChange}
@@ -1980,6 +2141,11 @@ function Rate(props) {
                                         </div>
                                         {tiers.map((tier, index) => (
                                             <div style={{ marginTop: '2%' }} key={index}>
+                                                <div style={{ marginBottom: "2%", marginLeft: "85%" }}>
+                                                    <p style={{ color: "#ef5350", fontWeight: "bold", cursor: "pointer" }} onClick={() => removeTier(index)}>
+                                                        Remove Tier
+                                                    </p>
+                                                </div>
                                                 <FormLayout>
                                                     <FormLayout.Group condensed>
                                                         <TextField
@@ -2007,11 +2173,7 @@ function Rate(props) {
                                                             placeholder="0.00"
                                                         />
                                                     </FormLayout.Group>
-                                                    <div style={{ marginTop: "2%" }}>
-                                                        <p style={{ color: "#ef5350", fontWeight: "bold", cursor: "pointer" }} onClick={() => removeTier(index)}>
-                                                            Remove Tier
-                                                        </p>
-                                                    </div>
+
                                                 </FormLayout>
                                                 {index < tiers.length - 1 && <div style={{ marginTop: "2%" }}> <Divider /></div>}
                                             </div>
@@ -2039,17 +2201,21 @@ function Rate(props) {
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '5%' }}>
+                        <div style={{ paddingTop: '5%', }}>
                             <Text variant="headingLg" as="h5">
                                 Exclude rate for products
 
                             </Text>
-                            <p style={{ paddingTop: '3%', fontSize: '14px' }}>
-                                If this rate does not set with Set Rate Based On Cart as "Product" then this rate can be exclude for selected products.
-                            </p>
-                            <p style={{ paddingTop: '2%', fontSize: '14px' }}>
-                                If any of these products are in the cart, then this rate will not be available at checkout.
-                            </p>
+                            <div style={{ marginTop: "4%" }}>
+                                <List type="bullet">
+                                    <List.Item>
+                                        If this rate does not set with Set Rate Based On Cart as "Product" then this rate can be exclude for selected products.
+                                    </List.Item>
+                                    <List.Item>
+                                        If any of these products are in the cart, then this rate will not be available at checkout.
+                                    </List.Item>
+                                </List>
+                            </div>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -2161,6 +2327,8 @@ function Rate(props) {
                                             placeholder='test1,test2'
                                             multiline={4}
                                             autoComplete="off"
+                                            value={exclude_Rate.exclude_products_textbox}
+                                            onChange={handleRateFormChange('exclude_products_textbox')}
                                             helpText={
                                                 `Note: Please enter the exact term of multiple ${selectedRate === 'product_vendor' ? 'Vendor ' : selectedRate === 'product_sku' ? 'Product SKU' :
                                                     selectedRate === 'product_type' ? 'Product Type' : 'Product Properties'
@@ -2186,12 +2354,13 @@ function Rate(props) {
                             <Text variant="headingLg" as="h5">
                                 Rate Modifiers
                             </Text>
-                            <p style={{ paddingTop: '5%', fontSize: '14px' }}>
-                                Set different Base Rate Price according to order weight, total price or qty.
-                            </p>
-                            {/* <p style={{ paddingTop: '2%', fontSize: '14px' }}>
-                            To format zipcodes/pincodes correctly and remove unnecessary blank space, Click here.
-                            </p> */}
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        Set different Base Rate Price according to order weight, total price or qty.
+                                    </List.Item>
+                                </List>
+                            </div>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -2470,6 +2639,7 @@ function Rate(props) {
                 </Grid>
 
             </div>
+
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
@@ -2478,9 +2648,15 @@ function Rate(props) {
                             <Text variant="headingLg" as="h5">
                                 Merge rate
                             </Text>
-                            <p style={{ paddingTop: '5%', fontSize: '14px' }}>
-                                We recommend using the same Shipping Tag for all related Shipping rates when merge shipping rates.
-                            </p>
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        We recommend using the same Shipping Tag for all related Shipping rates when merge shipping rates.
+
+                                    </List.Item>
+                                </List>
+                            </div>
+
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -2507,9 +2683,15 @@ function Rate(props) {
                             <Text variant="headingLg" as="h5">
                                 Origin Locations
                             </Text>
-                            <p style={{ paddingTop: '5%', fontSize: '14px' }}>
-                                Rate applies on selected locations
-                            </p>
+
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        Rate applies on selected locations
+
+                                    </List.Item>
+                                </List>
+                            </div>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -2567,9 +2749,14 @@ function Rate(props) {
                             <Text variant="headingLg" as="h5">
                                 Schedule Rate
                             </Text>
-                            <p style={{ paddingTop: '5%', fontSize: '14px' }}>
-                                Rate applies on selected locations
-                            </p>
+
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        This rate is only available on a specific date & time
+                                    </List.Item>
+                                </List>
+                            </div>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -2627,9 +2814,15 @@ function Rate(props) {
                             <Text variant="headingLg" as="h5">
                                 Send another rate
                             </Text>
-                            <p style={{ paddingTop: '5%', fontSize: '14px' }}>
-                                By selecting the Send Another Rate option it will allow to set another additional rate.
-                            </p>
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        By selecting the Send Another Rate option it will allow to set another additional rate.
+
+                                    </List.Item>
+                                </List>
+                            </div>
+
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>

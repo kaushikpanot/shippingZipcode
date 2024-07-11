@@ -28,6 +28,7 @@ import {
     Tag,
     LegacyStack,
     Icon,
+    List
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
@@ -72,13 +73,13 @@ function Zone(props) {
         page: "1",
         per_page: '10'
     });
-        const [formData, setFormData] = useState({
-            name: "",
-            currency: "",
-            country: [],
-            id: "",
-            status: 1,
-        });
+    const [formData, setFormData] = useState({
+        name: "",
+        currency: "",
+        country: [],
+        id: "",
+        status: 1,
+    });
     const handleStatusChange = useCallback(
         (newStatus) => {
             const statusValue = newStatus === 'Enabled' ? 1 : 0;
@@ -195,9 +196,9 @@ function Zone(props) {
             console.error("Error fetching currency:", error);
         }
     }
-    
 
-   
+
+
 
 
     const getCountry = async () => {
@@ -520,10 +521,14 @@ function Zone(props) {
                             <Text variant="headingLg" as="h5">
                                 Zone Details
                             </Text>
-                            <p style={{ paddingTop: '7%', fontSize: '14px' }}>
-                                Enable and disable zone without deleting it. Select countries
-                                where you want to ship for this zone.
-                            </p>
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        Enable and disable zone without deleting it. Select countries
+                                        where you want to ship for this zone.
+                                    </List.Item>
+                                </List>
+                            </div>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>

@@ -253,7 +253,6 @@ class ApiController extends Controller
         $userId = User::where('name', $originCompanyName)->value('id');
 
         $setting = Setting::where('user_id', $userId)->first();
-
         $response = [];
 
         if (!empty($setting) && !$setting->status) {
@@ -264,65 +263,72 @@ class ApiController extends Controller
             $query->where('status', 1);
         })->pluck('zone_id');
 
-        // Log::info($zoneIds);
-        // DB::enableQueryLog();
+
         $ratesQuery = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode');
 
         // Determine the appropriate rate based on the shipping rate setting
-        if ($setting->shippingRate == 'Only Higher') {
-            $maxRate = $ratesQuery->max('base_price');
-            $ratesQuery->where('base_price', $maxRate);
-        } elseif ($setting->shippingRate == 'Only Lower') {
-            $minRate = $ratesQuery->min('base_price');
-            $ratesQuery->where('base_price', $minRate);
-        }
+        // if ($setting->shippingRate == 'Only Higher') {
+        //     $maxRate = $ratesQuery->max('base_price');
+        //     $ratesQuery->where('base_price', $maxRate);
+        // } elseif ($setting->shippingRate == 'Only Lower') {
+        //     $minRate = $ratesQuery->min('base_price');
+        //     $ratesQuery->where('base_price', $minRate);
+        // }
 
         $rates = $ratesQuery->get();
 
-        $filteredRates = $rates->map(function ($rate) use ($destinationProvince, $destinationZipcode) {
+        $filteredRates = $rates->map(function ($rate) use ($destinationProvince, $destinationZipcode, $totalQuantity) {
             $zipcode = optional($rate->zipcode);
 
+            // Check cart conditions
+            if ($rate->cart_condition['conditionMatch'] != 0) {
+                $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity) {
+                    if ($condition['name'] === 'quantity' && $condition['condition'] === 'lthenoequal') {
+                        return $condition['value'] <= $totalQuantity;
+                    }
+                    return true; // If the condition is not 'quantity' and 'lthenoequal', it is met by default
+                });
+
+                // Log the conditions and the result of the check
+                Log::info('Filtered conditions:', [
+                    'rate_id' => $rate->id,
+                    'conditionsMet' => $conditionsMet,
+                ]);
+
+                // If not all conditions are met, return null
+                if (!$conditionsMet) {
+                    return null;
+                }
+            }
+            Log::info('Filtered conditions:', ['rate_id' => $rate->id, 'conditionMatch' => $totalQuantity]);
             // Check state selection
             if ($zipcode->stateSelection === 'Custom') {
-                $stateArr = $zipcode->state;
-                $stateCollection = collect($stateArr);
-                $states = $stateCollection->map(function ($state) {
-                    return $state->code;
-                })->all();
-                // $states = $zipcode->state;
+                $states = collect($zipcode->state)->pluck('code')->all();
                 if (!in_array($destinationProvince, $states)) {
                     return null;
                 }
             }
 
             // Check zipcode selection
-            if ($zipcode->zipcodeSelection === 'Custom') {
-                $zipcodes = $zipcode->zipcode;
-                if ($zipcode->isInclude === 'Include') {
-                    if (!in_array($destinationZipcode, $zipcodes)) {
-                        return null;
-                    }
-                } elseif ($zipcode->isInclude === 'Exclude') {
-                    if (in_array($destinationZipcode, $zipcodes)) {
-                        return null;
-                    }
-                }
-            }
-
-            if($rate->cart_condition['conditionMatch']){
-                $rateCondition = collect($rate->cart_condition['cartCondition']);
-                $filteredCondition = $rateCondition->map(function ($condition){
-                    return $condition;
-                });
-                Log::info('Query logs:', ['conditionMatch' => $filteredCondition]);
-            }
+            // if ($zipcode->zipcodeSelection === 'Custom') {
+            //     $zipcodes = $zipcode->zipcode;
+            //     if ($zipcode->isInclude === 'Include') {
+            //         if (!in_array($destinationZipcode, $zipcodes)) {
+            //             return null;
+            //         }
+            //     } elseif ($zipcode->isInclude === 'Exclude') {
+            //         if (in_array($destinationZipcode, $zipcodes)) {
+            //             return null;
+            //         }
+            //     }
+            // }
 
             return $rate;
         })->filter();
 
-        // Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
-        Log::info('Query logs:', ['totalQuantity' => $totalQuantity]);
-        // Log::info('Shopify Carrier Service Request input:', ['filteredRates' => $filteredRates]);
+        // // Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
+        // Log::info('Query logs:', ['totalQuantity' => $totalQuantity]);
+        // // Log::info('Shopify Carrier Service Request input:', ['filteredRates' => $filteredRates]);
 
         foreach ($filteredRates as $rate) {
             $response['rates'][] = [
@@ -334,8 +340,156 @@ class ApiController extends Controller
             ];
         }
 
-        Log::info('Shopify Carrier Service input:', ["input" => $input]);
-        // Log::info('Shopify Carrier Service response:', ["response" => $response]);
+        // Log::info('Shopify Carrier Service input:', ["input" => $input]);
+        Log::info('Shopify Carrier Service response:', ["response" => $response]);
+
+        return response()->json($response);
+    }
+
+    private function conditionConvertSymbol($symbolName){
+        $symbol = [
+            "equal" => "=",
+            "notequal" => "!=",
+            "gthenoequal" => ">=",
+            "lthenoequal" => "<="
+        ];
+
+        return $symbol[$symbolName] ?? false;
+    }
+
+    public function handleCallback(Request $request)
+    {
+        $input = $request->input();
+
+        $shopDomain = $request->header();
+        // Construct the response data
+        $originCompanyName = $shopDomain['x-shopify-shop-domain'][0];
+        // dd($originCompanyName);
+        $originCountryName = $input['rate']['origin']['country'];
+
+        $itemQuantitys = $input['rate']['items'];
+
+        $totalQuantity = 0;
+
+        // Iterate through the array and sum up the quantities
+        foreach ($itemQuantitys as $quantity) {
+            $totalQuantity += $quantity['quantity'];
+        }
+
+        $destinationZipcode = $input['rate']['destination']['postal_code'];
+        $destinationProvince = $input['rate']['destination']['province'];
+
+        $userId = User::where('name', $originCompanyName)->value('id');
+
+        $setting = Setting::where('user_id', $userId)->first();
+        $response = [];
+
+        if (!empty($setting) && !$setting->status) {
+            return response()->json($response);
+        }
+
+        $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $originCountryName)->whereHas('zone', function ($query) {
+            $query->where('status', 1);
+        })->pluck('zone_id');
+
+
+        $ratesQuery = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode');
+
+        // Determine the appropriate rate based on the shipping rate setting
+        // if ($setting->shippingRate == 'Only Higher') {
+        //     $maxRate = $ratesQuery->max('base_price');
+        //     $ratesQuery->where('base_price', $maxRate);
+        // } elseif ($setting->shippingRate == 'Only Lower') {
+        //     $minRate = $ratesQuery->min('base_price');
+        //     $ratesQuery->where('base_price', $minRate);
+        // }
+
+        $rates = $ratesQuery->get();
+
+        $filteredRates = $rates->map(function ($rate) use ($destinationProvince, $destinationZipcode, $totalQuantity) {
+            $zipcode = optional($rate->zipcode);
+
+            // Check cart conditions
+            if ($rate->cart_condition['conditionMatch'] != 0) {
+                $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity) {
+                    if ($condition['name'] === 'quantity') {
+                        $symbol = $this->conditionConvertSymbol($condition['condition']);
+                        if ($symbol) {
+                            $result = false;
+                            switch ($symbol) {
+                                case '=':
+                                    $result = $totalQuantity == $condition['value'];
+                                    break;
+                                case '!=':
+                                    $result = $totalQuantity != $condition['value'];
+                                    break;
+                                case '>=':
+                                    $result = $totalQuantity >= $condition['value'];
+                                    break;
+                                case '<=':
+                                    $result = $totalQuantity <= $condition['value'];
+                                    break;
+                            }
+                            Log::info('Query logs:', ['totalQuantity' => $totalQuantity, 'symbol' => $symbol, 'condition_value' => $condition['value'], 'result' => $result]);
+                            return $result;
+                        }
+                    }
+                    return true;
+                });
+
+                // Log the conditions and the result of the check
+                Log::info('Filtered conditions:', [
+                    'rate_id' => $rate->id,
+                    'conditionsMet' => $conditionsMet,
+                ]);
+
+                // If not all conditions are met, return null
+                if (!$conditionsMet) {
+                    return null;
+                }
+            }
+
+            // Check state selection
+            if ($zipcode->stateSelection === 'Custom') {
+                $states = collect($zipcode->state)->pluck('code')->all();
+                if (!in_array($destinationProvince, $states)) {
+                    return null;
+                }
+            }
+
+            // Check zipcode selection
+            // if ($zipcode->zipcodeSelection === 'Custom') {
+            //     $zipcodes = $zipcode->zipcode;
+            //     if ($zipcode->isInclude === 'Include') {
+            //         if (!in_array($destinationZipcode, $zipcodes)) {
+            //             return null;
+            //         }
+            //     } elseif ($zipcode->isInclude === 'Exclude') {
+            //         if (in_array($destinationZipcode, $zipcodes)) {
+            //             return null;
+            //         }
+            //     }
+            // }
+
+            return $rate;
+        })->filter();
+
+        // // Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
+        // Log::info('Query logs:', ['totalQuantity' => $totalQuantity]);
+        // // Log::info('Shopify Carrier Service Request input:', ['filteredRates' => $filteredRates]);
+
+        foreach ($filteredRates as $rate) {
+            $response['rates'][] = [
+                'service_name' => $rate->name,
+                'service_code' => $rate->service_code,
+                'total_price' => $rate->base_price, // Convert to cents if needed
+                'description' => $rate->description,
+                'currency' => $rate->zone->currency,
+            ];
+        }
+
+        // Log::info('Shopify Carrier Service input:', ["input" => $input]);
+        Log::info('Shopify Carrier Service response:', ["response" => $response]);
 
         return response()->json($response);
     }
@@ -463,7 +617,7 @@ class ApiController extends Controller
             // If a name parameter is provided, filter the results based on it
             $filter_param = $request->input('filter_param');
 
-            if(@$filter_param) {
+            if (@$filter_param) {
                 $ratesQuery->where(function ($query) use ($filter_param) {
                     $query->where('name', 'like', '%' . $filter_param . '%')
                         ->orWhere('service_code', 'like', '%' . $filter_param . '%');
@@ -709,7 +863,7 @@ class ApiController extends Controller
                     'zipcode.state' => 'required_if:zipcode.stateSelection,Custom|array',
                     'zipcode.zipcodeSelection' => 'required',
                     'zipcode.zipcode' => 'required_if:zipcode.zipcodeSelection,Custom|array',
-                    'zipcode.isInclude' => 'required_if:zipcode.zipcodeSelection,Custom|string',
+                    'zipcode.isInclude' => 'required_if:zipcode.zipcodeSelection,Custom',
                 ]);
 
                 $messages = array_merge($messages, [
@@ -752,7 +906,7 @@ class ApiController extends Controller
 
                 $inputData['schedule_rate'] = $inputData['scheduleRate']['schedule_rate'];
 
-                if($inputData['scheduleRate']['schedule_rate']){
+                if ($inputData['scheduleRate']['schedule_rate']) {
                     $inputData['schedule_start_date_time'] = $inputData['scheduleRate']['schedule_start_date_time'];
                     $inputData['schedule_end_date_time'] = $inputData['scheduleRate']['schedule_end_date_time'];
                 } else {
@@ -1157,7 +1311,7 @@ class ApiController extends Controller
                         'id' => str_replace('gid://shopify/Product/', '', $product['id']),
                         'title' => ucfirst($product['title']),
                         'image' => isset($product['images']['edges'][0]['node']['originalSrc']) ? $product['images']['edges'][0]['node']['originalSrc'] : null,
-                        'price'=>$price
+                        'price' => $price
                     ];
                     $collectionsArray[] = $itemArray;
                 }

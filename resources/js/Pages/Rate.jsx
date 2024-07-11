@@ -407,7 +407,6 @@ function Rate(props) {
         }
     };
 
-
     const getLocation = async () => {
         try {
             const token = await getSessionToken(app);
@@ -656,6 +655,54 @@ function Rate(props) {
         { label: 'Between', value: 'between' },
     ];
 
+    const time = [
+        { label: '00:00', value: '00' },
+        { label: '01:00', value: '01' },
+        { label: '02:00', value: '03' },
+        { label: '03:00', value: '03' },
+        { label: '04:00', value: '04' },
+        { label: '05:00', value: '05' },
+        { label: '06:00', value: '06' },
+        { label: '07:00', value: '07' },
+        { label: '08:00', value: '08' },
+        { label: '09:00', value: '09' },
+        { label: '10:00', value: '10' },
+        { label: '11:00', value: '11' },
+        { label: '12:00', value: '12' },
+        { label: '13:00', value: '13' },
+        { label: '14:00', value: '14' },
+        { label: '15:00', value: '04' },
+        { label: '16:00', value: '04' },
+        { label: '17:00', value: '04' },
+        { label: '18:00', value: '04' },
+        { label: '19:00', value: '04' },
+        { label: '20:00', value: '04' },
+        { label: '21:00', value: '04' },
+        { label: '22:00', value: '04' },
+        { label: '23:00', value: '04' },
+        { label: '24:00', value: '04' },
+       
+        
+
+
+    ];
+    const [selectedOption, setSelectedOption] = useState('');
+
+    const lineItem = [
+        { label: 'ANY product must satisfy this conditin ', value: 'satisfy' },
+        { label: 'ANY SPECIFIC product with TAg', value: 'withTag' },
+
+    ]
+    const [settings, setSettings] = useState({
+        lineItem: 'satisfy',
+        textBoxValue: '',
+    });
+    const handleConditionsChange = useCallback((field) => (value) => {
+        setSettings((prevState) => ({
+            ...prevState,
+            [field]: value,
+        }));
+    }, []);
     const getCategory = (itemName) => {
         let categoryLabel = '';
         const item = validations.find(option => option.value === itemName);
@@ -679,12 +726,12 @@ function Rate(props) {
         { label: 'Total', value: 'total', unit: '.Rs', mainLabel: "Cart_Order" },
         { label: 'Sale Product Total', value: 's&ptotal', unit: '.Rs', mainLabel: "Cart_Order" },
         { label: 'Non Sale Product Total', value: 'ns&ptotal', unit: '.Rs', mainLabel: "Cart_Order" },
-        { label: 'Weight', value: 'weight', unit: 'kg', mainLabel: "'Cart_Order" },
+        { label: 'Weight', value: 'weight', unit: 'kg', mainLabel: "Cart_Order" },
         { label: 'Line Item', value: 'lineitem', mainLabel: "Cart_Order" },
         { label: 'Distance', value: 'distance', unit: 'km', mainLabel: "Cart_Order" },
         { label: 'Day', value: 'day', mainLabel: "Cart_Order" },
         { label: 'Time', value: 'time', mainLabel: "Cart_Order" },
-        { label: 'Local Code', value: 'localcode', mainLabel: "'Cart_Order" },
+        { label: 'Local Code', value: 'localcode', mainLabel: "Cart_Order" },
 
         { label: 'Per Product', value: '', disabled: true, className: 'select-header' },
         { label: 'Quantity', value: 'quantity2', mainLabel: 'Per_Product' },
@@ -733,7 +780,9 @@ function Rate(props) {
         };
         setItems(prevItems => [...prevItems, newItem]);
     };
-    console.log(items);
+
+
+
     const handleSelectChange = (index, newValue, isSecondSelect) => {
         const selectedOption = validations.find(option => option.value === newValue) || {};
         const updatedItem = {
@@ -1224,168 +1273,197 @@ function Rate(props) {
                                                         </div>
                                                     </Grid.Cell>
                                                     <Grid.Cell columnSpan={{ xs: 10, sm: 9, md: 9, lg: 10, xl: 10 }}>
-                                                        <div className='conditions' style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '1%',
-                                                            marginTop: "2%",
-                                                            marginBottom: "2%",
-                                                        }}>
-                                                            <Select
-                                                                options={validations}
-                                                                onChange={(newValue) => handleSelectChange(index, newValue, false)}
-                                                                value={item.name}
-                                                            />
-                                                            <Select
-                                                                options={option}
-                                                                onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                                value={item.condition}
-                                                            />
-                                                            {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && (
-                                                                <TextField
-                                                                    value={item.value}
-                                                                    onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
-                                                                    autoComplete="off"
-                                                                    suffix={item.unit ? item.unit : ''}
-                                                                />
-                                                            )}
-                                                            {item.condition === 'between' && (
-                                                                <TextField
-                                                                    value={item.value2}
-                                                                    onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
-                                                                    autoComplete="off"
-                                                                    suffix={item.unit ? item.unit : ''}
-                                                                />
-                                                            )}
-                                                            {item.name === 'dayIs' && (
-                                                                <TextField
-                                                                    // value={item.value2}
-                                                                    // onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
-                                                                    autoComplete="off"
-                                                                    suffix={item.unit ? item.unit : ''}
-                                                                    placeholder='Delivery X days from today is'
-                                                                />
-                                                            )}
-                                                            {item.name === 'day' && (
-                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                                                    <Checkbox
-                                                                        label="Monday"
-                                                                        checked={dayOfWeekSelection.monday}
-                                                                        onChange={() => handleCheckboxChange('monday')}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Tuesday"
-                                                                        checked={dayOfWeekSelection.tuesday}
-                                                                        onChange={() => handleCheckboxChange('tuesday')}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Wednesday"
-                                                                        checked={dayOfWeekSelection.wednesday}
-                                                                        onChange={() => handleCheckboxChange('wednesday')}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Thursday"
-                                                                        checked={dayOfWeekSelection.thursday}
-                                                                        onChange={() => handleCheckboxChange('thursday')}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Friday"
-                                                                        checked={dayOfWeekSelection.friday}
-                                                                        onChange={() => handleCheckboxChange('friday')}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Saturday"
-                                                                        checked={dayOfWeekSelection.saturday}
-                                                                        onChange={() => handleCheckboxChange('saturday')}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Sunday"
-                                                                        checked={dayOfWeekSelection.sunday}
-                                                                        onChange={() => handleCheckboxChange('sunday')}
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                            {item.name === 'dayOfWeek' && (
-                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                                                    <Checkbox
-                                                                        label="Monday"
-                                                                        checked={dayOfWeekSelection.monday}
-                                                                        onChange={() => handleCheckboxChange('monday')}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Tuesday"
-                                                                        checked={dayOfWeekSelection.tuesday}
-                                                                        onChange={() => handleCheckboxChange('tuesday')}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Wednesday"
-                                                                        checked={dayOfWeekSelection.wednesday}
-                                                                        onChange={() => handleCheckboxChange('wednesday')}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Thursday"
-                                                                        checked={dayOfWeekSelection.thursday}
-                                                                        onChange={() => handleCheckboxChange('thursday')}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Friday"
-                                                                        checked={dayOfWeekSelection.friday}
-                                                                        onChange={() => handleCheckboxChange('friday')}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Saturday"
-                                                                        checked={dayOfWeekSelection.saturday}
-                                                                        onChange={() => handleCheckboxChange('saturday')}
-                                                                    />
-                                                                    <Checkbox
-                                                                        label="Sunday"
-                                                                        checked={dayOfWeekSelection.sunday}
-                                                                        onChange={() => handleCheckboxChange('sunday')}
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                            {item.name === 'date' && (
-                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                        
+                                                            <div className='conditions' style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '3%',
+                                                                marginTop: "2%",
 
-                                                                    {/* <FormLayout.Group> */}
+                                                            }}>
+                                                                <Select
+                                                                    options={validations}
+                                                                    onChange={(newValue) => handleSelectChange(index, newValue, false)}
+                                                                    value={item.name}
+                                                                />
+
+
+                                                                <Select
+                                                                    options={option}
+                                                                    onChange={(newValue) => handleSelectChange(index, newValue, true)}
+                                                                    value={item.condition}
+                                                                />
+
+                                                                {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && (
                                                                     <TextField
-                                                                        value={dates.date}
-                                                                        onChange={(value) => handleDateChange('date', value)}
-                                                                        type="date"
+                                                                        value={item.value}
+                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
+                                                                        autoComplete="off"
+                                                                        suffix={item.unit ? item.unit : ''}
                                                                     />
-                                                                    {/* </FormLayout.Group> */}
-                                                                </div>
-                                                            )}
-                                                            {item.name === 'type2' && (
-                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                                                    <Checkbox
-                                                                        label="Local Delivery"
-                                                                        checked={deliveryType.local}
-                                                                        onChange={() => handleCheckboxChange('local')}
+                                                                )}
+                                                                {item.condition === 'between' && (
+                                                                    <TextField
+                                                                        value={item.value2}
+                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
+                                                                        autoComplete="off"
+                                                                        suffix={item.unit ? item.unit : ''}
                                                                     />
-                                                                    <Checkbox
-                                                                        label="Store Pickup"
-                                                                        checked={deliveryType.Store}
-                                                                        onChange={() => handleCheckboxChange('Store')}
+                                                                )}
+                                                                {item.name === 'dayIs' && (
+                                                                    <TextField
+                                                                        // value={item.value2}
+                                                                        // onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
+                                                                        autoComplete="off"
+                                                                        suffix={item.unit ? item.unit : ''}
+                                                                        placeholder='Delivery X days from today is'
                                                                     />
-                                                                    <Checkbox
-                                                                        label="Shipping"
-                                                                        checked={deliveryType.Shipping}
-                                                                        onChange={() => handleCheckboxChange('Shipping')}
-                                                                    />
+                                                                )}
+                                                                {item.name === 'day' && (
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                                        <Checkbox
+                                                                            label="Monday"
+                                                                            checked={dayOfWeekSelection.monday}
+                                                                            onChange={() => handleCheckboxChange('monday')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Tuesday"
+                                                                            checked={dayOfWeekSelection.tuesday}
+                                                                            onChange={() => handleCheckboxChange('tuesday')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Wednesday"
+                                                                            checked={dayOfWeekSelection.wednesday}
+                                                                            onChange={() => handleCheckboxChange('wednesday')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Thursday"
+                                                                            checked={dayOfWeekSelection.thursday}
+                                                                            onChange={() => handleCheckboxChange('thursday')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Friday"
+                                                                            checked={dayOfWeekSelection.friday}
+                                                                            onChange={() => handleCheckboxChange('friday')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Saturday"
+                                                                            checked={dayOfWeekSelection.saturday}
+                                                                            onChange={() => handleCheckboxChange('saturday')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Sunday"
+                                                                            checked={dayOfWeekSelection.sunday}
+                                                                            onChange={() => handleCheckboxChange('sunday')}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                                {item.name === 'dayOfWeek' && (
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                                        <Checkbox
+                                                                            label="Monday"
+                                                                            checked={dayOfWeekSelection.monday}
+                                                                            onChange={() => handleCheckboxChange('monday')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Tuesday"
+                                                                            checked={dayOfWeekSelection.tuesday}
+                                                                            onChange={() => handleCheckboxChange('tuesday')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Wednesday"
+                                                                            checked={dayOfWeekSelection.wednesday}
+                                                                            onChange={() => handleCheckboxChange('wednesday')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Thursday"
+                                                                            checked={dayOfWeekSelection.thursday}
+                                                                            onChange={() => handleCheckboxChange('thursday')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Friday"
+                                                                            checked={dayOfWeekSelection.friday}
+                                                                            onChange={() => handleCheckboxChange('friday')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Saturday"
+                                                                            checked={dayOfWeekSelection.saturday}
+                                                                            onChange={() => handleCheckboxChange('saturday')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Sunday"
+                                                                            checked={dayOfWeekSelection.sunday}
+                                                                            onChange={() => handleCheckboxChange('sunday')}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                                {item.name === 'date' && (
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
 
-                                                                </div>
+                                                                        {/* <FormLayout.Group> */}
+                                                                        <TextField
+                                                                            value={dates.date}
+                                                                            onChange={(value) => handleDateChange('date', value)}
+                                                                            type="date"
+                                                                        />
+                                                                        {/* </FormLayout.Group> */}
+                                                                    </div>
+                                                                )}
+                                                                {item.name === 'type2' && (
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                                        <Checkbox
+                                                                            label="Local Delivery"
+                                                                            checked={deliveryType.local}
+                                                                            onChange={() => handleCheckboxChange('local')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Store Pickup"
+                                                                            checked={deliveryType.Store}
+                                                                            onChange={() => handleCheckboxChange('Store')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Shipping"
+                                                                            checked={deliveryType.Shipping}
+                                                                            onChange={() => handleCheckboxChange('Shipping')}
+                                                                        />
+
+                                                                    </div>
+                                                                )}
+                                                                {items.length > 1 && (
+                                                                    <Button
+                                                                        icon={DeleteIcon}
+                                                                        variant='primary'
+                                                                        tone="critical"
+                                                                        accessibilityLabel="Delete item"
+                                                                        onClick={() => handleDeleteItem(index)}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '3%',
+                                                                marginTop: "2%",
+                                                                marginBottom:"2%"
+                                                            }}>
+                                                            {item.name === 'lineitem' && (
+                                                                <Select
+
+                                                                    options={lineItem}
+                                                                    onChange={handleConditionsChange('lineItem')}
+                                                                    value={settings.lineItem}
+                                                                />
                                                             )}
-                                                           {items.length > 1 && (
-                                                            <Button
-                                                                icon={DeleteIcon}
-                                                                variant='primary'
-                                                                tone="critical"
-                                                                accessibilityLabel="Delete item"
-                                                                onClick={() => handleDeleteItem(index)}
-                                                            />
-                                                        )}
-                                                        </div>
+                                                            {settings.lineItem === 'withTag' && (
+                                                                <TextField
+                                                                   
+                                                                    value={settings.textBoxValue}
+                                                                    onChange={handleConditionsChange('textBoxValue')}
+                                                                    placeholder='tag1,tag2,tag3'
+                                                                />
+                                                            )}
+                                                            </div>
+                                                      
                                                     </Grid.Cell>
                                                 </Grid>
                                                 <Divider borderColor="border" />

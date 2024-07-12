@@ -36,6 +36,7 @@ import '../../../public/css/style.css';
 import createApp from '@shopify/app-bridge';
 import { getSessionToken } from "@shopify/app-bridge-utils";
 import '../../../public/css/style.css';
+import Settings from './Settings';
 
 const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
@@ -72,6 +73,7 @@ function Rate(props) {
 
     const [toastDuration, setToastDuration] = useState(3000);
     const [showToast, setShowToast] = useState(false);
+    const [errorToast, setErroToast] = useState(false)
     const [toastContent, setToastContent] = useState("");
     const [errors, setErrors] = useState({});
     const [toastActive, setToastActive] = useState(false);
@@ -600,6 +602,8 @@ function Rate(props) {
             placeholder="Search State"
             verticalContent={verticalContentMarkup}
             autoComplete="off"
+            error={errors.selectedOptions}
+
         />
     );
     const toggleToastActive = useCallback(() => setToastActive((active) => !active), []);
@@ -619,34 +623,6 @@ function Rate(props) {
         { label: 'Disabled', value: 'Disabled' },
     ];
 
-
-    const [dayOfWeekSelection, setDayOfWeekSelection] = useState({
-        monday: false,
-        tuesday: false,
-        wednesday: false,
-        thursday: false,
-        friday: false,
-        saturday: false,
-        sunday: false,
-    });
-    const [deliveryType, setDeliveryType] = useState({
-        local: false,
-        Store: false,
-        Shipping: false,
-
-    });
-
-    const handleCheckboxChange = useCallback((key) => {
-        setDayOfWeekSelection(prevState => ({
-            ...prevState,
-            [key]: !prevState[key]
-        }));
-
-        setDeliveryType(prevState => ({
-            ...prevState,
-            [key]: !prevState[key]
-        }));
-    }, []);
     const option = [
         { label: 'Equal', value: 'equal' },
         { label: 'Does Not Eqaul', value: 'notequal' },
@@ -671,38 +647,80 @@ function Rate(props) {
         { label: '12:00', value: '12' },
         { label: '13:00', value: '13' },
         { label: '14:00', value: '14' },
-        { label: '15:00', value: '04' },
-        { label: '16:00', value: '04' },
-        { label: '17:00', value: '04' },
-        { label: '18:00', value: '04' },
-        { label: '19:00', value: '04' },
-        { label: '20:00', value: '04' },
-        { label: '21:00', value: '04' },
-        { label: '22:00', value: '04' },
-        { label: '23:00', value: '04' },
-        { label: '24:00', value: '04' },
-       
-        
-
-
+        { label: '15:00', value: '15' },
+        { label: '16:00', value: '16' },
+        { label: '17:00', value: '17' },
+        { label: '18:00', value: '18' },
+        { label: '19:00', value: '19' },
+        { label: '20:00', value: '20' },
+        { label: '21:00', value: '21' },
+        { label: '22:00', value: '22' },
+        { label: '23:00', value: '23' },
+        { label: '24:00', value: '24' }
     ];
-    const [selectedOption, setSelectedOption] = useState('');
+
 
     const lineItem = [
         { label: 'ANY product must satisfy this conditin ', value: 'satisfy' },
         { label: 'ANY SPECIFIC product with TAg', value: 'withTag' },
+    ]
+    const quantity = [
+        { label: 'ANY product must satisfy this conditin ', value: 'any' },
+        { label: 'ALL product must satisfy this conditin ', value: 'all' },
+        { label: 'NONE of product must satisfy this conditin ', value: 'none' },
+        { label: 'ANY SPECIFIC product with TAg', value: 'anyTag' },
+        { label: 'ALL SPECIFIC product with TAg', value: 'allTag' },
 
     ]
-    const [settings, setSettings] = useState({
-        lineItem: 'satisfy',
-        textBoxValue: '',
+
+    const [deliveryType, setDeliveryType] = useState({
+        local: false,
+        Store: false,
+        Shipping: false,
+
     });
-    const handleConditionsChange = useCallback((field) => (value) => {
-        setSettings((prevState) => ({
-            ...prevState,
-            [field]: value,
+    const [dayOfWeekSelection, setDayOfWeekSelection] = useState({
+        monday: false,
+        tuesday: false,
+        wednesday: false,
+        thursday: false,
+        friday: false,
+        saturday: false,
+        sunday: false,
+    });
+    const [selectedDays, setSelectedDays] = useState([]);
+
+    const [items, setItems] = useState([]);
+    const handleCheckboxChange = useCallback((key) => {
+        setDayOfWeekSelection((prevSelection) => ({
+            ...prevSelection,
+            [key]: !prevSelection[key],
+        }));
+        setDeliveryType((prevSelection) => ({
+            ...prevSelection,
+            [key]: !prevSelection[key],
         }));
     }, []);
+
+
+    const getSelectedDays = (selection) => {
+        return Object.keys(selection).filter(day => selection[day]);
+    };
+
+    const CheckboxGroup = ({ selection, onChange }) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            {Object.keys(selection).map((day) => (
+                <Checkbox
+                    key={day}
+                    label={day.charAt(0).toUpperCase() + day.slice(1)}
+                    checked={selection[day]}
+                    onChange={() => onChange(day)}
+                />
+            ))}
+        </div>
+    );
+
+
     const getCategory = (itemName) => {
         let categoryLabel = '';
         const item = validations.find(option => option.value === itemName);
@@ -767,7 +785,9 @@ function Rate(props) {
         { label: 'Type', value: 'type2', mainLabel: "Delivery" }
     ];
 
-    const [items, setItems] = useState([]);
+    useEffect(() => {
+        setSelectedDays(getSelectedDays(dayOfWeekSelection))
+    }, [dayOfWeekSelection]);
 
     const handleAddItem = () => {
         const newItem = {
@@ -775,14 +795,25 @@ function Rate(props) {
             condition: 'equal',
             value: '',
             unit: '',
-            label: 'cart/order'
+            label: 'cart_order',
+            lineItem: 'satisfy',
+            textBoxValue: '',
+            time1: '00',
+            time2: '00',
+            per_product: 'any',
+            selectedDays: selectedDays
 
         };
         setItems(prevItems => [...prevItems, newItem]);
     };
 
 
-
+    const handleConditionsChange = useCallback((field) => (value) => {
+        setItems((prevState) => ({
+            ...prevState,
+            [field]: value,
+        }));
+    }, []);
     const handleSelectChange = (index, newValue, isSecondSelect) => {
         const selectedOption = validations.find(option => option.value === newValue) || {};
         const updatedItem = {
@@ -829,7 +860,9 @@ function Rate(props) {
 
 
     useEffect(() => {
-        editRate();
+        if (rate_id) {
+            editRate();
+        }
         getLocation();
         getstate();
         fetchProducts()
@@ -856,7 +889,7 @@ function Rate(props) {
         update_price_type: checkstate.selectedByUpdatePriceType,
         update_price_effect: checkstate.selectedByUpdatePriceEffect,
         adjustment_price: '',
-        service_code: "",
+        another_service_code: "",
         another_merge_rate_tag: ''
     })
 
@@ -920,8 +953,6 @@ function Rate(props) {
         merge_rate_tag: ''
     });
 
-
-
     const removeEmptyFields = (obj) => {
         return Object.keys(obj).reduce((acc, key) => {
             if (obj[key] !== '') {
@@ -930,11 +961,13 @@ function Rate(props) {
             return acc;
         }, {});
     };
+
     const handleRateFormChange = (field) => (value) => {
         setFormData((prevState) => ({
             ...prevState,
             [field]: value,
         }));
+
         setsend_another_rate((prevState) => ({
             ...prevState,
             [field]: value,
@@ -947,14 +980,17 @@ function Rate(props) {
             };
             return removeEmptyFields(updatedState);
         });
+
         SetExclude_Rate((prevState) => ({
             ...prevState,
             [field]: value,
         }));
+
         setErrors((prevErrors) => ({
             ...prevErrors,
             [field]: '',
         }));
+
     };
 
 
@@ -1015,18 +1051,95 @@ function Rate(props) {
         checkstate.selectedByUpdatePriceEffect
     ]);
 
-
     const saveRate = async () => {
         const newErrors = {};
+
         if (!formData.name) newErrors.name = 'Rate name is required';
         if (!formData.base_price) newErrors.base_price = 'Base price is required';
         if (!formData.service_code) newErrors.service_code = 'Service code is required';
         if (!formData.description) newErrors.description = 'Description is required';
 
+        if (checkedState.checked3) {
+            if (!send_another_rate.another_rate_name) {
+                newErrors.another_rate_name = 'Another Rate Name is required';
+            }
+            if (!send_another_rate.adjustment_price) {
+                newErrors.adjustment_price = 'Adjustment Price is required';
+            }
+        }
+
+        
+        if (
+            (selectedRate === 'product_vendor' ||
+                selectedRate === 'product_sku' ||
+                selectedRate === 'product_type' ||
+                selectedRate === 'product_properties') &&
+            !exclude_Rate.exclude_products_textbox
+        ) {
+            newErrors.exclude_products_textbox = 'Exclude products field is required';
+        }
+
+        if (tiers.length > 0) {
+            tiers.forEach((tier, index) => {
+                if (!tier.minWeight)
+                    newErrors[`minWeight${index}`] = `Minimum weight for Tier ${index + 1} is required`;
+                if (!tier.maxWeight)
+                    newErrors[`maxWeight${index}`] = `Maximum weight for Tier ${index + 1} is required`;
+                if (!tier.basePrice)
+                    newErrors[`basePrice${index}`] = `Base price for Tier ${index + 1} is required`;
+            });
+        }
+
+        if (rateModifiers.length > 0) {
+            rateModifiers.forEach((modifier, index) => {
+                if (!modifier.name)
+                    newErrors[`name${index}`] = `Rate modifier name for Modifier ${index + 1} is required`;
+                if (!modifier.adjustment)
+                    newErrors[`adjustment${index}`] = `Adjustment for Modifier ${index + 1} is required`;
+            });
+        }
+
+        if (items.length > 0) {
+            items.forEach((item, index) => {
+                if (!item.value) newErrors[`value${index}`] = `Value for Item ${index + 1} is required`;
+            });
+        }
+
+
+        if (checkstate.selectedStateCondition !== 'All' && selectedOptions.length === 0) {
+            newErrors.selectedOptions = 'Please select at least one country.';
+        }
+        if (checkstate.selectedZipCondition !== 'All' && !zipcodeValue) {
+            newErrors.zipcodeValue = 'The zipcodes field is required.';
+        }
+        if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
+            if (!rate_based_on_surcharge.charge_per_wight) {
+                newErrors.charge_per_wight = 'The charge per weight field is required.';
+            }
+            if (!rate_based_on_surcharge.unit_for) {
+                newErrors.unit_for = 'The unit per weight field is required.';
+            } 
+        }
+        if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
+            if (!rate_based_on_surcharge.charge_per_wight) {
+                newErrors.charge_per_wight = 'The charge per weight field is required.';
+            } 
+        }
+        if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
+            if (!rate_based_on_surcharge.charge_per_wight) {
+                newErrors.charge_per_wight = 'The charge per weight field is required.';
+            } 
+        }
+        
+        
+
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
+            setToastContent('Sorry. Couldn’t be saved. Please try again.');
+            setErroToast(true);
             return;
         }
+
         try {
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
@@ -1034,17 +1147,17 @@ function Rate(props) {
             });
             const token = await getSessionToken(app);
 
-
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, formData, {
                 headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                    Authorization: `Bearer ${token}`,
+                },
             });
-            setToastContent("Rate saved successfully");
+            setErrors({});
+            setToastContent('Rate saved successfully');
             setShowToast(true);
         } catch (error) {
             console.error('Error occurs', error);
-            setToastContent("Error occurred while saving data");
+            setToastContent('Error occurred while saving data');
             setShowToast(true);
         }
     };
@@ -1273,12 +1386,13 @@ function Rate(props) {
                                                         </div>
                                                     </Grid.Cell>
                                                     <Grid.Cell columnSpan={{ xs: 10, sm: 9, md: 9, lg: 10, xl: 10 }}>
-                                                        
+                                                        <div>
                                                             <div className='conditions' style={{
                                                                 display: 'flex',
                                                                 alignItems: 'center',
                                                                 gap: '3%',
                                                                 marginTop: "2%",
+                                                                marginBottom: "2%"
 
                                                             }}>
                                                                 <Select
@@ -1294,12 +1408,13 @@ function Rate(props) {
                                                                     value={item.condition}
                                                                 />
 
-                                                                {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && (
+                                                                {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && (
                                                                     <TextField
                                                                         value={item.value}
                                                                         onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
                                                                         autoComplete="off"
                                                                         suffix={item.unit ? item.unit : ''}
+                                                                        error={errors[`value${index}`]}
                                                                     />
                                                                 )}
                                                                 {item.condition === 'between' && (
@@ -1319,83 +1434,30 @@ function Rate(props) {
                                                                         placeholder='Delivery X days from today is'
                                                                     />
                                                                 )}
-                                                                {item.name === 'day' && (
-                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                                                        <Checkbox
-                                                                            label="Monday"
-                                                                            checked={dayOfWeekSelection.monday}
-                                                                            onChange={() => handleCheckboxChange('monday')}
+
+                                                                {item.name === 'time' && (
+                                                                    <div style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '10%',
+                                                                    }}>
+                                                                        <Select
+                                                                            options={time}
+                                                                            onChange={handleConditionsChange('time1')}
+                                                                            value={item.time1}
                                                                         />
-                                                                        <Checkbox
-                                                                            label="Tuesday"
-                                                                            checked={dayOfWeekSelection.tuesday}
-                                                                            onChange={() => handleCheckboxChange('tuesday')}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Wednesday"
-                                                                            checked={dayOfWeekSelection.wednesday}
-                                                                            onChange={() => handleCheckboxChange('wednesday')}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Thursday"
-                                                                            checked={dayOfWeekSelection.thursday}
-                                                                            onChange={() => handleCheckboxChange('thursday')}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Friday"
-                                                                            checked={dayOfWeekSelection.friday}
-                                                                            onChange={() => handleCheckboxChange('friday')}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Saturday"
-                                                                            checked={dayOfWeekSelection.saturday}
-                                                                            onChange={() => handleCheckboxChange('saturday')}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Sunday"
-                                                                            checked={dayOfWeekSelection.sunday}
-                                                                            onChange={() => handleCheckboxChange('sunday')}
+                                                                        <Select
+                                                                            options={time}
+                                                                            onChange={handleConditionsChange('time2')}
+                                                                            value={item}
                                                                         />
                                                                     </div>
                                                                 )}
-                                                                {item.name === 'dayOfWeek' && (
-                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                                                        <Checkbox
-                                                                            label="Monday"
-                                                                            checked={dayOfWeekSelection.monday}
-                                                                            onChange={() => handleCheckboxChange('monday')}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Tuesday"
-                                                                            checked={dayOfWeekSelection.tuesday}
-                                                                            onChange={() => handleCheckboxChange('tuesday')}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Wednesday"
-                                                                            checked={dayOfWeekSelection.wednesday}
-                                                                            onChange={() => handleCheckboxChange('wednesday')}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Thursday"
-                                                                            checked={dayOfWeekSelection.thursday}
-                                                                            onChange={() => handleCheckboxChange('thursday')}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Friday"
-                                                                            checked={dayOfWeekSelection.friday}
-                                                                            onChange={() => handleCheckboxChange('friday')}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Saturday"
-                                                                            checked={dayOfWeekSelection.saturday}
-                                                                            onChange={() => handleCheckboxChange('saturday')}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Sunday"
-                                                                            checked={dayOfWeekSelection.sunday}
-                                                                            onChange={() => handleCheckboxChange('sunday')}
-                                                                        />
-                                                                    </div>
+                                                                {(item.name === 'day' || item.name === 'dayOfWeek') && (
+                                                                    <CheckboxGroup
+                                                                        selection={dayOfWeekSelection}
+                                                                        onChange={handleCheckboxChange}
+                                                                    />
                                                                 )}
                                                                 {item.name === 'date' && (
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
@@ -1438,32 +1500,43 @@ function Rate(props) {
                                                                         onClick={() => handleDeleteItem(index)}
                                                                     />
                                                                 )}
+
                                                             </div>
                                                             <div style={{
                                                                 display: 'flex',
                                                                 alignItems: 'center',
                                                                 gap: '3%',
-                                                                marginTop: "2%",
-                                                                marginBottom:"2%"
-                                                            }}>
-                                                            {item.name === 'lineitem' && (
-                                                                <Select
+                                                                marginBottom: "2%"
 
-                                                                    options={lineItem}
-                                                                    onChange={handleConditionsChange('lineItem')}
-                                                                    value={settings.lineItem}
-                                                                />
-                                                            )}
-                                                            {settings.lineItem === 'withTag' && (
-                                                                <TextField
-                                                                   
-                                                                    value={settings.textBoxValue}
-                                                                    onChange={handleConditionsChange('textBoxValue')}
-                                                                    placeholder='tag1,tag2,tag3'
-                                                                />
-                                                            )}
+
+                                                            }}>
+                                                                {item.name === 'lineitem' && (
+                                                                    <Select
+                                                                        options={lineItem}
+                                                                        onChange={handleConditionsChange('lineItem')}
+                                                                        value={item.lineItem}
+                                                                    />
+                                                                )}
+                                                                {/* {item.lineItem === 'withTag' && (
+                                                                    <TextField
+
+                                                                        value={item.textBoxValue}
+                                                                        onChange={handleConditionsChange('textBoxValue')}
+                                                                        placeholder='tag1,tag2,tag3'
+                                                                    />
+                                                                )} */}
                                                             </div>
-                                                      
+                                                            {(item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2' || item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties') && (
+                                                                <div style={{ marginBottom: "2%" }}>
+
+                                                                    <Select
+                                                                        options={quantity}
+                                                                        onChange={handleConditionsChange('per_product')}
+                                                                        value={item.per_product}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </Grid.Cell>
                                                 </Grid>
                                                 <Divider borderColor="border" />
@@ -1479,7 +1552,7 @@ function Rate(props) {
                                             variant='primary'
                                             onClick={handleAddItem}
                                         >
-                                            Add theme
+                                            Add Theme
                                         </Button>
                                     </div>
                                 </div>
@@ -1545,8 +1618,10 @@ function Rate(props) {
                                                     onSelect={setSelectedOptions}
                                                     listTitle="Suggested Countries"
                                                 />
+
                                             </div>
                                         )}
+
 
                                         <Divider borderColor="border" />
                                     </>
@@ -1582,6 +1657,7 @@ function Rate(props) {
                                         onChange={(newValue) => handleChange(newValue)}
                                         multiline={4}
                                         autoComplete="off"
+                                        error={errors.zipcodeValue}
                                     />
 
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%" }}>
@@ -1768,6 +1844,7 @@ function Rate(props) {
                                                         placeholder='0.00'
                                                         value={rate_based_on_surcharge.charge_per_wight}
                                                         onChange={handleRateFormChange('charge_per_wight')}
+                                                        error={errors.charge_per_wight}
                                                     />
                                                     <TextField
                                                         type="number"
@@ -1789,6 +1866,7 @@ function Rate(props) {
                                                         }
                                                         value={rate_based_on_surcharge.unit_for}
                                                         onChange={handleRateFormChange('unit_for')}
+                                                        error={errors.unit_for}
                                                     />
                                                 </FormLayout.Group>
                                             </FormLayout>
@@ -2221,7 +2299,7 @@ function Rate(props) {
                                         </div>
                                         {tiers.map((tier, index) => (
                                             <div style={{ marginTop: '2%' }} key={index}>
-                                                <div style={{ marginBottom: "2%", marginLeft: "85%" }}>
+                                                <div style={{ marginBottom: "1%", marginLeft: "85%" }}>
                                                     <p style={{ color: "#ef5350", fontWeight: "bold", cursor: "pointer" }} onClick={() => removeTier(index)}>
                                                         Remove Tier
                                                     </p>
@@ -2235,6 +2313,7 @@ function Rate(props) {
                                                             autoComplete="off"
                                                             prefix="kg"
                                                             placeholder="0.00"
+                                                            error={errors[`minWeight${index}`]}
                                                         />
                                                         <TextField
                                                             label={`Maximum ${selectedTierType === 'order_weight' ? 'Weight' : selectedTierType === 'order_quantity' ? 'Quantity' : selectedTierType === 'order_distance' ? 'Distance' : 'Price'}`}
@@ -2243,6 +2322,8 @@ function Rate(props) {
                                                             autoComplete="off"
                                                             prefix="kg"
                                                             placeholder="0.00"
+                                                            error={errors[`maxWeight${index}`]}
+
                                                         />
                                                         <TextField
                                                             label='Base Price'
@@ -2251,11 +2332,13 @@ function Rate(props) {
                                                             autoComplete="off"
                                                             prefix="Rs."
                                                             placeholder="0.00"
+                                                            error={errors[`basePrice${index}`]}
+
                                                         />
                                                     </FormLayout.Group>
 
                                                 </FormLayout>
-                                                {index < tiers.length - 1 && <div style={{ marginTop: "2%" }}> <Divider /></div>}
+                                                {index < tiers.length - 1 && <div style={{ marginTop: "3%" }}> <Divider /></div>}
                                             </div>
                                         ))}
                                         <div style={{ marginTop: '2%' }}>
@@ -2414,6 +2497,7 @@ function Rate(props) {
                                                     selectedRate === 'product_type' ? 'Product Type' : 'Product Properties'
                                                 } with comma separator(,).`
                                             }
+                                            error={errors.exclude_products_textbox}
                                         />
                                     </div>
 
@@ -2449,9 +2533,9 @@ function Rate(props) {
 
                             <LegacyCard sectioned>
 
-                                {rateModifiers.map((modifier) => (
+                                {rateModifiers.map((modifier, index) => (
                                     <div style={{ marginBottom: "3%" }}>
-                                        <Box key={modifier.id} borderColor="border" borderWidth="025">
+                                        <Box key={index} borderColor="border" borderWidth="025">
                                             <div style={{ padding: '10px' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                     <Button
@@ -2486,6 +2570,7 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'name')}
                                                                     autoComplete="off"
                                                                     placeholder="Rate Modifier Name"
+                                                                    error={errors[`name${index}`]}
                                                                 />
                                                                 <TextField
                                                                     type="text"
@@ -2699,6 +2784,7 @@ function Rate(props) {
                                                                 onChange={handleRateModifierChange(modifier.id, 'adjustment')}
                                                                 autoComplete="off"
                                                                 placeholder="00"
+                                                                error={errors[`adjustment${index}`]}
                                                             />
                                                         </FormLayout>
                                                     </div>
@@ -2924,8 +3010,9 @@ function Rate(props) {
                                                     value={send_another_rate.another_rate_name}
                                                     onChange={handleRateFormChange('another_rate_name')}
                                                     autoComplete="off"
-
+                                                    required
                                                     placeholder='Enter Rate Name'
+                                                    error={errors.another_rate_name}
                                                 />
                                                 <TextField
                                                     type="text"
@@ -2933,8 +3020,9 @@ function Rate(props) {
                                                     value={send_another_rate.another_rate_description}
                                                     onChange={handleRateFormChange('another_rate_description')}
                                                     autoComplete="off"
-
+                                                    required
                                                     placeholder='Enter Desription'
+
                                                 />
                                             </FormLayout.Group>
                                         </FormLayout>
@@ -2975,7 +3063,7 @@ function Rate(props) {
                                         <div style={{ marginTop: '3%' }}>
                                             <Divider borderColor="border" />
                                         </div>
-                                        {checkstate.selectedByUpdatePriceType !== 3 && (
+                                        {checkstate.selectedByUpdatePriceType !== 2 && (
                                             <div style={{ marginTop: '3%' }}>
                                                 <FormLayout>
                                                     <FormLayout.Group>
@@ -3007,7 +3095,7 @@ function Rate(props) {
                                                             value={send_another_rate.adjustment_price}
                                                             onChange={handleRateFormChange('adjustment_price')}
                                                             autoComplete="off"
-
+                                                            error={errors.adjustment_price}
                                                             placeholder='00'
                                                         />
                                                     </FormLayout.Group>
@@ -3024,7 +3112,7 @@ function Rate(props) {
                                                     value={send_another_rate.adjustment_price}
                                                     onChange={handleRateFormChange('adjustment_price')}
                                                     autoComplete="off"
-
+                                                    error={errors.adjustment_price}
                                                     placeholder='0'
                                                 />
 
@@ -3040,8 +3128,8 @@ function Rate(props) {
                                                     <TextField
                                                         type="text"
                                                         label="Service Code"
-                                                        value={send_another_rate.service_code}
-                                                        onChange={handleRateFormChange('service_code')}
+                                                        value={send_another_rate.another_service_code}
+                                                        onChange={handleRateFormChange('another_service_code')}
                                                         autoComplete="off"
 
                                                         placeholder='Enter Service Code'
@@ -3074,6 +3162,9 @@ function Rate(props) {
 
             {showToast && (
                 <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
+            )}
+            {errorToast && (
+                <Toast content={toastContent} error duration={toastDuration} onDismiss={() => setErroToast(false)} />
             )}
             {toastActive && (
                 <Toast content={toastMessage} error onDismiss={toggleToastActive} />

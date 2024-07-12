@@ -115,6 +115,7 @@ function Zone(props) {
     const toastMarkup = toastActive ? (
         <Toast content="Rate deleted" onDismiss={toggleToast} />
     ) : null;
+    
     const handleRateAdd = (zone_id) => {
         navigate(`/Rate/${zone_id}`);
 
@@ -180,9 +181,9 @@ function Zone(props) {
             }));
 
             setCurrencys(currencyOptions);
+            const shop_currency = response.data.shop_currency;
+           
 
-
-          
             if (!zone_id) {
                 setFormData(prevState => ({
                     ...prevState,
@@ -210,9 +211,10 @@ function Zone(props) {
             });
             const countryData = response.data.countries;
             const stateList = countryData.map(state => ({
-                label: `${state.name} (${state.code})`,
+                label: state.nameCode,
                 value: state.code
             }));
+            console.log(response.data)
             setCountry(stateList);
         } catch (error) {
             console.error("Error fetching country:", error);
@@ -259,6 +261,7 @@ function Zone(props) {
             editAndSet();
         }
     }, [])
+
     const updateText = useCallback(
         (value) => {
             setInputValue(value);
@@ -299,7 +302,17 @@ function Zone(props) {
             </LegacyStack>
         ) : null;
 
-
+        const textField = (
+            <Autocomplete.TextField
+                onChange={updateText}
+                label="Select Countries"
+                value={inputValue}
+                placeholder="Search countries"
+                verticalContent={verticalContentMarkup}
+                error={errors.selectedCountries}
+                autoComplete="off"
+            />
+        );
 
     const handleNextPage = useCallback(() => {
         if (currentPage < totalPages) {
@@ -376,17 +389,7 @@ function Zone(props) {
             setShowToast(true);
         }
     }
-    const textField = (
-        <Autocomplete.TextField
-            onChange={updateText}
-            label="Select Countries"
-            value={inputValue}
-            placeholder="Search countries"
-            verticalContent={verticalContentMarkup}
-            error={errors.selectedCountries}
-            autoComplete="off"
-        />
-    );
+  
 
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
         useIndexResourceState(rate);

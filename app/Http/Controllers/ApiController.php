@@ -361,25 +361,25 @@ class ApiController extends Controller
 
     private function checkCondition($condition, $totalQuantity)
     {
-        // $condition['name'] === 'quantity' &&
+        // $condition['name'] === 'quantity' &&s
         if (isset($condition['condition'])) {
             $result = false;
 
             switch ($condition['condition']) {
                 case 'equal':
-                    $result = $totalQuantity == (int)$condition['value'];
+                    $result = $totalQuantity == $condition['value'];
                     break;
                 case 'notequal':
-                    $result = $totalQuantity != (int)$condition['value'];
+                    $result = $totalQuantity != $condition['value'];
                     break;
                 case 'gthenoequal':
-                    $result = $totalQuantity >= (int)$condition['value'];
+                    $result = $totalQuantity >= $condition['value'];
                     break;
                 case 'lthenoequal':
-                    $result = $totalQuantity <= (int)$condition['value'];
+                    $result = $totalQuantity <= $condition['value'];
                     break;
                 case 'between':
-                    $result = $totalQuantity >= (int)$condition['value'] && $totalQuantity <= (int)$condition['value2'];
+                    $result = $totalQuantity >= $condition['value'] && $totalQuantity <= $condition['value2'];
                     break;
             }
 
@@ -409,6 +409,9 @@ class ApiController extends Controller
 
         $itemQuantitys = $input['rate']['items'];
 
+        $reqCurrency = $input['rate']['currency'];
+
+        $localeCode = $input['rate']['locale'];
         $totalQuantity = array_sum(array_column($itemQuantitys, 'quantity'));
         $totalWeight = array_reduce($itemQuantitys, function($carry, $item) {
             return $carry + ($item['grams'] * $item['quantity']);
@@ -426,14 +429,13 @@ class ApiController extends Controller
             return response()->json($response);
         }
 
-        $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $originCountryName)->whereHas('zone', function ($query) {
-            $query->where('status', 1);
+        $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $originCountryName)->whereHas('zone', function ($query) use ($reqCurrency) {
+            $query->where('status', 1)->where('currency', $reqCurrency);
         })->pluck('zone_id');
-
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode')->get();
 
-        $filteredRates = $rates->map(function ($rate) use ($destinationProvince, $destinationZipcode, $totalQuantity, $totalWeight, $input) {
+        $filteredRates = $rates->map(function ($rate) use ($destinationProvince, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode) {
             $zipcode = optional($rate->zipcode);
 
             // Check cart conditions
@@ -443,13 +445,22 @@ class ApiController extends Controller
                     $conditionsMet = true;
                     break;
                 case 1: // All conditions must be true
-                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight) {
+                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationProvince) {
                         if ($condition['label'] == 'Cart_Order') {
                             if($condition['name'] == 'weight'){
                                 $totalQuantity = $totalWeight;
-                                // if($condition['unit'] == 'kg'){
-                                //     $condition['value'] = $condition['value'] * 1000;
-                                // }
+                            }
+
+                            if($condition['name'] == 'localcode'){
+                                $totalQuantity = $localeCode;
+                            }
+
+                            return $this->checkCondition($condition, $totalQuantity);
+                        }
+
+                        if($condition['label'] == 'Customer'){
+                            if($condition['name'] == "provinceCode"){
+                                $totalQuantity = $destinationProvince;
                             }
 
                             return $this->checkCondition($condition, $totalQuantity);

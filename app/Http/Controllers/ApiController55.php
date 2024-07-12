@@ -8,7 +8,6 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Models\Zone;
 use App\Models\ZoneCountry;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\DB;
@@ -347,22 +346,21 @@ class ApiController extends Controller
         return response()->json($response);
     }
 
-    // private function conditionConvertSymbol($symbolName)
-    // {
-    //     $symbol = [
-    //         "equal" => "=",
-    //         "notequal" => "!=",
-    //         "gthenoequal" => ">=",
-    //         "lthenoequal" => "<="
-    //     ];
+    private function conditionConvertSymbol($symbolName)
+    {
+        $symbol = [
+            "equal" => "=",
+            "notequal" => "!=",
+            "gthenoequal" => ">=",
+            "lthenoequal" => "<="
+        ];
 
-    //     return $symbol[$symbolName] ?? false;
-    // }
+        return $symbol[$symbolName] ?? false;
+    }
 
     private function checkCondition($condition, $totalQuantity)
     {
-        // $condition['name'] === 'quantity' &&
-        if (isset($condition['condition'])) {
+        if ($condition['name'] === 'quantity' && isset($condition['condition'])) {
             $result = false;
 
             switch ($condition['condition']) {
@@ -383,13 +381,13 @@ class ApiController extends Controller
                     break;
             }
 
-            Log::info('Query logs:', [
-                'totalQuantity' => $totalQuantity,
-                'condition' => $condition['condition'],
-                'condition_value' => $condition['value'],
-                'condition_value2' => $condition['value2'] ?? null,
-                'result' => $result
-            ]);
+            // Log::info('Query logs:', [
+            //     'totalQuantity' => $totalQuantity,
+            //     'condition' => $condition['condition'],
+            //     'condition_value' => $condition['value'],
+            //     'condition_value2' => $condition['value2'] ?? null,
+            //     'result' => $result
+            // ]);
 
             return $result;
         }
@@ -400,19 +398,18 @@ class ApiController extends Controller
     public function handleCallback(Request $request)
     {
         $input = $request->input();
+
         Log::info('Query logs:', ['totalQuantity' => $input]);
         $shopDomain = $request->header();
-
+        // Construct the response data
         $originCompanyName = $shopDomain['x-shopify-shop-domain'][0];
-
+        // dd($originCompanyName);
         $originCountryName = $input['rate']['origin']['country'];
 
         $itemQuantitys = $input['rate']['items'];
 
         $totalQuantity = array_sum(array_column($itemQuantitys, 'quantity'));
-        $totalWeight = array_reduce($itemQuantitys, function($carry, $item) {
-            return $carry + ($item['grams'] * $item['quantity']);
-        }, 0);
+        $totalGrams = 0;
 
         $destinationZipcode = $input['rate']['destination']['postal_code'];
         $destinationProvince = $input['rate']['destination']['province'];
@@ -432,42 +429,60 @@ class ApiController extends Controller
 
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode')->get();
+        $filteredRates = $rates->map(function ($rate) use ($totalQuantity) {
+            // Check if cart conditions are met
+            $conditionsMet = collect($rate->cart_condition['cartCondition'])->filter(function ($condvalue) use ($totalQuantity) {
+                if ($condvalue['label'] == 'Cart_Order') {
+                    if ($condvalue['name'] == 'quantity' && (int)$condvalue['value'] === $totalQuantity) {
+                        return true;
+                    }
+                }
+                return false;
+            })->isNotEmpty();
 
-        $filteredRates = $rates->map(function ($rate) use ($destinationProvince, $destinationZipcode, $totalQuantity, $totalWeight, $input) {
+        //     // Return the rate if conditions are met, otherwise null
+             return $conditionsMet ? $rate : null;
+         })->filter()->values(); // Filter out null values and reindex
+        // Determine the appropriate rate based on the shipping rate setting
+        // if ($setting->shippingRate == 'Only Higher') {
+        //     $maxRate = $ratesQuery->max('base_price');
+        //     $ratesQuery->where('base_price', $maxRate);
+        // } elseif ($setting->shippingRate == 'Only Lower') {
+        //     $minRate = $ratesQuery->min('base_price');
+        //     $ratesQuery->where('base_price', $minRate);
+        // }
+
+        //  $rates = $ratesQuery->get();
+
+       /* $filteredRates = $rates->map(function ($rate) use ($destinationProvince, $destinationZipcode, $totalQuantity, $input) {
             $zipcode = optional($rate->zipcode);
 
             // Check cart conditions
-            $conditionsMet = false;
-            switch ($rate->cart_condition['conditionMatch']) {
-                case 0: // Return true for case 0
-                    $conditionsMet = true;
-                    break;
-                case 1: // All conditions must be true
-                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight) {
-                        if ($condition['label'] == 'Cart_Order') {
-                            if($condition['name'] == 'weight'){
-                                $totalQuantity = $totalWeight;
-                                // if($condition['unit'] == 'kg'){
-                                //     $condition['value'] = $condition['value'] * 1000;
-                                // }
-                            }
+             $conditionsMet = false;
 
-                            return $this->checkCondition($condition, $totalQuantity);
-                        }
-                        return true;
+
+
+            switch ($rate->cart_condition['conditionMatch']) {
+                case 1: // All conditions must be true
+                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity) {
+                        return $this->checkCondition($condition, $totalQuantity);
                     });
                     break;
-                // case 2: // Any condition must be true
-                //     $conditionsMet = collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity) {
-                //         return $this->checkCondition($condition, $totalQuantity);
-                //     });
-                //     break;
 
-                // case 3: // All conditions must be false to return true, if any condition is true return false
-                //     $conditionsMet = !collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity) {
-                //         return $this->checkCondition($condition, $totalQuantity);
-                //     });
-                //     break;
+                case 2: // Any condition must be true
+                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity) {
+                        Log::info('Filtered conditions:', [
+                            'conditionsMet' => "case 2",
+                        ]);
+                        return $this->checkCondition($condition, $totalQuantity);
+                    });
+                    break;
+
+                case 3: // All conditions must be false to return true, if any condition is true return false
+                    $conditionsMet = !collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity) {
+                        return $this->checkCondition($condition, $totalQuantity);
+                    });
+                    break;
             }
 
             //Log the conditions and the result of the check
@@ -476,35 +491,35 @@ class ApiController extends Controller
                 'conditionsMet' => $conditionsMet,
             ]);
 
-            // If the conditions are not met, return null
+           // If the conditions are not met, return null
             if (!$conditionsMet) {
                 return null;
             }
 
-            // Check state selection
-            // if ($zipcode->stateSelection === 'Custom') {
-            //     $states = collect($zipcode->state)->pluck('code')->all();
-            //     if (!in_array($destinationProvince, $states)) {
-            //         return null;
-            //     }
-            // }
+        //     // Check state selection
+        //     // if ($zipcode->stateSelection === 'Custom') {
+        //     //     $states = collect($zipcode->state)->pluck('code')->all();
+        //     //     if (!in_array($destinationProvince, $states)) {
+        //     //         return null;
+        //     //     }
+        //     // }
 
-            // Check zipcode selection
-            // if ($zipcode->zipcodeSelection === 'Custom') {
-            //     $zipcodes = $zipcode->zipcode;
-            //     if ($zipcode->isInclude === 'Include') {
-            //         if (!in_array($destinationZipcode, $zipcodes)) {
-            //             return null;
-            //         }
-            //     } elseif ($zipcode->isInclude === 'Exclude') {
-            //         if (in_array($destinationZipcode, $zipcodes)) {
-            //             return null;
-            //         }
-            //     }
-            // }
+        //     // Check zipcode selection
+        //     // if ($zipcode->zipcodeSelection === 'Custom') {
+        //     //     $zipcodes = $zipcode->zipcode;
+        //     //     if ($zipcode->isInclude === 'Include') {
+        //     //         if (!in_array($destinationZipcode, $zipcodes)) {
+        //     //             return null;
+        //     //         }
+        //     //     } elseif ($zipcode->isInclude === 'Exclude') {
+        //     //         if (in_array($destinationZipcode, $zipcodes)) {
+        //     //             return null;
+        //     //         }
+        //     //     }
+        //     // }
 
-            return $rate;
-        })->filter();
+         return $rate;
+         })->filter();
 
         // // Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
         // Log::info('Query logs:', ['totalQuantity' => $totalQuantity]);
@@ -517,8 +532,6 @@ class ApiController extends Controller
                 'total_price' => $rate->base_price, // Convert to cents if needed
                 'description' => $rate->description,
                 'currency' => $rate->zone->currency,
-                'min_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
-                'max_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
             ];
         }
 
@@ -911,14 +924,14 @@ class ApiController extends Controller
 
             if (isset($inputData['cart_condition'])) {
                 $rules = array_merge($rules, [
-                    'cart_condition.conditionMatch' => 'in:0,1,2,3',
-                    'cart_condition.cartCondition' => 'array',
+                    'cart_condition.conditionMatch' => 'required|in:0,1,2,3',
+                    'cart_condition.cartCondition' => 'required|array',
                 ]);
 
                 $messages = array_merge($messages, [
-                    // 'cart_condition.conditionMatch.required' => 'The condition match field is required.',
+                    'cart_condition.conditionMatch.required' => 'The condition match field is required.',
                     'cart_condition.conditionMatch.in' => 'The condition must be one of the following: 0=Not Any Condition, 1=All, 2=Any, 3=NOT All',
-                    // 'cart_condition.cartCondition.required' => 'The cart condition field is required.',
+                    'cart_condition.cartCondition.required' => 'The cart condition field is required.',
                     'cart_condition.cartCondition.array' => 'The cart condition must be an array.',
                 ]);
 
@@ -1112,8 +1125,6 @@ class ApiController extends Controller
                     'message' => 'Rate not found.'
                 ], 404);
             }
-
-            $rate->shop_weight_unit = $user->shop_weight_unit;
 
             $countryList = $rate->zone->countries->pluck('country', 'countryCode');
 

@@ -385,6 +385,10 @@ return [
             'topic' => env('SHOPIFY_WEBHOOK_1_TOPIC', 'app/uninstalled'),
             'address' => env('SHOPIFY_WEBHOOK_1_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/app-uninstalled')
         ],
+        [
+            'topic' => env('SHOPIFY_WEBHOOK_1_TOPIC', 'shop/update'),
+            'address' => env('SHOPIFY_WEBHOOK_1_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/shop-update')
+        ],
         /*
             [
                 'topic' => env('SHOPIFY_WEBHOOK_2_TOPIC', 'APP_PURCHASES_ONE_TIME_UPDATE'),

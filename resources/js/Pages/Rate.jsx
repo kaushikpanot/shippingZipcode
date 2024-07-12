@@ -711,13 +711,7 @@ function Rate(props) {
         { label: 'ALL SPECIFIC product with TAg', value: 'allTag' },
 
     ]
-    const [settings, setSettings] = useState({
-        lineItem: 'satisfy',
-        textBoxValue: '',
-        time1: '00',
-        time2: '00',
-        per_product: 'any'
-    });
+    
     const handleConditionsChange = useCallback((field) => (value) => {
         setSettings((prevState) => ({
             ...prevState,
@@ -789,10 +783,27 @@ function Rate(props) {
     ];
 
     const [items, setItems] = useState([]);
-    console.log(settings)
+   
     
-    
-    
+    const [settings, setSettings] = useState({
+        lineItem: 'satisfy',
+        textBoxValue: '',
+        time1: '00',
+        time2: '00',
+        per_product: 'any'
+    });
+    const handleAddItem = () => {
+        const newItem = {
+            name: 'quantity',
+            condition: 'equal',
+            value: '',
+            unit: '',
+            label: 'cart/order',
+            others : settings
+
+        };
+        setItems(prevItems => [...prevItems, newItem]);
+    };
 
 
 
@@ -1405,6 +1416,7 @@ function Rate(props) {
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             gap: '3%',
+                                                            marginBottom:"2%"
 
 
                                                         }}>
@@ -1449,7 +1461,7 @@ function Rate(props) {
                                             variant='primary'
                                             onClick={handleAddItem}
                                         >
-                                            Add theme
+                                            Add Theme
                                         </Button>
                                     </div>
                                 </div>

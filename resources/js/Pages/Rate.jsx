@@ -879,7 +879,7 @@ function Rate(props) {
         collecion_id: '',
         product_type: '',
         product_vendor: '',
-        description: '',
+        descriptions: '',
 
     })
     const [send_another_rate, setsend_another_rate] = useState({
@@ -992,8 +992,6 @@ function Rate(props) {
         }));
 
     };
-
-
 
     useEffect(() => {
         const selectedStates = selectedOptions.map(option => ({
@@ -1114,23 +1112,13 @@ function Rate(props) {
         }
         if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
             if (!rate_based_on_surcharge.charge_per_wight) {
-                newErrors.charge_per_wight = 'The charge per weight field is required.';
+                newErrors.charge_per_wight = 'The charge field is required.';
             }
             if (!rate_based_on_surcharge.unit_for) {
-                newErrors.unit_for = 'The unit per weight field is required.';
+                newErrors.unit_for = 'The unit field is required.';
             } 
         }
-        if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
-            if (!rate_based_on_surcharge.charge_per_wight) {
-                newErrors.charge_per_wight = 'The charge per weight field is required.';
-            } 
-        }
-        if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
-            if (!rate_based_on_surcharge.charge_per_wight) {
-                newErrors.charge_per_wight = 'The charge per weight field is required.';
-            } 
-        }
-        
+       
         
 
         if (Object.keys(newErrors).length > 0) {
@@ -2244,8 +2232,8 @@ function Rate(props) {
                                                                 } with comma separator(,).`
                                                             }
 
-                                                            value={rate_based_on_surcharge.description}
-                                                            onChange={handleRateFormChange('description')}
+                                                            value={rate_based_on_surcharge.descriptions}
+                                                            onChange={handleRateFormChange('descriptions')}
                                                         />
                                                     </div>
 

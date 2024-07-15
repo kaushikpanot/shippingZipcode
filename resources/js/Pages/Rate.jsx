@@ -73,6 +73,7 @@ function Rate(props) {
 
     const [toastDuration, setToastDuration] = useState(3000);
     const [showToast, setShowToast] = useState(false);
+    const [errorToast, setErroToast] = useState(false)
     const [toastContent, setToastContent] = useState("");
     const [errors, setErrors] = useState({});
     const [toastActive, setToastActive] = useState(false);
@@ -601,6 +602,8 @@ function Rate(props) {
             placeholder="Search State"
             verticalContent={verticalContentMarkup}
             autoComplete="off"
+            error={errors.selectedOptions}
+
         />
     );
     const toggleToastActive = useCallback(() => setToastActive((active) => !active), []);
@@ -718,6 +721,26 @@ function Rate(props) {
             [field]: value,
         }));
     }, []);
+
+
+    const getSelectedDays = (selection) => {
+        return Object.keys(selection).filter(day => selection[day]);
+    };
+
+    const CheckboxGroup = ({ selection, onChange }) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            {Object.keys(selection).map((day) => (
+                <Checkbox
+                    key={day}
+                    label={day.charAt(0).toUpperCase() + day.slice(1)}
+                    checked={selection[day]}
+                    onChange={() => onChange(day)}
+                />
+            ))}
+        </div>
+    );
+
+
     const getCategory = (itemName) => {
         let categoryLabel = '';
         const item = validations.find(option => option.value === itemName);
@@ -806,7 +829,12 @@ function Rate(props) {
     };
 
 
-
+    const handleConditionsChange = useCallback((field) => (value) => {
+        setItems((prevState) => ({
+            ...prevState,
+            [field]: value,
+        }));
+    }, []);
     const handleSelectChange = (index, newValue, isSecondSelect) => {
         const selectedOption = validations.find(option => option.value === newValue) || {};
         const updatedItem = {
@@ -853,7 +881,9 @@ function Rate(props) {
 
 
     useEffect(() => {
-        editRate();
+        if (rate_id) {
+            editRate();
+        }
         getLocation();
         getstate();
         fetchProducts()
@@ -870,7 +900,7 @@ function Rate(props) {
         collecion_id: '',
         product_type: '',
         product_vendor: '',
-        description: '',
+        descriptions: '',
 
     })
     const [send_another_rate, setsend_another_rate] = useState({
@@ -880,7 +910,7 @@ function Rate(props) {
         update_price_type: checkstate.selectedByUpdatePriceType,
         update_price_effect: checkstate.selectedByUpdatePriceEffect,
         adjustment_price: '',
-        service_code: "",
+        another_service_code: "",
         another_merge_rate_tag: ''
     })
 
@@ -944,8 +974,6 @@ function Rate(props) {
         merge_rate_tag: ''
     });
 
-
-
     const removeEmptyFields = (obj) => {
         return Object.keys(obj).reduce((acc, key) => {
             if (obj[key] !== '') {
@@ -954,11 +982,13 @@ function Rate(props) {
             return acc;
         }, {});
     };
+
     const handleRateFormChange = (field) => (value) => {
         setFormData((prevState) => ({
             ...prevState,
             [field]: value,
         }));
+
         setsend_another_rate((prevState) => ({
             ...prevState,
             [field]: value,
@@ -971,17 +1001,18 @@ function Rate(props) {
             };
             return removeEmptyFields(updatedState);
         });
+
         SetExclude_Rate((prevState) => ({
             ...prevState,
             [field]: value,
         }));
+
         setErrors((prevErrors) => ({
             ...prevErrors,
             [field]: '',
         }));
+
     };
-
-
 
     useEffect(() => {
         const selectedStates = selectedOptions.map(option => ({
@@ -1039,18 +1070,85 @@ function Rate(props) {
         checkstate.selectedByUpdatePriceEffect
     ]);
 
-
     const saveRate = async () => {
         const newErrors = {};
+
         if (!formData.name) newErrors.name = 'Rate name is required';
         if (!formData.base_price) newErrors.base_price = 'Base price is required';
         if (!formData.service_code) newErrors.service_code = 'Service code is required';
         if (!formData.description) newErrors.description = 'Description is required';
 
+        if (checkedState.checked3) {
+            if (!send_another_rate.another_rate_name) {
+                newErrors.another_rate_name = 'Another Rate Name is required';
+            }
+            if (!send_another_rate.adjustment_price) {
+                newErrors.adjustment_price = 'Adjustment Price is required';
+            }
+        }
+
+        
+        if (
+            (selectedRate === 'product_vendor' ||
+                selectedRate === 'product_sku' ||
+                selectedRate === 'product_type' ||
+                selectedRate === 'product_properties') &&
+            !exclude_Rate.exclude_products_textbox
+        ) {
+            newErrors.exclude_products_textbox = 'Exclude products field is required';
+        }
+
+        if (tiers.length > 0) {
+            tiers.forEach((tier, index) => {
+                if (!tier.minWeight)
+                    newErrors[`minWeight${index}`] = `Minimum weight for Tier ${index + 1} is required`;
+                if (!tier.maxWeight)
+                    newErrors[`maxWeight${index}`] = `Maximum weight for Tier ${index + 1} is required`;
+                if (!tier.basePrice)
+                    newErrors[`basePrice${index}`] = `Base price for Tier ${index + 1} is required`;
+            });
+        }
+
+        if (rateModifiers.length > 0) {
+            rateModifiers.forEach((modifier, index) => {
+                if (!modifier.name)
+                    newErrors[`name${index}`] = `Rate modifier name for Modifier ${index + 1} is required`;
+                if (!modifier.adjustment)
+                    newErrors[`adjustment${index}`] = `Adjustment for Modifier ${index + 1} is required`;
+            });
+        }
+
+        if (items.length > 0) {
+            items.forEach((item, index) => {
+                if (!item.value) newErrors[`value${index}`] = `Value for Item ${index + 1} is required`;
+            });
+        }
+
+
+        if (checkstate.selectedStateCondition !== 'All' && selectedOptions.length === 0) {
+            newErrors.selectedOptions = 'Please select at least one country.';
+        }
+        if (checkstate.selectedZipCondition !== 'All' && !zipcodeValue) {
+            newErrors.zipcodeValue = 'The zipcodes field is required.';
+        }
+        if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
+            if (!rate_based_on_surcharge.charge_per_wight) {
+                newErrors.charge_per_wight = 'The charge field is required.';
+            }
+            if (!rate_based_on_surcharge.unit_for) {
+                newErrors.unit_for = 'The unit field is required.';
+            } 
+        }
+       
+        
+
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
+            setToastContent('Sorry. Couldn’t be saved. Please try again.');
+            setErroToast(true);
             return;
         }
+
         try {
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
@@ -1058,17 +1156,17 @@ function Rate(props) {
             });
             const token = await getSessionToken(app);
 
-
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, formData, {
                 headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                    Authorization: `Bearer ${token}`,
+                },
             });
-            setToastContent("Rate saved successfully");
+            setErrors({});
+            setToastContent('Rate saved successfully');
             setShowToast(true);
         } catch (error) {
             console.error('Error occurs', error);
-            setToastContent("Error occurred while saving data");
+            setToastContent('Error occurred while saving data');
             setShowToast(true);
         }
     };
@@ -1527,8 +1625,10 @@ function Rate(props) {
                                                     onSelect={setSelectedOptions}
                                                     listTitle="Suggested Countries"
                                                 />
+
                                             </div>
                                         )}
+
 
                                         <Divider borderColor="border" />
                                     </>
@@ -1564,6 +1664,7 @@ function Rate(props) {
                                         onChange={(newValue) => handleChange(newValue)}
                                         multiline={4}
                                         autoComplete="off"
+                                        error={errors.zipcodeValue}
                                     />
 
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%" }}>
@@ -1750,6 +1851,7 @@ function Rate(props) {
                                                         placeholder='0.00'
                                                         value={rate_based_on_surcharge.charge_per_wight}
                                                         onChange={handleRateFormChange('charge_per_wight')}
+                                                        error={errors.charge_per_wight}
                                                     />
                                                     <TextField
                                                         type="number"
@@ -1771,6 +1873,7 @@ function Rate(props) {
                                                         }
                                                         value={rate_based_on_surcharge.unit_for}
                                                         onChange={handleRateFormChange('unit_for')}
+                                                        error={errors.unit_for}
                                                     />
                                                 </FormLayout.Group>
                                             </FormLayout>
@@ -2148,8 +2251,8 @@ function Rate(props) {
                                                                 } with comma separator(,).`
                                                             }
 
-                                                            value={rate_based_on_surcharge.description}
-                                                            onChange={handleRateFormChange('description')}
+                                                            value={rate_based_on_surcharge.descriptions}
+                                                            onChange={handleRateFormChange('descriptions')}
                                                         />
                                                     </div>
 
@@ -2203,7 +2306,7 @@ function Rate(props) {
                                         </div>
                                         {tiers.map((tier, index) => (
                                             <div style={{ marginTop: '2%' }} key={index}>
-                                                <div style={{ marginBottom: "2%", marginLeft: "85%" }}>
+                                                <div style={{ marginBottom: "1%", marginLeft: "85%" }}>
                                                     <p style={{ color: "#ef5350", fontWeight: "bold", cursor: "pointer" }} onClick={() => removeTier(index)}>
                                                         Remove Tier
                                                     </p>
@@ -2217,6 +2320,7 @@ function Rate(props) {
                                                             autoComplete="off"
                                                             prefix="kg"
                                                             placeholder="0.00"
+                                                            error={errors[`minWeight${index}`]}
                                                         />
                                                         <TextField
                                                             label={`Maximum ${selectedTierType === 'order_weight' ? 'Weight' : selectedTierType === 'order_quantity' ? 'Quantity' : selectedTierType === 'order_distance' ? 'Distance' : 'Price'}`}
@@ -2225,6 +2329,8 @@ function Rate(props) {
                                                             autoComplete="off"
                                                             prefix="kg"
                                                             placeholder="0.00"
+                                                            error={errors[`maxWeight${index}`]}
+
                                                         />
                                                         <TextField
                                                             label='Base Price'
@@ -2233,11 +2339,13 @@ function Rate(props) {
                                                             autoComplete="off"
                                                             prefix="Rs."
                                                             placeholder="0.00"
+                                                            error={errors[`basePrice${index}`]}
+
                                                         />
                                                     </FormLayout.Group>
 
                                                 </FormLayout>
-                                                {index < tiers.length - 1 && <div style={{ marginTop: "2%" }}> <Divider /></div>}
+                                                {index < tiers.length - 1 && <div style={{ marginTop: "3%" }}> <Divider /></div>}
                                             </div>
                                         ))}
                                         <div style={{ marginTop: '2%' }}>
@@ -2396,6 +2504,7 @@ function Rate(props) {
                                                     selectedRate === 'product_type' ? 'Product Type' : 'Product Properties'
                                                 } with comma separator(,).`
                                             }
+                                            error={errors.exclude_products_textbox}
                                         />
                                     </div>
 
@@ -2431,9 +2540,9 @@ function Rate(props) {
 
                             <LegacyCard sectioned>
 
-                                {rateModifiers.map((modifier) => (
+                                {rateModifiers.map((modifier, index) => (
                                     <div style={{ marginBottom: "3%" }}>
-                                        <Box key={modifier.id} borderColor="border" borderWidth="025">
+                                        <Box key={index} borderColor="border" borderWidth="025">
                                             <div style={{ padding: '10px' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                     <Button
@@ -2468,6 +2577,7 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'name')}
                                                                     autoComplete="off"
                                                                     placeholder="Rate Modifier Name"
+                                                                    error={errors[`name${index}`]}
                                                                 />
                                                                 <TextField
                                                                     type="text"
@@ -2681,6 +2791,7 @@ function Rate(props) {
                                                                 onChange={handleRateModifierChange(modifier.id, 'adjustment')}
                                                                 autoComplete="off"
                                                                 placeholder="00"
+                                                                error={errors[`adjustment${index}`]}
                                                             />
                                                         </FormLayout>
                                                     </div>
@@ -2906,8 +3017,9 @@ function Rate(props) {
                                                     value={send_another_rate.another_rate_name}
                                                     onChange={handleRateFormChange('another_rate_name')}
                                                     autoComplete="off"
-
+                                                    required
                                                     placeholder='Enter Rate Name'
+                                                    error={errors.another_rate_name}
                                                 />
                                                 <TextField
                                                     type="text"
@@ -2915,8 +3027,9 @@ function Rate(props) {
                                                     value={send_another_rate.another_rate_description}
                                                     onChange={handleRateFormChange('another_rate_description')}
                                                     autoComplete="off"
-
+                                                    required
                                                     placeholder='Enter Desription'
+
                                                 />
                                             </FormLayout.Group>
                                         </FormLayout>
@@ -2957,7 +3070,7 @@ function Rate(props) {
                                         <div style={{ marginTop: '3%' }}>
                                             <Divider borderColor="border" />
                                         </div>
-                                        {checkstate.selectedByUpdatePriceType !== 3 && (
+                                        {checkstate.selectedByUpdatePriceType !== 2 && (
                                             <div style={{ marginTop: '3%' }}>
                                                 <FormLayout>
                                                     <FormLayout.Group>
@@ -2989,7 +3102,7 @@ function Rate(props) {
                                                             value={send_another_rate.adjustment_price}
                                                             onChange={handleRateFormChange('adjustment_price')}
                                                             autoComplete="off"
-
+                                                            error={errors.adjustment_price}
                                                             placeholder='00'
                                                         />
                                                     </FormLayout.Group>
@@ -3006,7 +3119,7 @@ function Rate(props) {
                                                     value={send_another_rate.adjustment_price}
                                                     onChange={handleRateFormChange('adjustment_price')}
                                                     autoComplete="off"
-
+                                                    error={errors.adjustment_price}
                                                     placeholder='0'
                                                 />
 
@@ -3022,8 +3135,8 @@ function Rate(props) {
                                                     <TextField
                                                         type="text"
                                                         label="Service Code"
-                                                        value={send_another_rate.service_code}
-                                                        onChange={handleRateFormChange('service_code')}
+                                                        value={send_another_rate.another_service_code}
+                                                        onChange={handleRateFormChange('another_service_code')}
                                                         autoComplete="off"
 
                                                         placeholder='Enter Service Code'
@@ -3056,6 +3169,9 @@ function Rate(props) {
 
             {showToast && (
                 <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
+            )}
+            {errorToast && (
+                <Toast content={toastContent} error duration={toastDuration} onDismiss={() => setErroToast(false)} />
             )}
             {toastActive && (
                 <Toast content={toastMessage} error onDismiss={toggleToastActive} />

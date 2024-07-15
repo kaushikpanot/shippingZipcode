@@ -98,6 +98,7 @@ function Rate(props) {
             [key]: value,
         }));
     };
+   
     const [selectedTierType, setSelectedTierType] = useState('selected');
     const [tiers, setTiers] = useState([
         { minWeight: '', maxWeight: '', basePrice: '' }
@@ -641,30 +642,6 @@ function Rate(props) {
         saturday: false,
         sunday: false,
     });
-
-    const handleCheckboxChange = useCallback((day) => {
-        setDayOfWeekSelection((prevSelection) => ({
-            ...prevSelection,
-            [day]: !prevSelection[day],
-        }));
-        setDeliveryType((prevSelection) => ({
-            ...prevSelection,
-            [day]: !prevSelection[day],
-        }));
-    }, []);
-
-    const CheckboxGroup = ({ selection, onChange }) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {Object.keys(selection).map((day) => (
-                <Checkbox
-                    key={day}
-                    label={day.charAt(0).toUpperCase() + day.slice(1)}
-                    checked={selection[day]}
-                    onChange={() => onChange(day)}
-                />
-            ))}
-        </div>
-    );
     const option = [
         { label: 'Equal', value: 'equal' },
         { label: 'Does Not Eqaul', value: 'notequal' },
@@ -701,7 +678,6 @@ function Rate(props) {
         { label: '24:00', value: '24' }
     ];
 
-
     const lineItem = [
         { label: 'ANY product must satisfy this conditin ', value: 'satisfy' },
         { label: 'ANY SPECIFIC product with TAg', value: 'withTag' },
@@ -714,32 +690,6 @@ function Rate(props) {
         { label: 'ALL SPECIFIC product with TAg', value: 'allTag' },
 
     ]
-    
-    const handleConditionsChange = useCallback((field) => (value) => {
-        setSettings((prevState) => ({
-            ...prevState,
-            [field]: value,
-        }));
-    }, []);
-
-
-    const getSelectedDays = (selection) => {
-        return Object.keys(selection).filter(day => selection[day]);
-    };
-
-    const CheckboxGroup = ({ selection, onChange }) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {Object.keys(selection).map((day) => (
-                <Checkbox
-                    key={day}
-                    label={day.charAt(0).toUpperCase() + day.slice(1)}
-                    checked={selection[day]}
-                    onChange={() => onChange(day)}
-                />
-            ))}
-        </div>
-    );
-
 
     const getCategory = (itemName) => {
         let categoryLabel = '';
@@ -805,36 +755,74 @@ function Rate(props) {
         { label: 'Type', value: 'type2', mainLabel: "Delivery" }
     ];
 
-    const [items, setItems] = useState([]);
+  
+
+        const handleCheckboxChange = useCallback((day) => {
+            setDayOfWeekSelection((prevSelection) => ({
+                ...prevSelection,
+                [day]: !prevSelection[day],
+            }));
+            setDeliveryType((prevSelection) => ({
+                ...prevSelection,
+                [day]: !prevSelection[day],
+            }));
+        }, []);
+
+    const CheckboxGroup = ({ selection, onChange }) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            {Object.keys(selection).map((day) => (
+                <Checkbox
+                    key={day}
+                    label={day.charAt(0).toUpperCase() + day.slice(1)}
+                    checked={selection[day]}
+                    onChange={() => onChange(day)}
+                />
+            ))}
+        </div>
+    );
    
-    
     const [settings, setSettings] = useState({
         lineItem: 'satisfy',
         textBoxValue: '',
         time1: '00',
         time2: '00',
-        per_product: 'any'
+        per_product: 'any',
+        deliveryDay : dates.date
     });
-    const handleAddItem = () => {
+
+    const [items, setItems] = useState([]);
+
+     const handleAddItem = () => {
+        const selectedDays = Object.keys(dayOfWeekSelection).filter(day => dayOfWeekSelection[day]);
+
         const newItem = {
             name: 'quantity',
             condition: 'equal',
             value: '',
             unit: '',
             label: 'cart/order',
-            others : settings
-
+            others: settings,
+            selectedDays
         };
+
         setItems(prevItems => [...prevItems, newItem]);
     };
-
-
+    
     const handleConditionsChange = useCallback((field) => (value) => {
-        setItems((prevState) => ({
-            ...prevState,
+        setItems(prevItems => prevItems.map((item, index) => {
+            if (index === field) {
+                return { ...item, condition: value };
+            }
+            return item;
+        }));
+    
+        setSettings(prevSettings => ({
+            ...prevSettings,
             [field]: value,
         }));
     }, []);
+    
+
     const handleSelectChange = (index, newValue, isSecondSelect) => {
         const selectedOption = validations.find(option => option.value === newValue) || {};
         const updatedItem = {
@@ -921,6 +909,7 @@ function Rate(props) {
             update_price_type: checkstate.selectedByUpdatePriceType,
             update_price_effect: checkstate.selectedByUpdatePriceEffect
         }));
+
     }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect]);
 
 
@@ -1087,7 +1076,7 @@ function Rate(props) {
             }
         }
 
-        
+
         if (
             (selectedRate === 'product_vendor' ||
                 selectedRate === 'product_sku' ||
@@ -1118,12 +1107,11 @@ function Rate(props) {
             });
         }
 
-        if (items.length > 0) {
-            items.forEach((item, index) => {
-                if (!item.value) newErrors[`value${index}`] = `Value for Item ${index + 1} is required`;
-            });
-        }
-
+        // if (items.length > 0) {
+        //     items.forEach((item, index) => {
+        //         if (!item.value) newErrors[`value${index}`] = `Value for Item ${index + 1} is required`;
+        //     });
+        // }
 
         if (checkstate.selectedStateCondition !== 'All' && selectedOptions.length === 0) {
             newErrors.selectedOptions = 'Please select at least one country.';
@@ -1137,10 +1125,15 @@ function Rate(props) {
             }
             if (!rate_based_on_surcharge.unit_for) {
                 newErrors.unit_for = 'The unit field is required.';
-            } 
+            }
         }
-       
-        
+        if (checkstate.selectedByCart === 'Vendor' || checkstate.selectedByCart === 'Tag' || checkstate.selectedByCart === 'Type'  || checkstate.selectedByCart === 'SKU'  || checkstate.selectedByCart === 'Collection' || checkstate.selectedByCart === 'Metafields') {
+           
+            if (!rate_based_on_surcharge.descriptions) {
+                newErrors.descriptions = 'The field is required.';
+            }
+        }
+
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -1511,10 +1504,10 @@ function Rate(props) {
 
                                                         </div>
                                                         <div style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '3%',
-                                                            marginBottom:"2%"
+                                                            // display: 'flex',
+                                                            // alignItems: 'center',
+                                                            // gap: '3%',
+                                                            marginBottom: "2%"
 
 
                                                         }}>
@@ -1549,9 +1542,8 @@ function Rate(props) {
                                                 <Divider borderColor="border" />
                                             </div>
                                         ))}
+
                                     </div>
-
-
 
                                     <div style={{ marginTop: "2%" }}>
                                         <Button
@@ -2253,6 +2245,8 @@ function Rate(props) {
 
                                                             value={rate_based_on_surcharge.descriptions}
                                                             onChange={handleRateFormChange('descriptions')}
+                                                            error={errors.descriptions}
+
                                                         />
                                                     </div>
 

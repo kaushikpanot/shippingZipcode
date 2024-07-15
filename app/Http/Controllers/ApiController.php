@@ -455,6 +455,17 @@ class ApiController extends Controller
                                 $totalQuantity = $localeCode;
                             }
 
+                            if($condition['name'] == 'days'){
+                                $day = Carbon::createFromFormat('Y-m-d', date('Y-m-d'))->format('l');
+                                $days = explode(',', $condition['value']);
+
+                                if($condition['condition'] == 'equal'){
+                                    return in_array($day, $days);
+                                } else {
+                                    return !in_array($day, $days);
+                                }
+                            }
+
                             return $this->checkCondition($condition, $totalQuantity);
                         }
 

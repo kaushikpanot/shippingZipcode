@@ -229,139 +229,8 @@ class ApiController extends Controller
         }
     }
 
-    public function getResponse(Request $request)
-    {
-        $input = $request->input();
-
-        $shopDomain = $request->header();
-        // Construct the response data
-        $originCompanyName = $shopDomain['x-shopify-shop-domain'][0];
-        // dd($originCompanyName);
-        $originCountryName = $input['rate']['origin']['country'];
-
-        $itemQuantitys = $input['rate']['items'];
-
-        $totalQuantity = 0;
-
-        // Iterate through the array and sum up the quantities
-        foreach ($itemQuantitys as $quantity) {
-            $totalQuantity += $quantity['quantity'];
-        }
-
-        $destinationZipcode = $input['rate']['destination']['postal_code'];
-        $destinationProvince = $input['rate']['destination']['province'];
-
-        $userId = User::where('name', $originCompanyName)->value('id');
-
-        $setting = Setting::where('user_id', $userId)->first();
-        $response = [];
-
-        if (!empty($setting) && !$setting->status) {
-            return response()->json($response);
-        }
-
-        $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $originCountryName)->whereHas('zone', function ($query) {
-            $query->where('status', 1);
-        })->pluck('zone_id');
-
-
-        $ratesQuery = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode');
-
-        // Determine the appropriate rate based on the shipping rate setting
-        // if ($setting->shippingRate == 'Only Higher') {
-        //     $maxRate = $ratesQuery->max('base_price');
-        //     $ratesQuery->where('base_price', $maxRate);
-        // } elseif ($setting->shippingRate == 'Only Lower') {
-        //     $minRate = $ratesQuery->min('base_price');
-        //     $ratesQuery->where('base_price', $minRate);
-        // }
-
-        $rates = $ratesQuery->get();
-
-        $filteredRates = $rates->map(function ($rate) use ($destinationProvince, $destinationZipcode, $totalQuantity) {
-            $zipcode = optional($rate->zipcode);
-
-            // Check cart conditions
-            if ($rate->cart_condition['conditionMatch'] != 0) {
-                $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity) {
-                    if ($condition['name'] === 'quantity' && $condition['condition'] === 'lthenoequal') {
-                        return $condition['value'] <= $totalQuantity;
-                    }
-                    return true; // If the condition is not 'quantity' and 'lthenoequal', it is met by default
-                });
-
-                // Log the conditions and the result of the check
-                Log::info('Filtered conditions:', [
-                    'rate_id' => $rate->id,
-                    'conditionsMet' => $conditionsMet,
-                ]);
-
-                // If not all conditions are met, return null
-                if (!$conditionsMet) {
-                    return null;
-                }
-            }
-            Log::info('Filtered conditions:', ['rate_id' => $rate->id, 'conditionMatch' => $totalQuantity]);
-            // Check state selection
-            if ($zipcode->stateSelection === 'Custom') {
-                $states = collect($zipcode->state)->pluck('code')->all();
-                if (!in_array($destinationProvince, $states)) {
-                    return null;
-                }
-            }
-
-            // Check zipcode selection
-            // if ($zipcode->zipcodeSelection === 'Custom') {
-            //     $zipcodes = $zipcode->zipcode;
-            //     if ($zipcode->isInclude === 'Include') {
-            //         if (!in_array($destinationZipcode, $zipcodes)) {
-            //             return null;
-            //         }
-            //     } elseif ($zipcode->isInclude === 'Exclude') {
-            //         if (in_array($destinationZipcode, $zipcodes)) {
-            //             return null;
-            //         }
-            //     }
-            // }
-
-            return $rate;
-        })->filter();
-
-        // // Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
-        // Log::info('Query logs:', ['totalQuantity' => $totalQuantity]);
-        // // Log::info('Shopify Carrier Service Request input:', ['filteredRates' => $filteredRates]);
-
-        foreach ($filteredRates as $rate) {
-            $response['rates'][] = [
-                'service_name' => $rate->name,
-                'service_code' => $rate->service_code,
-                'total_price' => $rate->base_price, // Convert to cents if needed
-                'description' => $rate->description,
-                'currency' => $rate->zone->currency,
-            ];
-        }
-
-        // Log::info('Shopify Carrier Service input:', ["input" => $input]);
-        Log::info('Shopify Carrier Service response:', ["response" => $response]);
-
-        return response()->json($response);
-    }
-
-    // private function conditionConvertSymbol($symbolName)
-    // {
-    //     $symbol = [
-    //         "equal" => "=",
-    //         "notequal" => "!=",
-    //         "gthenoequal" => ">=",
-    //         "lthenoequal" => "<="
-    //     ];
-
-    //     return $symbol[$symbolName] ?? false;
-    // }
-
     private function checkCondition($condition, $totalQuantity)
     {
-        // $condition['name'] === 'quantity' &&s
         if (isset($condition['condition'])) {
             $result = false;
 
@@ -380,6 +249,12 @@ class ApiController extends Controller
                     break;
                 case 'between':
                     $result = $totalQuantity >= $condition['value'] && $totalQuantity <= $condition['value2'];
+                    break;
+                case 'contains':
+                    $result = strpos($totalQuantity, $condition['value']) !== false;
+                    break;
+                case 'notcontains':
+                    $result = strpos($totalQuantity, $condition['value']) === false;
                     break;
             }
 
@@ -400,25 +275,26 @@ class ApiController extends Controller
     public function handleCallback(Request $request)
     {
         $input = $request->input();
-        Log::info('Query logs:', ['totalQuantity' => $input]);
+        // Log::info('Query logs:', ['totalQuantity' => $input]);
         $shopDomain = $request->header();
 
         $originCompanyName = $shopDomain['x-shopify-shop-domain'][0];
 
         $originCountryName = $input['rate']['origin']['country'];
 
-        $itemQuantitys = $input['rate']['items'];
+        $items = $input['rate']['items'];
 
         $reqCurrency = $input['rate']['currency'];
 
         $localeCode = $input['rate']['locale'];
-        $totalQuantity = array_sum(array_column($itemQuantitys, 'quantity'));
-        $totalWeight = array_reduce($itemQuantitys, function($carry, $item) {
+        $totalQuantity = array_sum(array_column($items, 'quantity'));
+        $totalWeight = array_reduce($items, function ($carry, $item) {
             return $carry + ($item['grams'] * $item['quantity']);
         }, 0);
 
         $destinationZipcode = $input['rate']['destination']['postal_code'];
         $destinationProvince = $input['rate']['destination']['province'];
+        $destinationAddress = $input['rate']['destination']['address1'] . " " . $input['rate']['destination']['address2'];
 
         $userId = User::where('name', $originCompanyName)->value('id');
 
@@ -435,7 +311,7 @@ class ApiController extends Controller
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode')->get();
 
-        $filteredRates = $rates->map(function ($rate) use ($destinationProvince, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode) {
+        $filteredRates = $rates->map(function ($rate) use ($destinationProvince, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items) {
             $zipcode = optional($rate->zipcode);
 
             // Check cart conditions
@@ -445,21 +321,29 @@ class ApiController extends Controller
                     $conditionsMet = true;
                     break;
                 case 1: // All conditions must be true
-                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationProvince) {
+                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationProvince, $destinationAddress, $items) {
                         if ($condition['label'] == 'Cart_Order') {
-                            if($condition['name'] == 'weight'){
+                            if ($condition['name'] == 'weight') {
                                 $totalQuantity = $totalWeight;
                             }
 
-                            if($condition['name'] == 'localcode'){
+                            if ($condition['name'] == 'localcode') {
                                 $totalQuantity = $localeCode;
                             }
 
-                            if($condition['name'] == 'days'){
+                            if ($condition['name'] == 'time') {
+                                $totalQuantity = Carbon::now()->format('H');
+                            }
+
+                            if ($condition['name'] == 'address') {
+                                $totalQuantity = $destinationAddress;
+                            }
+
+                            if ($condition['name'] == 'day') {
                                 $day = Carbon::createFromFormat('Y-m-d', date('Y-m-d'))->format('l');
                                 $days = explode(',', $condition['value']);
 
-                                if($condition['condition'] == 'equal'){
+                                if ($condition['condition'] == 'equal') {
                                     return in_array($day, $days);
                                 } else {
                                     return !in_array($day, $days);
@@ -469,9 +353,81 @@ class ApiController extends Controller
                             return $this->checkCondition($condition, $totalQuantity);
                         }
 
-                        if($condition['label'] == 'Customer'){
-                            if($condition['name'] == "provinceCode"){
+                        if ($condition['label'] == 'Per_Product') {
+
+                            if($condition['name'] == 'quantity') {
+
+                                foreach ($items as $item) {
+                                    $totalQuantity = $item['quantity'];
+                                    $result = $this->checkCondition($condition, $totalQuantity);
+
+                                    if (!$result) {
+                                        return false; // Return false immediately if any item fails the condition
+                                    }
+                                }
+
+                                return true;
+                            }
+
+                            if($condition['name'] == 'quantity') {
+
+                                foreach ($items as $item) {
+                                    $totalQuantity = $item['grams'];
+                                    $result = $this->checkCondition($condition, $totalQuantity);
+
+                                    if (!$result) {
+                                        return false; // Return false immediately if any item fails the condition
+                                    }
+                                }
+
+                                return true;
+                            }
+
+                            return true;
+                        }
+
+                        if ($condition['label'] == 'Customer') {
+                            if ($condition['name'] == "provinceCode") {
                                 $totalQuantity = $destinationProvince;
+                            }
+
+                            return $this->checkCondition($condition, $totalQuantity);
+                        }
+
+                        if ($condition['label'] == 'Delivery') {
+
+                            if ($condition['name'] == 'dayOfWeek') {
+                                $day = Carbon::createFromFormat('Y-m-d', date('Y-m-d'))->format('l');
+                                $days = explode(',', $condition['value']);
+
+                                if ($condition['condition'] == 'equal') {
+                                    return in_array($day, $days);
+                                } else {
+                                    return !in_array($day, $days);
+                                }
+                            }
+
+                            if ($condition['name'] == 'dayIs') {
+                                $totalQuantity = Carbon::now()->format('d');
+                            }
+
+                            if ($condition['name'] == 'date') {
+                                $totalQuantity = Carbon::today()->format('d-m-Y');
+                            }
+
+                            if ($condition['name'] == 'timeIn') {
+                                $totalQuantity = Carbon::now()->format('H:i');
+                            }
+
+                            if ($condition['name'] == 'deliveryType') {
+                                $deliveryType = explode(',', $condition['value']);
+                                $day = "Shipping";
+
+                                if ($condition['condition'] == 'equal') {
+                                    return in_array($day, $deliveryType);
+                                } else {
+                                    return !in_array($day, $deliveryType);
+                                }
                             }
 
                             return $this->checkCondition($condition, $totalQuantity);
@@ -479,17 +435,17 @@ class ApiController extends Controller
                         return true;
                     });
                     break;
-                // case 2: // Any condition must be true
-                //     $conditionsMet = collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity) {
-                //         return $this->checkCondition($condition, $totalQuantity);
-                //     });
-                //     break;
+                    // case 2: // Any condition must be true
+                    //     $conditionsMet = collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity) {
+                    //         return $this->checkCondition($condition, $totalQuantity);
+                    //     });
+                    //     break;
 
-                // case 3: // All conditions must be false to return true, if any condition is true return false
-                //     $conditionsMet = !collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity) {
-                //         return $this->checkCondition($condition, $totalQuantity);
-                //     });
-                //     break;
+                    // case 3: // All conditions must be false to return true, if any condition is true return false
+                    //     $conditionsMet = !collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity) {
+                    //         return $this->checkCondition($condition, $totalQuantity);
+                    //     });
+                    //     break;
             }
 
             //Log the conditions and the result of the check

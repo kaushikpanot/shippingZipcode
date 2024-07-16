@@ -98,7 +98,6 @@ function Rate(props) {
             [key]: value,
         }));
     };
-
     const [selectedTierType, setSelectedTierType] = useState('selected');
     const [tiers, setTiers] = useState([
         { minWeight: '', maxWeight: '', basePrice: '' }
@@ -131,8 +130,6 @@ function Rate(props) {
     ];
 
     const [selectedRate, setSelectedRate] = useState('selected');
-
-
     const handleRateSelectChange = (value) => {
         setSelectedRate(value);
     };
@@ -635,7 +632,7 @@ function Rate(props) {
     const time = [
         { label: '00:00', value: '00' },
         { label: '01:00', value: '01' },
-        { label: '02:00', value: '02' },
+        { label: '02:00', value: '03' },
         { label: '03:00', value: '03' },
         { label: '04:00', value: '04' },
         { label: '05:00', value: '05' },
@@ -664,12 +661,24 @@ function Rate(props) {
         { label: 'ANY product must satisfy this conditin ', value: 'satisfy' },
         { label: 'ANY SPECIFIC product with TAg', value: 'withTag' },
     ]
+    const timeIs = [
+        { label: 'Between', value: 'between' },
+    ]
     const day = [
         { label: 'Equal', value: 'equal' },
-        { label: 'Does not equl', value: 'notEqual' },
+        { label: 'Does not equal', value: 'notequal' },
     ]
-    const timeIs = [
-        { label: 'Between', value: 'between' }
+    const address = [
+        { label: 'Contains', value: 'contains' },
+        { label: 'Does not contains', value: 'notcontains' },
+    ]
+    const name = [
+        { label: 'Equal', value: 'equal' },
+        { label: 'Does not equal', value: 'notequal' },
+        { label: 'Contains', value: 'contains' },
+        { label: 'Does not contains', value: 'notcontains' },
+        { label: 'Start with', value: 'startwith' },
+        { label: 'Does not start with ', value: 'notstartwith' },
     ]
     const quantity = [
         { label: 'ANY product must satisfy this conditin ', value: 'any' },
@@ -677,20 +686,82 @@ function Rate(props) {
         { label: 'NONE of product must satisfy this conditin ', value: 'none' },
         { label: 'ANY SPECIFIC product with TAg', value: 'anyTag' },
         { label: 'ALL SPECIFIC product with TAg', value: 'allTag' },
-    ]
-    const name = [
-        { label: 'Equal', value: 'equal' },
-        { label: 'Does not equal', value: 'notEqual' },
-        { label: 'Contains', value: 'containsss' },
-        { label: 'Does not contains', value: 'notContainss' },
-        { label: 'Starts With ', value: 'startwith' },
-        { label: 'Does not start with', value: 'notstartwith' },
-    ]
-    const address = [
-        { label: 'Contains', value: 'contains' },
-        { label: 'Does not contains', value: 'notContains' },
 
     ]
+
+    const [deliveryType, setDeliveryType] = useState({
+        local: false,
+        Store: false,
+        Shipping: false,
+
+    });
+    const [dayOfWeekSelection, setDayOfWeekSelection] = useState({
+        monday: false,
+        tuesday: false,
+        wednesday: false,
+        thursday: false,
+        friday: false,
+        saturday: false,
+        sunday: false,
+    });
+    const [items, setItems] = useState([]);
+
+    const handleCheckboxChange = useCallback((type) => {
+        setDeliveryType((prevSelection) => {
+            const updatedSelection = {
+                ...prevSelection,
+                [type]: !prevSelection[type],
+            };
+            const selectedTypes = Object.keys(updatedSelection).filter(key => updatedSelection[key]);
+            const selectedTypesString = selectedTypes.join(', ');
+            const existingItemIndex = items.findIndex(item => item.name === 'type2');
+            if (existingItemIndex !== -1) {
+                const updatedItems = [...items];
+                updatedItems[existingItemIndex] = {
+                    ...updatedItems[existingItemIndex],
+                    value: selectedTypesString,
+                };
+                setItems(updatedItems);            }
+
+            return updatedSelection;
+        });
+    }, [items]);
+
+    const handleDayCheckboxChange = useCallback((type) => {
+        setDayOfWeekSelection((prevSelection) => {
+            const updatedSelection = {
+                ...prevSelection,
+                [type]: !prevSelection[type],
+            };
+            const selectedTypes = Object.keys(updatedSelection).filter(key => updatedSelection[key]);
+            const selectedTypesString = selectedTypes.join(', ');
+            const existingItemIndex = items.findIndex(item => item.name === 'dayOfWeek');
+            if (existingItemIndex !== -1) {
+                const updatedItems = [...items];
+                updatedItems[existingItemIndex] = {
+                    ...updatedItems[existingItemIndex],
+                    value: selectedTypesString,
+                };
+                setItems(updatedItems);
+            }
+
+            return updatedSelection;
+        });
+    }, [items]);
+
+
+    const CheckboxGroup = ({ selection, onChange }) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            {Object.keys(selection).map((day) => (
+                <Checkbox
+                    key={day}
+                    label={day.charAt(0).toUpperCase() + day.slice(1)}
+                    checked={selection[day]}
+                    onChange={() => onChange(day)}
+                />
+            ))}
+        </div>
+    );
 
     const getCategory = (itemName) => {
         let categoryLabel = '';
@@ -718,7 +789,6 @@ function Rate(props) {
         { label: 'Weight', value: 'weight', unit: 'kg', mainLabel: "Cart_Order" },
         { label: 'Line Item', value: 'lineitem', mainLabel: "Cart_Order" },
         { label: 'Distance', value: 'distance', unit: 'km', mainLabel: "Cart_Order" },
-        { label: 'Address', value: 'address', mainLabel: "Cart_Order" },
         { label: 'Day', value: 'day', mainLabel: "Cart_Order" },
         { label: 'Time', value: 'time', mainLabel: "Cart_Order" },
         { label: 'Local Code', value: 'localcode', mainLabel: "Cart_Order" },
@@ -757,109 +827,32 @@ function Rate(props) {
         { label: 'Type', value: 'type2', mainLabel: "Delivery" }
     ];
 
-
-    const [deliveryType, setDeliveryType] = useState({
-        Local: false,
-        Store: false,
-        Shipping: false,
-    });
-
-    const [dayOfWeekSelection, setDayOfWeekSelection] = useState({
-        Monday: false,
-        Tuesday: false,
-        Wednesday: false,
-        Thursday: false,
-        Friday: false,
-        Saturday: false,
-        Sunday: false,
-    });
-
-    const [settings, setSettings] = useState({
-        lineItem: 'satisfy',
-        textBoxValue: '',
-        time1: '00',
-        time2: '00',
-        per_product: 'any',
-        DeliveryType: [],
-        Day: []
-    });
-    const [items, setItems] = useState([]);
- 
-
-    const handledayCheckboxChange = useCallback((day) => {
-        setDayOfWeekSelection((prevSelection) => ({
-            ...prevSelection,
-            [day]: !prevSelection[day],
-        }));
-    }, []);
-
-    const handletypeCheckboxChange = useCallback((type) => {
-        setDeliveryType((prevSelection) => ({
-            ...prevSelection,
-            [type]: !prevSelection[type],
-        }));
-    }, []);
-
-   console.log('item that is added :',items)
- useEffect(() => {
-    const selectedTypes = Object.keys(deliveryType).filter(type => deliveryType[type]);
-    const selectedDay = Object.keys(dayOfWeekSelection).filter(type => dayOfWeekSelection[type]);
-
-    console.log('Selected types:', selectedTypes);
-    console.log('Selected days:', selectedDay);
-
-}, [deliveryType, dayOfWeekSelection]);
-
-    
     const handleAddItem = () => {
-        const selectedTypes = Object.keys(deliveryType).filter(type => deliveryType[type]);
-        const selectedDay = Object.keys(dayOfWeekSelection).filter(type => dayOfWeekSelection[type]);
-    
         const newItem = {
             name: 'quantity',
             condition: 'equal',
-            value: selectedTypes.join(', '), 
-            value2: selectedDay.join(', '),
+            value: '',
+            value2: '',
             unit: '',
-            label: 'Cart_Order',
-            // others: settings, 
-    
+            label: 'cart_order',
+            lineItem: 'satisfy',
+            textBoxValue: '',
+            time1: '00',
+            time2: '00',
+            per_product: 'any',
+            date : dates.date
         };
-    
         setItems(prevItems => [...prevItems, newItem]);
     };
-    
 
-    
-    
-    const CheckboxGroup = ({ selection, onChange }) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {Object.keys(selection).map((day) => (
-                <Checkbox
-                    key={day}
-                    label={day.charAt(0).toUpperCase() + day.slice(1)}
-                    checked={selection[day]}
-                    onChange={() => onChange(day)}
-                />
-            ))}
-        </div>
-    );
+    console.l
 
     const handleConditionsChange = useCallback((field) => (value) => {
-        setItems(prevItems => prevItems.map((item, index) => {
-            if (index === field) {
-                return { ...item, condition: value };
-            }
-            return item;
-        }));
-
-        setSettings(prevSettings => ({
-            ...prevSettings,
+        setItems((prevState) => ({
+            ...prevState,
             [field]: value,
         }));
     }, []);
-
-
     const handleSelectChange = (index, newValue, isSecondSelect) => {
         const selectedOption = validations.find(option => option.value === newValue) || {};
         const updatedItem = {
@@ -914,6 +907,7 @@ function Rate(props) {
         fetchProducts()
     }, []);
 
+
     const [rate_based_on_surcharge, Setrate_based_on_surcharge] = useState({
         charge_per_wight: '',
         unit_for: '',
@@ -945,8 +939,8 @@ function Rate(props) {
             update_price_type: checkstate.selectedByUpdatePriceType,
             update_price_effect: checkstate.selectedByUpdatePriceEffect
         }));
-
     }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect]);
+
 
     const [exclude_Rate, SetExclude_Rate] = useState({
         set_exclude_products: selectedRate,
@@ -1111,7 +1105,6 @@ function Rate(props) {
             }
         }
 
-
         if (
             (selectedRate === 'product_vendor' ||
                 selectedRate === 'product_sku' ||
@@ -1142,11 +1135,11 @@ function Rate(props) {
             });
         }
 
-        // if (items.length > 0) {
-        //     items.forEach((item, index) => {
-        //         if (!item.value) newErrors[`value${index}`] = `Value for Item ${index + 1} is required`;
-        //     });
-        // }
+        if (items.length > 0) {
+            items.forEach((item, index) => {
+                if (!item.value) newErrors[`value${index}`] = `Value for Item  is required`;
+            });
+        }
 
         if (checkstate.selectedStateCondition !== 'All' && selectedOptions.length === 0) {
             newErrors.selectedOptions = 'Please select at least one country.';
@@ -1162,12 +1155,7 @@ function Rate(props) {
                 newErrors.unit_for = 'The unit field is required.';
             }
         }
-        if (checkstate.selectedByCart === 'Vendor' || checkstate.selectedByCart === 'Tag' || checkstate.selectedByCart === 'Type' || checkstate.selectedByCart === 'SKU' || checkstate.selectedByCart === 'Collection' || checkstate.selectedByCart === 'Metafields') {
 
-            if (!rate_based_on_surcharge.descriptions) {
-                newErrors.descriptions = 'The field is required.';
-            }
-        }
 
 
         if (Object.keys(newErrors).length > 0) {
@@ -1183,7 +1171,7 @@ function Rate(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
-            console.log(formData)
+
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -1423,194 +1411,198 @@ function Rate(props) {
                                                         </div>
                                                     </Grid.Cell>
                                                     <Grid.Cell columnSpan={{ xs: 10, sm: 9, md: 9, lg: 10, xl: 10 }}>
+                                                        <div>
+                                                            <div className='conditions' style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '5%',
+                                                                marginTop: "2%",
+                                                                marginBottom: "2%"
 
-                                                        <div className='conditions' style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '3%',
-                                                            marginTop: "2%",
-                                                            marginBottom: "2%"
-
-                                                        }}>
-                                                            <Select
-                                                                options={validations}
-                                                                onChange={(newValue) => handleSelectChange(index, newValue, false)}
-                                                                value={item.name}
-                                                            />
-
-                                                            {item.name !== 'address' && item.name !== 'time' && item.name !== 'localcode' && item.name !== 'day' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'name2' && item.name !== 'email' && item.name !== 'phone' && item.name !== 'company' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'city' && item.name !== 'address2' && item.name !== 'provinceCode' && item.name !== 'tag2' && item.name !== 'dayOfWeek' && item.name !== 'dayIs' && item.name !== 'timeIn' && item.name !== 'type2' && (
+                                                            }}>
                                                                 <Select
-                                                                    options={option}
-                                                                    onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                                    value={item.condition}
+                                                                    options={validations}
+                                                                    onChange={(newValue) => handleSelectChange(index, newValue, false)}
+                                                                    value={item.name}
                                                                 />
-                                                            )}
 
-                                                            {(item.name === 'address' || item.name === 'address' || item.name === 'timeIn') && (
-                                                                <Select
-                                                                    options={address}
-                                                                    onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                                    value={item.condition}
-                                                                />
-                                                            )}
-
-                                                            {item.name === 'time' && (
-                                                                <Select
-                                                                    options={timeIs}
-                                                                    onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                                    value={item.condition}
-                                                                />
-                                                            )}
-
-                                                            {(item.name === 'localcode' || item.name === 'day' || item.name === 'provinceCode' || item.name === 'dayOfWeek' || item.name === 'dayIs' || item.name === 'type2') && (
-                                                                <Select
-                                                                    options={day}
-                                                                    onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                                    value={item.condition}
-                                                                />
-                                                            )}
-
-                                                            {(item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties' || item.name === 'name2' || item.name === 'email' || item.name === 'phone' || item.name === 'company' || item.name === 'addrss1' || item.name === 'address2' || item.name === 'city' || item.name === 'tag2') && (
-                                                                <Select
-                                                                    options={name}
-                                                                    onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                                    value={item.condition}
-                                                                />
-                                                            )}
-
-
-
-                                                            {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && (
-                                                                <TextField
-                                                                    value={item.value}
-                                                                    onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
-                                                                    autoComplete="off"
-                                                                    suffix={item.unit ? item.unit : ''}
-                                                                />
-                                                            )}
-                                                            {item.condition === 'between' && (
-                                                                <TextField
-                                                                    value={item.value2}
-                                                                    onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
-                                                                    autoComplete="off"
-                                                                    suffix={item.unit ? item.unit : ''}
-                                                                />
-                                                            )}
-                                                            {item.name === 'dayIs' && (
-                                                                <TextField
-                                                                    value={item.deliverydays}
-                                                                    onChange={(newValue) => handleConditionChange(newValue, index, 'deliverydays')}
-                                                                    autoComplete="off"
-                                                                    suffix={item.unit ? item.unit : ''}
-                                                                    placeholder='Delivery X days from today is'
-                                                                />
-                                                            )}
-
-                                                            {item.name === 'time' && (
-                                                                <div style={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    gap: '10%',
-                                                                }}>
+                                                                {item.name !== 'day' && item.name !== 'localcode' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'time' && item.name !== 'name2' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'address' && item.name !== 'address' &&  item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'tag2' && item.name !== 'dayIs' && item.name !== 'type2' && item.name !== 'timeIn' &&  item.name !== 'dayOfWeek' &&  item.name !== 'company' && item.name !== 'phone' && item.name !== 'email' &&(
                                                                     <Select
-                                                                        options={time}
-                                                                        onChange={handleConditionsChange('time1')}
-                                                                        value={settings.time1}
+                                                                        options={option}
+                                                                        onChange={(newValue) => handleSelectChange(index, newValue, true)}
+                                                                        value={item.condition}
                                                                     />
+                                                                )}
+
+                                                                {(item.name === 'day' || item.name === 'localcode' || item.name === 'provinceCode' || item.name === 'dayOfWeek' || item.name === 'dayIs' || item.name === 'type2') && (
                                                                     <Select
-                                                                        options={time}
-                                                                        onChange={handleConditionsChange('time2')}
-                                                                        value={settings.time2}
+                                                                        options={day}
+                                                                        onChange={(newValue) => handleSelectChange(index, newValue, true)}
+                                                                        value={item.condition}
                                                                     />
-                                                                </div>
-                                                            )}
-                                                            {(item.name === 'day' || item.name === 'dayOfWeek') && (
-                                                                <CheckboxGroup
-                                                                    selection={dayOfWeekSelection}
-                                                                    onChange={handledayCheckboxChange}
-                                                                />
-                                                            )}
-                                                            {item.name === 'date' && (
-                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                                )}
+
+                                                                {(item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties' || item.name === 'name2' || item.name === 'email' || item.name === 'phone' || item.name === 'company' || item.name === 'addrss1' || item.name === 'address2' || item.name === 'city'|| item.name === 'tag2' ) && (
+                                                                    <Select
+                                                                        options={name}
+                                                                        onChange={(newValue) => handleSelectChange(index, newValue, true)}
+                                                                        value={item.condition}
+                                                                    />
+                                                                )}
+
+                                                                {item.name === 'time' && (
+                                                                    <Select
+                                                                        options={timeIs}
+                                                                        onChange={(newValue) => handleSelectChange(index, newValue, true)}
+                                                                        value={item.condition}
+                                                                    />
+                                                                )}
+
+                                                                 {(item.name === 'address' ||  item.name === 'timeIn') && (
+                                                                    <Select
+                                                                        options={address}
+                                                                        onChange={(newValue) => handleSelectChange(index, newValue, true)}
+                                                                        value={item.condition}
+                                                                    />
+                                                                )}
+
+                                                                {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && (
                                                                     <TextField
-                                                                        value={dates.date}
-                                                                        onChange={(value) => handleDateChange('date', value)}
-                                                                        type="date"
+                                                                        value={item.value}
+                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
+                                                                        autoComplete="off"
+                                                                        suffix={item.unit ? item.unit : ''}
+                                                                        error={errors[`value${index}`]}
                                                                     />
-                                                                </div>
-                                                            )}
-                                                            {item.name === 'type2' && (
-                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                                                    <Checkbox
-                                                                        label="Local Delivery"
-                                                                        checked={deliveryType.Local}
-                                                                        onChange={() => handletypeCheckboxChange('local')}
+                                                                )}
+                                                                {item.condition === 'between' && (
+                                                                    <TextField
+                                                                        value={item.value2}
+                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
+                                                                        autoComplete="off"
+                                                                        suffix={item.unit ? item.unit : ''}
                                                                     />
-                                                                    <Checkbox
-                                                                        label="Store Pickup"
-                                                                        checked={deliveryType.Store}
-                                                                        onChange={() => handletypeCheckboxChange('Store')}
+                                                                )}
+                                                                {item.name === 'dayIs' && (
+                                                                    <TextField
+                                                                        // value={item.value2}
+                                                                        // onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
+                                                                        autoComplete="off"
+                                                                        suffix={item.unit ? item.unit : ''}
+                                                                        placeholder='Delivery X days from today is'
                                                                     />
-                                                                    <Checkbox
-                                                                        label="Shipping"
-                                                                        checked={deliveryType.Shipping}
-                                                                        onChange={() => handletypeCheckboxChange('Shipping')}
+                                                                )}
+
+                                                                {item.name === 'time' && (
+                                                                    <div style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '10%',
+                                                                    }}>
+                                                                        <Select
+                                                                            options={time}
+                                                                            onChange={handleConditionsChange('time1')}
+                                                                            value={item.time1}
+                                                                        />
+                                                                        <Select
+                                                                            options={time}
+                                                                            onChange={handleConditionsChange('time2')}
+                                                                            value={item}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                                {(item.name === 'day' || item.name === 'dayOfWeek') && (
+                                                                    <CheckboxGroup
+                                                                        selection={dayOfWeekSelection}
+                                                                        onChange={handleDayCheckboxChange}
                                                                     />
+                                                                )}
+                                                                {item.name === 'date' && (
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
 
-                                                                </div>
-                                                            )}
-                                                            {items.length > 1 && (
-                                                                <Button
-                                                                    icon={DeleteIcon}
-                                                                    variant='primary'
-                                                                    tone="critical"
-                                                                    accessibilityLabel="Delete item"
-                                                                    onClick={() => handleDeleteItem(index)}
-                                                                />
-                                                            )}
+                                                                       
+                                                                        <TextField
+                                                                            value={dates.date}
+                                                                            onChange={(value) => handleDateChange('date', value)}
+                                                                            type="date"
+                                                                        />
+                                                                      
+                                                                    </div>
+                                                                )}
+                                                                {item.name === 'type2' && (
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                                        <Checkbox
+                                                                            label="Local Delivery"
+                                                                            checked={deliveryType.local}
+                                                                            onChange={() => handleCheckboxChange('local')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Store Pickup"
+                                                                            checked={deliveryType.Store}
+                                                                            onChange={() => handleCheckboxChange('Store')}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Shipping"
+                                                                            checked={deliveryType.Shipping}
+                                                                            onChange={() => handleCheckboxChange('Shipping')}
+                                                                        />
 
-                                                        </div>
-                                                        <div style={{
-                                                            // display: 'flex',
-                                                            // alignItems: 'center',
-                                                            // gap: '3%',
-                                                            marginBottom: "2%"
+                                                                    </div>
+                                                                )}
+                                                                {items.length > 1 && (
+                                                                    <Button
+                                                                        icon={DeleteIcon}
+                                                                        variant='primary'
+                                                                        tone="critical"
+                                                                        accessibilityLabel="Delete item"
+                                                                        onClick={() => handleDeleteItem(index)}
+                                                                    />
+                                                                )}
 
-
-                                                        }}>
-                                                            {item.name === 'lineitem' && (
-                                                                <Select
-                                                                    options={lineItem}
-                                                                    onChange={handleConditionsChange('lineItem')}
-                                                                    value={settings.lineItem}
-                                                                />
-                                                            )}
-                                                            {settings.lineItem === 'withTag' && (
-                                                                <TextField
-
-                                                                    value={settings.textBoxValue}
-                                                                    onChange={handleConditionsChange('textBoxValue')}
-                                                                    placeholder='tag1,tag2,tag3'
-                                                                />
-                                                            )}
-                                                        </div>
-                                                        {(item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2' || item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties') && (
-                                                            <div style={{ marginBottom: "2%" }}>
-
-                                                                <Select
-                                                                    options={quantity}
-                                                                    onChange={handleConditionsChange('per_product')}
-                                                                    value={settings.per_product}
-                                                                />
                                                             </div>
-                                                        )}
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '3%',
+                                                                marginBottom: "2%"
+
+
+                                                            }}>
+                                                                {item.name === 'lineitem' && (
+                                                                    <Select
+                                                                        options={lineItem}
+                                                                        onChange={handleConditionsChange('lineItem')}
+                                                                        value={item.lineItem}
+                                                                    />
+                                                                )}
+                                                                {/* {item.lineItem === 'withTag' && (
+                                                                    <TextField
+
+                                                                        value={item.textBoxValue}
+                                                                        onChange={handleConditionsChange('textBoxValue')}
+                                                                        placeholder='tag1,tag2,tag3'
+                                                                    />
+                                                                )} */}
+                                                            </div>
+                                                            {(item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2' || item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties') && (
+                                                                <div style={{ marginBottom: "2%" }}>
+
+                                                                    <Select
+                                                                        options={quantity}
+                                                                        onChange={handleConditionsChange('per_product')}
+                                                                        value={item.per_product}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </Grid.Cell>
                                                 </Grid>
                                                 <Divider borderColor="border" />
                                             </div>
                                         ))}
-
                                     </div>
+
+
 
                                     <div style={{ marginTop: "2%" }}>
                                         <Button
@@ -2312,8 +2304,6 @@ function Rate(props) {
 
                                                             value={rate_based_on_surcharge.descriptions}
                                                             onChange={handleRateFormChange('descriptions')}
-                                                            error={errors.descriptions}
-
                                                         />
                                                     </div>
 
@@ -2332,7 +2322,6 @@ function Rate(props) {
                     </Grid.Cell>
                 </Grid>
             </div>
-
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
@@ -2426,7 +2415,6 @@ function Rate(props) {
                 </Grid>
 
             </div>
-
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>

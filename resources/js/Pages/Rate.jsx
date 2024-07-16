@@ -122,7 +122,7 @@ function Rate(props) {
     };
 
     const tierOptions = [
-        { label: 'Select Tier Type', value: 'selected' },
+        { label: 'Select Tier Type' },
         { label: 'Order Price', value: 'order_price' },
         { label: 'Order Weight', value: 'order_weight' },
         { label: 'Order Quantity', value: 'order_quantity' },
@@ -721,7 +721,8 @@ function Rate(props) {
                     ...updatedItems[existingItemIndex],
                     value: selectedTypesString,
                 };
-                setItems(updatedItems);            }
+                setItems(updatedItems);
+            }
 
             return updatedSelection;
         });
@@ -733,6 +734,7 @@ function Rate(props) {
                 ...prevSelection,
                 [type]: !prevSelection[type],
             };
+            console.log(type)
             const selectedTypes = Object.keys(updatedSelection).filter(key => updatedSelection[key]);
             const selectedTypesString = selectedTypes.join(', ');
             const existingItemIndex = items.findIndex(item => item.name === 'dayOfWeek');
@@ -747,6 +749,9 @@ function Rate(props) {
 
             return updatedSelection;
         });
+
+        // setDayOfWeekSelection({});
+
     }, [items]);
 
 
@@ -840,19 +845,24 @@ function Rate(props) {
             time1: '00',
             time2: '00',
             per_product: 'any',
-            date : dates.date
+            date: dates.date
         };
         setItems(prevItems => [...prevItems, newItem]);
+
+        // setDayOfWeekSelection({});
     };
 
-    console.l
-
-    const handleConditionsChange = useCallback((field) => (value) => {
-        setItems((prevState) => ({
-            ...prevState,
-            [field]: value,
-        }));
+    const handleConditionsChange = useCallback((index, field) => (value) => {
+        setItems((prevState) => {
+            const updatedItems = [...prevState];
+            updatedItems[index] = {
+                ...updatedItems[index],
+                [field]: value,
+            };
+            return updatedItems;
+        });
     }, []);
+
     const handleSelectChange = (index, newValue, isSecondSelect) => {
         const selectedOption = validations.find(option => option.value === newValue) || {};
         const updatedItem = {
@@ -887,9 +897,11 @@ function Rate(props) {
         const updatedItems = items.filter((item, i) => i !== index);
         setItems(updatedItems);
     };
+
     const BacktoZone = (zone_id) => {
         navigate(`/Zone/${zone_id}`);
     };
+
     useEffect(() => {
         app = createApp({
             apiKey: SHOPIFY_API_KEY,
@@ -1115,7 +1127,7 @@ function Rate(props) {
             newErrors.exclude_products_textbox = 'Exclude products field is required';
         }
 
-        if (tiers.length > 0) {
+        if (selectedTierType !== 'selected') {
             tiers.forEach((tier, index) => {
                 if (!tier.minWeight)
                     newErrors[`minWeight${index}`] = `Minimum weight for Tier ${index + 1} is required`;
@@ -1125,7 +1137,7 @@ function Rate(props) {
                     newErrors[`basePrice${index}`] = `Base price for Tier ${index + 1} is required`;
             });
         }
-
+       
         if (rateModifiers.length > 0) {
             rateModifiers.forEach((modifier, index) => {
                 if (!modifier.name)
@@ -1147,6 +1159,9 @@ function Rate(props) {
         if (checkstate.selectedZipCondition !== 'All' && !zipcodeValue) {
             newErrors.zipcodeValue = 'The zipcodes field is required.';
         }
+
+
+        if (checkedState.checked1) {
         if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
             if (!rate_based_on_surcharge.charge_per_wight) {
                 newErrors.charge_per_wight = 'The charge field is required.';
@@ -1155,12 +1170,14 @@ function Rate(props) {
                 newErrors.unit_for = 'The unit field is required.';
             }
         }
+    }
 
 
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             setToastContent('Sorry. Couldn’t be saved. Please try again.');
+            console.log(newErrors)
             setErroToast(true);
             return;
         }
@@ -1426,7 +1443,7 @@ function Rate(props) {
                                                                     value={item.name}
                                                                 />
 
-                                                                {item.name !== 'day' && item.name !== 'localcode' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'time' && item.name !== 'name2' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'address' && item.name !== 'address' &&  item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'tag2' && item.name !== 'dayIs' && item.name !== 'type2' && item.name !== 'timeIn' &&  item.name !== 'dayOfWeek' &&  item.name !== 'company' && item.name !== 'phone' && item.name !== 'email' &&(
+                                                                {item.name !== 'day' && item.name !== 'localcode' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'time' && item.name !== 'name2' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'address' && item.name !== 'address' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'tag2' && item.name !== 'dayIs' && item.name !== 'type2' && item.name !== 'timeIn' && item.name !== 'dayOfWeek' && item.name !== 'company' && item.name !== 'phone' && item.name !== 'email' && (
                                                                     <Select
                                                                         options={option}
                                                                         onChange={(newValue) => handleSelectChange(index, newValue, true)}
@@ -1442,7 +1459,7 @@ function Rate(props) {
                                                                     />
                                                                 )}
 
-                                                                {(item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties' || item.name === 'name2' || item.name === 'email' || item.name === 'phone' || item.name === 'company' || item.name === 'addrss1' || item.name === 'address2' || item.name === 'city'|| item.name === 'tag2' ) && (
+                                                                {(item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties' || item.name === 'name2' || item.name === 'email' || item.name === 'phone' || item.name === 'company' || item.name === 'addrss1' || item.name === 'address2' || item.name === 'city' || item.name === 'tag2') && (
                                                                     <Select
                                                                         options={name}
                                                                         onChange={(newValue) => handleSelectChange(index, newValue, true)}
@@ -1458,7 +1475,7 @@ function Rate(props) {
                                                                     />
                                                                 )}
 
-                                                                 {(item.name === 'address' ||  item.name === 'timeIn') && (
+                                                                {(item.name === 'address' || item.name === 'timeIn') && (
                                                                     <Select
                                                                         options={address}
                                                                         onChange={(newValue) => handleSelectChange(index, newValue, true)}
@@ -1507,7 +1524,7 @@ function Rate(props) {
                                                                         <Select
                                                                             options={time}
                                                                             onChange={handleConditionsChange('time2')}
-                                                                            value={item}
+                                                                            value={item.time2}
                                                                         />
                                                                     </div>
                                                                 )}
@@ -1520,13 +1537,13 @@ function Rate(props) {
                                                                 {item.name === 'date' && (
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
 
-                                                                       
+
                                                                         <TextField
                                                                             value={dates.date}
                                                                             onChange={(value) => handleDateChange('date', value)}
                                                                             type="date"
                                                                         />
-                                                                      
+
                                                                     </div>
                                                                 )}
                                                                 {item.name === 'type2' && (

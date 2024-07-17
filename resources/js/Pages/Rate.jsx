@@ -689,12 +689,13 @@ function Rate(props) {
 
     ]
 
-    const [deliveryType, setDeliveryType] = useState({
+    const [deliveryType, setDeliveryType] = useState([{
+        id: 0,
         local: false,
         Store: false,
         Shipping: false,
 
-    });
+    }]);
     const [dayOfWeekSelection, setDayOfWeekSelection] = useState({
         monday: false,
         tuesday: false,
@@ -705,27 +706,18 @@ function Rate(props) {
         sunday: false,
     });
     const [items, setItems] = useState([]);
+    // console.log(items)
 
-    const handleCheckboxChange = useCallback((type) => {
-        setDeliveryType((prevSelection) => {
-            const updatedSelection = {
-                ...prevSelection,
-                [type]: !prevSelection[type],
+    const handleCheckboxChange = useCallback((type, index) => {
+        setDeliveryType((prevState) => {
+            const updatedItems = [...prevState];
+            updatedItems[index] = {
+                ...updatedItems[index],
+                [type]: !updatedItems[index][type],
             };
-            const selectedTypes = Object.keys(updatedSelection).filter(key => updatedSelection[key]);
-            const selectedTypesString = selectedTypes.join(', ');
-            const existingItemIndex = items.findIndex(item => item.name === 'type2');
-            if (existingItemIndex !== -1) {
-                const updatedItems = [...items];
-                updatedItems[existingItemIndex] = {
-                    ...updatedItems[existingItemIndex],
-                    value: selectedTypesString,
-                };
-                setItems(updatedItems);
-            }
-
-            return updatedSelection;
+            return updatedItems;
         });
+
     }, [items]);
 
     const handleDayCheckboxChange = useCallback((type) => {
@@ -734,7 +726,6 @@ function Rate(props) {
                 ...prevSelection,
                 [type]: !prevSelection[type],
             };
-            console.log(type)
             const selectedTypes = Object.keys(updatedSelection).filter(key => updatedSelection[key]);
             const selectedTypesString = selectedTypes.join(', ');
             const existingItemIndex = items.findIndex(item => item.name === 'dayOfWeek');
@@ -750,10 +741,9 @@ function Rate(props) {
             return updatedSelection;
         });
 
-        // setDayOfWeekSelection({});
+
 
     }, [items]);
-
 
     const CheckboxGroup = ({ selection, onChange }) => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
@@ -866,6 +856,22 @@ function Rate(props) {
 
     const handleSelectChange = (index, newValue, isSecondSelect) => {
         const selectedOption = validations.find(option => option.value === newValue) || {};
+        if (newValue === 'type2') {
+            setDeliveryType((prevState) => {
+                const updatedItems = [...prevState];
+                updatedItems[index] = {
+                    id: index,
+                    local: false,
+                    Store: false,
+                    Shipping: false,
+                };
+                updatedItems[index] = {
+                    ...updatedItems[index],
+                };
+
+                return updatedItems;
+            });
+        }
         const updatedItem = {
             ...items[index],
             name: isSecondSelect ? items[index].name : newValue,
@@ -1138,7 +1144,7 @@ function Rate(props) {
                     newErrors[`basePrice${index}`] = `Base price for Tier ${index + 1} is required`;
             });
         }
-       
+
         if (rateModifiers.length > 0) {
             rateModifiers.forEach((modifier, index) => {
                 if (!modifier.name)
@@ -1148,11 +1154,11 @@ function Rate(props) {
             });
         }
 
-        if (items.length > 0) {
-            items.forEach((item, index) => {
-                if (!item.value) newErrors[`value${index}`] = `Value for Item  is required`;
-            });
-        }
+        // if (items.length > 0) {
+        //     items.forEach((item, index) => {
+        //         if (!item.value) newErrors[`value${index}`] = `Value for Item  is required`;
+        //     });
+        // }
 
         if (checkstate.selectedStateCondition !== 'All' && selectedOptions.length === 0) {
             newErrors.selectedOptions = 'Please select at least one country.';
@@ -1163,15 +1169,15 @@ function Rate(props) {
 
 
         if (checkedState.checked1) {
-        if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
-            if (!rate_based_on_surcharge.charge_per_wight) {
-                newErrors.charge_per_wight = 'The charge field is required.';
-            }
-            if (!rate_based_on_surcharge.unit_for) {
-                newErrors.unit_for = 'The unit field is required.';
+            if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
+                if (!rate_based_on_surcharge.charge_per_wight) {
+                    newErrors.charge_per_wight = 'The charge field is required.';
+                }
+                if (!rate_based_on_surcharge.unit_for) {
+                    newErrors.unit_for = 'The unit field is required.';
+                }
             }
         }
-    }
 
 
 
@@ -1506,10 +1512,9 @@ function Rate(props) {
                                                                 )}
                                                                 {item.name === 'dayIs' && (
                                                                     <TextField
-                                                                        // value={item.value2}
-                                                                        // onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
+                                                                        value={item.value}
+                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
                                                                         autoComplete="off"
-                                                                        suffix={item.unit ? item.unit : ''}
                                                                         placeholder='Delivery X days from today is'
                                                                     />
                                                                 )}
@@ -1540,32 +1545,38 @@ function Rate(props) {
                                                                 )}
                                                                 {item.name === 'date' && (
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-
-
                                                                         <TextField
                                                                             value={dates.date}
                                                                             onChange={(value) => handleDateChange('date', value)}
                                                                             type="date"
                                                                         />
-
                                                                     </div>
                                                                 )}
+                                                                {/* {item.name === 'date' && (
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                                        <TextField
+                                                                            value={dates.date}
+                                                                            onChange={(value) => handleDateChange('date', value)}
+                                                                            type="date"
+                                                                        />
+                                                                    </div>
+                                                                )} */}
                                                                 {item.name === 'type2' && (
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                                                         <Checkbox
                                                                             label="Local Delivery"
-                                                                            checked={deliveryType.local}
-                                                                            onChange={() => handleCheckboxChange('local')}
+                                                                            checked={deliveryType[index].local}
+                                                                            onChange={() => handleCheckboxChange('local', index)}
                                                                         />
                                                                         <Checkbox
                                                                             label="Store Pickup"
-                                                                            checked={deliveryType.Store}
-                                                                            onChange={() => handleCheckboxChange('Store')}
+                                                                            checked={deliveryType[index].Store}
+                                                                            onChange={() => handleCheckboxChange('Store', index)}
                                                                         />
                                                                         <Checkbox
                                                                             label="Shipping"
-                                                                            checked={deliveryType.Shipping}
-                                                                            onChange={() => handleCheckboxChange('Shipping')}
+                                                                            checked={deliveryType[index].Shipping}
+                                                                            onChange={() => handleCheckboxChange('Shipping', index)}
                                                                         />
 
                                                                     </div>
@@ -1609,8 +1620,9 @@ function Rate(props) {
                                                                 <div style={{ marginBottom: "2%" }}>
 
                                                                     <Select
+                                                                        key={index}
                                                                         options={quantity}
-                                                                        onChange={handleConditionsChange('per_product')}
+                                                                        onChange={handleConditionsChange(index, 'per_product')}
                                                                         value={item.per_product}
                                                                     />
                                                                 </div>

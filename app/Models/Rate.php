@@ -21,25 +21,25 @@ class Rate extends Model
     ];
 
     // List of possible date formats
-    // protected $dateFormats = [
-    //     'd-m-Y h:i A',
-    //     'd/m/Y h:i A',
-    //     'Y-m-d H:i:s',
-    //     'Y/m/d H:i:s',
-    //     'Y-m-d h:i A',
-    //     'Y/m/d h:i A',
-    //     'Y-m-d',
-    //     'Y/m/d',
-    //     'd-m-Y',
-    //     'd/m/Y',
-    // ];
-
     protected $dateFormats = [
-        'd/m/Y',
+        'd-m-Y h:i A',
+        'd/m/Y h:i A',
+        'Y-m-d H:i:s',
+        'Y/m/d H:i:s',
+        'Y-m-d h:i A',
+        'Y/m/d h:i A',
         'Y-m-d',
         'Y/m/d',
-        'd-m-Y'
+        'd-m-Y',
+        'd/m/Y',
     ];
+
+    // protected $dateFormats = [
+    //     'd/m/Y',
+    //     'Y-m-d',
+    //     'Y/m/d',
+    //     'd-m-Y'
+    // ];
 
     public function zone()
     {

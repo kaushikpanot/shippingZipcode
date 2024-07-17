@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\DistanceHelper;
 use App\Models\Rate;
 use App\Models\RateZipcode;
 use App\Models\Setting;
@@ -264,13 +265,13 @@ class ApiController extends Controller
                     break;
             }
 
-            Log::info('Query logs:', [
-                'totalQuantity' => $totalQuantity,
-                'condition' => $condition['condition'],
-                'condition_value' => $condition['value'],
-                'condition_value2' => $condition['value2'] ?? null,
-                'result' => $result
-            ]);
+            // Log::info('Query logs:', [
+            //     'totalQuantity' => $totalQuantity,
+            //     'condition' => $condition['condition'],
+            //     'condition_value' => $condition['value'],
+            //     'condition_value2' => $condition['value2'] ?? null,
+            //     'result' => $result
+            // ]);
 
             return $result;
         }
@@ -278,52 +279,71 @@ class ApiController extends Controller
         return false; // Return false if condition is not properly set
     }
 
-    private function checkOtherCondition($condition, $totalQuantity)
+    /**
+     * Fetches data from Shopify product API.
+     *
+     * @param array $userData User data containing credentials and shop info
+     * @param int $productId The product ID to fetch data for
+     * @param string $field The specific field to retrieve from the product data
+     * @return mixed The requested product field data
+     */
+    private function fetchShopifyProductData($userData, $productId, $field)
     {
-        if (isset($condition['condition'])) {
+        $restEndpoint = "https://{$userData['name']}/admin/api/2024-01/products/{$productId}.json";
+        $customHeaders = ['X-Shopify-Access-Token' => $userData['password']];
+        $response = Http::withHeaders($customHeaders)->get($restEndpoint);
+        return $response->json('product')[$field];
+    }
+
+    private function checkOtherCondition($array, $condition)
+    {
+        // $tags
+        if (isset($condition) && is_array($array)) {
             $result = false;
 
-            switch ($condition['condition']) {
+            switch ($condition['per_product']) {
                 case 'any':
-                    $result = $totalQuantity == $condition['value'];
+                    // ANY product must satisfy this condition
+                    $result = in_array(true, $array);
                     break;
                 case 'all':
-                    $result = $totalQuantity != $condition['value'];
+                    // ALL products must satisfy this condition
+                    $result = !in_array(false, $array);
                     break;
                 case 'none':
-                    $result = $totalQuantity >= $condition['value'];
+                    // NONE of the products must satisfy this condition
+                    $result = !in_array(true, $array);
                     break;
                 case 'anyTag':
                     $result = $totalQuantity <= $condition['value'];
                     break;
-                case 'allTag':
-                    $result = $totalQuantity >= $condition['value'] && $totalQuantity <= $condition['value2'];
-                    break;
+                    // case 'allTag':
+                    //     $result = $totalQuantity >= $condition['value'] && $totalQuantity <= $condition['value2'];
+                    //     break;
             }
 
             Log::info('Query logs:', [
-                'totalQuantity' => $totalQuantity,
-                'condition' => $condition['condition'],
-                'condition_value' => $condition['value'],
-                'condition_value2' => $condition['value2'] ?? null,
+                'condition' => $array,
+                'condition1' => $condition,
                 'result' => $result
             ]);
 
             return $result;
         }
 
-        return false; // Return false if condition is not properly set
+        return false; // Return false if condition is not properly set or if $array is not an array
     }
+
 
     public function handleCallback(Request $request)
     {
         $input = $request->input();
-        // Log::info('Query logs:', ['totalQuantity' => $request->all()]);
+        //  Log::info('Query logs:', ['totalQuantity' => $request->all()]);
         $shopDomain = $request->header();
 
-        $originCompanyName = $shopDomain['x-shopify-shop-domain'][0];
+        $companyName = $shopDomain['x-shopify-shop-domain'][0];
 
-        $originCountryName = $input['rate']['origin']['country'];
+        $destinationCountryName = $input['rate']['destination']['country'];
 
         $items = $input['rate']['items'];
 
@@ -342,12 +362,25 @@ class ApiController extends Controller
 
         $totalPriceFormatted = number_format($totalPrice, 2);
 
+        $latitudeFrom = $input['rate']['origin']['latitude'];
+        $longitudeFrom = $input['rate']['origin']['longitude'];
+        $latitudeTo = $input['rate']['destination']['latitude'];
+        $longitudeTo = $input['rate']['destination']['longitude'];
+
+        $distance = DistanceHelper::haversineGreatCircleDistance(
+            $latitudeFrom,
+            $longitudeFrom,
+            $latitudeTo,
+            $longitudeTo
+        );
+
         $destinationZipcode = $input['rate']['destination']['postal_code'];
         $destinationData = $input['rate']['destination'];
         $originData = $input['rate']['origin'];
         $destinationAddress = $input['rate']['destination']['address1'] . " " . $input['rate']['destination']['address2'];
 
-        $userId = User::where('name', $originCompanyName)->value('id');
+        $userData = User::where('name', $companyName)->first();
+        $userId = $userData->id;
 
         $setting = Setting::where('user_id', $userId)->first();
         $response = [];
@@ -356,13 +389,13 @@ class ApiController extends Controller
             return response()->json($response);
         }
 
-        $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $originCountryName)->whereHas('zone', function ($query) use ($reqCurrency) {
+        $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $destinationCountryName)->whereHas('zone', function ($query) use ($reqCurrency) {
             $query->where('status', 1)->where('currency', $reqCurrency);
         })->pluck('zone_id');
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode')->get();
 
-        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPriceFormatted, $originData) {
+        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPriceFormatted, $originData, $distance, $userData) {
             $zipcode = optional($rate->zipcode);
 
             // Check cart conditions
@@ -372,7 +405,7 @@ class ApiController extends Controller
                     $conditionsMet = true;
                     break;
                 case 1: // All conditions must be true
-                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPriceFormatted, $originData) {
+                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPriceFormatted, $originData, $distance, $userData) {
                         // if ($condition['label'] == 'Cart_Order') {
                         //     if ($condition['name'] == 'weight') {
                         //         $totalQuantity = $totalWeight;
@@ -399,7 +432,7 @@ class ApiController extends Controller
                         //     }
 
                         //     if ($condition['name'] == 'distance') {
-                        //         $totalQuantity = 10;
+                        //         $totalQuantity = $distance;
                         //     }
 
                         //     if ($condition['name'] == 'day') {
@@ -419,27 +452,30 @@ class ApiController extends Controller
                         if ($condition['label'] == 'Per_Product') {
                             $fieldMap = [
                                 'quantity2' => 'quantity',
-                                'price' => function ($item) {
-                                    return $item['price'] / 100;
-                                },
+                                'price' => fn ($item) => $item['price'] / 100,
+                                'total2' => fn ($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
                                 'weight2' => 'grams',
                                 'name' => 'name',
+                                // 'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
+                                'type' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
                                 'sku' => 'sku',
                                 'vendor' => 'vendor'
                             ];
 
                             if (array_key_exists($condition['name'], $fieldMap)) {
+                                $perProductResult = [];
                                 foreach ($items as $item) {
                                     $totalQuantity = is_callable($fieldMap[$condition['name']])
                                         ? $fieldMap[$condition['name']]($item)
                                         : $item[$fieldMap[$condition['name']]];
 
-                                    $result = $this->checkCondition($condition, $totalQuantity);
-
-                                    if (!$result) {
-                                        return false; // Return false immediately if any item fails the condition
-                                    }
+                                    $perProductResult[] = $this->checkCondition($condition, $totalQuantity);
                                 }
+
+                                if (!empty($perProductResult)) {
+                                    return $this->checkOtherCondition($perProductResult, $condition);
+                                }
+
                                 return true; // Return true if all items pass the condition
                             }
                         }
@@ -966,15 +1002,23 @@ class ApiController extends Controller
                     'cart_condition.cartCondition' => 'array',
                 ]);
 
+                // Check if cartCondition exists and is an array
+                if (!empty($inputData['cart_condition']['cartCondition']) && is_array($inputData['cart_condition']['cartCondition'])) {
+                    // Validate each object in the cartCondition array
+                    foreach ($inputData['cart_condition']['cartCondition'] as $key => $item) {
+                        $rules["cart_condition.cartCondition.{$key}.label"] = 'required';
+                    }
+                }
+
                 $messages = array_merge($messages, [
-                    // 'cart_condition.conditionMatch.required' => 'The condition match field is required.',
                     'cart_condition.conditionMatch.in' => 'The condition must be one of the following: 0=Not Any Condition, 1=All, 2=Any, 3=NOT All',
-                    // 'cart_condition.cartCondition.required' => 'The cart condition field is required.',
                     'cart_condition.cartCondition.array' => 'The cart condition must be an array.',
+                    'cart_condition.cartCondition.label.required' => 'The cart condition label is required when cart conditions are specified.',
                 ]);
 
                 $inputData['conditionMatch'] = $inputData['cart_condition']['conditionMatch'];
             }
+
 
             if (isset($inputData['scheduleRate'])) {
                 $rules = array_merge($rules, [

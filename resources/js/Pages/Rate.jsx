@@ -850,6 +850,7 @@ function Rate(props) {
         setItems(prevItems => [...prevItems, newItem]);
 
         // setDayOfWeekSelection({});
+        
     };
 
     const handleConditionsChange = useCallback((index, field) => (value) => {
@@ -1197,6 +1198,9 @@ function Rate(props) {
             setErrors({});
             setToastContent('Rate saved successfully');
             setShowToast(true);
+            // setTimeout(() => {
+            //     navigate(`/Zone/${zone_id}`);
+            // }, 1000);
         } catch (error) {
             console.error('Error occurs', error);
             setToastContent('Error occurred while saving data');

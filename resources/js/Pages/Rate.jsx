@@ -892,20 +892,22 @@ function Rate(props) {
                 return updatedItems;
             });
         }
+    
         const updatedItem = {
             ...items[index],
             condition: isSecondSelect ? newValue : items[index].condition,
             name: isSecondSelect ? items[index].name : newValue,
-            unit: selectedOption.unit || '',
+            unit: isSecondSelect ? items[index].unit : selectedOption.unit || '', // Only update if it's not a second select
             label: selectedOption.mainLabel,
             value: isSecondSelect ? items[index].value : '',
+            value2: isSecondSelect ? items[index].value : '',
         };
-
+    
         const updatedItems = [...items];
         updatedItems[index] = updatedItem;
         setItems(updatedItems);
     };
-
+    
 
     const handleConditionChange = useCallback(
         (newValue, index, key) => {
@@ -1440,7 +1442,7 @@ function Rate(props) {
                                             <div key={index}>
                                                 <Grid>
                                                     <Grid.Cell columnSpan={{ xs: 2, sm: 3, md: 3, lg: 2, xl: 2 }}>
-                                                        <div style={{ paddingTop: '20%', }}>
+                                                        <div style={{ paddingTop: '20%',textAlign: 'center', }}>
                                                             <Text variant="headingXs" as="h6">
                                                                 {getCategory(item.name)}
                                                             </Text>
@@ -1451,7 +1453,7 @@ function Rate(props) {
                                                             <div className='conditions' style={{
                                                                 display: 'flex',
                                                                 alignItems: 'center',
-                                                                gap: '4%',
+                                                                gap: '2%',
                                                                 marginTop: "2%",
                                                                 marginBottom: "2%"
                                                             }}>
@@ -1507,13 +1509,13 @@ function Rate(props) {
 
                                                                 {item.condition === 'between' && (
                                                                 <div>
-                                                                   {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' &&  item.name !== 'name' &&  (
+                                                                   {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' &&  item.name !== 'name' &&  item.name !== 'tag' && item.name !== 'sku' &&  item.name !== 'type' && item.name !== 'vendor' &&  item.name !== 'properties' && item.name !== 'name2' && item.name !== 'email' && item.name !== 'phone' && item.name !== 'company' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'Customer' && item.name !== 'localcode' && (
                                                                     <TextField
-                                                                        value={item.value}
-                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
+                                                                        value={item.value2}
+                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
                                                                         autoComplete="off"
                                                                         suffix={item.unit ? item.unit : ''}
-                                                                        error={errors[`value${index}`]}
+                                                                      
                                                                     />
                                                                 )}
                                                                     </div>

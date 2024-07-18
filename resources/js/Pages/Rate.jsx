@@ -877,7 +877,7 @@ function Rate(props) {
             unit: '',
             label: 'cart_order',
             lineItem: 'satisfy',
-            textBoxValue: '',
+            tag: '',
             time1: '00',
             time2: '00',
             per_product: 'any',
@@ -1737,8 +1737,9 @@ function Rate(props) {
 
                                                                     {(item.per_product === 'anyTag'|| item.per_product === 'allTag' )&& (
                                                                         <TextField
-                                                                            value={item.textBoxValue}
-                                                                            onChange={handleConditionsChange('textBoxValue')}
+                                                                        value={item.tag}
+                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}
+                                                                           
                                                                             placeholder='tag1,tag2,tag3'
                                                                         />
                                                                     )}

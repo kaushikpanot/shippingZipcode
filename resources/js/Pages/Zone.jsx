@@ -8,7 +8,6 @@ import {
     Divider,
     Grid,
     Text,
-    Checkbox,
     TextField,
     Select,
     ButtonGroup,
@@ -23,7 +22,7 @@ import {
     EmptySearchResult,
     SkeletonBodyText,
     SkeletonDisplayText,
-    Spinner,
+    Link,
     Autocomplete,
     Tag,
     LegacyStack,
@@ -125,7 +124,7 @@ function Zone(props) {
         // 👇️ Navigate to /
         navigate('/Home');
     };
-    const handleEditZone = (rate_id) => {
+    const handleEditRate = (rate_id) => {
         navigate(`/Zone/${zone_id}/Rate/Edit/${rate_id}`);
     };
 
@@ -411,16 +410,20 @@ function Zone(props) {
                 position={index}
             >
                 <IndexTable.Cell>
-                    <Text variant="bodyMd" fontWeight="bold" as="span">
-                        {name}
-                    </Text>
+                <Link
+                        dataPrimaryLink
+                        onClick={() => handleEditRate(id)}>
+                        <Text variant="bodyMd" fontWeight="bold" as="span">
+                            {name}
+                        </Text>
+                    </Link>
                 </IndexTable.Cell>
                 <IndexTable.Cell>{service_code}</IndexTable.Cell>
                 <IndexTable.Cell>{base_price}</IndexTable.Cell>
                 <IndexTable.Cell>{description}</IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
-                        <Button icon={EditIcon} variant="primary" onClick={() => handleEditZone(id)} />
+                        <Button icon={EditIcon} variant="primary" onClick={() => handleEditRate(id)} />
                         <Button icon={DeleteIcon} variant="primary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedZoneId(id); toggleModal(); }} />
                     </ButtonGroup>
                 </IndexTable.Cell>

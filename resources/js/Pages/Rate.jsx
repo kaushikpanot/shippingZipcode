@@ -1708,7 +1708,6 @@ function Rate(props) {
                                                                 )}
                                                                 {item.lineItem === 'anyTag' && (
                                                                     <TextField
-
                                                                         value={item.textBoxValue}
                                                                         onChange={handleConditionsChange('textBoxValue')}
                                                                         placeholder='tag1,tag2,tag3'

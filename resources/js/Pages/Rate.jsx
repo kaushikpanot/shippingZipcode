@@ -1700,7 +1700,7 @@ function Rate(props) {
                                                                 alignItems: 'center',
                                                                 gap: '3%',
                                                                 marginBottom: "2%",
-                                                               
+
 
 
                                                             }}>
@@ -1720,8 +1720,13 @@ function Rate(props) {
                                                                     />
                                                                 )}
                                                             </div>
-                                                            {(item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2' ) && (
-                                                                <div style={{ marginBottom: "2%", width: "80%" }}>
+
+
+                                                            {(item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2') && (
+                                                                <div style={{ display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '3%',
+                                                                    marginBottom: "2%", }}>
 
                                                                     <Select
                                                                         key={index}
@@ -1729,9 +1734,18 @@ function Rate(props) {
                                                                         onChange={handleConditionsChange(index, 'per_product')}
                                                                         value={item.per_product}
                                                                     />
+
+                                                                    {(item.per_product === 'anyTag'|| item.per_product === 'allTag' )&& (
+                                                                        <TextField
+                                                                            value={item.textBoxValue}
+                                                                            onChange={handleConditionsChange('textBoxValue')}
+                                                                            placeholder='tag1,tag2,tag3'
+                                                                        />
+                                                                    )}
+
                                                                 </div>
                                                             )}
-                                                              {( item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties') && (
+                                                            {(item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties') && (
                                                                 <div style={{ marginBottom: "2%", width: "80%" }}>
 
                                                                     <Select

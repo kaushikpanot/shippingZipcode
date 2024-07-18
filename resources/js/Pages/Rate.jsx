@@ -90,14 +90,22 @@ function Rate(props) {
     const [hasPreviousPage, setHasPreviousPage] = useState(false);
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
+    const [dates, setDates] = useState({ startDate: '', endDate: '', date: '', time: '', error: '' });
 
-    const [dates, setDates] = useState({ startDate: '', endDate: '', date: '' });
+
     const handleDateChange = (key, value) => {
-        setDates(prevDates => ({
-            ...prevDates,
-            [key]: value,
-        }));
+        setDates(prevDates => {
+            const updatedDates = { ...prevDates, [key]: value };
+            if (key === 'endDate' && new Date(value) < new Date(updatedDates.startDate)) {
+                return { ...updatedDates, error: 'End date cannot be before start date.' };
+            } else if (key === 'startDate' && new Date(updatedDates.endDate) < new Date(value)) {
+                return { ...updatedDates, error: 'End date cannot be before start date.' };
+            } else {
+                return { ...updatedDates, error: '' };
+            }
+        });
     };
+
     const [selectedTierType, setSelectedTierType] = useState('selected');
     const [tiers, setTiers] = useState([
         { minWeight: '', maxWeight: '', basePrice: '' }
@@ -122,7 +130,7 @@ function Rate(props) {
     };
 
     const tierOptions = [
-        { label: 'Select Tier Type' },
+        { label: 'Select Tier Type', value: "selected" },
         { label: 'Order Price', value: 'order_price' },
         { label: 'Order Weight', value: 'order_weight' },
         { label: 'Order Quantity', value: 'order_quantity' },
@@ -146,6 +154,12 @@ function Rate(props) {
             ...prevState,
             set_exclude_products: selectedRate,
         }));
+        // setItems(prevState => ([{
+        //     ...prevState,
+        //     value: dates.date,
+        //     value2: dates.time,
+        // }]));
+
     }, [selectedRate]);
 
     const [rateModifiers, setRateModifiers] = useState([]);
@@ -337,12 +351,38 @@ function Rate(props) {
 
             }
             if (response.data.rate.cart_condition) {
+
                 setCheckState(prevState => ({
                     ...prevState,
                     selectedCondition: response.data.rate.cart_condition.conditionMatch,
                 }));
-                setItems(response.data.rate.cart_condition.cartCondition)
+
+
+                setItems(response.data.rate.cart_condition.cartCondition);
+
+                const cartCondition = response.data.rate.cart_condition.cartCondition;
+                const initialDeliveryType = cartCondition.map(condition => ({
+                    id: condition.id,
+                    local: condition.name === 'type2' && condition.value.includes('local'),
+                    Store: condition.name === 'type2' && condition.value.includes('Store'),
+                    Shipping: condition.name === 'type2' && condition.value.includes('Shipping'),
+                }));
+                setDeliveryType(initialDeliveryType);
+
+                const initialDeliveryday = cartCondition.map(condition => ({
+                    id: condition.id,
+                    sunday: condition.name === 'dayOfWeek' && condition.value.includes('sunday'),
+                    monday: condition.name === 'dayOfWeek' && condition.value.includes('monday'),
+                    tuesday: condition.name === 'dayOfWeek' && condition.value.includes('tuesday'),
+                    wednesday: condition.name === 'dayOfWeek' && condition.value.includes('wednesday'),
+                    thursday: condition.name === 'dayOfWeek' && condition.value.includes('thursday'),
+                    friday: condition.name === 'dayOfWeek' && condition.value.includes('friday'),
+                    saturday: condition.name === 'dayOfWeek' && condition.value.includes('saturday'),
+
+                }));
+                setDayOfWeekSelection(initialDeliveryday);
             }
+
 
             if (response.data.rate.send_another_rate) {
                 setCheckState(prevState => ({
@@ -658,8 +698,8 @@ function Rate(props) {
     ];
 
     const lineItem = [
-        { label: 'ANY product must satisfy this conditin ', value: 'satisfy' },
-        { label: 'ANY SPECIFIC product with TAg', value: 'withTag' },
+        { label: 'ANY product must satisfy this conditin ', value: 'any' },
+        { label: 'ANY SPECIFIC product with TAg', value: 'anyTag' },
     ]
     const timeIs = [
         { label: 'Between', value: 'between' },
@@ -680,13 +720,17 @@ function Rate(props) {
         { label: 'Start with', value: 'startwith' },
         { label: 'Does not start with ', value: 'notstartwith' },
     ]
-    const quantity = [
+    const per_product = [
         { label: 'ANY product must satisfy this conditin ', value: 'any' },
         { label: 'ALL product must satisfy this conditin ', value: 'all' },
         { label: 'NONE of product must satisfy this conditin ', value: 'none' },
         { label: 'ANY SPECIFIC product with TAg', value: 'anyTag' },
         { label: 'ALL SPECIFIC product with TAg', value: 'allTag' },
-
+    ]
+    const per_product2 = [
+        { label: 'ANY product must satisfy this conditin ', value: 'any' },
+        { label: 'ALL product must satisfy this conditin ', value: 'all' },
+        { label: 'NONE of product must satisfy this conditin ', value: 'none' },
     ]
 
     const [deliveryType, setDeliveryType] = useState([{
@@ -696,7 +740,8 @@ function Rate(props) {
         Shipping: false,
 
     }]);
-    const [dayOfWeekSelection, setDayOfWeekSelection] = useState({
+    const [dayOfWeekSelection, setDayOfWeekSelection] = useState([{
+        id: 0,
         monday: false,
         tuesday: false,
         wednesday: false,
@@ -704,10 +749,8 @@ function Rate(props) {
         friday: false,
         saturday: false,
         sunday: false,
-    });
-    const [items, setItems] = useState([]);
-    // console.log(items)
-
+    }]);
+    const [items, setItems] = useState([{ time: dates.time }]);
     const handleCheckboxChange = useCallback((type, index) => {
         setDeliveryType((prevState) => {
             const updatedItems = [...prevState];
@@ -715,48 +758,50 @@ function Rate(props) {
                 ...updatedItems[index],
                 [type]: !updatedItems[index][type],
             };
-            return updatedItems;
-        });
 
-    }, [items]);
+            const selectedTypes = Object.keys(updatedItems[index]).filter(key => updatedItems[index][key]);
 
-    const handleDayCheckboxChange = useCallback((type) => {
-        setDayOfWeekSelection((prevSelection) => {
-            const updatedSelection = {
-                ...prevSelection,
-                [type]: !prevSelection[type],
-            };
-            const selectedTypes = Object.keys(updatedSelection).filter(key => updatedSelection[key]);
             const selectedTypesString = selectedTypes.join(', ');
-            const existingItemIndex = items.findIndex(item => item.name === 'dayOfWeek');
-            if (existingItemIndex !== -1) {
-                const updatedItems = [...items];
-                updatedItems[existingItemIndex] = {
-                    ...updatedItems[existingItemIndex],
+            setItems((prevItems) => {
+                const updatedItemsList = [...prevItems];
+
+                updatedItemsList[index] = {
+                    ...updatedItemsList[index],
                     value: selectedTypesString,
                 };
-                setItems(updatedItems);
-            }
+                return updatedItemsList;
+            });
 
-            return updatedSelection;
+            return updatedItems;
         });
+    }, []);
 
 
+    const handleDayCheckboxChange = useCallback((type, index) => {
+        setDayOfWeekSelection((prevState) => {
+            const updatedItems = [...prevState];
+            updatedItems[index] = {
+                ...updatedItems[index],
+                [type]: !updatedItems[index][type],
+            };
 
+            const selectedTypes = Object.keys(updatedItems[index]).filter(key => updatedItems[index][key]);
+            const selectedTypesString = selectedTypes.join(', ');
+
+
+            const existingItemIndex = items.findIndex(item => item.name === 'dayOfWeek');
+            if (existingItemIndex !== -1) {
+                const updatedItemsList = [...items];
+                updatedItemsList[existingItemIndex] = {
+                    ...updatedItemsList[existingItemIndex],
+                    value: selectedTypesString,
+                };
+                setItems(updatedItemsList);
+
+            }
+            return updatedItems;
+        });
     }, [items]);
-
-    const CheckboxGroup = ({ selection, onChange }) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {Object.keys(selection).map((day) => (
-                <Checkbox
-                    key={day}
-                    label={day.charAt(0).toUpperCase() + day.slice(1)}
-                    checked={selection[day]}
-                    onChange={() => onChange(day)}
-                />
-            ))}
-        </div>
-    );
 
     const getCategory = (itemName) => {
         let categoryLabel = '';
@@ -823,6 +868,7 @@ function Rate(props) {
     ];
 
     const handleAddItem = () => {
+
         const newItem = {
             name: 'quantity',
             condition: 'equal',
@@ -835,7 +881,8 @@ function Rate(props) {
             time1: '00',
             time2: '00',
             per_product: 'any',
-            date: dates.date
+            date: dates.date,
+            time: dates.time
         };
         setItems(prevItems => [...prevItems, newItem]);
 
@@ -864,6 +911,26 @@ function Rate(props) {
                     local: false,
                     Store: false,
                     Shipping: false,
+                };
+                updatedItems[index] = {
+                    ...updatedItems[index],
+                };
+
+                return updatedItems;
+            });
+        }
+        if (newValue === 'dayOfWeek') {
+            setDayOfWeekSelection((prevState) => {
+                const updatedItems = [...prevState];
+                updatedItems[index] = {
+                    id: index,
+                    monday: false,
+                    tuesday: false,
+                    wednesday: false,
+                    thursday: false,
+                    friday: false,
+                    saturday: false,
+                    sunday: false,
                 };
                 updatedItems[index] = {
                     ...updatedItems[index],
@@ -1195,7 +1262,7 @@ function Rate(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
-
+            console.log(formData)
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -1442,7 +1509,7 @@ function Rate(props) {
                                                             <div className='conditions' style={{
                                                                 display: 'flex',
                                                                 alignItems: 'center',
-                                                                gap: '5%',
+                                                                gap: '4%',
                                                                 marginTop: "2%",
                                                                 marginBottom: "2%"
 
@@ -1493,7 +1560,7 @@ function Rate(props) {
                                                                     />
                                                                 )}
 
-                                                                {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && (
+                                                                {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && (
                                                                     <TextField
                                                                         value={item.value}
                                                                         onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
@@ -1526,22 +1593,58 @@ function Rate(props) {
                                                                         gap: '10%',
                                                                     }}>
                                                                         <Select
+                                                                            key={index}
                                                                             options={time}
-                                                                            onChange={handleConditionsChange('time1')}
+                                                                            onChange={handleConditionsChange(index, 'time1')}
                                                                             value={item.time1}
                                                                         />
                                                                         <Select
                                                                             options={time}
-                                                                            onChange={handleConditionsChange('time2')}
+                                                                            key={index}
+                                                                            onChange={handleConditionsChange(index, 'time2')}
                                                                             value={item.time2}
                                                                         />
                                                                     </div>
                                                                 )}
                                                                 {(item.name === 'day' || item.name === 'dayOfWeek') && (
-                                                                    <CheckboxGroup
-                                                                        selection={dayOfWeekSelection}
-                                                                        onChange={handleDayCheckboxChange}
-                                                                    />
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                                        <Checkbox
+                                                                            label="Sunday"
+                                                                            checked={dayOfWeekSelection[index].sunday}
+                                                                            onChange={() => handleDayCheckboxChange('sunday', index)}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Monday"
+                                                                            checked={dayOfWeekSelection[index].monday}
+                                                                            onChange={() => handleDayCheckboxChange('monday', index)}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Tuesday"
+                                                                            checked={dayOfWeekSelection[index].tuesday}
+                                                                            onChange={() => handleDayCheckboxChange('tuesday', index)}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="wednesday"
+                                                                            checked={dayOfWeekSelection[index].wednesday}
+                                                                            onChange={() => handleDayCheckboxChange('wednesday', index)}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Thursday"
+                                                                            checked={dayOfWeekSelection[index].thursday}
+                                                                            onChange={() => handleDayCheckboxChange('thursday', index)}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Friday"
+                                                                            checked={dayOfWeekSelection[index].friday}
+                                                                            onChange={() => handleDayCheckboxChange('friday', index)}
+                                                                        />
+                                                                        <Checkbox
+                                                                            label="Saturday"
+                                                                            checked={dayOfWeekSelection[index].saturday}
+                                                                            onChange={() => handleDayCheckboxChange('saturday', index)}
+                                                                        />
+
+                                                                    </div>
                                                                 )}
                                                                 {item.name === 'date' && (
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
@@ -1552,15 +1655,15 @@ function Rate(props) {
                                                                         />
                                                                     </div>
                                                                 )}
-                                                                {/* {item.name === 'date' && (
+                                                                {item.name === 'timeIn' && (
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                                                         <TextField
-                                                                            value={dates.date}
-                                                                            onChange={(value) => handleDateChange('date', value)}
-                                                                            type="date"
+                                                                            value={dates.time}
+                                                                            onChange={(value) => handleDateChange('time', value)}
+                                                                            type="time"
                                                                         />
                                                                     </div>
-                                                                )} */}
+                                                                )}
                                                                 {item.name === 'type2' && (
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                                                         <Checkbox
@@ -1596,32 +1699,44 @@ function Rate(props) {
                                                                 display: 'flex',
                                                                 alignItems: 'center',
                                                                 gap: '3%',
-                                                                marginBottom: "2%"
+                                                                marginBottom: "2%",
+                                                               
 
 
                                                             }}>
                                                                 {item.name === 'lineitem' && (
                                                                     <Select
+                                                                        key={index}
                                                                         options={lineItem}
-                                                                        onChange={handleConditionsChange('lineItem')}
+                                                                        onChange={handleConditionsChange(index, 'lineItem')}
                                                                         value={item.lineItem}
                                                                     />
                                                                 )}
-                                                                {/* {item.lineItem === 'withTag' && (
+                                                                {item.lineItem === 'anyTag' && (
                                                                     <TextField
-
                                                                         value={item.textBoxValue}
                                                                         onChange={handleConditionsChange('textBoxValue')}
                                                                         placeholder='tag1,tag2,tag3'
                                                                     />
-                                                                )} */}
+                                                                )}
                                                             </div>
-                                                            {(item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2' || item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties') && (
-                                                                <div style={{ marginBottom: "2%" }}>
+                                                            {(item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2' ) && (
+                                                                <div style={{ marginBottom: "2%", width: "80%" }}>
 
                                                                     <Select
                                                                         key={index}
-                                                                        options={quantity}
+                                                                        options={per_product}
+                                                                        onChange={handleConditionsChange(index, 'per_product')}
+                                                                        value={item.per_product}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                              {( item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties') && (
+                                                                <div style={{ marginBottom: "2%", width: "80%" }}>
+
+                                                                    <Select
+                                                                        key={index}
+                                                                        options={per_product2}
                                                                         onChange={handleConditionsChange(index, 'per_product')}
                                                                         value={item.per_product}
                                                                     />
@@ -3044,15 +3159,16 @@ function Rate(props) {
                                             label="Start Date"
                                             value={dates.startDate}
                                             onChange={(value) => handleDateChange('startDate', value)}
-                                            type="date"
+                                            type="datetime-local"
                                         />
                                         <TextField
                                             label="End Date"
                                             value={dates.endDate}
                                             onChange={(value) => handleDateChange('endDate', value)}
-                                            type="date"
+                                            type="datetime-local"
                                         />
                                     </FormLayout.Group>
+                                    {dates.error && <p message={dates.error} fieldID="endDate" >{dates.error}</p>}
                                 </FormLayout>
                             )}
                         </LegacyCard>

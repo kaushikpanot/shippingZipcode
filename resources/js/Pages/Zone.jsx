@@ -423,8 +423,8 @@ function Zone(props) {
                 <IndexTable.Cell>{description}</IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
-                        <Button icon={EditIcon} variant="primary" onClick={() => handleEditRate(id)} />
-                        <Button icon={DeleteIcon} variant="primary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedZoneId(id); toggleModal(); }} />
+                        <Button icon={EditIcon}  variant="tertiary" onClick={() => handleEditRate(id)} />
+                        <Button icon={DeleteIcon}  variant="tertiary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedZoneId(id); toggleModal(); }} />
                     </ButtonGroup>
                 </IndexTable.Cell>
 

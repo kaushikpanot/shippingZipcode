@@ -435,13 +435,13 @@ function Zone(props) {
     if (loading) {
         return (
             <Page
-                fullWidth
+                
                 title={zone_id ? 'Edit Zone' : 'Add Zone'}
                 primaryAction={<Button variant="primary" onClick={saveZone}>Save</Button>}
                 secondaryActions={<Button onClick={navigateHome}>Back</Button>}
             >
                 <Grid>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                 
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '18%' }}>
                             <SkeletonDisplayText size="small" />
@@ -454,7 +454,7 @@ function Zone(props) {
 
 
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                             <Card roundedAbove="sm">
 
@@ -481,12 +481,10 @@ function Zone(props) {
                             </Card>
                         </div>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                  
                 </Grid>
                 <div style={{ marginTop: "2%" }}>
-                    <Grid>
-                        <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-                        <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
+                   
                             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                                 <Card roundedAbove="sm">
                                     <div style={{ marginLeft: "85%" }}>
@@ -504,23 +502,22 @@ function Zone(props) {
                                     </div>
                                 </Card>
                             </div>
-                        </Grid.Cell>
-                        <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-                    </Grid>
+                       
                 </div>
             </Page>
         );
     }
     return (
         <Page
-            fullWidth
+            // fullWidth
             title={zone_id ? 'Edit Zone' : 'Add Zone'}
             primaryAction={<Button variant="primary" onClick={saveZone}>Save</Button>}
             secondaryActions={<Button onClick={navigateHome}>Back</Button>}
         >
+              <Divider borderColor="border" />
             <div style={{ marginTop: '2%', marginBottom: "2%" }}>
                 <Grid>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '10%' }}>
                             <Text variant="headingLg" as="h5">
@@ -536,7 +533,7 @@ function Zone(props) {
                             </div>
                         </div>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}>
+                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
                             <div className='choice'>
                                 <Select
@@ -583,7 +580,7 @@ function Zone(props) {
                             </div>
                         </LegacyCard>
                     </Grid.Cell>
-                    <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
+                    
 
                 </Grid>
             </div>
@@ -593,9 +590,7 @@ function Zone(props) {
                 <div>
                     <Divider borderColor="border" />
                     <div style={{ marginTop: "2%", marginBottom: "5%" }}>
-                        <Grid>
-                            <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
-                            <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
+                       
 
                                 <Card>
                                     <BlockStack gap="200">
@@ -656,8 +651,7 @@ function Zone(props) {
                                         </IndexTable>
                                     </div>
                                 </Card>
-                            </Grid.Cell>
-                        </Grid>
+                           
                     </div>
                 </div>
             )}

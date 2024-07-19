@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Throwable;
 use CountryState;
+use Illuminate\Support\Facades\Session;
 
 class ApiController extends Controller
 {
@@ -265,13 +266,13 @@ class ApiController extends Controller
                     break;
             }
 
-            // Log::info('Query logs:', [
-            //     'totalQuantity' => $totalQuantity,
-            //     'condition' => $condition['condition'],
-            //     'condition_value' => $condition['value'],
-            //     'condition_value2' => $condition['value2'] ?? null,
-            //     'result' => $result
-            // ]);
+            Log::info('Query logs:', [
+                'totalQuantity' => $totalQuantity,
+                'condition' => $condition['condition'],
+                'condition_value' => $condition['value'],
+                'condition_value2' => $condition['value2'] ?? null,
+                'result' => $result
+            ]);
 
             return $result;
         }
@@ -295,10 +296,9 @@ class ApiController extends Controller
         return $response->json('product')[$field];
     }
 
-    private function checkOtherCondition($array, $condition)
+    private function checkOtherCondition($array, $condition, $tags)
     {
-        // $tags
-        if (isset($condition) && is_array($array)) {
+        if (isset($condition) && is_array($array) && is_array($tags)) {
             $result = false;
 
             switch ($condition['per_product']) {
@@ -315,16 +315,37 @@ class ApiController extends Controller
                     $result = !in_array(true, $array);
                     break;
                 case 'anyTag':
-                    $result = $totalQuantity <= $condition['value'];
+                    // ANY product must satisfy this condition and have the specified tag
+                    $resultTag = in_array(true, $array);
+                    if ($resultTag) {
+                        foreach ($tags as $tag) {
+                            $tagArr = explode(',', $tag);
+                            if (in_array(trim($condition['tag']), array_map('trim', $tagArr))) {
+                                $result = true;
+                                break;
+                            }
+                        }
+                    }
                     break;
-                    // case 'allTag':
-                    //     $result = $totalQuantity >= $condition['value'] && $totalQuantity <= $condition['value2'];
-                    //     break;
+                case 'allTag':
+                    // ALL products that satisfy this condition must have the specified tag
+                    $resultTag = !in_array(false, $array);
+                    if ($resultTag) {
+                        $result = true;
+                        foreach ($tags as $tag) {
+                            $tagArr = explode(',', $tag);
+                            if (!in_array(trim($condition['tag']), array_map('trim', $tagArr))) {
+                                $result = false;
+                                break;
+                            }
+                        }
+                    }
+                    break;
             }
 
             Log::info('Query logs:', [
                 'condition' => $array,
-                'condition1' => $condition,
+                'condition_details' => $condition,
                 'result' => $result
             ]);
 
@@ -338,7 +359,9 @@ class ApiController extends Controller
     public function handleCallback(Request $request)
     {
         $input = $request->input();
-        //  Log::info('Query logs:', ['totalQuantity' => $request->all()]);
+
+        // Log::info('Query logs:', ['totalQuantity' => $request->header()]);
+
         $shopDomain = $request->header();
 
         $companyName = $shopDomain['x-shopify-shop-domain'][0];
@@ -395,7 +418,7 @@ class ApiController extends Controller
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode')->get();
 
-        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPriceFormatted, $originData, $distance, $userData) {
+        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPriceFormatted, $distance, $userData) {
             $zipcode = optional($rate->zipcode);
 
             // Check cart conditions
@@ -405,49 +428,64 @@ class ApiController extends Controller
                     $conditionsMet = true;
                     break;
                 case 1: // All conditions must be true
-                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPriceFormatted, $originData, $distance, $userData) {
-                        // if ($condition['label'] == 'Cart_Order') {
-                        //     if ($condition['name'] == 'weight') {
-                        //         $totalQuantity = $totalWeight;
-                        //     }
+                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPriceFormatted, $distance, $userData) {
 
-                        //     if ($condition['name'] == 'localcode') {
-                        //         $totalQuantity = $localeCode;
-                        //     }
+                        if ($condition['label'] == 'Cart_Order') {
 
-                        //     if ($condition['name'] == 'time') {
-                        //         $totalQuantity = Carbon::now()->format('H');
-                        //     }
+                            $currentTime = Carbon::now()->format('H');
+                            $currentDay = Carbon::now()->format('l');
+                            $comparativeValue = null;
 
-                        //     if ($condition['name'] == 'address') {
-                        //         $totalQuantity = $destinationAddress;
-                        //     }
+                            switch ($condition['name']) {
+                                case 'quantity':
+                                    $comparativeValue = $totalQuantity;
+                                    break;
 
-                        //     if ($condition['name'] == 'total') {
-                        //         $totalQuantity = $totalPriceFormatted;
-                        //     }
+                                case 'weight':
+                                    $comparativeValue = $totalWeight;
+                                    break;
 
-                        //     if ($condition['name'] == 'lineitem') {
-                        //         $totalQuantity = count($items);
-                        //     }
+                                case 'localcode':
+                                    $comparativeValue = $localeCode;
+                                    break;
 
-                        //     if ($condition['name'] == 'distance') {
-                        //         $totalQuantity = $distance;
-                        //     }
+                                case 'time':
+                                    $comparativeValue = $currentTime;
+                                    break;
 
-                        //     if ($condition['name'] == 'day') {
-                        //         $day = Carbon::createFromFormat('Y-m-d', date('Y-m-d'))->format('l');
-                        //         $days = explode(',', $condition['value']);
+                                case 'address':
+                                    $comparativeValue = $destinationAddress;
+                                    break;
 
-                        //         if ($condition['condition'] == 'equal') {
-                        //             return in_array($day, $days);
-                        //         } else {
-                        //             return !in_array($day, $days);
-                        //         }
-                        //     }
+                                case 'total':
+                                    $comparativeValue = $totalPriceFormatted;
+                                    break;
 
-                        //     return $this->checkCondition($condition, $totalQuantity);
-                        // }
+                                case 'lineitem':
+                                    $comparativeValue = count($items);
+                                    break;
+
+                                case 'distance':
+                                    $comparativeValue = $distance;
+                                    break;
+
+                                case 'day':
+                                    $days = explode(',', $condition['value']);
+
+                                    if ($condition['condition'] == 'equal') {
+                                        return in_array($currentDay, $days);
+                                    } else {
+                                        return !in_array($currentDay, $days);
+                                    }
+
+                                default:
+                                    Log::error('Unknown condition name: ' . $condition['name']);
+                                    break;
+                            }
+
+                            // Check the condition with the determined comparative value
+                            return $this->checkCondition($condition, $comparativeValue);
+                        }
 
                         if ($condition['label'] == 'Per_Product') {
                             $fieldMap = [
@@ -464,97 +502,400 @@ class ApiController extends Controller
 
                             if (array_key_exists($condition['name'], $fieldMap)) {
                                 $perProductResult = [];
+                                $perProductTag = [];
                                 foreach ($items as $item) {
                                     $totalQuantity = is_callable($fieldMap[$condition['name']])
                                         ? $fieldMap[$condition['name']]($item)
                                         : $item[$fieldMap[$condition['name']]];
 
                                     $perProductResult[] = $this->checkCondition($condition, $totalQuantity);
+                                    $perProductTag[] = $this->fetchShopifyProductData($userData, $item['product_id'], 'tags');
                                 }
 
                                 if (!empty($perProductResult)) {
-                                    return $this->checkOtherCondition($perProductResult, $condition);
+                                    return $this->checkOtherCondition($perProductResult, $condition, $perProductTag);
                                 }
 
                                 return true; // Return true if all items pass the condition
                             }
                         }
 
-                        // if ($condition['label'] == 'Customer') {
-                        //     $fieldMap = [
-                        //         'name2' => 'name',
-                        //         'email' => 'email',
-                        //         'phone' => 'phone',
-                        //         'company' => ['originData', 'company'],
-                        //         'address' => 'address1',
-                        //         'addrss1' => 'address2',
-                        //         'address2' => 'address3',
-                        //         'city' => 'city',
-                        //         'provinceCode' => 'province'
-                        //     ];
+                        if ($condition['label'] == 'Customer') {
+                            $fieldMap = [
+                                'name2' => 'name',
+                                'email' => 'email',
+                                'phone' => 'phone',
+                                'company' => 'company_name',
+                                'address' => 'address1',
+                                'addrss1' => 'address2',
+                                'address2' => 'address3',
+                                'city' => 'city',
+                                'provinceCode' => 'province'
+                            ];
 
-                        //     if (array_key_exists($condition['name'], $fieldMap)) {
-                        //         $field = $fieldMap[$condition['name']];
-                        //         $totalQuantity = is_array($field)
-                        //             ? ${$field[0]}[$field[1]]
-                        //             : $destinationData[$field];
+                            if (array_key_exists($condition['name'], $fieldMap)) {
+                                $field = $fieldMap[$condition['name']];
+                                $totalQuantity = isset($destinationData[$field]) ? $destinationData[$field] : null;
 
-                        //         return $this->checkCondition($condition, $totalQuantity);
-                        //     }
-                        // }
+                                return $this->checkCondition($condition, $totalQuantity);
+                            }
+                        }
 
-                        // if ($condition['label'] == 'Delivery') {
+                        if ($condition['label'] == 'Delivery') {
 
-                        //     if ($condition['name'] == 'dayOfWeek') {
-                        //         $day = Carbon::createFromFormat('Y-m-d', date('Y-m-d'))->format('l');
-                        //         $days = explode(',', $condition['value']);
+                            if ($condition['name'] == 'dayOfWeek') {
+                                $day = Carbon::createFromFormat('Y-m-d', date('Y-m-d'))->format('l');
+                                $days = explode(',', $condition['value']);
 
-                        //         if ($condition['condition'] == 'equal') {
-                        //             return in_array($day, $days);
-                        //         } else {
-                        //             return !in_array($day, $days);
-                        //         }
-                        //     }
+                                if ($condition['condition'] == 'equal') {
+                                    return in_array($day, $days);
+                                } else {
+                                    return !in_array($day, $days);
+                                }
+                            }
 
-                        //     if ($condition['name'] == 'dayIs') {
-                        //         $totalQuantity = Carbon::now()->format('d');
-                        //     }
+                            if ($condition['name'] == 'dayIs') {
+                                $totalQuantity = Carbon::now()->format('d');
+                            }
 
-                        //     if ($condition['name'] == 'date') {
-                        //         $totalQuantity = Carbon::today()->format('d-m-Y');
-                        //     }
+                            if ($condition['name'] == 'date') {
+                                $totalQuantity = Carbon::today()->format('d-m-Y');
+                            }
 
-                        //     if ($condition['name'] == 'timeIn') {
-                        //         $totalQuantity = Carbon::now()->format('H:i');
-                        //     }
+                            if ($condition['name'] == 'timeIn') {
+                                $totalQuantity = Carbon::now()->format('H:i');
+                            }
 
-                        //     if ($condition['name'] == 'deliveryType') {
-                        //         $deliveryType = explode(',', $condition['value']);
-                        //         $day = "Shipping";
+                            if ($condition['name'] == 'deliveryType') {
+                                $deliveryType = explode(',', $condition['value']);
+                                $day = "Shipping";
 
-                        //         if ($condition['condition'] == 'equal') {
-                        //             return in_array($day, $deliveryType);
-                        //         } else {
-                        //             return !in_array($day, $deliveryType);
-                        //         }
-                        //     }
+                                if ($condition['condition'] == 'equal') {
+                                    return in_array($day, $deliveryType);
+                                } else {
+                                    return !in_array($day, $deliveryType);
+                                }
+                            }
 
-                        //     return $this->checkCondition($condition, $totalQuantity);
-                        // }
+                            return $this->checkCondition($condition, $totalQuantity);
+                        }
                         return true;
                     });
                     break;
-                    // case 2: // Any condition must be true
-                    //     $conditionsMet = collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity) {
-                    //         return $this->checkCondition($condition, $totalQuantity);
-                    //     });
-                    //     break;
+                case 2: // Any condition must be true
+                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPriceFormatted, $distance, $userData) {
 
-                    // case 3: // All conditions must be false to return true, if any condition is true return false
-                    //     $conditionsMet = !collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity) {
-                    //         return $this->checkCondition($condition, $totalQuantity);
-                    //     });
-                    //     break;
+                        if ($condition['label'] == 'Cart_Order') {
+
+                            $currentTime = Carbon::now()->format('H');
+                            $currentDay = Carbon::now()->format('l');
+                            $comparativeValue = null;
+
+                            switch ($condition['name']) {
+                                case 'quantity':
+                                    $comparativeValue = $totalQuantity;
+                                    break;
+
+                                case 'weight':
+                                    $comparativeValue = $totalWeight;
+                                    break;
+
+                                case 'localcode':
+                                    $comparativeValue = $localeCode;
+                                    break;
+
+                                case 'time':
+                                    $comparativeValue = $currentTime;
+                                    break;
+
+                                case 'address':
+                                    $comparativeValue = $destinationAddress;
+                                    break;
+
+                                case 'total':
+                                    $comparativeValue = $totalPriceFormatted;
+                                    break;
+
+                                case 'lineitem':
+                                    $comparativeValue = count($items);
+                                    break;
+
+                                case 'distance':
+                                    $comparativeValue = $distance;
+                                    break;
+
+                                case 'day':
+                                    $days = explode(',', $condition['value']);
+
+                                    if ($condition['condition'] == 'equal') {
+                                        return in_array($currentDay, $days);
+                                    } else {
+                                        return !in_array($currentDay, $days);
+                                    }
+
+                                default:
+                                    Log::error('Unknown condition name: ' . $condition['name']);
+                                    break;
+                            }
+
+                            // Check the condition with the determined comparative value
+                            return $this->checkCondition($condition, $comparativeValue);
+                        }
+
+                        if ($condition['label'] == 'Per_Product') {
+                            $fieldMap = [
+                                'quantity2' => 'quantity',
+                                'price' => fn ($item) => $item['price'] / 100,
+                                'total2' => fn ($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
+                                'weight2' => 'grams',
+                                'name' => 'name',
+                                // 'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
+                                'type' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
+                                'sku' => 'sku',
+                                'vendor' => 'vendor'
+                            ];
+
+                            if (array_key_exists($condition['name'], $fieldMap)) {
+                                $perProductResult = [];
+                                $perProductTag = [];
+                                foreach ($items as $item) {
+                                    $totalQuantity = is_callable($fieldMap[$condition['name']])
+                                        ? $fieldMap[$condition['name']]($item)
+                                        : $item[$fieldMap[$condition['name']]];
+
+                                    $perProductResult[] = $this->checkCondition($condition, $totalQuantity);
+                                    $perProductTag[] = $this->fetchShopifyProductData($userData, $item['product_id'], 'tags');
+                                }
+
+                                if (!empty($perProductResult)) {
+                                    return $this->checkOtherCondition($perProductResult, $condition, $perProductTag);
+                                }
+
+                                return true; // Return true if all items pass the condition
+                            }
+                        }
+
+                        if ($condition['label'] == 'Customer') {
+                            $fieldMap = [
+                                'name2' => 'name',
+                                'email' => 'email',
+                                'phone' => 'phone',
+                                'company' => 'company_name',
+                                'address' => 'address1',
+                                'addrss1' => 'address2',
+                                'address2' => 'address3',
+                                'city' => 'city',
+                                'provinceCode' => 'province'
+                            ];
+
+                            if (array_key_exists($condition['name'], $fieldMap)) {
+                                $field = $fieldMap[$condition['name']];
+                                $totalQuantity = isset($destinationData[$field]) ? $destinationData[$field] : null;
+
+                                return $this->checkCondition($condition, $totalQuantity);
+                            }
+                        }
+
+                        if ($condition['label'] == 'Delivery') {
+
+                            if ($condition['name'] == 'dayOfWeek') {
+                                $currentDay = Carbon::now()->format('l');
+                                $days = array_map('trim', explode(',', $condition['value']));
+
+                                Log::info('Checking dayOfWeek condition', ['currentDay' => $currentDay, 'days' => $days]);
+                                if ($condition['condition'] == 'equal') {
+                                    return in_array($currentDay, $days);
+                                } else {
+                                    return !in_array($currentDay, $days);
+                                }
+                            }
+
+                            if ($condition['name'] == 'dayIs') {
+                                $totalQuantity = Carbon::now()->format('d');
+                            }
+
+                            if ($condition['name'] == 'date') {
+                                $totalQuantity = Carbon::today()->format('d-m-Y');
+                            }
+
+                            if ($condition['name'] == 'timeIn') {
+                                $totalQuantity = Carbon::now()->format('H:i');
+                            }
+
+                            if ($condition['name'] == 'deliveryType') {
+                                $deliveryType = explode(',', $condition['value']);
+                                $day = "Shipping";
+
+                                if ($condition['condition'] == 'equal') {
+                                    return in_array($day, $deliveryType);
+                                } else {
+                                    return !in_array($day, $deliveryType);
+                                }
+                            }
+
+                            return $this->checkCondition($condition, $totalQuantity);
+                        }
+
+                        return true;
+                    });
+                    break;
+                case 3: // All conditions must be false to return true, if any condition is true return false
+                    $conditionsMet = !collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPriceFormatted, $distance, $userData) {
+
+                        if ($condition['label'] == 'Cart_Order') {
+
+                            $currentTime = Carbon::now()->format('H');
+                            $currentDay = Carbon::now()->format('l');
+                            $comparativeValue = null;
+
+                            switch ($condition['name']) {
+                                case 'quantity':
+                                    $comparativeValue = $totalQuantity;
+                                    break;
+
+                                case 'weight':
+                                    $comparativeValue = $totalWeight;
+                                    break;
+
+                                case 'localcode':
+                                    $comparativeValue = $localeCode;
+                                    break;
+
+                                case 'time':
+                                    $comparativeValue = $currentTime;
+                                    break;
+
+                                case 'address':
+                                    $comparativeValue = $destinationAddress;
+                                    break;
+
+                                case 'total':
+                                    $comparativeValue = $totalPriceFormatted;
+                                    break;
+
+                                case 'lineitem':
+                                    $comparativeValue = count($items);
+                                    break;
+
+                                case 'distance':
+                                    $comparativeValue = $distance;
+                                    break;
+
+                                case 'day':
+                                    $days = explode(',', $condition['value']);
+
+                                    if ($condition['condition'] == 'equal') {
+                                        return in_array($currentDay, $days);
+                                    } else {
+                                        return !in_array($currentDay, $days);
+                                    }
+
+                                default:
+                                    Log::error('Unknown condition name: ' . $condition['name']);
+                                    break;
+                            }
+
+                            // Check the condition with the determined comparative value
+                            return $this->checkCondition($condition, $comparativeValue);
+                        }
+
+                        if ($condition['label'] == 'Per_Product') {
+                            $fieldMap = [
+                                'quantity2' => 'quantity',
+                                'price' => fn ($item) => $item['price'] / 100,
+                                'total2' => fn ($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
+                                'weight2' => 'grams',
+                                'name' => 'name',
+                                // 'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
+                                'type' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
+                                'sku' => 'sku',
+                                'vendor' => 'vendor'
+                            ];
+
+                            if (array_key_exists($condition['name'], $fieldMap)) {
+                                $perProductResult = [];
+                                $perProductTag = [];
+                                foreach ($items as $item) {
+                                    $totalQuantity = is_callable($fieldMap[$condition['name']])
+                                        ? $fieldMap[$condition['name']]($item)
+                                        : $item[$fieldMap[$condition['name']]];
+
+                                    $perProductResult[] = $this->checkCondition($condition, $totalQuantity);
+                                    $perProductTag[] = $this->fetchShopifyProductData($userData, $item['product_id'], 'tags');
+                                }
+
+                                if (!empty($perProductResult)) {
+                                    return $this->checkOtherCondition($perProductResult, $condition, $perProductTag);
+                                }
+
+                                return true; // Return true if all items pass the condition
+                            }
+                        }
+
+                        if ($condition['label'] == 'Customer') {
+                            $fieldMap = [
+                                'name2' => 'name',
+                                'email' => 'email',
+                                'phone' => 'phone',
+                                'company' => 'company_name',
+                                'address' => 'address1',
+                                'addrss1' => 'address2',
+                                'address2' => 'address3',
+                                'city' => 'city',
+                                'provinceCode' => 'province'
+                            ];
+
+                            if (array_key_exists($condition['name'], $fieldMap)) {
+                                $field = $fieldMap[$condition['name']];
+                                $totalQuantity = isset($destinationData[$field]) ? $destinationData[$field] : null;
+
+                                return $this->checkCondition($condition, $totalQuantity);
+                            }
+                        }
+
+                        if ($condition['label'] == 'Delivery') {
+
+                            if ($condition['name'] == 'dayOfWeek') {
+                                $currentDay = Carbon::now()->format('l');
+                                $days = array_map('trim', explode(',', $condition['value']));
+
+                                Log::info('Checking dayOfWeek condition', ['currentDay' => $currentDay, 'days' => $days]);
+                                if ($condition['condition'] == 'equal') {
+                                    return in_array($currentDay, $days);
+                                } else {
+                                    return !in_array($currentDay, $days);
+                                }
+                            }
+
+                            if ($condition['name'] == 'dayIs') {
+                                $totalQuantity = Carbon::now()->format('d');
+                            }
+
+                            if ($condition['name'] == 'date') {
+                                $totalQuantity = Carbon::today()->format('d-m-Y');
+                            }
+
+                            if ($condition['name'] == 'timeIn') {
+                                $totalQuantity = Carbon::now()->format('H:i');
+                            }
+
+                            if ($condition['name'] == 'deliveryType') {
+                                $deliveryType = explode(',', $condition['value']);
+                                $day = "Shipping";
+
+                                if ($condition['condition'] == 'equal') {
+                                    return in_array($day, $deliveryType);
+                                } else {
+                                    return !in_array($day, $deliveryType);
+                                }
+                            }
+
+                            return $this->checkCondition($condition, $totalQuantity);
+                        }
+
+                        return true;
+                    });
+                    break;
             }
 
             //Log the conditions and the result of the check
@@ -590,8 +931,22 @@ class ApiController extends Controller
             //     }
             // }
 
+            // if($rate->send_another_rate['send_another_rate']){
+            //     dump($rate->send_another_rate);
+            // }
+
             return $rate;
         })->filter();
+
+        // if($rate->send_another_rate['send_another_rate']){
+        //     $rate[] = [
+        //         "name" => $rate->send_another_rate['another_rate_name'],
+        //         "service_code" => $rate->send_another_rate['another_service_code'],
+        //         "total_price" => $rate->send_another_rate['adjustment_price'],
+        //         "description" => $rate->send_another_rate['another_rate_description'],
+        //         "currency" => $rate->zone->currency,
+        //     ];
+        // }
 
         // // Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
         // Log::info('Query logs:', ['totalQuantity' => $totalQuantity]);
@@ -607,6 +962,36 @@ class ApiController extends Controller
                 'min_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
                 'max_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
             ];
+
+            if ($rate->send_another_rate['send_another_rate']) {
+                $finalTotalPrice = 0;
+
+                if($rate->send_another_rate['update_price_type'] == 0){
+                    if($rate->send_another_rate['update_price_effect']) {
+                        $finalTotalPrice = $rate->base_price - $rate->send_another_rate['adjustment_price'];
+                    } else {
+                        $finalTotalPrice = $rate->base_price + $rate->send_another_rate['adjustment_price'];
+                    }
+                } elseif($rate->send_another_rate['update_price_type'] == 1) {
+                    if($rate->send_another_rate['update_price_effect']) {
+                        $finalTotalPrice = $rate->base_price - ($rate->base_price * $rate->send_another_rate['adjustment_price'] / 100);
+                    } else {
+                        $finalTotalPrice = $rate->base_price + ($rate->base_price * $rate->send_another_rate['adjustment_price'] / 100);
+                    }
+                } else {
+                    $finalTotalPrice = $rate->send_another_rate['adjustment_price'];
+                }
+
+                $response['rates'][] = [
+                    "service_name" => $rate->send_another_rate['another_rate_name'],
+                    "service_code" => $rate->send_another_rate['another_service_code'],
+                    "total_price" => $finalTotalPrice,
+                    "description" => $rate->send_another_rate['another_rate_description'],
+                    "currency" => $rate->zone->currency,
+                    'min_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
+                    'max_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
+                ];
+            }
         }
 
         // Log::info('Shopify Carrier Service input:', ["input" => $input]);

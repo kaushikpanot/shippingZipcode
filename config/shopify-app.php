@@ -201,8 +201,7 @@ return [
     |
     */
 
-    'api_scopes' => env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,write_shipping'),
-
+    'api_scopes' => env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,write_shipping,write_customers,read_customers,write_orders,read_orders, read_shipping, read_checkouts, write_checkouts'),
     /*
     |--------------------------------------------------------------------------
     | Shopify API Grant Mode
@@ -386,13 +385,29 @@ return [
             'address' => env('SHOPIFY_WEBHOOK_1_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/app-uninstalled')
         ],
         [
-            'topic' => env('SHOPIFY_WEBHOOK_1_TOPIC', 'shop/update'),
-            'address' => env('SHOPIFY_WEBHOOK_1_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/shop-update')
+            'topic' => env('SHOPIFY_WEBHOOK_2_TOPIC', 'shop/update'),
+            'address' => env('SHOPIFY_WEBHOOK_2_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/shop-update')
         ],
         [
-            'topic' => env('SHOPIFY_WEBHOOK_1_TOPIC', 'carts/create'),
-            'address' => env('SHOPIFY_WEBHOOK_1_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/carts-create')
+            'topic' => env('SHOPIFY_WEBHOOK_3_TOPIC', 'checkouts/create'),
+            'address' => env('SHOPIFY_WEBHOOK_3_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/checkouts-create')
         ],
+        [
+            'topic' => env('SHOPIFY_WEBHOOK_3_TOPIC', 'carts/create'),
+            'address' => env('SHOPIFY_WEBHOOK_3_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/carts-create')
+        ],
+        [
+            'topic' => env('SHOPIFY_WEBHOOK_3_TOPIC', 'carts/update'),
+            'address' => env('SHOPIFY_WEBHOOK_3_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/carts-update')
+        ],
+        // [
+        //     'topic' => env('SHOPIFY_WEBHOOK_4_TOPIC', 'carts/create'),
+        //     'address' => env('SHOPIFY_WEBHOOK_4_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/carts/create')
+        // ],
+        // [
+        //     'topic' => env('SHOPIFY_ORDER_WEBHOOK_TOPIC', 'orders/create'),
+        //     'address' => env('SHOPIFY_ORDER_WEBHOOK_ADDRESS', env('APP_URL') . '/webhook/order-created')
+        // ]
         /*
             [
                 'topic' => env('SHOPIFY_WEBHOOK_2_TOPIC', 'APP_PURCHASES_ONE_TIME_UPDATE'),

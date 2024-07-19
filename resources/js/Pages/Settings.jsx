@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   Toast, Select, Page, Button, Grid, Divider,
-  LegacyCard, RadioButton, Text, Banner, TextField, FormLayout, List
+  LegacyCard, RadioButton, Text, Banner, TextField, FormLayout, List, SkeletonDisplayText, SkeletonBodyText, Card
 } from '@shopify/polaris';
 import axios from 'axios';
 import '../../../public/css/style.css';
@@ -13,13 +13,14 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 const Settings = (props) => {
   const [active, setActive] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [settings, setSettings] = useState({
     status: 0,
     shippingRate: 'All',
     rateModifierTitle: 'Append Description',
-    mix_merge_rate: 0,
-    mix_merge_rate_1: 0,
+    mix_merge_rate: 1,
+    mix_merge_rate_1: 1,
     additional_description_of_mix_rate: '',
     max_price_of_auto_product_base_mix_rate: ''
   });
@@ -55,6 +56,7 @@ const Settings = (props) => {
 
       const data = response.data.settings;
       setSettings(data);
+      setLoading(false)
       console.log(data)
     } catch (error) {
       console.error("Error fetching settings data:", error);
@@ -83,10 +85,115 @@ const Settings = (props) => {
   const toastMarkup = active ? (
     <Toast content="Setting saved successfully." onDismiss={() => setActive(false)} />
   ) : null;
+  if (loading) {
+    return (
+      <Page
+        title='Settings'
+        primaryAction={<Button variant="primary" onClick={handleSaveSettings}>Save</Button>}
+      // secondaryActions={<Button onClick={navigateHome}>Back</Button>}
+      >
+         <Divider borderColor="border" />
+        <Grid>
+          <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+            <div style={{ paddingTop: '18%' }}>
+              <SkeletonDisplayText size="small" />
+              <div style={{ paddingTop: '7%', fontSize: '14px' }}>
+                <SkeletonBodyText lines={2} />
+              </div>
+            </div>
+          </Grid.Cell>
+          <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+              <Card roundedAbove="sm">
+
+                <div style={{ marginTop: "2%", }}>
+                  <LegacyCard sectioned>
+                    <SkeletonBodyText lines={2} />
+                  </LegacyCard>
+                </div>
+                <div style={{ marginTop: "2%", }}>
+                  <LegacyCard sectioned>
+                    <SkeletonBodyText lines={2} />
+                  </LegacyCard>
+                </div>
+
+              </Card>
+            </div>
+          </Grid.Cell>
+
+        </Grid>
+        <div style={{marginBottom:"2%"}}></div>
+        <Divider borderColor="border" />
+        <div style={{ marginTop: "2%",marginBottom:"2%" }}>
+          <Grid>
+            <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+              <div style={{ paddingTop: '18%' }}>
+                <SkeletonDisplayText size="small" />
+                <div style={{ paddingTop: '7%', fontSize: '14px' }}>
+                  <SkeletonBodyText lines={2} />
+                </div>
+              </div>
+            </Grid.Cell>
+            <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+              <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                <Card roundedAbove="sm">
+
+                  <div style={{ marginTop: "2%", }}>
+                    <LegacyCard sectioned>
+                      <SkeletonBodyText lines={2} />
+                    </LegacyCard>
+                  </div>
+                  <div style={{ marginTop: "2%", }}>
+                    <LegacyCard sectioned>
+                      <SkeletonBodyText lines={2} />
+                    </LegacyCard>
+                  </div>
+
+                </Card>
+              </div>
+            </Grid.Cell>
+
+          </Grid>
+        </div>
+        <Divider borderColor="border" />
+        <div style={{ marginTop: "2%" }}>
+          <Grid>
+            <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+              <div style={{ paddingTop: '18%' }}>
+                <SkeletonDisplayText size="small" />
+                <div style={{ paddingTop: '7%', fontSize: '14px' }}>
+                  <SkeletonBodyText lines={2} />
+                </div>
+              </div>
+            </Grid.Cell>
+            <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+              <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                <Card roundedAbove="sm">
+
+                  <div style={{ marginTop: "2%", }}>
+                    <LegacyCard sectioned>
+                      <SkeletonBodyText lines={2} />
+                    </LegacyCard>
+                  </div>
+                  <div style={{ marginTop: "2%", }}>
+                    <LegacyCard sectioned>
+                      <SkeletonBodyText lines={2} />
+                    </LegacyCard>
+                  </div>
+
+                </Card>
+              </div>
+            </Grid.Cell>
+
+          </Grid>
+        </div>
+      </Page>
+    );
+  }
 
   return (
     <Page
-      backAction={{ content: 'Settings', url: '#' }}
+     
       title="Settings"
       primaryAction={<Button onClick={handleSaveSettings} variant='primary'>Save</Button>}
     >

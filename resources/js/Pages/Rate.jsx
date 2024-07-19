@@ -133,12 +133,7 @@ function Rate(props) {
         { label: 'Product Type', value: 'product_type' },
         { label: 'Product Properties', value: 'product_properties' }
     ];
-    useEffect(() => {
-        SetExclude_Rate(prevState => ({
-            ...prevState,
-            set_exclude_products: selectedRate,
-        }));
-    }, [selectedRate]);
+  
 
     const [rateModifiers, setRateModifiers] = useState([]);
     const [open, setOpen] = useState({});
@@ -253,7 +248,8 @@ function Rate(props) {
     const [checkedState, setCheckedState] = useState({
         checked1: false,
         checked2: true,
-        checked3: false
+        checked3: false,
+        checked4: false,
     });
 
     const handleCheckChange = (checkbox) => {
@@ -263,6 +259,14 @@ function Rate(props) {
         });
     };
 
+    const [checkedlocation, setCheckedlocation] = useState({});
+
+    const handleLocationChange = (locationId) => {
+        setCheckedlocation(prevState => ({
+            ...prevState,
+            [locationId]: !prevState[locationId]
+        }));
+    };
     const handleChange = useCallback((value) => {
         setZipcodeValue(value);
     }, []);
@@ -427,6 +431,13 @@ function Rate(props) {
                 }
             });
             setLocations(response.data.locations);
+
+            // Initialize the checked state for each location
+            const initialCheckedState = response.data.locations.reduce((acc, location) => {
+                acc[location.id] = false;
+                return acc;
+            }, {});
+            setCheckedlocation(initialCheckedState);
         } catch (error) {
             console.error("Error fetching shop location:", error);
         }
@@ -785,49 +796,49 @@ function Rate(props) {
 
     const validations = [
         { label: 'Cart / Order', value: '', disabled: true, className: 'select-header' },
-        { label: 'Quantity', value: 'quantity', unit: 'items', mainLabel: "Cart_Order" },
-        { label: 'Total', value: 'total', unit: '.Rs', mainLabel: "Cart_Order" },
-        { label: 'Sale Product Total', value: 's&ptotal', unit: '.Rs', mainLabel: "Cart_Order" },
-        { label: 'Non Sale Product Total', value: 'ns&ptotal', unit: '.Rs', mainLabel: "Cart_Order" },
-        { label: 'Weight', value: 'weight', unit: shop_weight_unit, mainLabel: "Cart_Order" },
-        { label: 'Line Item', value: 'lineitem', mainLabel: "Cart_Order" },
-        { label: 'Distance', value: 'distance', unit: 'km', mainLabel: "Cart_Order" },
-        { label: 'Day', value: 'day', mainLabel: "Cart_Order" },
-        { label: 'Time', value: 'time', mainLabel: "Cart_Order" },
-        { label: 'Local Code', value: 'localcode', mainLabel: "Cart_Order" },
+        { label: 'Quantity', value: 'quantity', unit: 'items', mainlabel: "Cart_Order" },
+        { label: 'Total', value: 'total', unit: '.Rs', mainlabel: "Cart_Order" },
+        { label: 'Sale Product Total', value: 's&ptotal', unit: '.Rs', mainlabel: "Cart_Order" },
+        { label: 'Non Sale Product Total', value: 'ns&ptotal', unit: '.Rs', mainlabel: "Cart_Order" },
+        { label: 'Weight', value: 'weight', unit: shop_weight_unit, mainlabel: "Cart_Order" },
+        { label: 'Line Item', value: 'lineitem', mainlabel: "Cart_Order" },
+        { label: 'Distance', value: 'distance', unit: 'km', mainlabel: "Cart_Order" },
+        { label: 'Day', value: 'day', mainlabel: "Cart_Order" },
+        { label: 'Time', value: 'time', mainlabel: "Cart_Order" },
+        { label: 'Local Code', value: 'localcode', mainlabel: "Cart_Order" },
 
         { label: 'Per Product', value: '', disabled: true, className: 'select-header' },
-        { label: 'Quantity', value: 'quantity2', unit: 'items', mainLabel: 'Per_Product' },
-        { label: 'Price', value: 'price', unit: '.Rs', mainLabel: 'Per_Product' },
-        { label: 'Total', value: 'total2', unit: '.Rs', mainLabel: 'Per_Product' },
-        { label: 'Weight', value: 'weight2', unit: shop_weight_unit, mainLabel: 'Per_Product' },
-        { label: 'Name', value: 'name', mainLabel: 'Per_Product' },
-        { label: 'Tag', value: 'tag', mainLabel: 'Per_Product' },
-        { label: 'SKU', value: 'sku', mainLabel: 'Per_Product' },
-        { label: 'Type', value: 'type', mainLabel: 'Per_Product' },
-        { label: 'Vendor', value: 'vendor', mainLabel: 'Per_Product' },
-        { label: 'Properties', value: 'properties', mainLabel: 'Per_Product' },
+        { label: 'Quantity', value: 'quantity2', unit: 'items', mainlabel: 'Per_Product' },
+        { label: 'Price', value: 'price', unit: '.Rs', mainlabel: 'Per_Product' },
+        { label: 'Total', value: 'total2', unit: '.Rs', mainlabel: 'Per_Product' },
+        { label: 'Weight', value: 'weight2', unit: shop_weight_unit, mainlabel: 'Per_Product' },
+        { label: 'Name', value: 'name', mainlabel: 'Per_Product' },
+        { label: 'Tag', value: 'tag', mainlabel: 'Per_Product' },
+        { label: 'SKU', value: 'sku', mainlabel: 'Per_Product' },
+        { label: 'Type', value: 'type', mainlabel: 'Per_Product' },
+        { label: 'Vendor', value: 'vendor', mainlabel: 'Per_Product' },
+        { label: 'Properties', value: 'properties', mainlabel: 'Per_Product' },
 
         { label: 'Customer', value: '', disabled: true, className: 'select-header' },
-        { label: 'Name', value: 'name2', mainLabel: 'Customer' },
-        { label: 'Email', value: 'email', mainLabel: 'Customer' },
-        { label: 'Phone', value: 'phone', mainLabel: 'Customer' },
-        { label: 'Compnay', value: 'company', mainLabel: 'Customer' },
-        { label: 'Address', value: 'address', mainLabel: 'Customer' },
-        { label: 'Address1', value: 'addrss1', mainLabel: 'Customer' },
-        { label: 'Address2', value: 'address2', mainLabel: 'Customer' },
-        { label: 'City', value: 'city', mainLabel: 'Customer' },
-        { label: 'Province COde', value: 'provinceCode', mainLabel: 'Customer' },
-        { label: 'Tag', value: 'tag2', mainLabel: 'Customer' },
-        { label: 'Previous Orders Count', value: 'previousCount', mainLabel: 'Customer' },
-        { label: 'Previous Orders Spent ', value: 'previousSpent', mainLabel: 'Customer' },
+        { label: 'Name', value: 'name2', mainlabel: 'Customer' },
+        { label: 'Email', value: 'email', mainlabel: 'Customer' },
+        { label: 'Phone', value: 'phone', mainlabel: 'Customer' },
+        { label: 'Compnay', value: 'company', mainlabel: 'Customer' },
+        { label: 'Address', value: 'address', mainlabel: 'Customer' },
+        { label: 'Address1', value: 'addrss1', mainlabel: 'Customer' },
+        { label: 'Address2', value: 'address2', mainlabel: 'Customer' },
+        { label: 'City', value: 'city', mainlabel: 'Customer' },
+        { label: 'Province COde', value: 'provinceCode', mainlabel: 'Customer' },
+        { label: 'Tag', value: 'tag2', mainlabel: 'Customer' },
+        { label: 'Previous Orders Count', value: 'previousCount', mainlabel: 'Customer' },
+        { label: 'Previous Orders Spent ', value: 'previousSpent', mainlabel: 'Customer' },
 
         { label: 'Delivery', value: '', disabled: true, className: 'select-header' },
-        { label: 'Day Of Week', value: 'dayOfWeek', mainLabel: "Delivery" },
-        { label: 'Day Is', value: 'dayIs', mainLabel: "Delivery" },
-        { label: 'Date', value: 'date', mainLabel: "Delivery" },
-        { label: 'Time In', value: 'timeIn', mainLabel: "Delivery" },
-        { label: 'Type', value: 'type2', mainLabel: "Delivery" }
+        { label: 'Day Of Week', value: 'dayOfWeek', mainlabel: "Delivery" },
+        { label: 'Day Is', value: 'dayIs', mainlabel: "Delivery" },
+        { label: 'Date', value: 'date', mainlabel: "Delivery" },
+        { label: 'Time In', value: 'timeIn', mainlabel: "Delivery" },
+        { label: 'Type', value: 'type2', mainlabel: "Delivery" }
     ];
 
     const handleAddItem = () => {
@@ -838,13 +849,9 @@ function Rate(props) {
             value2: '',
             unit: 'items',
             label: 'cart_order',
-            lineItem: 'satisfy',
+            lineItem: 'any',
             tag: '',
-            time1: '00',
-            time2: '00',
             per_product: 'any',
-            date: '',
-            time: ''
         };
         setItems(prevItems => [...prevItems, newItem]);
     };
@@ -889,22 +896,21 @@ function Rate(props) {
                 return updatedItems;
             });
         }
-    
+
         const updatedItem = {
             ...items[index],
             condition: isSecondSelect ? newValue : items[index].condition,
             name: isSecondSelect ? items[index].name : newValue,
             unit: isSecondSelect ? items[index].unit : selectedOption.unit || '', // Only update if it's not a second select
-            label: selectedOption.mainLabel,
+            label: selectedOption.mainlabel,
             value: isSecondSelect ? items[index].value : '',
             value2: isSecondSelect ? items[index].value : '',
         };
-    
+
         const updatedItems = [...items];
         updatedItems[index] = updatedItem;
         setItems(updatedItems);
     };
-    
 
     const handleConditionChange = useCallback(
         (newValue, index, key) => {
@@ -929,14 +935,12 @@ function Rate(props) {
         navigate(`/Zone/${zone_id}`);
     };
 
+   
     useEffect(() => {
         app = createApp({
             apiKey: SHOPIFY_API_KEY,
             host: props.host,
         });
-    }, []);
-
-    useEffect(() => {
         if (rate_id) {
             editRate();
         }
@@ -958,6 +962,7 @@ function Rate(props) {
         descriptions: '',
 
     })
+   
     const [send_another_rate, setsend_another_rate] = useState({
         send_another_rate: checkedState.checked3,
         another_rate_name: '',
@@ -976,7 +981,11 @@ function Rate(props) {
             update_price_type: checkstate.selectedByUpdatePriceType,
             update_price_effect: checkstate.selectedByUpdatePriceEffect
         }));
-    }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect]);
+        SetExclude_Rate(prevState => ({
+            ...prevState,
+            set_exclude_products: selectedRate,
+        }));
+    }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect,selectedRate]);
 
     const [exclude_Rate, SetExclude_Rate] = useState({
         set_exclude_products: selectedRate,
@@ -1028,15 +1037,7 @@ function Rate(props) {
         merge_rate_tag: ''
     });
 
-    const removeEmptyFields = (obj) => {
-        return Object.keys(obj).reduce((acc, key) => {
-            if (obj[key] !== '') {
-                acc[key] = obj[key];
-            }
-            return acc;
-        }, {});
-    };
-
+   
     const handleRateFormChange = (field) => (value) => {
         setFormData((prevState) => ({
             ...prevState,
@@ -1048,13 +1049,11 @@ function Rate(props) {
             [field]: value,
         }));
 
-        Setrate_based_on_surcharge((prevState) => {
-            const updatedState = {
-                ...prevState,
-                [field]: value,
-            };
-            return removeEmptyFields(updatedState);
-        });
+        Setrate_based_on_surcharge((prevState) => ({
+            ...prevState,
+            [field]: value,
+        }));
+
 
         SetExclude_Rate((prevState) => ({
             ...prevState,
@@ -1124,7 +1123,8 @@ function Rate(props) {
         checkstate.selectedByUpdatePriceEffect
     ]);
 
-    const saveRate = async () => {
+    const saveRate = async (event) => {
+        event.preventDefault();
         const newErrors = {};
         if (!formData.name) newErrors.name = 'Rate name is required';
         if (!formData.base_price) newErrors.base_price = 'Base price is required';
@@ -1302,6 +1302,7 @@ function Rate(props) {
             primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
             secondaryActions={<Button onClick={() => BacktoZone(zone_id)}>Back</Button>}
         >
+              <Divider borderColor="border" />
             <div style={{ marginTop: '2%', marginBottom: '2%' }}>
                 <Layout>
                     <Layout.Section variant="oneThird">
@@ -1436,7 +1437,7 @@ function Rate(props) {
                                             <div key={index}>
                                                 <Grid>
                                                     <Grid.Cell columnSpan={{ xs: 2, sm: 3, md: 3, lg: 2, xl: 2 }}>
-                                                        <div style={{ paddingTop: '20%',textAlign: 'center', }}>
+                                                        <div style={{ paddingTop: '20%', textAlign: 'center', }}>
                                                             <Text variant="headingXs" as="h6">
                                                                 {getCategory(item.name)}
                                                             </Text>
@@ -1502,16 +1503,15 @@ function Rate(props) {
                                                                 )}
 
                                                                 {item.condition === 'between' && (
-                                                                <div>
-                                                                   {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' &&  item.name !== 'name' &&  item.name !== 'tag' && item.name !== 'sku' &&  item.name !== 'type' && item.name !== 'vendor' &&  item.name !== 'properties' && item.name !== 'name2' && item.name !== 'email' && item.name !== 'phone' && item.name !== 'company' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'Customer' && item.name !== 'localcode' && (
-                                                                    <TextField
-                                                                        value={item.value2}
-                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
-                                                                        autoComplete="off"
-                                                                        suffix={item.unit ? item.unit : ''}
-                                                                      
-                                                                    />
-                                                                )}
+                                                                    <div>
+                                                                        {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'name2' && item.name !== 'email' && item.name !== 'phone' && item.name !== 'company' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'Customer' && item.name !== 'localcode' && (
+                                                                            <TextField
+                                                                                value={item.value2}
+                                                                                onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
+                                                                                autoComplete="off"
+                                                                                suffix={item.unit ? item.unit : ''}
+                                                                            />
+                                                                        )}
                                                                     </div>
                                                                 )}
 
@@ -1528,18 +1528,19 @@ function Rate(props) {
                                                                         display: 'flex',
                                                                         alignItems: 'center',
                                                                         gap: '10%',
+                                                                        marginRight:"3%"
                                                                     }}>
                                                                         <Select
                                                                             key={index}
                                                                             options={time}
-                                                                            onChange={handleConditionsChange(index, 'time1')}
-                                                                            value={item.time1}
+                                                                            onChange={handleConditionsChange(index, 'value')}
+                                                                            value={item.value}
                                                                         />
                                                                         <Select
                                                                             options={time}
                                                                             key={index}
-                                                                            onChange={handleConditionsChange(index, 'time2')}
-                                                                            value={item.time2}
+                                                                            onChange={handleConditionsChange(index, 'value2')}
+                                                                            value={item.value2}
                                                                         />
                                                                     </div>
                                                                 )}
@@ -1586,8 +1587,8 @@ function Rate(props) {
                                                                 {item.name === 'date' && (
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                                                         <TextField
-                                                                            value={item.date}
-                                                                            onChange={(value) => handleDateChange(index, 'date', value)}
+                                                                            value={item.value}
+                                                                            onChange={(value) => handleDateChange(index, 'value', value)}
                                                                             type="date"
                                                                         />
                                                                     </div>
@@ -1595,8 +1596,8 @@ function Rate(props) {
                                                                 {item.name === 'timeIn' && (
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                                                         <TextField
-                                                                            value={item.time}
-                                                                            onChange={(value) => handleDateChange(index, 'time', value)}
+                                                                            value={item.value}
+                                                                            onChange={(value) => handleDateChange(index, 'value', value)}
                                                                             type="time"
                                                                         />
                                                                     </div>
@@ -2947,20 +2948,19 @@ function Rate(props) {
                                     <div style={{ marginTop: "1%" }}>
                                         <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                                             {locations.map(location => (
-                                                <div key={location.id} style={{ width: '50%', height: "5%", padding: '5px' }}>
+                                                <div key={location.id} style={{ width: '50%', height: '5%', padding: '5px' }}>
                                                     <LegacyCard>
-                                                        <div style={{ display: 'flex', alignItems: 'center', padding: "10px", }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', padding: '10px' }}>
                                                             <Checkbox
-                                                            // checked={checked}
-                                                            // onChange={onChange}
+                                                                checked={!!checkedlocation[location.id]}
+                                                                onChange={() => handleLocationChange(location.id)}
                                                             />
-                                                            <div style={{ marginLeft: "5%" }}>
+                                                            <div style={{ marginLeft: '5%' }}>
                                                                 <h2>{location.name}</h2>
                                                                 <p>{location.address1 || '-'}</p>
-
                                                             </div>
                                                         </div>
-                                                    </ LegacyCard>
+                                                    </LegacyCard>
                                                 </div>
                                             ))}
                                             {locations.length === 0 && (

@@ -37,7 +37,7 @@ class CheckoutsCreateJob implements ShouldQueue
         // $customHeaders = [
         //     'X-Shopify-Access-Token' => 'shpua_f6ab89d02602242cc83b47c3c4d64946',
         // ];
-        // Log::info('Query logs:', ['call' => $customer_id]);
+         Log::info('Query logs:', ['call' => $this->webhookData]);
 
         // $data = [
         //     'carrier_service' => [

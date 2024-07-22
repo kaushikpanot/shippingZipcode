@@ -2,7 +2,10 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The Laravel Framework.",
-    "keywords": ["framework", "laravel"],
+    "keywords": [
+        "framework",
+        "laravel"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.1",
@@ -12,7 +15,8 @@
         "kyon147/laravel-shopify": "^21.1",
         "laravel/framework": "^10.0",
         "laravel/sanctum": "^3.2",
-        "laravel/tinker": "^2.8"
+        "laravel/tinker": "^2.8",
+        "terdia/currency-util": "^1.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
@@ -28,7 +32,10 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "app/Helpers/DistanceHelper.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

@@ -35,11 +35,22 @@ class Rate extends Model
     // ];
 
     protected $dateFormats = [
-        'd/m/Y',
+        'Y-m-d\TH:i',
+        'Y-m-d\TH:i A',
+        'Y-m-d H:i:s',
+        'Y/m/d H:i:s',
+        'Y-m-d h:i A',
+        'Y/m/d h:i A',
         'Y-m-d',
-        'Y/m/d',
-        'd-m-Y'
+        'Y/m/d'
     ];
+
+    // protected $dateFormats = [
+    //     'd/m/Y',
+    //     'Y-m-d',
+    //     'Y/m/d',
+    //     'd-m-Y'
+    // ];
 
     public function zone()
     {
@@ -70,7 +81,6 @@ class Rate extends Model
     {
         foreach ($this->dateFormats as $format) {
             try {
-                \Log::info('format:', ["format" => $value]);
                 $this->attributes[$attribute] = Carbon::createFromFormat($format, $value)->format('Y-m-d H:i:s');
                 return;
             } catch (Throwable $e) {

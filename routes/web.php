@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,9 +15,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', [HomeController::class,'index'])->middleware(['verify.shop','verify.shopify'])->name('home');
+Route::get('/', [HomeController::class, 'index'])->middleware(['verify.shop', 'verify.shopify'])->name('home');
 Route::get('/{path?}', [HomeController::class, 'common'])
     ->where('path', '^(?!uploads).')
     ->where('path', '..(?!jpg|jpeg|png|gif|bmp|ico|webp).')
     ->where('path', '.*')
     ->fallback();
+
+
+Route::post('/webhook/checkouts-create', [WebhookController::class, 'handleCheckoutsCreate']);
+
+Route::post('/webhook/carts-create', [WebhookController::class, 'handleCartsCreate']);

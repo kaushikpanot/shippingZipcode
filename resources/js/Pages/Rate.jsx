@@ -29,7 +29,6 @@ import {
     Box,
     Collapsible,
     List,
-
 } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon, SearchIcon, SelectIcon } from '@shopify/polaris-icons';
 import '../../../public/css/style.css';
@@ -92,23 +91,23 @@ function Rate(props) {
 
     const handleDateChange = (key, value) => {
         setDates(prevDates => {
-          const updatedDates = { ...prevDates, [key]: value };
-    
-          if (key === 'endDate' && new Date(value) < new Date(updatedDates.startDate)) {
-            updatedDates.error = 'End date cannot be before start date.';
-          } else if (key === 'startDate' && new Date(updatedDates.endDate) < new Date(value)) {
-            updatedDates.error = 'End date cannot be before start date.';
-          } else {
-            updatedDates.error = '';
-          }
-    
-          return updatedDates;
+            const updatedDates = { ...prevDates, [key]: value };
+
+            if (key === 'endDate' && new Date(value) < new Date(updatedDates.startDate)) {
+                updatedDates.error = 'End date cannot be before start date.';
+            } else if (key === 'startDate' && new Date(updatedDates.endDate) < new Date(value)) {
+                updatedDates.error = 'End date cannot be before start date.';
+            } else {
+                updatedDates.error = '';
+            }
+
+            return updatedDates;
         });
-      };
+    };
 
     const [selectedTierType, setSelectedTierType] = useState('selected');
     const [tiers, setTiers] = useState([
-        { minWeight: '', maxWeight: '', basePrice: '', perItem:'' , percentCharge:'', perkg:'' }
+        { minWeight: '', maxWeight: '', basePrice: '', perItem: '', percentCharge: '', perkg: '' }
     ]);
 
     const handleInputChange = (index, field, value) => {
@@ -276,7 +275,6 @@ function Rate(props) {
     };
 
     const [checkedlocation, setCheckedlocation] = useState({});
-
     const handleLocationChange = (locationId) => {
         setCheckedlocation(prevState => ({
             ...prevState,
@@ -295,7 +293,7 @@ function Rate(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            console.log(response.data)
+            console.log(response.data);
             const allStates = response.data.states;
             const formattedOptions = [];
             for (const country in allStates) {
@@ -333,21 +331,15 @@ function Rate(props) {
                 const fetchedSelectedOptions = response.data.rate.zipcode.state.map(state => state.code);
                 setSelectedOptions(fetchedSelectedOptions);
             }
-            if (response.data.rate.zipcode.state) {
-                const fetchedSelectedOptions = response.data.rate.zipcode.state.map(state => state.code);
-                setSelectedOptions(fetchedSelectedOptions);
-            }
 
             if (response.data.rate.exclude_rate_for_products) {
-                setSelectedRate(response.data.rate.exclude_rate_for_products.set_exclude_products)
-                SetExclude_Rate(response.data.rate.exclude_rate_for_products)
+                setSelectedRate(response.data.rate.exclude_rate_for_products.set_exclude_products);
+                SetExclude_Rate(response.data.rate.exclude_rate_for_products);
             }
             if (response.data.rate.rate_modifiers) {
-                setRateModifiers(response.data.rate.rate_modifiers)
-
+                setRateModifiers(response.data.rate.rate_modifiers);
             }
             if (response.data.rate.cart_condition) {
-
                 setCheckState(prevState => ({
                     ...prevState,
                     selectedCondition: response.data.rate.cart_condition.conditionMatch,
@@ -384,9 +376,8 @@ function Rate(props) {
                 setCheckedState(prevState => ({
                     ...prevState,
                     checked3: response.data.rate.send_another_rate.send_another_rate,
-
                 }));
-                setsend_another_rate(response.data.rate.send_another_rate)
+                setsend_another_rate(response.data.rate.send_another_rate);
             }
 
             if (response.data.rate.rate_based_on_surcharge) {
@@ -395,19 +386,24 @@ function Rate(props) {
                     selectedByCart: response.data.rate.rate_based_on_surcharge.cart_and_product_surcharge,
                     selectedByAmount: response.data.rate.rate_based_on_surcharge.selectedByAmount,
                     selectedMultiplyLine: response.data.rate.rate_based_on_surcharge.selectedMultiplyLine
-
                 }));
                 setCheckedState(prevState => ({
                     ...prevState,
                     checked1: response.data.rate.rate_based_on_surcharge.based_on_cart,
-
-                }))
-                Setrate_based_on_surcharge(response.data.rate.rate_based_on_surcharge.rate_based_on_surcharge)
+                }));
+                const surchargeData = response.data.rate.rate_based_on_surcharge.rate_based_on_surcharge || {};
+                Setrate_based_on_surcharge({
+                    ...surchargeData,
+                    charge_per_wight: surchargeData.charge_per_wight || '',
+                    unit_for: surchargeData.unit_for || '',
+                    min_charge_price: surchargeData.min_charge_price || '',
+                    max_charge_price: surchargeData.max_charge_price || ''
+                });
             }
 
             if (response.data.rate.rate_tier) {
-                setSelectedTierType(response.data.rate.rate_tier.tier_type)
-                setTiers(response.data.rate.rate_tier.rateTier)
+                setSelectedTierType(response.data.rate.rate_tier.tier_type);
+                setTiers(response.data.rate.rate_tier.rateTier);
             }
 
             setFormData({
@@ -433,10 +429,22 @@ function Rate(props) {
                 }));
             }
 
+            if (response.data.rate.origin_locations) {
+                const checkedLocationIds = response.data.rate.origin_locations.map(location => location.id);
+                const newCheckedLocations = locations.reduce((acc, location) => {
+                    if (checkedLocationIds.includes(location.id)) {
+                        acc[location.id] = true;
+                    }
+                    return acc;
+                }, {});
+                setCheckedlocation(newCheckedLocations);
+            }
+
         } catch (error) {
             console.error("Error fetching edit data:", error);
         }
     };
+
 
     const getLocation = async () => {
         try {
@@ -448,8 +456,6 @@ function Rate(props) {
                 }
             });
             setLocations(response.data.locations);
-
-            // Initialize the checked state for each location
             const initialCheckedState = response.data.locations.reduce((acc, location) => {
                 acc[location.id] = false;
                 return acc;
@@ -732,7 +738,7 @@ function Rate(props) {
         Sunday: false,
     }]);
 
-    const [items, setItems] = useState([]);
+    const [items, setItems] = useState([{ name: 'quantity', }]);
 
     const handleItemDateChange = (index, key, value) => {
         setItems(prevItems => {
@@ -741,15 +747,6 @@ function Rate(props) {
                 ...updatedItems[index],
                 [key]: value
             };
-
-            if (key === 'endDate' && new Date(value) < new Date(updatedItems[index].startDate)) {
-                updatedItems[index].error = 'End date cannot be before start date.';
-            } else if (key === 'startDate' && new Date(updatedItems[index].endDate) < new Date(value)) {
-                updatedItems[index].error = 'End date cannot be before start date.';
-            } else {
-                updatedItems[index].error = '';
-            }
-
             return updatedItems;
         });
     };
@@ -866,7 +863,7 @@ function Rate(props) {
             value2: '',
             unit: 'items',
             label: 'cart_order',
-            lineItem: 'any',
+            lineItem: 'anyTag',
             tag: '',
             per_product: 'any',
         };
@@ -1002,7 +999,24 @@ function Rate(props) {
             ...prevState,
             set_exclude_products: selectedRate,
         }));
-    }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate]);
+
+        const updated_location = locations
+            .filter(location => checkedlocation[location.id])
+            .map(location => ({
+                name: location.name,
+                address: location.address1 || '-'
+            }));
+
+        setFormData(prevState => ({
+            ...prevState,
+            origin_locations: {
+                updated_location,
+                ship_from_locations: checkedState.checked2,
+
+            },
+        }));
+
+    }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate, locations, checkedlocation]);
 
     const [exclude_Rate, SetExclude_Rate] = useState({
         set_exclude_products: selectedRate,
@@ -1051,7 +1065,8 @@ function Rate(props) {
         rate_modifiers: rateModifiers,
         exclude_rate_for_products: exclude_Rate,
         status: 1,
-        merge_rate_tag: ''
+        merge_rate_tag: '',
+        origin_locations: []
     });
 
     const handleRateFormChange = (field) => (value) => {
@@ -1060,14 +1075,16 @@ function Rate(props) {
             [field]: value,
         }));
 
+        if (field in send_another_rate) {
+            setsend_another_rate((prevState) => ({
+                ...prevState,
+                [field]: value,
+            }));
+        }
+
         setsend_another_rate((prevState) => ({
             ...prevState,
-            [field]: value,
-        }));
-
-        Setrate_based_on_surcharge((prevState) => ({
-            ...prevState,
-            [field]: value,
+            [field]: value
         }));
 
         SetExclude_Rate((prevState) => ({
@@ -1079,7 +1096,6 @@ function Rate(props) {
             ...prevErrors,
             [field]: '',
         }));
-
     };
 
     useEffect(() => {
@@ -1115,14 +1131,17 @@ function Rate(props) {
                 based_on_cart: checkedState.checked1,
                 selectedByAmount: checkstate.selectedByAmount,
                 selectedMultiplyLine: checkstate.selectedMultiplyLine,
-                rate_based_on_surcharge
+                charge_per_wight: rate_based_on_surcharge?.charge_per_wight || '',
+                unit_for: rate_based_on_surcharge?.unit_for || '',
+                min_charge_price: rate_based_on_surcharge?.min_charge_price || '',
+                max_charge_price: rate_based_on_surcharge?.max_charge_price || ''
             },
             rate_tier: {
                 ...prevFormData.rate_tier,
                 tier_type: selectedTierType,
                 rateTier: tiers
             },
-            send_another_rate: send_another_rate,
+            send_another_rate,
             exclude_rate_for_products: exclude_Rate,
             rate_modifiers: rateModifiers,
         }));
@@ -1138,8 +1157,21 @@ function Rate(props) {
         checkstate.selectedByUpdatePriceEffect
     ]);
 
-    const saveRate = async (event) => {
-        event.preventDefault();
+
+    const removeEmptyFields = (obj) => {
+        return Object.entries(obj)
+            .filter(([_, value]) => value !== '' && value !== null && value !== undefined)
+            .reduce((acc, [key, value]) => {
+                if (typeof value === 'object' && !Array.isArray(value)) {
+                    acc[key] = removeEmptyFields(value);
+                } else {
+                    acc[key] = value;
+                }
+                return acc;
+            }, {});
+    };
+
+    const saveRate = async () => {
         const newErrors = {};
         if (!formData.name) newErrors.name = 'Rate name is required';
         if (!formData.base_price) newErrors.base_price = 'Base price is required';
@@ -1180,11 +1212,7 @@ function Rate(props) {
                     newErrors[`adjustment${index}`] = `Adjustment for Modifier ${index + 1} is required`;
             });
         }
-        // if (items.length > 0) {
-        //     items.forEach((item, index) => {
-        //         if (!item.value) newErrors[`value${index}`] = `Value for Item  is required`;
-        //     });
-        // }
+
         if (checkstate.selectedStateCondition !== 'All' && selectedOptions.length === 0) {
             newErrors.selectedOptions = 'Please select at least one country.';
         }
@@ -1206,19 +1234,21 @@ function Rate(props) {
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             setToastContent('Sorry. Couldn’t be saved. Please try again.');
-            console.log(newErrors)
+            // console.log(newErrors)
             setErroToast(true);
             return;
         }
-
         try {
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
             });
             const token = await getSessionToken(app);
-            console.log(formData)
-            const response = await axios.post(`${apiCommonURL}/api/rate/save`, formData, {
+
+            const cleanFormData = removeEmptyFields(formData);
+
+            console.log(cleanFormData);
+            const response = await axios.post(`${apiCommonURL}/api/rate/save`, cleanFormData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -1232,6 +1262,7 @@ function Rate(props) {
             setShowToast(true);
         }
     };
+
 
     const fetchProducts = async () => {
         try {
@@ -1656,13 +1687,13 @@ function Rate(props) {
                                                                         value={item.lineItem}
                                                                     />
                                                                 )}
-                                                                {item.lineItem === 'anyTag' && (
+                                                                {/* {item.lineItem === 'anyTag' && (
                                                                     <TextField
                                                                         value={item.tag}
                                                                         onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}
                                                                         placeholder='tag1,tag2,tag3'
                                                                     />
-                                                                )}
+                                                                )} */}
                                                             </div>
                                                             {(item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2') && (
                                                                 <div style={{
@@ -2462,7 +2493,7 @@ function Rate(props) {
                                                                         prefix={shop_currency}
                                                                         placeholder="0.00"
                                                                     />
-                                                                    <div style={{ padding: '20px 3px 0 3px',fontSize: '18px' }}>+</div>
+                                                                    <div style={{ padding: '20px 3px 0 3px', fontSize: '18px' }}>+</div>
                                                                     <TextField
                                                                         label='Percent Charge'
                                                                         value={tier.percentCharge}
@@ -2471,14 +2502,14 @@ function Rate(props) {
                                                                         prefix="%"
                                                                         placeholder="0.00"
                                                                     />
-                                                                    <div style={{ padding: '20px 3px 0 3px',fontSize: '18px' }}>+</div>
+                                                                    <div style={{ padding: '20px 3px 0 3px', fontSize: '18px' }}>+</div>
                                                                     <TextField
                                                                         label='Per kg'
                                                                         value={tier.perkg}
                                                                         onChange={(value) => handleInputChange(index, 'perkg', value)}
                                                                         autoComplete="off"
                                                                         prefix={shop_currency}
-                                                                        placeholder="0.00"                                                                      
+                                                                        placeholder="0.00"
                                                                     />
                                                                 </div>
                                                             </FormLayout.Group>
@@ -2778,7 +2809,7 @@ function Rate(props) {
                                                             />
                                                         </FormLayout.Group>
                                                     </FormLayout>
-                                                    <div style={{ marginTop: '4%', marginBottom: '3%' }}>
+                                                    <div style={{ marginTop: '5%', marginBottom: '3%' }}>
                                                         <Select
                                                             options={rateDayOptions}
                                                             value={modifier.rateDay}
@@ -2820,6 +2851,40 @@ function Rate(props) {
                                                     )}
 
 
+
+                                                    {(modifier.type === 'AND' || modifier.type === 'OR') && (
+                                                        <div style={{ marginTop: '5%' }}>
+                                                            <div style={{ float: 'left', width: '45%', marginTop: "0.5%" }}><hr /></div>
+                                                            <div style={{ float: 'right', width: '45%', marginTop: "0.5%" }}><hr /></div>
+                                                            <p style={{ textAlign: "center" }}>{modifier.type} </p>
+
+
+                                                            <div style={{ marginTop: '4%' }}></div>
+                                                            <FormLayout>
+                                                                <FormLayout.Group>
+                                                                    <Select
+                                                                        label="Apply this rate modifier when"
+                                                                        options={rateModifiersOptions}
+                                                                        value={modifier.rateModifier}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateModifier')}
+                                                                    />
+                                                                    <Select
+                                                                        label="Select Operator"
+                                                                        options={rateOperatorOptions}
+                                                                        value={modifier.rateOperator}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                    />
+                                                                </FormLayout.Group>
+                                                            </FormLayout>
+                                                            <div style={{ marginTop: '5%', marginBottom: '3%' }}>
+                                                                <Select
+                                                                    options={rateDayOptions}
+                                                                    value={modifier.rateDay}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                     <Divider borderColor="border" />
                                                     <div
                                                         style={{

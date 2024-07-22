@@ -7,19 +7,19 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
-class ProcessShopifyCartCreate implements ShouldQueue
+class CartsUpdateJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $payload;
-
+    protected $webhookData;
     /**
      * Create a new job instance.
      */
-    public function __construct(array $payload)
+    public function __construct()
     {
-        $this->payload = $payload;
+        $this->webhookData = request()->all();
     }
 
     /**
@@ -27,6 +27,6 @@ class ProcessShopifyCartCreate implements ShouldQueue
      */
     public function handle(): void
     {
-        \Log::info('Processing Shopify cart create webhook:', $this->payload);
+        Log::info('carts updated webhook:', $this->webhookData);
     }
 }

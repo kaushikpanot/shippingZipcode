@@ -29,7 +29,8 @@ class HomeController extends Controller
             'carrier_service' => [
                 'name' => 'Shipping Rate Provider For Meetanshi',
                 'callback_url' => env('VITE_COMMON_API_URL') . "/api/carrier/callback",
-                'service_discovery' => true
+                'service_discovery' => true,
+                'format' => 'json'
             ]
         ];
 

@@ -2785,6 +2785,41 @@ function Rate(props) {
                                                             onChange={handleRateModifierChange(modifier.id, 'rateDay')}
                                                         />
                                                     </div>
+                                                    {(modifier.type === 'AND' || modifier.type === 'OR') && (
+                                                        <div style={{ marginTop: '5%' }}>
+                                                            <div style={{ float: 'left', width: '45%', marginTop: "0.5%" }}><hr /></div>
+                                                            <div style={{ float: 'right', width: '45%', marginTop: "0.5%" }}><hr /></div>
+                                                            <p style={{ textAlign: "center" }}>{modifier.type} </p>
+
+
+                                                            <div style={{ marginTop: '4%' }}></div>
+                                                            <FormLayout>
+                                                                <FormLayout.Group>
+                                                                    <Select
+                                                                        label="Apply this rate modifier when"
+                                                                        options={rateModifiersOptions}
+                                                                        value={modifier.rateModifier}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateModifier')}
+                                                                    />
+                                                                    <Select
+                                                                        label="Select Operator"
+                                                                        options={rateOperatorOptions}
+                                                                        value={modifier.rateOperator}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                    />
+                                                                </FormLayout.Group>
+                                                            </FormLayout>
+                                                            <div style={{ marginTop: '5%', marginBottom: '3%' }}>
+                                                                <Select
+                                                                    options={rateDayOptions}
+                                                                    value={modifier.rateDay}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+
                                                     <Divider borderColor="border" />
                                                     <div
                                                         style={{
@@ -2876,35 +2911,61 @@ function Rate(props) {
                                                             }
                                                         />
                                                     </div>
-                                                    <Divider borderColor="border" />
+                                                   
+                                                    {modifier.modifierType !== 'Static' && modifier.modifierType !== 'RemoveRate' && modifier.modifierType !== 'ShowOnly' && (
+                                                        <div>
+                                                            <Divider borderColor="border" />
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                marginTop: '2%',
+                                                                marginBottom: '2%',
+                                                                justifyContent: "space-between"
+                                                            }}>
+                                                                <Text variant="headingXs" as="h6">
+                                                                    Effect :
+                                                                </Text>
+                                                                <RadioButton
+                                                                    label="Increase"
+                                                                    checked={modifier.effect === 'Increase'}
+                                                                    id="Increase"
+                                                                    name="effect"
+                                                                    onChange={() =>
+                                                                        handleRateModifierChange(modifier.id, 'effect')('Increase')
+                                                                    }
+                                                                />
+                                                                <RadioButton
+                                                                    label="Decrease"
+                                                                    checked={modifier.effect === 'Decrease'}
+                                                                    id="Decrease"
+                                                                    name="effect"
+                                                                    onChange={() =>
+                                                                        handleRateModifierChange(modifier.id, 'effect')('Decrease')
+                                                                    }
+                                                                />
+
+                                                                <TextField
+                                                                    type="text"
+                                                                    label="Adjustment"
+                                                                    value={modifier.adjustment}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'adjustment')}
+                                                                    autoComplete="off"
+                                                                    placeholder="00"
+                                                                    error={errors[`adjustment${index}`]}
+                                                                />
+
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {modifier.modifierType === 'Static' && (
                                                     <div style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        marginTop: '3%',
-                                                        marginBottom: '3%',
-                                                        justifyContent: "space-between"
+                                                        marginTop: '2%',
+                                                        marginBottom: '2%',
+                                                       
                                                     }}>
-                                                        <Text variant="headingXs" as="h6">
-                                                            Effect :
-                                                        </Text>
-                                                        <RadioButton
-                                                            label="Increase"
-                                                            checked={modifier.effect === 'Increase'}
-                                                            id="Increase"
-                                                            name="effect"
-                                                            onChange={() =>
-                                                                handleRateModifierChange(modifier.id, 'effect')('Increase')
-                                                            }
-                                                        />
-                                                        <RadioButton
-                                                            label="Decrease"
-                                                            checked={modifier.effect === 'Decrease'}
-                                                            id="Decrease"
-                                                            name="effect"
-                                                            onChange={() =>
-                                                                handleRateModifierChange(modifier.id, 'effect')('Decrease')
-                                                            }
-                                                        />
+                                                        <div style={{marginBottom:"2%"}}>
+                                                          <Divider borderColor="border" />
+                                                          </div>
                                                         <FormLayout>
                                                             <TextField
                                                                 type="text"
@@ -2917,6 +2978,7 @@ function Rate(props) {
                                                             />
                                                         </FormLayout>
                                                     </div>
+                                                    )}
                                                 </Collapsible>
                                             </div>
                                         </Box>

@@ -21,17 +21,28 @@ class Rate extends Model
     ];
 
     // List of possible date formats
+    // protected $dateFormats = [
+    //     'd-m-Y h:i A',
+    //     'd/m/Y h:i A',
+    //     'Y-m-d H:i:s',
+    //     'Y/m/d H:i:s',
+    //     'Y-m-d h:i A',
+    //     'Y/m/d h:i A',
+    //     'Y-m-d',
+    //     'Y/m/d',
+    //     'd-m-Y',
+    //     'd/m/Y',
+    // ];
+
     protected $dateFormats = [
-        'd-m-Y h:i A',
-        'd/m/Y h:i A',
+        'Y-m-d\TH:i',
+        'Y-m-d\TH:i A',
         'Y-m-d H:i:s',
         'Y/m/d H:i:s',
         'Y-m-d h:i A',
         'Y/m/d h:i A',
         'Y-m-d',
-        'Y/m/d',
-        'd-m-Y',
-        'd/m/Y',
+        'Y/m/d'
     ];
 
     // protected $dateFormats = [
@@ -70,7 +81,6 @@ class Rate extends Model
     {
         foreach ($this->dateFormats as $format) {
             try {
-                \Log::info('format:', ["format" => $value]);
                 $this->attributes[$attribute] = Carbon::createFromFormat($format, $value)->format('Y-m-d H:i:s');
                 return;
             } catch (Throwable $e) {

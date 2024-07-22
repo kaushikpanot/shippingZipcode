@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Throwable;
 use CountryState;
+use Currency\Util\CurrencySymbolUtil;
 use Illuminate\Support\Facades\Session;
 
 class ApiController extends Controller
@@ -355,12 +356,11 @@ class ApiController extends Controller
         return false; // Return false if condition is not properly set or if $array is not an array
     }
 
-
     public function handleCallback(Request $request)
     {
         $input = $request->input();
 
-        // Log::info('Query logs:', ['totalQuantity' => $request->header()]);
+        //  Log::info('input logs:', ['totalQuantity' => $input]);
 
         $shopDomain = $request->header();
 
@@ -909,6 +909,17 @@ class ApiController extends Controller
                 return null;
             }
 
+            // Schedule Rate => This rate is only available on a specific date & time
+            if($rate->schedule_rate){
+                if(!empty($rate->schedule_start_date_time) && !empty($rate->schedule_end_date_time)){
+                    $currentDateTime = Carbon::now()->format('d-m-Y H:i A');
+                    $checkScheduleDateTime = $currentDateTime >= $rate->schedule_start_date_time && $currentDateTime <= $rate->schedule_end_date_time;
+                    if(!$checkScheduleDateTime) {
+                        return null;
+                    }
+                }
+            }
+
             // Check state selection
             // if ($zipcode->stateSelection === 'Custom') {
             //     $states = collect($zipcode->state)->pluck('code')->all();
@@ -937,16 +948,6 @@ class ApiController extends Controller
 
             return $rate;
         })->filter();
-
-        // if($rate->send_another_rate['send_another_rate']){
-        //     $rate[] = [
-        //         "name" => $rate->send_another_rate['another_rate_name'],
-        //         "service_code" => $rate->send_another_rate['another_service_code'],
-        //         "total_price" => $rate->send_another_rate['adjustment_price'],
-        //         "description" => $rate->send_another_rate['another_rate_description'],
-        //         "currency" => $rate->zone->currency,
-        //     ];
-        // }
 
         // // Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
         // Log::info('Query logs:', ['totalQuantity' => $totalQuantity]);
@@ -1594,6 +1595,10 @@ class ApiController extends Controller
             }
 
             $rate->shop_weight_unit = $user->shop_weight_unit;
+            if(!empty($user->shop_currency)){
+                $symbol = CurrencySymbolUtil::getSymbol($user->shop_currency);
+                $rate->shop_currency = $symbol;
+            }
 
             $countryList = $rate->zone->countries->pluck('country', 'countryCode');
 

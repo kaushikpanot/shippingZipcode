@@ -360,7 +360,7 @@ class ApiController extends Controller
     {
         $input = $request->input();
 
-        //  Log::info('input logs:', ['totalQuantity' => $input]);
+        // Log::info('input logs:', ['totalQuantity' => $input]);
 
         $shopDomain = $request->header();
 
@@ -418,9 +418,8 @@ class ApiController extends Controller
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode')->get();
 
-        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPriceFormatted, $distance, $userData) {
+        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPriceFormatted, $totalPrice, $distance, $userData) {
             $zipcode = optional($rate->zipcode);
-
             // Check cart conditions
             $conditionsMet = false;
             switch ($rate->cart_condition['conditionMatch']) {
@@ -910,12 +909,47 @@ class ApiController extends Controller
             }
 
             // Schedule Rate => This rate is only available on a specific date & time
-            if($rate->schedule_rate){
-                if(!empty($rate->schedule_start_date_time) && !empty($rate->schedule_end_date_time)){
+            if ($rate->schedule_rate) {
+                if (!empty($rate->schedule_start_date_time) && !empty($rate->schedule_end_date_time)) {
                     $currentDateTime = Carbon::now()->format('d-m-Y H:i A');
                     $checkScheduleDateTime = $currentDateTime >= $rate->schedule_start_date_time && $currentDateTime <= $rate->schedule_end_date_time;
-                    if(!$checkScheduleDateTime) {
+                    if (!$checkScheduleDateTime) {
                         return null;
+                    }
+                }
+            }
+
+            if (!empty($rate->rate_tier) && $rate->rate_tier['tier_type'] !== 'selected') {
+
+                if ($rate->rate_tier['tier_type'] == 'order_price') {
+
+                    foreach ($rate->rate_tier['rateTier'] as $tier) {
+                        $checkRateTier = $totalPrice >= $tier['minWeight'] && $totalPrice <= $tier['maxWeight'];
+
+                        $perItem = isset($tier['perItem']) ? $totalQuantity * $tier['perItem'] : 0;
+                        $percentCharge = isset($tier['percentCharge']) ? $totalPrice * $tier['percentCharge'] / 100 : 0;
+                        $perkg = isset($tier['perkg']) ? $totalWeight * $tier['perkg'] : 0;
+
+                        if ($checkRateTier) {
+                            $rate->base_price = $tier['basePrice'] + $perItem + $percentCharge + $perkg;
+                        }
+                    }
+                } else {
+
+                    $matchValue = 0;
+                    if ($rate->rate_tier['tier_type'] == 'order_quantity') {
+                        $matchValue = $totalQuantity;
+                    } else if ($rate->rate_tier['tier_type'] == 'order_weight') {
+                        $matchValue = $totalWeight;
+                    } else if ($rate->rate_tier['tier_type'] == 'order_distance') {
+                        $matchValue = $distance;
+                    }
+
+                    foreach ($rate->rate_tier['rateTier'] as $tier) {
+                        $checkRateTier = $matchValue >= $tier['minWeight'] && $matchValue <= $tier['maxWeight'];
+                        if ($checkRateTier) {
+                            $rate->base_price = $tier['basePrice'];
+                        }
                     }
                 }
             }
@@ -967,14 +1001,14 @@ class ApiController extends Controller
             if ($rate->send_another_rate['send_another_rate']) {
                 $finalTotalPrice = 0;
 
-                if($rate->send_another_rate['update_price_type'] == 0){
-                    if($rate->send_another_rate['update_price_effect']) {
+                if ($rate->send_another_rate['update_price_type'] == 0) {
+                    if ($rate->send_another_rate['update_price_effect']) {
                         $finalTotalPrice = $rate->base_price - $rate->send_another_rate['adjustment_price'];
                     } else {
                         $finalTotalPrice = $rate->base_price + $rate->send_another_rate['adjustment_price'];
                     }
-                } elseif($rate->send_another_rate['update_price_type'] == 1) {
-                    if($rate->send_another_rate['update_price_effect']) {
+                } elseif ($rate->send_another_rate['update_price_type'] == 1) {
+                    if ($rate->send_another_rate['update_price_effect']) {
                         $finalTotalPrice = $rate->base_price - ($rate->base_price * $rate->send_another_rate['adjustment_price'] / 100);
                     } else {
                         $finalTotalPrice = $rate->base_price + ($rate->base_price * $rate->send_another_rate['adjustment_price'] / 100);
@@ -1484,7 +1518,7 @@ class ApiController extends Controller
                 $message = 'Rate updated successfully.';
             }
 
-            return response()->json(['status' => true, 'message' => $message]);
+            return response()->json(['status' => true, 'message' => $message, 'rate_id' => $rate->id]);
         } catch (\Illuminate\Database\QueryException $ex) {
             Log::error('Database error when adding rate', ['exception' => $ex->getMessage()]);
             return response()->json(['status' => false, 'message' => 'Database error occurred.'], 500);
@@ -1595,7 +1629,7 @@ class ApiController extends Controller
             }
 
             $rate->shop_weight_unit = $user->shop_weight_unit;
-            if(!empty($user->shop_currency)){
+            if (!empty($user->shop_currency)) {
                 $symbol = CurrencySymbolUtil::getSymbol($user->shop_currency);
                 $rate->shop_currency = $symbol;
             }

@@ -28,7 +28,7 @@ class CheckoutsCreateJob implements ShouldQueue
      */
     public function handle(): void
     {
-        Log::info("Hello");
+        // Log::info("Hello");
         // $customer_id = $this->webhookData['customer']['id'];
 
         // $graphqlEndpoint = "https://jaypal-demo.myshopify.com/admin/api/2024-04/carrier_services/69713461497.json";
@@ -37,7 +37,7 @@ class CheckoutsCreateJob implements ShouldQueue
         // $customHeaders = [
         //     'X-Shopify-Access-Token' => 'shpua_f6ab89d02602242cc83b47c3c4d64946',
         // ];
-         Log::info('Query logs:', ['call' => $this->webhookData]);
+        //  Log::info('Query logs:', ['call' => $this->webhookData]);
 
         // $data = [
         //     'carrier_service' => [

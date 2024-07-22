@@ -30,6 +30,7 @@ import {
     Collapsible,
     List,
 
+
 } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon, SearchIcon, SelectIcon } from '@shopify/polaris-icons';
 import '../../../public/css/style.css';
@@ -80,6 +81,7 @@ function Rate(props) {
     const [showTable, setShowTable] = useState(false);
     const [value, setValue] = useState('');
     const [shop_weight_unit, setshop_weight_unit] = useState()
+    const [shop_currency, setShop_currency] = useState()
 
     const [startCursor, setStartCursor] = useState('');
     const [endCursor, setEndCursor] = useState('');
@@ -89,11 +91,25 @@ function Rate(props) {
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [dates, setDates] = useState({ startDate: '', endDate: '', date: '', time: '', error: '' });
 
-
+    const handleDateChange = (key, value) => {
+        setDates(prevDates => {
+          const updatedDates = { ...prevDates, [key]: value };
+    
+          if (key === 'endDate' && new Date(value) < new Date(updatedDates.startDate)) {
+            updatedDates.error = 'End date cannot be before start date.';
+          } else if (key === 'startDate' && new Date(updatedDates.endDate) < new Date(value)) {
+            updatedDates.error = 'End date cannot be before start date.';
+          } else {
+            updatedDates.error = '';
+          }
+    
+          return updatedDates;
+        });
+      };
 
     const [selectedTierType, setSelectedTierType] = useState('selected');
     const [tiers, setTiers] = useState([
-        { minWeight: '', maxWeight: '', basePrice: '' }
+        { minWeight: '', maxWeight: '', basePrice: '', perItem:'' , percentCharge:'', perkg:'' }
     ]);
 
     const handleInputChange = (index, field, value) => {
@@ -297,7 +313,8 @@ function Rate(props) {
                     });
                 }
             }
-            setshop_weight_unit(response.data.rate.shop_weight_unit);
+            setshop_weight_unit(response.data.rate.shop_weight_unit)
+            setShop_currency(response.data.rate.shop_currency)
             setOptions(formattedOptions);
             setState(formattedOptions.map(section => section.options).flat());
             if (response.data.rate.zipcode) {
@@ -717,7 +734,7 @@ function Rate(props) {
 
     const [items, setItems] = useState([]);
 
-    const handleDateChange = (index, key, value) => {
+    const handleItemDateChange = (index, key, value) => {
         setItems(prevItems => {
             const updatedItems = [...prevItems];
             updatedItems[index] = {
@@ -797,9 +814,9 @@ function Rate(props) {
     const validations = [
         { label: 'Cart / Order', value: '', disabled: true, className: 'select-header' },
         { label: 'Quantity', value: 'quantity', unit: 'items', mainlabel: "Cart_Order" },
-        { label: 'Total', value: 'total', unit: '.Rs', mainlabel: "Cart_Order" },
-        { label: 'Sale Product Total', value: 's&ptotal', unit: '.Rs', mainlabel: "Cart_Order" },
-        { label: 'Non Sale Product Total', value: 'ns&ptotal', unit: '.Rs', mainlabel: "Cart_Order" },
+        { label: 'Total', value: 'total', unit: shop_currency, mainlabel: "Cart_Order" },
+        { label: 'Sale Product Total', value: 's&ptotal', unit: shop_currency, mainlabel: "Cart_Order" },
+        { label: 'Non Sale Product Total', value: 'ns&ptotal', unit: shop_currency, mainlabel: "Cart_Order" },
         { label: 'Weight', value: 'weight', unit: shop_weight_unit, mainlabel: "Cart_Order" },
         { label: 'Line Item', value: 'lineitem', mainlabel: "Cart_Order" },
         { label: 'Distance', value: 'distance', unit: 'km', mainlabel: "Cart_Order" },
@@ -809,8 +826,8 @@ function Rate(props) {
 
         { label: 'Per Product', value: '', disabled: true, className: 'select-header' },
         { label: 'Quantity', value: 'quantity2', unit: 'items', mainlabel: 'Per_Product' },
-        { label: 'Price', value: 'price', unit: '.Rs', mainlabel: 'Per_Product' },
-        { label: 'Total', value: 'total2', unit: '.Rs', mainlabel: 'Per_Product' },
+        { label: 'Price', value: 'price', unit: shop_currency, mainlabel: 'Per_Product' },
+        { label: 'Total', value: 'total2', unit: shop_currency, mainlabel: 'Per_Product' },
         { label: 'Weight', value: 'weight2', unit: shop_weight_unit, mainlabel: 'Per_Product' },
         { label: 'Name', value: 'name', mainlabel: 'Per_Product' },
         { label: 'Tag', value: 'tag', mainlabel: 'Per_Product' },
@@ -1054,14 +1071,12 @@ function Rate(props) {
             ...prevState,
             [field]: value
         }));
-    
-      
-            SetExclude_Rate((prevState) => ({
-                ...prevState,
-                [field]: value,
-            }));
-        
-    
+
+        SetExclude_Rate((prevState) => ({
+            ...prevState,
+            [field]: value,
+        }));
+
         setErrors((prevErrors) => ({
             ...prevErrors,
             [field]: '',
@@ -1147,7 +1162,6 @@ function Rate(props) {
         if (!formData.base_price) newErrors.base_price = 'Base price is required';
         if (!formData.service_code) newErrors.service_code = 'Service code is required';
         if (!formData.description) newErrors.description = 'Description is required';
-    
         if (checkedState.checked3) {
             if (!send_another_rate.another_rate_name) {
                 newErrors.another_rate_name = 'Another Rate Name is required';
@@ -1156,7 +1170,6 @@ function Rate(props) {
                 newErrors.adjustment_price = 'Adjustment Price is required';
             }
         }
-    
         if (
             (selectedRate === 'product_vendor' ||
                 selectedRate === 'product_sku' ||
@@ -1166,7 +1179,6 @@ function Rate(props) {
         ) {
             newErrors.exclude_products_textbox = 'Exclude products field is required';
         }
-    
         if (selectedTierType !== 'selected') {
             tiers.forEach((tier, index) => {
                 if (!tier.minWeight)
@@ -1177,7 +1189,6 @@ function Rate(props) {
                     newErrors[`basePrice${index}`] = `Base price for Tier ${index + 1} is required`;
             });
         }
-    
         if (rateModifiers.length > 0) {
             rateModifiers.forEach((modifier, index) => {
                 if (!modifier.name)
@@ -1362,7 +1373,7 @@ function Rate(props) {
                                     label="Base price"
                                     placeholder="0.00"
                                     autoComplete="off"
-                                    prefix="Rs."
+                                    prefix={shop_currency}
                                     value={formData.base_price}
                                     onChange={handleRateFormChange('base_price')}
                                     error={errors.base_price}
@@ -1605,7 +1616,7 @@ function Rate(props) {
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                                                         <TextField
                                                                             value={item.value}
-                                                                            onChange={(value) => handleDateChange(index, 'value', value)}
+                                                                            onChange={(value) => handleItemDateChange(index, 'value', value)}
                                                                             type="date"
                                                                         />
                                                                     </div>
@@ -1614,7 +1625,7 @@ function Rate(props) {
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                                                         <TextField
                                                                             value={item.value}
-                                                                            onChange={(value) => handleDateChange(index, 'value', value)}
+                                                                            onChange={(value) => handleItemDateChange(index, 'value', value)}
                                                                             type="time"
                                                                         />
                                                                     </div>
@@ -1994,7 +2005,7 @@ function Rate(props) {
                                                                     "Charge Per Distance"
                                                         }
                                                         autoComplete="off"
-                                                        prefix="Rs."
+                                                        prefix={shop_currency}
                                                         placeholder='0.00'
                                                         value={rate_based_on_surcharge.charge_per_wight}
                                                         onChange={handleRateFormChange('charge_per_wight')}
@@ -2051,7 +2062,7 @@ function Rate(props) {
                                                         type="text"
                                                         label="Minimum Charge Price"
                                                         autoComplete="off"
-                                                        prefix="Rs."
+                                                        prefix={shop_currency}
                                                         placeholder='0'
                                                         value={rate_based_on_surcharge.min_charge_price}
                                                         onChange={handleRateFormChange('min_charge_price')}
@@ -2060,7 +2071,7 @@ function Rate(props) {
                                                         type="number"
                                                         label="Maximum Charge Price"
                                                         autoComplete="off"
-                                                        prefix="Rs."
+                                                        prefix={shop_currency}
                                                         placeholder='0'
                                                         value={rate_based_on_surcharge.max_charge_price}
                                                         onChange={handleRateFormChange('max_charge_price')}
@@ -2088,7 +2099,7 @@ function Rate(props) {
                                                         value={rate_based_on_surcharge.charge_per_wight}
                                                         onChange={handleRateFormChange('charge_per_wight')}
                                                         autoComplete="off"
-                                                        prefix="Rs."
+                                                        prefix={shop_currency}
                                                         placeholder='0'
 
                                                     />
@@ -2449,12 +2460,48 @@ function Rate(props) {
                                                             value={tier.basePrice}
                                                             onChange={(value) => handleInputChange(index, 'basePrice', value)}
                                                             autoComplete="off"
-                                                            prefix="Rs."
+                                                            prefix={shop_currency}
                                                             placeholder="0.00"
                                                             error={errors[`basePrice${index}`]}
                                                         />
                                                     </FormLayout.Group>
                                                 </FormLayout>
+                                                {selectedTierType === 'order_price' && (
+                                                    <div style={{ marginTop: '3%' }}>
+                                                        <FormLayout>
+                                                            <FormLayout.Group condensed>
+                                                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                                    <TextField
+                                                                        label='Per Item'
+                                                                        value={tier.perItem}
+                                                                        onChange={(value) => handleInputChange(index, 'perItem', value)}
+                                                                        autoComplete="off"
+                                                                        prefix={shop_currency}
+                                                                        placeholder="0.00"
+                                                                    />
+                                                                    <div style={{ padding: '20px 3px 0 3px',fontSize: '18px' }}>+</div>
+                                                                    <TextField
+                                                                        label='Percent Charge'
+                                                                        value={tier.percentCharge}
+                                                                        onChange={(value) => handleInputChange(index, 'percentCharge', value)}
+                                                                        autoComplete="off"
+                                                                        prefix="%"
+                                                                        placeholder="0.00"
+                                                                    />
+                                                                    <div style={{ padding: '20px 3px 0 3px',fontSize: '18px' }}>+</div>
+                                                                    <TextField
+                                                                        label='Per kg'
+                                                                        value={tier.perkg}
+                                                                        onChange={(value) => handleInputChange(index, 'perkg', value)}
+                                                                        autoComplete="off"
+                                                                        prefix={shop_currency}
+                                                                        placeholder="0.00"                                                                      
+                                                                    />
+                                                                </div>
+                                                            </FormLayout.Group>
+                                                        </FormLayout>
+                                                    </div>
+                                                )}
                                                 {index < tiers.length - 1 && <div style={{ marginTop: "3%" }}> <Divider /></div>}
                                             </div>
                                         ))}
@@ -2469,6 +2516,7 @@ function Rate(props) {
                                         </div>
                                     </div>
                                 )}
+
                             </div>
                         </LegacyCard>
                     </Grid.Cell>

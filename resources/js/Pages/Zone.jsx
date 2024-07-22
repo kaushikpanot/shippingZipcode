@@ -46,7 +46,6 @@ function Zone(props) {
     const { zone_id } = useParams();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
-    const [loadingDelete, setLoadingDelete] = useState(false)
     const [country, setCountry] = useState([])
     const [currencys, setCurrencys] = useState([])
     const [rate, setRate] = useState([])
@@ -114,10 +113,9 @@ function Zone(props) {
     const toastMarkup = toastActive ? (
         <Toast content="Rate deleted" onDismiss={toggleToast} />
     ) : null;
-    
+
     const handleRateAdd = (zone_id) => {
         navigate(`/Rate/${zone_id}`);
-
     };
 
     const navigateHome = () => {
@@ -127,7 +125,6 @@ function Zone(props) {
     const handleEditRate = (rate_id) => {
         navigate(`/Zone/${zone_id}/Rate/Edit/${rate_id}`);
     };
-
     const editAndSet = async () => {
         try {
             const app = createApp({
@@ -167,22 +164,19 @@ function Zone(props) {
     const getCurrency = async () => {
         try {
             const token = await getSessionToken(app);
-
             const response = await axios.get(`${apiCommonURL}/api/currency`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
             const currencyes = response.data.currencies;
+          
             const currencyOptions = currencyes.map(currency => ({
                 label: currency.currency_code_symbol,
                 value: currency.code
             }));
-
             setCurrencys(currencyOptions);
             const shop_currency = response.data.shop_currency;
-           
-
             if (!zone_id) {
                 setFormData(prevState => ({
                     ...prevState,
@@ -190,15 +184,10 @@ function Zone(props) {
                 }));
             }
             setLoading(false);
-
         } catch (error) {
             console.error("Error fetching currency:", error);
         }
     }
-
-
-
-
 
     const getCountry = async () => {
         try {
@@ -219,35 +208,28 @@ function Zone(props) {
             console.error("Error fetching country:", error);
         }
     }
+
     const handleDelete = async () => {
         try {
-            setLoadingDelete(true)
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
             });
             const token = await getSessionToken(app);
-
             const response = await axios.delete(`${apiCommonURL}/api/rate/${selectedZoneId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
             toggleModal();
             toggleToast();
             editAndSet();
-
         } catch (error) {
             console.error('Error deleting item:', error);
             setToastContent("Error occurred while deleting item");
             setShowToast(true);
         }
-        finally {
-            setLoadingDelete(false)
-        }
     };
-
 
     useEffect(() => {
         app = createApp({
@@ -264,17 +246,14 @@ function Zone(props) {
     const updateText = useCallback(
         (value) => {
             setInputValue(value);
-
             if (value === '') {
                 getCountry();
                 return;
             }
-
             const filterRegex = new RegExp(value, 'i');
             const resultOptions = country.filter((option) =>
                 option.label.match(filterRegex),
             );
-
             setCountry(resultOptions);
         },
         [country],
@@ -287,6 +266,7 @@ function Zone(props) {
         },
         [selectedOptions],
     );
+
     const verticalContentMarkup =
         selectedOptions.length > 0 ? (
             <LegacyStack spacing="extraTight" alignment="center">
@@ -301,17 +281,17 @@ function Zone(props) {
             </LegacyStack>
         ) : null;
 
-        const textField = (
-            <Autocomplete.TextField
-                onChange={updateText}
-                label="Select Countries"
-                value={inputValue}
-                placeholder="Search countries"
-                verticalContent={verticalContentMarkup}
-                error={errors.selectedCountries}
-                autoComplete="off"
-            />
-        );
+    const textField = (
+        <Autocomplete.TextField
+            onChange={updateText}
+            label="Select Countries"
+            value={inputValue}
+            placeholder="Search countries"
+            verticalContent={verticalContentMarkup}
+            error={errors.selectedCountries}
+            autoComplete="off"
+        />
+    );
 
     const handleNextPage = useCallback(() => {
         if (currentPage < totalPages) {
@@ -346,18 +326,15 @@ function Zone(props) {
             if (selectedOptions.length === 0) {
                 newErrors.selectedCountries = 'Please select at least one country';
             }
-
             if (Object.keys(newErrors).length > 0) {
                 setErrors(newErrors);
                 return;
             }
-
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
             });
             const token = await getSessionToken(app);
-
             const selectedCountries = selectedOptions.map(option => {
                 const selectedCountry = country.find(country => country.value === option);
                 return {
@@ -365,12 +342,10 @@ function Zone(props) {
                     code: option
                 };
             });
-
             const dataToSubmit = {
                 ...formData,
                 country: selectedCountries,
             };
-
             const response = await axios.post(`${apiCommonURL}/api/zone/save`, dataToSubmit, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -388,7 +363,6 @@ function Zone(props) {
             setShowToast(true);
         }
     }
-  
 
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
         useIndexResourceState(rate);
@@ -410,7 +384,7 @@ function Zone(props) {
                 position={index}
             >
                 <IndexTable.Cell>
-                <Link
+                    <Link
                         dataPrimaryLink
                         onClick={() => handleEditRate(id)}>
                         <Text variant="bodyMd" fontWeight="bold" as="span">
@@ -423,11 +397,10 @@ function Zone(props) {
                 <IndexTable.Cell>{description}</IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
-                        <Button icon={EditIcon}  variant="tertiary" onClick={() => handleEditRate(id)} />
-                        <Button icon={DeleteIcon}  variant="tertiary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedZoneId(id); toggleModal(); }} />
+                        <Button icon={EditIcon} variant="tertiary" onClick={() => handleEditRate(id)} />
+                        <Button icon={DeleteIcon} variant="tertiary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedZoneId(id); toggleModal(); }} />
                     </ButtonGroup>
                 </IndexTable.Cell>
-
             </IndexTable.Row>
         ),
     );
@@ -435,13 +408,11 @@ function Zone(props) {
     if (loading) {
         return (
             <Page
-                
                 title={zone_id ? 'Edit Zone' : 'Add Zone'}
                 primaryAction={<Button variant="primary" onClick={saveZone}>Save</Button>}
                 secondaryActions={<Button onClick={navigateHome}>Back</Button>}
             >
                 <Grid>
-                 
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '18%' }}>
                             <SkeletonDisplayText size="small" />
@@ -449,15 +420,10 @@ function Zone(props) {
                                 <SkeletonBodyText lines={2} />
                             </div>
                         </div>
-
-
-
-
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                             <Card roundedAbove="sm">
-
                                 <div style={{ marginTop: "2%", }}>
                                     <LegacyCard sectioned>
                                         <SkeletonBodyText lines={2} />
@@ -481,43 +447,39 @@ function Zone(props) {
                             </Card>
                         </div>
                     </Grid.Cell>
-                  
                 </Grid>
                 <div style={{ marginTop: "2%" }}>
-                   
-                            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
-                                <Card roundedAbove="sm">
-                                    <div style={{ marginLeft: "85%" }}>
-                                        <SkeletonDisplayText size="medium" />
-                                    </div>
-                                    <div style={{ marginTop: "2%", }}>
-                                        <LegacyCard sectioned>
-                                            <SkeletonBodyText lines={3} />
-                                        </LegacyCard>
-                                    </div>
-                                    <div style={{ marginTop: "2%", }}>
-                                        <LegacyCard sectioned>
-                                            <SkeletonBodyText lines={5} />
-                                        </LegacyCard>
-                                    </div>
-                                </Card>
+                    <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+                        <Card roundedAbove="sm">
+                            <div style={{ marginLeft: "85%" }}>
+                                <SkeletonDisplayText size="medium" />
                             </div>
-                       
+                            <div style={{ marginTop: "2%", }}>
+                                <LegacyCard sectioned>
+                                    <SkeletonBodyText lines={3} />
+                                </LegacyCard>
+                            </div>
+                            <div style={{ marginTop: "2%", }}>
+                                <LegacyCard sectioned>
+                                    <SkeletonBodyText lines={5} />
+                                </LegacyCard>
+                            </div>
+                        </Card>
+                    </div>
                 </div>
             </Page>
         );
     }
+
     return (
         <Page
-            // fullWidth
             title={zone_id ? 'Edit Zone' : 'Add Zone'}
             primaryAction={<Button variant="primary" onClick={saveZone}>Save</Button>}
             secondaryActions={<Button onClick={navigateHome}>Back</Button>}
         >
-              <Divider borderColor="border" />
+            <Divider borderColor="border" />
             <div style={{ marginTop: '2%', marginBottom: "2%" }}>
                 <Grid>
-                    
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '10%' }}>
                             <Text variant="headingLg" as="h5">
@@ -551,11 +513,8 @@ function Zone(props) {
                                     value={formData.name}
                                     onChange={handleZoneDataChange('name')}
                                     error={errors.name}
-
                                 />                            </div>
                             <div style={{ marginTop: "2%" }} className='zonetext'>
-
-
                                 <Autocomplete
                                     allowMultiple
                                     options={country}
@@ -565,10 +524,6 @@ function Zone(props) {
                                     listTitle="Suggested Countries"
 
                                 />
-                                {/* {errors.selectedCountries && (
-    <p style={{ color: 'red' }}>{errors.selectedCountries}</p>
-)} */}
-
                             </div>
                             <div style={{ marginTop: "2%", marginBottom: "2%" }} className='zonetext'>
                                 <Select
@@ -580,78 +535,73 @@ function Zone(props) {
                             </div>
                         </LegacyCard>
                     </Grid.Cell>
-                    
-
                 </Grid>
             </div>
-
 
             {zone_id && (
                 <div>
                     <Divider borderColor="border" />
                     <div style={{ marginTop: "2%", marginBottom: "5%" }}>
-                       
+                        <Card>
+                            <BlockStack gap="200">
+                                <InlineGrid columns="1fr auto">
+                                    <Text as="h2" variant="headingSm">
+                                        Rates
+                                    </Text>
+                                    <Button
+                                        onClick={() => handleRateAdd(zone_id)}
+                                        accessibilityLabel="Add zone"
+                                        variant='primary'
+                                        icon={PlusIcon}
+                                    >
+                                        Add Rate
+                                    </Button>
+                                </InlineGrid>
+                                <Text as="p" variant="bodyMd">
+                                    Specify shipping rates for this particular zone.
+                                </Text>
+                            </BlockStack>
+                            <div style={{ marginTop: "2.5%" }}>
+                                <TextField
+                                    type="text"
+                                    value={textFieldValue}
+                                    placeholder="Search by name..."
+                                    onChange={handleTextFieldChange}
+                                    prefix={<Icon source={SearchIcon} />}
+                                    autoComplete="off"
+                                />
+                            </div>
+                            <div style={{ marginTop: "2.5%" }}>
+                                {/* {loadingDelete ? <Spinner accessibilityLabel="Loading" size="large" /> : null} */}
+                                <IndexTable
+                                    resourceName={resourceName}
+                                    itemCount={rate.length}
+                                    emptyState={emptyStateMarkup}
 
-                                <Card>
-                                    <BlockStack gap="200">
-                                        <InlineGrid columns="1fr auto">
-                                            <Text as="h2" variant="headingSm">
-                                                Rates
-                                            </Text>
-                                            <Button
-                                                onClick={() => handleRateAdd(zone_id)}
-                                                accessibilityLabel="Add zone"
-                                                variant='primary'
-                                                icon={PlusIcon}
-                                            >
-                                                Add Rate
-                                            </Button>
-                                        </InlineGrid>
-                                        <Text as="p" variant="bodyMd">
-                                            Specify shipping rates for this particular zone.                                    </Text>
-                                    </BlockStack>
-                                    <div style={{ marginTop: "2.5%" }}>
-                                        <TextField
-                                            type="text"
-                                            value={textFieldValue}
-                                            placeholder="Search by name..."
-                                            onChange={handleTextFieldChange}
-                                            prefix={<Icon source={SearchIcon} />}
-                                            autoComplete="off"
-                                        />
-                                    </div>
-                                    <div style={{ marginTop: "2.5%" }}>
-                                        {/* {loadingDelete ? <Spinner accessibilityLabel="Loading" size="large" /> : null} */}
-                                        <IndexTable
-                                            resourceName={resourceName}
-                                            itemCount={rate.length}
-                                            emptyState={emptyStateMarkup}
+                                    selectedItemsCount={
+                                        allResourcesSelected ? 'All' : selectedResources.length
+                                    }
+                                    onSelectionChange={handleSelectionChange}
+                                    headings={[
+                                        { title: 'Rate Name' },
+                                        { title: 'Service Code' },
+                                        { title: 'Base Rate Price' },
+                                        { title: 'Description' },
+                                        { title: 'Actions' },
 
-                                            selectedItemsCount={
-                                                allResourcesSelected ? 'All' : selectedResources.length
-                                            }
-                                            onSelectionChange={handleSelectionChange}
-                                            headings={[
-                                                { title: 'Rate Name' },
-                                                { title: 'Service Code' },
-                                                { title: 'Base Rate Price' },
-                                                { title: 'Description' },
-                                                { title: 'Actions' },
-
-                                            ]}
-                                            paginated
-                                            pagination={{
-                                                hasPrevious: currentPage > 1,
-                                                hasNext: currentPage < totalPages,
-                                                onNext: handleNextPage,
-                                                onPrevious: handlePreviousPage,
-                                            }}
-                                        >
-                                            {rowMarkup}
-                                        </IndexTable>
-                                    </div>
-                                </Card>
-                           
+                                    ]}
+                                    paginated
+                                    pagination={{
+                                        hasPrevious: currentPage > 1,
+                                        hasNext: currentPage < totalPages,
+                                        onNext: handleNextPage,
+                                        onPrevious: handlePreviousPage,
+                                    }}
+                                >
+                                    {rowMarkup}
+                                </IndexTable>
+                            </div>
+                        </Card>
                     </div>
                 </div>
             )}
@@ -681,9 +631,7 @@ function Zone(props) {
                 </Modal.Section>
             </Modal>
             {toastMarkup}
-
         </Page>
     );
 }
-
 export default Zone;

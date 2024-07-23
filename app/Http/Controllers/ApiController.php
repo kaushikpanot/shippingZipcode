@@ -988,11 +988,11 @@ class ApiController extends Controller
                 }
             }
 
-            if(!empty($rate->rate_based_on_surcharge) && $rate->rate_based_on_surcharge['based_on_cart']){
-                if($rate->rate_based_on_surcharge['based_on_cart'] == "Charge Per"){
-                    // $subchargePrice = basePrice + (total_weight/uni_weight)* subcharge
-                }
-            }
+            // if(!empty($rate->rate_based_on_surcharge) && $rate->rate_based_on_surcharge['based_on_cart']){
+            //     if($rate->rate_based_on_surcharge['based_on_cart'] == "Charge Per"){
+            //         // $subchargePrice = basePrice + (total_weight/uni_weight)* subcharge
+            //     }
+            // }
 
             // Check state selection
             // if ($zipcode->stateSelection === 'Custom') {
@@ -1147,7 +1147,7 @@ class ApiController extends Controller
                 ZoneCountry::create($insertData);
             }
 
-            return response()->json(['status' => true, 'message' => 'Zone added successfully.']);
+            return response()->json(['status' => true, 'message' => 'Zone added successfully.', 'id' => $zone->id]);
         } catch (\Throwable $th) {
             Log::error('Unexpected zone add error', ['exception' => $th->getMessage()]);
             return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);

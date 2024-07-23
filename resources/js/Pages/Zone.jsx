@@ -122,8 +122,9 @@ function Zone(props) {
         // 👇️ Navigate to /
         navigate('/Home');
     };
-    const handleEditRate = (rate_id) => {
-        navigate(`/Zone/${zone_id}/Rate/Edit/${rate_id}`);
+    const handleEditRate = (id) => {
+        navigate(`/Zone/${zone_id}/Rate/Edit/${id}`);
+      
     };
     const editAndSet = async () => {
         try {
@@ -202,7 +203,6 @@ function Zone(props) {
                 label: state.nameCode,
                 value: state.code
             }));
-            console.log(response.data)
             setCountry(stateList);
         } catch (error) {
             console.error("Error fetching country:", error);

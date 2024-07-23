@@ -39,8 +39,8 @@ const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 function Rate(props) {
-    const { zone_id } = useParams();
-    const [rate_id, setrate_id] = useState()
+    const {id, zone_id } = useParams();
+    const {id} = useParams();
     const [loading, setLoading] = useState(true);
     const [state, setState] = useState([])
     const [selectedOptions, setSelectedOptions] = useState([]);
@@ -309,7 +309,7 @@ function Rate(props) {
     const editRate = async () => {
         try {
             const token = await getSessionToken(app);
-            const response = await axios.get(`${apiCommonURL}/api/rate/${rate_id}/edit`, {
+            const response = await axios.get(`${apiCommonURL}/api/rate/${id}/edit`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -1099,6 +1099,7 @@ function Rate(props) {
 
         setFormData(prevFormData => ({
             ...prevFormData,
+            id:id,
             cart_condition: {
                 ...prevFormData.cart_condition,
                 conditionMatch: checkstate.selectedCondition,
@@ -1258,7 +1259,11 @@ function Rate(props) {
                 },
             });
 
-            setrate_id(response.data.rate_id)
+            setFormData(prevFormData => ({
+                ...prevFormData,
+                id:response.data.id,
+            }))
+        console.log(response.data)
             setErrors({});
             setToastContent('Rate saved successfully');
             setShowToast(true);
@@ -1271,10 +1276,10 @@ function Rate(props) {
     };
 
     useEffect(() => {
-        if (rate_id) {
-            navigate(`/Zone/${zone_id}/Rate/Edit/${rate_id}`);
+        if (formData.id) {
+            navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
         }
-    }, [rate_id, zone_id, navigate]);
+    }, [formData.id, zone_id, navigate]);
     
     const fetchProducts = async () => {
         try {
@@ -1362,7 +1367,7 @@ function Rate(props) {
     if (loading) {
         return (
             <Page
-                title={rate_id ? 'Edit Rate' : 'Add Rate'}
+                title={id ? 'Edit Rate' : 'Add Rate'}
                 primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
                 secondaryActions={<Button onClick={BacktoZone}>Back</Button>}
             >
@@ -1414,7 +1419,7 @@ function Rate(props) {
     }
     return (
         <Page
-            title={rate_id ? 'Edit Rate' : 'Add Rate'}
+            title={id ? 'Edit Rate' : 'Add Rate'}
             primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
             secondaryActions={<Button onClick={() => BacktoZone(zone_id)}>Back</Button>}
         >

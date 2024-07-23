@@ -39,8 +39,8 @@ const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 function Rate(props) {
-    const { zone_id } = useParams();
-    const [rate_id, setrate_id] = useState()
+    const {rate_id, zone_id } = useParams();
+    // const [rate_id, setrate_id] = useState()
     const [loading, setLoading] = useState(true);
     const [state, setState] = useState([])
     const [selectedOptions, setSelectedOptions] = useState([]);
@@ -1099,6 +1099,7 @@ function Rate(props) {
 
         setFormData(prevFormData => ({
             ...prevFormData,
+            id:rate_id,
             cart_condition: {
                 ...prevFormData.cart_condition,
                 conditionMatch: checkstate.selectedCondition,
@@ -1258,7 +1259,12 @@ function Rate(props) {
                 },
             });
 
-            setrate_id(response.data.rate_id)
+            setFormData(prevFormData => ({
+                ...prevFormData,
+                id:response.data.id,
+            }))
+            navigate(`/Zone/${zone_id}/Rate/Edit/${rate_id}`);
+            console.log(response.data.id)
             setErrors({});
             setToastContent('Rate saved successfully');
             setShowToast(true);
@@ -1272,7 +1278,7 @@ function Rate(props) {
 
     useEffect(() => {
         if (rate_id) {
-            navigate(`/Zone/${zone_id}/Rate/Edit/${rate_id}`);
+            navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
         }
     }, [rate_id, zone_id, navigate]);
     

@@ -33,7 +33,10 @@ class ShopUpdateJob implements ShouldQueue
         $user = User::where('name', $shopDomain)->first();
 
         if($user){
-            $user->update(['shop_weight_unit'=>$this->webhookData['weight_unit']]);
+            $user->update([
+                'shop_weight_unit'=>$this->webhookData['weight_unit'],
+                'shop_currency' => $this->webhookData['currency']
+            ]);
         }
         // Log::info('Processing shop update webhook:', $this->webhookData);
         // Log::info('Processing shop update webhook:', ['shopDomain'=>$shopDomain]);

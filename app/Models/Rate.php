@@ -11,7 +11,7 @@ class Rate extends Model
 {
     use HasFactory;
 
-    protected $fillable = ["user_id", "zone_id", "name", "base_price", "service_code", "description", "status", "conditionMatch", "cart_condition", "rate_based_on_surcharge", "rate_tier", "exclude_rate_for_products", "rate_modifiers", "merge_rate_tag", "schedule_rate", "schedule_start_date_time", "schedule_end_date_time", "send_another_rate"];
+    protected $fillable = ["user_id", "zone_id", "name", "base_price", "service_code", "description", "status", "conditionMatch", "cart_condition", "rate_based_on_surcharge", "rate_tier", "exclude_rate_for_products", "rate_modifiers", "merge_rate_tag", "schedule_rate", "schedule_start_date_time", "schedule_end_date_time", "send_another_rate", "origin_locations"];
 
     protected $hidden = ['created_at', 'updated_at'];
 
@@ -249,6 +249,28 @@ class Rate extends Model
     }
 
     public function getSendAnotherRateAttribute($value)
+    {
+        if (is_null($value)) {
+            return null;
+        }
+
+        return json_decode($value, true); // true to return as an associative array
+    }
+
+    public function setOriginLocationsAttribute($value)
+    {
+        if (!empty($value)) {
+            if (is_array($value) || is_object($value)) {
+                $this->attributes['origin_locations'] = json_encode($value);
+            } else {
+                $this->attributes['origin_locations'] = $value;
+            }
+        } else {
+            $this->attributes['origin_locations'] = null;
+        }
+    }
+
+    public function getOriginLocationsAttribute($value)
     {
         if (is_null($value)) {
             return null;

@@ -39,7 +39,7 @@ const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 function Rate(props) {
-    const {id, zone_id } = useParams();
+    const { id, zone_id } = useParams();
     const [loading, setLoading] = useState(true);
     const [state, setState] = useState([])
     const [selectedOptions, setSelectedOptions] = useState([]);
@@ -113,6 +113,7 @@ function Rate(props) {
     const [value, setValue] = useState('');
     const [shop_weight_unit, setshop_weight_unit] = useState()
     const [shop_currency, setShop_currency] = useState()
+    const [selectedProductsData, setSelectedProductsData] = useState([]);
 
     const [startCursor, setStartCursor] = useState('');
     const [endCursor, setEndCursor] = useState('');
@@ -949,9 +950,9 @@ function Rate(props) {
             apiKey: SHOPIFY_API_KEY,
             host: props.host,
         });
-       
-            editRate();
-        
+
+        editRate();
+
         getLocation();
         getstate();
         fetchProducts()
@@ -968,7 +969,8 @@ function Rate(props) {
         product_type: '',
         product_vendor: '',
         descriptions: '',
-        rate_price:''
+        rate_price: '',
+        productsData: selectedProductsData
 
     })
 
@@ -1056,7 +1058,8 @@ function Rate(props) {
             based_on_cart: checkedState.checked1,
             selectedByAmount: checkstate.selectedByAmount,
             selectedMultiplyLine: checkstate.selectedMultiplyLine,
-            rate_based_on_surcharge
+            rate_based_on_surcharge,
+            productsData: selectedProductsData
         },
         rate_modifiers: rateModifiers,
         exclude_rate_for_products: exclude_Rate,
@@ -1098,7 +1101,7 @@ function Rate(props) {
 
         setFormData(prevFormData => ({
             ...prevFormData,
-            id:id,
+            id: id,
             cart_condition: {
                 ...prevFormData.cart_condition,
                 conditionMatch: checkstate.selectedCondition,
@@ -1127,7 +1130,8 @@ function Rate(props) {
                 charge_per_wight: rate_based_on_surcharge?.charge_per_wight || '',
                 unit_for: rate_based_on_surcharge?.unit_for || '',
                 min_charge_price: rate_based_on_surcharge?.min_charge_price || '',
-                max_charge_price: rate_based_on_surcharge?.max_charge_price || ''
+                max_charge_price: rate_based_on_surcharge?.max_charge_price || '',
+                productsData: selectedProductsData
             },
             rate_tier: {
                 ...prevFormData.rate_tier,
@@ -1147,7 +1151,7 @@ function Rate(props) {
         checkstate.selectedMultiplyLine, selectedTierType, tiers,
         exclude_Rate, rateModifiers, send_another_rate,
         checkedState.checked3, checkstate.selectedByUpdatePriceType,
-        checkstate.selectedByUpdatePriceEffect
+        checkstate.selectedByUpdatePriceEffect,selectedProductsData
     ]);
 
 
@@ -1251,7 +1255,7 @@ function Rate(props) {
 
             const cleanFormData = removeEmptyFields(formData);
 
-
+console.log(cleanFormData)
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, cleanFormData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -1260,10 +1264,10 @@ function Rate(props) {
 
             setFormData(prevFormData => ({
                 ...prevFormData,
-                id:response.data.id,
+                id: response.data.id,
             }))
-        
-            
+
+
             setErrors({});
             setToastContent('Rate saved successfully');
             setShowToast(true);
@@ -1280,7 +1284,8 @@ function Rate(props) {
             navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
         }
     }, [formData.id, zone_id, navigate]);
-    
+
+   
     const fetchProducts = async () => {
         try {
             const token = await getSessionToken(app);
@@ -1301,7 +1306,22 @@ function Rate(props) {
             console.error('Error fetching product data:', error);
         }
     };
+    const handleRatePriceChange = (value, id) => {
+        setSelectedProductsData((prevData) => prevData.map(product =>
+            product.id === id ? { ...product, rate_price: value } : product
+        ));
+    };
 
+    const handleProductSelection = (product) => {
+        setSelectedProductsData((prevData) => {
+            const isSelected = prevData.some(item => item.id === product.id);
+            if (isSelected) {
+                return prevData.filter(item => item.id !== product.id);
+            } else {
+                return [...prevData, { ...product, rate_price: '' }];
+            }
+        });
+    };
     const resourceName = {
         singular: 'order',
         plural: 'products',
@@ -1310,59 +1330,57 @@ function Rate(props) {
         setShowTable(true);
     };
 
-    const handlePriceChange = (productId) => (event) => {
-        const { value } = event.target;
-        Setrate_based_on_surcharge(prevState => ({
-            ...prevState,
-            rate_price: {
-                ...prevState.rate_price,
-                [productId]: value
-            }
-        }));
-    };
-    
-    
+
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
         useIndexResourceState(filteredProducts);
 
-    const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
-        <IndexTable.Row
-            id={id}
-            key={id}
-            selected={selectedResources.includes(id)}
-            position={index}
-        >
-            <IndexTable.Cell>
-
-                <Thumbnail
-                    source={image}
-                    size="large"
-                    alt="Black choker necklace"
-                />
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+        const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
+            <IndexTable.Row
+                id={id}
+                key={id}
+                selected={selectedProductsData.some(product => product.id === id)}
+                position={index}
+                onClick={() => handleProductSelection({
+                    id,
+                    name: title,
+                    tags: "Accessories", // Adjust as needed
+                    product_vendor: "United By Blue", // Adjust as needed
+                    product_type: "Accessories", // Adjust as needed
+                    product_price: price,
+                    product_image_url: image,
+                    price // Include price in the selected data
+                })}
+            >
+                <IndexTable.Cell>
+                    <Thumbnail
+                        source={image}
+                        size="large"
+                        alt={title}
+                    />
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+                        <Text fontWeight="bold" as="span">
+                            {title}
+                        </Text>
+                    </div>
+                </IndexTable.Cell>
+                <IndexTable.Cell>
                     <Text fontWeight="bold" as="span">
-                        {title}
+                        {price}
                     </Text>
-                </div>
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <Text fontWeight="bold" as="span">
-                    {price}
-                </Text>
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <TextField
-                    type="text"
-                    prefix={shop_currency}
-                    placeholder='0.00'
-                    value={rate_based_on_surcharge.rate_price}
-                    onChange={handleRateFormChange('rate_price')}
-                />
-            </IndexTable.Cell>
-        </IndexTable.Row>
-    ));
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <TextField
+                        type="text"
+                        prefix={shop_currency}
+                        placeholder='0.00'
+                        value={selectedProductsData.find(product => product.id === id)?.rate_price || ''}
+                        onChange={(value) => handleRatePriceChange(value, id)}
+                    />
+                </IndexTable.Cell>
+            </IndexTable.Row>
+        ));
 
     if (loading) {
         return (

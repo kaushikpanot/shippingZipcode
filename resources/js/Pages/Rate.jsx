@@ -274,13 +274,7 @@ function Rate(props) {
         });
     };
 
-    const [checkedlocation, setCheckedlocation] = useState({});
-    const handleLocationChange = (locationId) => {
-        setCheckedlocation(prevState => ({
-            ...prevState,
-            [locationId]: !prevState[locationId]
-        }));
-    };
+
     const handleChange = useCallback((value) => {
         setZipcodeValue(value);
     }, []);
@@ -294,6 +288,8 @@ function Rate(props) {
                 }
             });
             console.log(response.data);
+
+
             const allStates = response.data.states;
             const formattedOptions = [];
             for (const country in allStates) {
@@ -420,8 +416,8 @@ function Rate(props) {
             if (response.data.rate.scheduleRate) {
                 setDates(prevState => ({
                     ...prevState,
-                    startDate: moment(response.data.rate.scheduleRate.schedule_start_date_time, "DD-MM-YYYY hh:mm A").format("YYYY-MM-DD"),
-                    endDate: moment(response.data.rate.scheduleRate.schedule_end_date_time, "DD-MM-YYYY hh:mm A").format("YYYY-MM-DD"),
+                    startDate: moment(response.data.rate.scheduleRate.schedule_start_date_time, "DD-MM-YYYY hh:mm A").format("YYYY-MM-DDTHH:mm"),
+                    endDate: moment(response.data.rate.scheduleRate.schedule_end_date_time, "DD-MM-YYYY hh:mm A").format("YYYY-MM-DDTHH:mm"),
                 }));
                 setCheckState(prevState => ({
                     ...prevState,
@@ -429,15 +425,20 @@ function Rate(props) {
                 }));
             }
 
+
             if (response.data.rate.origin_locations) {
-                const checkedLocationIds = response.data.rate.origin_locations.map(location => location.id);
-                const newCheckedLocations = locations.reduce((acc, location) => {
-                    if (checkedLocationIds.includes(location.id)) {
-                        acc[location.id] = true;
-                    }
+                setCheckedState(prevState => ({
+                    ...prevState,
+                    checked2: response.data.rate.origin_locations.ship_from_locations,
+                }));
+                const initialCheckedState = response.data.rate.origin_locations.updated_location.reduce((acc, location) => {
+                    acc[location.name] = {
+                        checked: true,
+                        address: location.address || '-'
+                    };
                     return acc;
                 }, {});
-                setCheckedlocation(newCheckedLocations);
+                setCheckedlocation(initialCheckedState);
             }
 
         } catch (error) {
@@ -465,6 +466,20 @@ function Rate(props) {
             console.error("Error fetching shop location:", error);
         }
     };
+    const [checkedlocation, setCheckedlocation] = useState({});
+
+    const handleLocationChange = (location) => {
+        setCheckedlocation(prevState => {
+            const isChecked = prevState[location.name]?.checked;
+            return {
+                ...prevState,
+                [location.name]: {
+                    checked: !isChecked,
+                    address: location.address1 || '-'
+                }
+            };
+        });
+    };
 
     const handlesearchChange = useCallback(
         (newValue) => {
@@ -484,54 +499,6 @@ function Rate(props) {
         setValue('');
         setFilteredProducts(products);
     }, [products]);
-
-    const resourceName = {
-        singular: 'order',
-        plural: 'products',
-    };
-    const handleSearchClick = () => {
-        setShowTable(true);
-    };
-
-    const { selectedResources, allResourcesSelected, handleSelectionChange } =
-        useIndexResourceState(filteredProducts);
-
-    const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
-        <IndexTable.Row
-            id={id}
-            key={id}
-            selected={selectedResources.includes(id)}
-            position={index}
-        >
-            <IndexTable.Cell>
-
-                <Thumbnail
-                    source={image}
-                    size="large"
-                    alt="Black choker necklace"
-                />
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
-                    <Text fontWeight="bold" as="span">
-                        {title}
-                    </Text>
-                </div>
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <Text fontWeight="bold" as="span">
-                    {price}
-                </Text>
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <TextField
-                    type="text"
-                    prefix="$"
-                    placeholder='0.00'
-                />
-            </IndexTable.Cell>
-        </IndexTable.Row>
-    ));
 
     const handleNextPage = () => {
         if (hasNextPage) {
@@ -738,7 +705,7 @@ function Rate(props) {
         Sunday: false,
     }]);
 
-    const [items, setItems] = useState([{ name: 'quantity', }]);
+    const [items, setItems] = useState([]);
 
     const handleItemDateChange = (index, key, value) => {
         setItems(prevItems => {
@@ -988,6 +955,7 @@ function Rate(props) {
         another_merge_rate_tag: ''
     })
 
+
     useEffect(() => {
         setsend_another_rate(prevState => ({
             ...prevState,
@@ -995,13 +963,14 @@ function Rate(props) {
             update_price_type: checkstate.selectedByUpdatePriceType,
             update_price_effect: checkstate.selectedByUpdatePriceEffect
         }));
+
         SetExclude_Rate(prevState => ({
             ...prevState,
-            set_exclude_products: selectedRate,
+            set_exclude_products: selectedRate
         }));
 
         const updated_location = locations
-            .filter(location => checkedlocation[location.id])
+            .filter(location => checkedlocation[location.name]?.checked)
             .map(location => ({
                 name: location.name,
                 address: location.address1 || '-'
@@ -1011,9 +980,8 @@ function Rate(props) {
             ...prevState,
             origin_locations: {
                 updated_location,
-                ship_from_locations: checkedState.checked2,
-
-            },
+                ship_from_locations: checkedState.checked2
+            }
         }));
 
     }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate, locations, checkedlocation]);
@@ -1213,6 +1181,13 @@ function Rate(props) {
             });
         }
 
+        if (items.length > 0) {
+            items.forEach((item, index) => {
+                if (!item.value)
+                    newErrors[`value${index}`] = 'Value is required.';
+            });
+        }
+
         if (checkstate.selectedStateCondition !== 'All' && selectedOptions.length === 0) {
             newErrors.selectedOptions = 'Please select at least one country.';
         }
@@ -1234,7 +1209,7 @@ function Rate(props) {
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             setToastContent('Sorry. Couldn’t be saved. Please try again.');
-            // console.log(newErrors)
+            console.log(newErrors)
             setErroToast(true);
             return;
         }
@@ -1284,6 +1259,54 @@ function Rate(props) {
             console.error('Error fetching product data:', error);
         }
     };
+
+    const resourceName = {
+        singular: 'order',
+        plural: 'products',
+    };
+    const handleSearchClick = () => {
+        setShowTable(true);
+    };
+
+    const { selectedResources, allResourcesSelected, handleSelectionChange } =
+        useIndexResourceState(filteredProducts);
+
+    const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
+        <IndexTable.Row
+            id={id}
+            key={id}
+            selected={selectedResources.includes(id)}
+            position={index}
+        >
+            <IndexTable.Cell>
+
+                <Thumbnail
+                    source={image}
+                    size="large"
+                    alt="Black choker necklace"
+                />
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+                    <Text fontWeight="bold" as="span">
+                        {title}
+                    </Text>
+                </div>
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <Text fontWeight="bold" as="span">
+                    {price}
+                </Text>
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <TextField
+                    type="text"
+                    prefix={shop_currency}
+                    placeholder='0.00'
+                />
+            </IndexTable.Cell>
+        </IndexTable.Row>
+    ));
 
     if (loading) {
         return (
@@ -1563,6 +1586,7 @@ function Rate(props) {
                                                                         onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
                                                                         autoComplete="off"
                                                                         placeholder='Delivery X days from today is'
+                                                                        error={errors[`value${index}`]}
                                                                     />
                                                                 )}
                                                                 {item.name === 'time' && (
@@ -1623,6 +1647,7 @@ function Rate(props) {
                                                                             checked={dayOfWeekSelection[index].Saturday}
                                                                             onChange={() => handleDayCheckboxChange('Saturday', index)}
                                                                         />
+                                                                       
 
                                                                     </div>
                                                                 )}
@@ -1632,6 +1657,7 @@ function Rate(props) {
                                                                             value={item.value}
                                                                             onChange={(value) => handleItemDateChange(index, 'value', value)}
                                                                             type="date"
+                                                                            error={errors[`value${index}`]}
                                                                         />
                                                                     </div>
                                                                 )}
@@ -1641,6 +1667,7 @@ function Rate(props) {
                                                                             value={item.value}
                                                                             onChange={(value) => handleItemDateChange(index, 'value', value)}
                                                                             type="time"
+                                                                            error={errors[`value${index}`]}
                                                                         />
                                                                     </div>
                                                                 )}
@@ -1661,6 +1688,7 @@ function Rate(props) {
                                                                             checked={deliveryType[index].Shipping}
                                                                             onChange={() => handleCheckboxChange('Shipping', index)}
                                                                         />
+                                                                        
                                                                     </div>
                                                                 )}
                                                                 {items.length > 1 && (
@@ -2456,7 +2484,7 @@ function Rate(props) {
                                                             value={tier.minWeight}
                                                             onChange={(value) => handleInputChange(index, 'minWeight', value)}
                                                             autoComplete="off"
-                                                            prefix="kg"
+                                                            prefix={shop_currency}
                                                             placeholder="0.00"
                                                             error={errors[`minWeight${index}`]}
                                                         />
@@ -2465,7 +2493,7 @@ function Rate(props) {
                                                             value={tier.maxWeight}
                                                             onChange={(value) => handleInputChange(index, 'maxWeight', value)}
                                                             autoComplete="off"
-                                                            prefix="kg"
+                                                            prefix={shop_currency}
                                                             placeholder="0.00"
                                                             error={errors[`maxWeight${index}`]}
                                                         />
@@ -2504,7 +2532,7 @@ function Rate(props) {
                                                                     />
                                                                     <div style={{ padding: '20px 3px 0 3px', fontSize: '18px' }}>+</div>
                                                                     <TextField
-                                                                        label='Per kg'
+                                                                        label={`Per ${shop_weight_unit}`}
                                                                         value={tier.perkg}
                                                                         onChange={(value) => handleInputChange(index, 'perkg', value)}
                                                                         autoComplete="off"
@@ -2516,7 +2544,8 @@ function Rate(props) {
                                                         </FormLayout>
                                                     </div>
                                                 )}
-                                                {index < tiers.length - 1 && <div style={{ marginTop: "3%" }}> <Divider /></div>}
+                                                <div style={{ marginTop: "3%" }}> <Divider borderColor="border" /></div>
+                                               
                                             </div>
                                         ))}
                                         <div style={{ marginTop: '2%' }}>
@@ -2976,7 +3005,7 @@ function Rate(props) {
                                                             }
                                                         />
                                                     </div>
-                                                   
+
                                                     {modifier.modifierType !== 'Static' && modifier.modifierType !== 'RemoveRate' && modifier.modifierType !== 'ShowOnly' && (
                                                         <div>
                                                             <Divider borderColor="border" />
@@ -3023,26 +3052,26 @@ function Rate(props) {
                                                         </div>
                                                     )}
                                                     {modifier.modifierType === 'Static' && (
-                                                    <div style={{
-                                                        marginTop: '2%',
-                                                        marginBottom: '2%',
-                                                       
-                                                    }}>
-                                                        <div style={{marginBottom:"2%"}}>
-                                                          <Divider borderColor="border" />
-                                                          </div>
-                                                        <FormLayout>
-                                                            <TextField
-                                                                type="text"
-                                                                label="Adjustment"
-                                                                value={modifier.adjustment}
-                                                                onChange={handleRateModifierChange(modifier.id, 'adjustment')}
-                                                                autoComplete="off"
-                                                                placeholder="00"
-                                                                error={errors[`adjustment${index}`]}
-                                                            />
-                                                        </FormLayout>
-                                                    </div>
+                                                        <div style={{
+                                                            marginTop: '2%',
+                                                            marginBottom: '2%',
+
+                                                        }}>
+                                                            <div style={{ marginBottom: "2%" }}>
+                                                                <Divider borderColor="border" />
+                                                            </div>
+                                                            <FormLayout>
+                                                                <TextField
+                                                                    type="text"
+                                                                    label="Adjustment"
+                                                                    value={modifier.adjustment}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'adjustment')}
+                                                                    autoComplete="off"
+                                                                    placeholder="00"
+                                                                    error={errors[`adjustment${index}`]}
+                                                                />
+                                                            </FormLayout>
+                                                        </div>
                                                     )}
                                                 </Collapsible>
                                             </div>
@@ -3122,22 +3151,25 @@ function Rate(props) {
                                 {!checkedState.checked2 && (
                                     <div style={{ marginTop: "1%" }}>
                                         <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-                                            {locations.map(location => (
-                                                <div key={location.id} style={{ width: '50%', height: '5%', padding: '5px' }}>
-                                                    <LegacyCard>
-                                                        <div style={{ display: 'flex', alignItems: 'center', padding: '10px' }}>
-                                                            <Checkbox
-                                                                checked={!!checkedlocation[location.id]}
-                                                                onChange={() => handleLocationChange(location.id)}
-                                                            />
-                                                            <div style={{ marginLeft: '5%' }}>
-                                                                <h2>{location.name}</h2>
-                                                                <p>{location.address1 || '-'}</p>
+                                            {locations.map(location => {
+
+                                                return (
+                                                    <div key={location.id} style={{ width: '50%', height: '5%', padding: '5px' }}>
+                                                        <LegacyCard>
+                                                            <div style={{ display: 'flex', alignItems: 'center', padding: '10px' }}>
+                                                                <Checkbox
+                                                                    checked={!!checkedlocation[location.name]?.checked}
+                                                                    onChange={() => handleLocationChange(location)}
+                                                                />
+                                                                <div style={{ marginLeft: '5%' }}>
+                                                                    <h2>{location.name}</h2>
+                                                                    <p>{location.address1 || '-'}</p>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    </LegacyCard>
-                                                </div>
-                                            ))}
+                                                        </LegacyCard>
+                                                    </div>
+                                                );
+                                            })}
                                             {locations.length === 0 && (
                                                 <Card>
                                                     <p>No locations found</p>

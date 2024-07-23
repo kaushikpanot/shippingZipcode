@@ -332,8 +332,7 @@ function Rate(props) {
                     });
                 }
             }
-            setshop_weight_unit(response.data.rate.shop_weight_unit)
-            setShop_currency(response.data.rate.shop_currency)
+
             setOptions(formattedOptions);
             setState(formattedOptions.map(section => section.options).flat());
             if (response.data.rate.zipcode) {
@@ -413,14 +412,15 @@ function Rate(props) {
                     ...prevState,
                     checked1: response.data.rate.rate_based_on_surcharge.based_on_cart,
                 }));
-                const surchargeData = response.data.rate.rate_based_on_surcharge.rate_based_on_surcharge || {};
+                const surchargeData = response.data.rate.rate_based_on_surcharge || {};
                 Setrate_based_on_surcharge({
                     ...surchargeData,
                     charge_per_wight: surchargeData.charge_per_wight || '',
                     unit_for: surchargeData.unit_for || '',
                     min_charge_price: surchargeData.min_charge_price || '',
                     max_charge_price: surchargeData.max_charge_price || '',
-                    rate_price : surchargeData.rate_price || ''
+                    rate_price : surchargeData.rate_price || '',
+                    cart_total_percentage : surchargeData.cart_total_percentage || '',
                 });
             }
 
@@ -549,6 +549,8 @@ function Rate(props) {
                 }
             });
             const allStates = response.data.states;
+            setshop_weight_unit(response.data.rate.shop_weight_unit)
+            setShop_currency(response.data.rate.shop_currency)
             const formattedOptions = [];
             for (const country in allStates) {
                 if (allStates.hasOwnProperty(country)) {

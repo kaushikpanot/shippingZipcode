@@ -20,6 +20,7 @@ use Throwable;
 use CountryState;
 use Currency\Util\CurrencySymbolUtil;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\Rule;
 
 class ApiController extends Controller
 {
@@ -294,6 +295,7 @@ class ApiController extends Controller
         $restEndpoint = "https://{$userData['name']}/admin/api/2024-01/products/{$productId}.json";
         $customHeaders = ['X-Shopify-Access-Token' => $userData['password']];
         $response = Http::withHeaders($customHeaders)->get($restEndpoint);
+
         return $response->json('product')[$field];
     }
 
@@ -354,6 +356,11 @@ class ApiController extends Controller
         }
 
         return false; // Return false if condition is not properly set or if $array is not an array
+    }
+
+    private function arraysHaveCommonElement($array1, $array2)
+    {
+        return !empty(array_intersect($array1, $array2));
     }
 
     public function handleCallback(Request $request)
@@ -919,6 +926,8 @@ class ApiController extends Controller
                 }
             }
 
+
+            // tier_type
             if (!empty($rate->rate_tier) && $rate->rate_tier['tier_type'] !== 'selected') {
 
                 if ($rate->rate_tier['tier_type'] == 'order_price') {
@@ -953,6 +962,37 @@ class ApiController extends Controller
                     }
                 }
             }
+
+            // Exclude rate for products
+            if (!empty($rate->exclude_rate_for_products) && $rate->exclude_rate_for_products['set_exclude_products'] !== 'selected') {
+                $excludeProducts = $rate->exclude_rate_for_products;
+                if ($excludeProducts['exclude_products_radio']) {
+                    dd($excludeProducts);
+                } else {
+                    if ($excludeProducts['set_exclude_products'] == 'product_vendor') {
+                        $excludeProducts['set_exclude_products'] = 'vendor';
+                    }
+
+                    $excludeType = $excludeProducts['set_exclude_products'];
+                    $excludeText = explode(',', $excludeProducts['exclude_products_textbox']);
+
+                    foreach ($items as $item) {
+                        $productData = ($excludeType != 'product_sku') ?
+                            $this->fetchShopifyProductData($userData, $item['product_id'], $excludeType) :
+                            $item['sku'];
+
+                        if ($this->arraysHaveCommonElement($excludeText, explode(',', $productData))) {
+                            return null;
+                        }
+                    }
+                }
+            }
+
+            // if(!empty($rate->rate_based_on_surcharge) && $rate->rate_based_on_surcharge['based_on_cart']){
+            //     if($rate->rate_based_on_surcharge['based_on_cart'] == "Charge Per"){
+            //         // $subchargePrice = basePrice + (total_weight/uni_weight)* subcharge
+            //     }
+            // }
 
             // Check state selection
             // if ($zipcode->stateSelection === 'Custom') {
@@ -1107,7 +1147,7 @@ class ApiController extends Controller
                 ZoneCountry::create($insertData);
             }
 
-            return response()->json(['status' => true, 'message' => 'Zone added successfully.']);
+            return response()->json(['status' => true, 'message' => 'Zone added successfully.', 'id' => $zone->id]);
         } catch (\Throwable $th) {
             Log::error('Unexpected zone add error', ['exception' => $th->getMessage()]);
             return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);
@@ -1345,10 +1385,20 @@ class ApiController extends Controller
 
             $states = $this->getState($zone->countries->pluck('country', 'countryCode'));
 
+            $rate = [
+               "shop_weight_unit"=>$user->shop_weight_unit
+            ];
+
+            if (!empty($user->shop_currency)) {
+                $symbol = CurrencySymbolUtil::getSymbol($user->shop_currency);
+                $rate['shop_currency'] = $symbol;
+            }
+
             return response()->json([
                 'status' => true,
                 'message' => 'Rate create data retrieved successfully.',
-                'states' => $states
+                'states' => $states,
+                'rate' => $rate,
             ]);
         } catch (\Illuminate\Database\QueryException $ex) {
             Log::error('Database error when retrieving rate list', ['exception' => $ex->getMessage()]);
@@ -1391,11 +1441,17 @@ class ApiController extends Controller
 
             $rules = [
                 'zone_id' => 'required|exists:zones,id',
+                'service_code' => [
+                    'required',
+                    Rule::unique('rates', 'service_code')->ignore($request->input('id')),
+                ],
             ];
 
             $messages = [
                 'zone_id.required' => 'The zone ID is required.',
                 'zone_id.exists' => 'The selected zone ID is invalid.',
+                'service_code.required' => 'The service code is required.',
+                'service_code.unique' => 'The service code should not be the same as any other rate.',
             ];
 
             if (isset($inputData['zipcode'])) {
@@ -1518,7 +1574,7 @@ class ApiController extends Controller
                 $message = 'Rate updated successfully.';
             }
 
-            return response()->json(['status' => true, 'message' => $message, 'rate_id' => $rate->id]);
+            return response()->json(['status' => true, 'message' => $message, 'id' => $rate->id]);
         } catch (\Illuminate\Database\QueryException $ex) {
             Log::error('Database error when adding rate', ['exception' => $ex->getMessage()]);
             return response()->json(['status' => false, 'message' => 'Database error occurred.'], 500);

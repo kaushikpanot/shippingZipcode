@@ -40,7 +40,6 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 function Rate(props) {
     const {id, zone_id } = useParams();
-    const {id} = useParams();
     const [loading, setLoading] = useState(true);
     const [state, setState] = useState([])
     const [selectedOptions, setSelectedOptions] = useState([]);
@@ -1263,7 +1262,8 @@ function Rate(props) {
                 ...prevFormData,
                 id:response.data.id,
             }))
-        console.log(response.data)
+        
+            
             setErrors({});
             setToastContent('Rate saved successfully');
             setShowToast(true);

@@ -419,7 +419,8 @@ function Rate(props) {
                     charge_per_wight: surchargeData.charge_per_wight || '',
                     unit_for: surchargeData.unit_for || '',
                     min_charge_price: surchargeData.min_charge_price || '',
-                    max_charge_price: surchargeData.max_charge_price || ''
+                    max_charge_price: surchargeData.max_charge_price || '',
+                    rate_price : surchargeData.rate_price || ''
                 });
             }
 
@@ -969,7 +970,6 @@ function Rate(props) {
         product_vendor: '',
         descriptions: '',
         rate_price:''
-
     })
 
     const [send_another_rate, setsend_another_rate] = useState({
@@ -1127,7 +1127,10 @@ function Rate(props) {
                 charge_per_wight: rate_based_on_surcharge?.charge_per_wight || '',
                 unit_for: rate_based_on_surcharge?.unit_for || '',
                 min_charge_price: rate_based_on_surcharge?.min_charge_price || '',
-                max_charge_price: rate_based_on_surcharge?.max_charge_price || ''
+                max_charge_price: rate_based_on_surcharge?.max_charge_price || '',
+                rate_price : rate_based_on_surcharge?.rate_price || '',
+                cart_total_percentage: rate_based_on_surcharge?.cart_total_percentage || '',
+                
             },
             rate_tier: {
                 ...prevFormData.rate_tier,
@@ -1263,7 +1266,6 @@ function Rate(props) {
                 id:response.data.id,
             }))
         
-            
             setErrors({});
             setToastContent('Rate saved successfully');
             setShowToast(true);
@@ -1290,6 +1292,7 @@ function Rate(props) {
                 }
             });
             const productData = response.data;
+            console.log(response.data)
             setProducts(productData.products);
             setFilteredProducts(productData.products);
             setStartCursor(productData.startCursor);
@@ -1310,18 +1313,6 @@ function Rate(props) {
         setShowTable(true);
     };
 
-    const handlePriceChange = (productId) => (event) => {
-        const { value } = event.target;
-        Setrate_based_on_surcharge(prevState => ({
-            ...prevState,
-            rate_price: {
-                ...prevState.rate_price,
-                [productId]: value
-            }
-        }));
-    };
-    
-    
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
         useIndexResourceState(filteredProducts);
 

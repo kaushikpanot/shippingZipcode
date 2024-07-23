@@ -351,11 +351,17 @@ function Zone(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
+            setFormData(prevFormData => ({
+                ...prevFormData,
+                id:response.data.id,
+            }))
+        
+            console.log(response.data)
             setToastContent("Zone saved successfully.");
             setShowToast(true);
-            setTimeout(() => {
-                navigate('/Home');
-            }, 1000);
+            // setTimeout(() => {
+            //     navigate('/Home');
+            // }, 1000);
 
         } catch (error) {
             console.error('Error occurs', error);
@@ -363,6 +369,11 @@ function Zone(props) {
             setShowToast(true);
         }
     }
+    useEffect(() => {
+        if (formData.id) {
+            navigate(`/Zone/${formData.id}`);
+        }
+    }, [formData.id, zone_id, navigate]);
 
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
         useIndexResourceState(rate);

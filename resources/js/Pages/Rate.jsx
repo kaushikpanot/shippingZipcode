@@ -1282,14 +1282,6 @@ function Rate(props) {
             setShowToast(true);
         }
     };
-
-    useEffect(() => {
-        if (formData.id) {
-            navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
-        }
-    }, [formData.id, zone_id, navigate]);
-
-
     const fetchProducts = async () => {
         try {
             const token = await getSessionToken(app);
@@ -1328,7 +1320,6 @@ function Rate(props) {
     //     });
     // };
 
-
     const resourceName = {
         singular: 'order',
         plural: 'products',
@@ -1346,7 +1337,11 @@ function Rate(props) {
             ...prevState,
            productData: productIds,
         }));
-    }, [selectedResources]);
+
+        if (formData.id) {
+            navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
+        }
+    }, [selectedResources,formData.id, zone_id, navigate]);
 
     const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
         <IndexTable.Row

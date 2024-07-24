@@ -1338,17 +1338,17 @@ console.log(cleanFormData)
             <IndexTable.Row
                 id={id}
                 key={id}
-                selected={selectedProductsData.some(product => product.id === id)}
+                selected={selectedResources.includes(id)}
                 position={index}
                 onClick={() => handleProductSelection({
                     id,
                     name: title,
-                    tags: "Accessories", // Adjust as needed
-                    product_vendor: "United By Blue", // Adjust as needed
-                    product_type: "Accessories", // Adjust as needed
+                    tags: "Accessories", 
+                    product_vendor: "United By Blue",
+                    product_type: "Accessories",
                     product_price: price,
                     product_image_url: image,
-                    price // Include price in the selected data
+                   
                 })}
             >
                 <IndexTable.Cell>

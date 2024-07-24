@@ -185,6 +185,7 @@ function Rate(props) {
         { label: 'Set Exclude Products Option', value: 'selected' },
         { label: 'Custome Selection', value: 'custome_selection' },
         { label: 'Product Vendor', value: 'product_vendor' },
+        { label: 'Product Tag', value: 'product_tag' },
         { label: 'Product SKU', value: 'product_sku' },
         { label: 'Product Type', value: 'product_type' },
         { label: 'Product Properties', value: 'product_properties' }
@@ -1283,13 +1284,6 @@ function Rate(props) {
         }
     };
 
-    useEffect(() => {
-        if (formData.id) {
-            navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
-        }
-    }, [formData.id, zone_id, navigate]);
-
-
     const fetchProducts = async () => {
         try {
             const token = await getSessionToken(app);
@@ -1299,7 +1293,6 @@ function Rate(props) {
                 }
             });
             const productData = response.data;
-            console.log(response.data)
             setProducts(productData.products);
             setFilteredProducts(productData.products);
             setStartCursor(productData.startCursor);
@@ -1311,6 +1304,7 @@ function Rate(props) {
             console.error('Error fetching product data:', error);
         }
     };
+
     const handleRatePriceChange = (value, id) => {
         setSelectedProductsData((prevData) => prevData.map(product =>
             product.id === id ? { ...product, rate_price: value } : product
@@ -1328,7 +1322,6 @@ function Rate(props) {
     //     });
     // };
 
-  
     const resourceName = {
         singular: 'order',
         plural: 'products',
@@ -1339,6 +1332,7 @@ function Rate(props) {
 
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
         useIndexResourceState(filteredProducts);
+
         useEffect(() => {
       
             const updatedSelectedProducts = selectedResources.map(id => {
@@ -1350,7 +1344,11 @@ function Rate(props) {
                 };
             });
             setSelectedProductsData(updatedSelectedProducts);
-        }, [selectedResources, filteredProducts]);
+
+            if (formData.id) {
+                navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
+            }
+        }, [selectedResources, filteredProducts,formData.id, zone_id, navigate]);
 
     const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
         <IndexTable.Row
@@ -2251,24 +2249,23 @@ function Rate(props) {
                                                     onChange={handleRateFormChange('cart_total_percentage')}
                                                 />
                                                 <FormLayout.Group>
-                                                    <TextField
+                                                <TextField
                                                         type="text"
-                                                        label="Charge Per Weight"
-                                                        value={rate_based_on_surcharge.charge_per_wight}
-                                                        onChange={handleRateFormChange('charge_per_wight')}
+                                                        label="Minimum Charge Price"
                                                         autoComplete="off"
                                                         prefix={shop_currency}
                                                         placeholder='0'
-
+                                                        value={rate_based_on_surcharge.min_charge_price}
+                                                        onChange={handleRateFormChange('min_charge_price')}
                                                     />
                                                     <TextField
                                                         type="number"
-                                                        label="Unit For Weight"
-                                                        value={rate_based_on_surcharge.unit_for}
-                                                        onChange={handleRateFormChange('unit_for')}
+                                                        label="Maximum Charge Price"
                                                         autoComplete="off"
-                                                        prefix="kg"
+                                                        prefix={shop_currency}
                                                         placeholder='0'
+                                                        value={rate_based_on_surcharge.max_charge_price}
+                                                        onChange={handleRateFormChange('max_charge_price')}
                                                     />
                                                 </FormLayout.Group>
                                             </FormLayout>
@@ -2824,7 +2821,7 @@ function Rate(props) {
                                 </div>
                             )}
 
-                            {(selectedRate === 'product_vendor' || selectedRate === 'product_sku' || selectedRate === 'product_type' || selectedRate === 'product_properties') && (
+                            {(selectedRate === 'product_vendor' || selectedRate === 'product_sku' || selectedRate === 'product_type' || selectedRate === 'product_properties' || selectedRate === 'product_tag') && (
                                 <div>
                                     <div style={{ marginTop: "3%" }}></div>
                                     <Divider borderColor="border" />
@@ -2853,7 +2850,7 @@ function Rate(props) {
                                             onChange={handleRateFormChange('exclude_products_textbox')}
                                             helpText={
                                                 `Note: Please enter the exact term of multiple ${selectedRate === 'product_vendor' ? 'Vendor ' : selectedRate === 'product_sku' ? 'Product SKU' :
-                                                    selectedRate === 'product_type' ? 'Product Type' : 'Product Properties'
+                                                    selectedRate === 'product_type' ? 'Product Type' :  selectedRate === 'product_tag' ? 'Product Tag' : 'Product Properties'
                                                 } with comma separator(,).`
                                             }
                                             error={errors.exclude_products_textbox}
@@ -3003,42 +3000,6 @@ function Rate(props) {
                                                             onChange={handleRateModifierChange(modifier.id, 'rateDay')}
                                                         />
                                                     </div>
-                                                    {(modifier.type === 'AND' || modifier.type === 'OR') && (
-                                                        <div style={{ marginTop: '5%' }}>
-                                                            <div style={{ float: 'left', width: '45%', marginTop: "0.5%" }}><hr /></div>
-                                                            <div style={{ float: 'right', width: '45%', marginTop: "0.5%" }}><hr /></div>
-                                                            <p style={{ textAlign: "center" }}>{modifier.type} </p>
-
-
-                                                            <div style={{ marginTop: '4%' }}></div>
-                                                            <FormLayout>
-                                                                <FormLayout.Group>
-                                                                    <Select
-                                                                        label="Apply this rate modifier when"
-                                                                        options={rateModifiersOptions}
-                                                                        value={modifier.rateModifier}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateModifier')}
-                                                                    />
-                                                                    <Select
-                                                                        label="Select Operator"
-                                                                        options={rateOperatorOptions}
-                                                                        value={modifier.rateOperator}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
-                                                                    />
-                                                                </FormLayout.Group>
-                                                            </FormLayout>
-                                                            <div style={{ marginTop: '5%', marginBottom: '3%' }}>
-                                                                <Select
-                                                                    options={rateDayOptions}
-                                                                    value={modifier.rateDay}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'rateDay')}
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-
-
                                                     {(modifier.type === 'AND' || modifier.type === 'OR') && (
                                                         <div style={{ marginTop: '5%' }}>
                                                             <div style={{ float: 'left', width: '45%', marginTop: "0.5%" }}><hr /></div>

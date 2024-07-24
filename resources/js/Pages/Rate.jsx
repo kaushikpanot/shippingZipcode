@@ -354,6 +354,7 @@ function Rate(props) {
                 setSelectedOptions(fetchedSelectedOptions);
             }
 
+
             if (response.data.rate.exclude_rate_for_products) {
                 setSelectedRate(response.data.rate.exclude_rate_for_products.set_exclude_products);
                 SetExclude_Rate(response.data.rate.exclude_rate_for_products);
@@ -999,7 +1000,6 @@ function Rate(props) {
         SetExclude_Rate(prevState => ({
             ...prevState,
             set_exclude_products: selectedRate,
-            productsData: selectedProductsData
         }));
 
         const updated_location = locations
@@ -1017,7 +1017,7 @@ function Rate(props) {
             }
         }));
 
-    }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate, locations, checkedlocation, selectedProductsData]);
+    }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate, locations, checkedlocation]);
 
     const [exclude_Rate, SetExclude_Rate] = useState({
         set_exclude_products: selectedRate,
@@ -1027,7 +1027,7 @@ function Rate(props) {
         product_type: '',
         product_vendor: '',
         exclude_products_textbox: '',
-
+        productData:''
     })
 
     const [formData, setFormData] = useState({
@@ -1328,7 +1328,7 @@ function Rate(props) {
     //     });
     // };
 
-  
+
     const resourceName = {
         singular: 'order',
         plural: 'products',
@@ -1337,20 +1337,16 @@ function Rate(props) {
         setShowTable(true);
     };
 
-    const { selectedResources, allResourcesSelected, handleSelectionChange } =
-        useIndexResourceState(filteredProducts);
-        useEffect(() => {
-      
-            const updatedSelectedProducts = selectedResources.map(id => {
-                const product = filteredProducts.find(product => product.id === id);
-                return {
-                    id: product.id,
-                    name: product.title,
-                    product_price: product.price,
-                };
-            });
-            setSelectedProductsData(updatedSelectedProducts);
-        }, [selectedResources, filteredProducts]);
+    const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(filteredProducts);
+
+    useEffect(() => {
+       
+        const productIds = selectedResources.join(',');
+        SetExclude_Rate(prevState => ({
+            ...prevState,
+           productData: productIds,
+        }));
+    }, [selectedResources]);
 
     const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
         <IndexTable.Row
@@ -2806,7 +2802,7 @@ function Rate(props) {
                                                         onSelectionChange={handleSelectionChange}
                                                         headings={[
                                                             { title: 'Image' },
-                                                            { title: 'Title' },                                                  
+                                                            { title: 'Title' },
                                                         ]}
                                                         pagination={{
                                                             hasNext: hasNextPage,

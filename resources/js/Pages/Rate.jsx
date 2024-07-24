@@ -29,6 +29,7 @@ import {
     Box,
     Collapsible,
     List,
+    Modal
 } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon, SearchIcon, SelectIcon } from '@shopify/polaris-icons';
 import '../../../public/css/style.css';
@@ -201,7 +202,16 @@ function Rate(props) {
             [id]: !prevState[id],
         }));
     };
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const handleFocus = useCallback(() => {
+        setIsModalOpen(true);
+    }, []);
 
+    const handleModalClose = useCallback(() => {
+        setIsModalOpen(false);
+    }, []);
+  
+    
     const handleAddRateModifier = () => {
         const newId = rateModifiers.length ? rateModifiers[rateModifiers.length - 1].id + 1 : 1;
         setRateModifiers((prevModifiers) => [
@@ -212,7 +222,7 @@ function Rate(props) {
                 title: '',
                 rateModifier: 'dayOfOrder',
                 rateOperator: 'equals',
-                rateDay: '',
+                rateDay: rateModifiers.find(modifier => modifier.id in open)?.rateDay || '', // Use the updated rateDay
                 type: 'None',
                 behaviour: 'Stack',
                 modifierType: 'Fixed',
@@ -236,11 +246,14 @@ function Rate(props) {
             return newState;
         });
     };
-
     const handleRateModifierChange = (id, field) => (value) => {
         setRateModifiers((prevModifiers) =>
             prevModifiers.map((modifier) =>
-                modifier.id === id ? { ...modifier, [field]: value } : modifier
+                modifier.id === id ? {
+                    ...modifier,
+                    [field]: value,
+                    ...(field === 'rateModifier' && { rateDay: null })
+                } : modifier
             )
         );
     };
@@ -331,8 +344,8 @@ function Rate(props) {
     const rateQuantityOptions = [
         { label: 'Equals', value: 'equal' },
         { label: 'Does Not Equal', value: 'notequal' },
-        { label: 'Less then or Equal', value: 'less' },
-        { label: 'Greater then or Equal', value: 'greater' },
+        { label: 'Less then or Equal', value: 'lthenoequal' },
+        { label: 'Greater then or Equal', value: 'gthenoequal' },
         { label: 'Is modular 0', value: 'modular0' },
         { label: 'Is not modular 0', value: 'modularnot0' },
     ];
@@ -402,6 +415,7 @@ function Rate(props) {
                 const fetchedSelectedOptions = response.data.rate.zipcode.state.map(state => state.code);
                 setSelectedOptions(fetchedSelectedOptions);
             }
+
 
             if (response.data.rate.exclude_rate_for_products) {
                 setSelectedRate(response.data.rate.exclude_rate_for_products.set_exclude_products);
@@ -1048,7 +1062,6 @@ function Rate(props) {
         SetExclude_Rate(prevState => ({
             ...prevState,
             set_exclude_products: selectedRate,
-            productsData: selectedProductsData
         }));
 
         const updated_location = locations
@@ -1066,7 +1079,7 @@ function Rate(props) {
             }
         }));
 
-    }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate, locations, checkedlocation, selectedProductsData]);
+    }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate, locations, checkedlocation]);
 
     const [exclude_Rate, SetExclude_Rate] = useState({
         set_exclude_products: selectedRate,
@@ -1076,7 +1089,7 @@ function Rate(props) {
         product_type: '',
         product_vendor: '',
         exclude_products_textbox: '',
-
+        productData: ''
     })
 
     const [formData, setFormData] = useState({
@@ -1337,7 +1350,6 @@ function Rate(props) {
             setShowToast(true);
         }
     };
-
     const fetchProducts = async () => {
         try {
             const token = await getSessionToken(app);
@@ -1387,23 +1399,47 @@ function Rate(props) {
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
         useIndexResourceState(filteredProducts);
 
-    useEffect(() => {
-
-        const updatedSelectedProducts = selectedResources.map(id => {
+ useEffect(() => {
+   
+    const productIds = selectedResources
+        .map(id => {
             const product = filteredProducts.find(product => product.id === id);
-            return {
-                id: product.id,
-                name: product.title,
-                product_price: product.price,
-            };
-        });
-        setSelectedProductsData(updatedSelectedProducts);
+            return product ? product.id : '';
+        })
+        .filter(id => id); 
 
-        if (formData.id) {
-            navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
-        }
-    }, [selectedResources, filteredProducts, formData.id, zone_id, navigate]);
+    const currentProductData = productIds.join(', ');
 
+    SetExclude_Rate(prevState => ({
+        ...prevState,
+        productData: currentProductData,
+    }));
+    if (formData.id) {
+        navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
+    }
+}, [selectedResources, filteredProducts, formData.id, zone_id, navigate]);
+
+useEffect(() => {
+    // Create a comma-separated list of product IDs
+    const productIds = selectedResources
+        .map(id => {
+            const product = filteredProducts.find(product => product.id === id);
+            return product ? product.id : ''; // Extract product ID
+        })
+        .filter(id => id); // Remove any empty IDs
+
+    const currentProductData = productIds.join(', ');
+
+    // Update existing rate modifiers with the current product IDs in rateDay
+    setRateModifiers(prevModifiers => {
+        return prevModifiers.map(modifier =>
+            modifier.id in open ? {
+                ...modifier,
+                rateDay: currentProductData, // Set the product IDs in rateDay
+            } : modifier
+        );
+    });
+}, [selectedResources, filteredProducts, open]);
     const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
         <IndexTable.Row
             id={id}
@@ -1451,7 +1487,7 @@ function Rate(props) {
         </IndexTable.Row>
     ));
 
-    const productData = filteredProducts.map(({ id, title, image, price }, index) => (
+    const productData = filteredProducts.map(({ id, title, image }, index) => (
         <IndexTable.Row
             id={id}
             key={id}
@@ -1461,7 +1497,7 @@ function Rate(props) {
             <IndexTable.Cell>
                 <Thumbnail
                     source={image}
-                    size="large"
+                    size="small"
                     alt={title}
                 />
             </IndexTable.Cell>
@@ -3123,19 +3159,22 @@ function Rate(props) {
                                                             />
                                                         )}
                                                         {modifier.rateModifier === 'date' && (
-                                                        <TextField
-                                                           value={modifier.rateDay}
-                                                           onChange={handleRateModifierChange(modifier.id, 'rateDay')}
-                                                            type="date"
-                                                        />
+                                                            <TextField
+                                                                value={modifier.rateDay}
+                                                                onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                type="date"
+                                                            />
                                                         )}
                                                         {modifier.rateModifier === 'ids' && (
-                                                        <TextField
-                                                           value={modifier.rateDay}
-                                                           onChange={handleRateModifierChange(modifier.id, 'rateDay')}
-                                                            type="date"
-                                                            
-                                                        />
+                                                            <TextField
+
+                                                                type='text' 
+                                                                value={selectedResources.join(', ')}
+                                                                onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                multiline={4}
+                                                                onFocus={handleFocus}  // Open the modal when TextField is focused
+
+                                                            />
                                                         )}
                                                         {(modifier.rateModifier === 'price' || modifier.rateModifier === 'calculateRate' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
                                                             <TextField
@@ -3312,6 +3351,13 @@ function Rate(props) {
                                                                         options={time}
                                                                         value={modifier.rateDay}
                                                                         onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                    />
+                                                                )}
+                                                                {modifier.rateModifier === 'date' && (
+                                                                    <TextField
+                                                                        value={modifier.rateDay}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                        type="date"
                                                                     />
                                                                 )}
                                                                 {(modifier.rateModifier === 'price' || modifier.rateModifier === 'calculateRate' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
@@ -3904,6 +3950,64 @@ function Rate(props) {
             {toastActive && (
                 <Toast content={toastMessage} error onDismiss={toggleToastActive} />
             )}
+            {isModalOpen && (
+                <Modal
+                    open={isModalOpen}
+                    onClose={handleModalClose}
+                    title="My Shopify Modal"
+                    primaryAction={{
+                        content: 'Add',
+                        onAction: handleModalClose,
+
+                    }}
+                    secondaryActions={[
+                        {
+                            content: 'Cancel ',
+                            onAction: handleModalClose,
+
+                        },
+                    ]}
+                >
+
+                    <Modal.Section>
+                        <div style={{ position: 'relative' }}>
+                            <div style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
+                                <TextField
+                                    placeholder='search'
+                                    onChange={handlesearchChange}
+                                    value={value}
+                                    type="text"
+                                    prefix={<Icon source={SearchIcon} color="inkLighter" />}
+                                    autoComplete="off"
+                                    clearButton
+                                    onClearButtonClick={handleClearButtonClick}
+                                />
+                            </div>
+                            <div style={{ marginTop: '4%', height: '400px', overflowY: 'scroll' }}>
+                                <IndexTable
+                                    resourceName={resourceName}
+                                    itemCount={filteredProducts.length}
+                                    selectedItemsCount={allResourcesSelected ? 'All' : selectedResources.length}
+                                    onSelectionChange={handleSelectionChange}
+                                    headings={[
+                                        { title: 'Image' },
+                                        { title: 'Title' },
+                                    ]}
+                                    pagination={{
+                                        hasNext: hasNextPage,
+                                        hasPrevious: hasPreviousPage,
+                                        onNext: handleNextPage,
+                                        onPrevious: handlePreviousPage,
+                                    }}
+                                >
+                                    {productData}
+                                </IndexTable>
+                            </div>
+                        </div>
+                    </Modal.Section>
+                </Modal>
+            )}
+
         </Page>
     );
 }

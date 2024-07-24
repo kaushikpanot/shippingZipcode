@@ -420,8 +420,8 @@ function Rate(props) {
                     unit_for: surchargeData.unit_for || '',
                     min_charge_price: surchargeData.min_charge_price || '',
                     max_charge_price: surchargeData.max_charge_price || '',
-                    rate_price : surchargeData.rate_price || '',
-                    cart_total_percentage : surchargeData.cart_total_percentage || '',
+                    rate_price: surchargeData.rate_price || '',
+                    cart_total_percentage: surchargeData.cart_total_percentage || '',
                 });
             }
 
@@ -973,7 +973,6 @@ function Rate(props) {
         product_vendor: '',
         descriptions: '',
         rate_price: '',
-        productsData: selectedProductsData
 
     })
 
@@ -999,7 +998,8 @@ function Rate(props) {
 
         SetExclude_Rate(prevState => ({
             ...prevState,
-            set_exclude_products: selectedRate
+            set_exclude_products: selectedRate,
+            productsData: selectedProductsData
         }));
 
         const updated_location = locations
@@ -1017,7 +1017,7 @@ function Rate(props) {
             }
         }));
 
-    }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate, locations, checkedlocation]);
+    }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate, locations, checkedlocation, selectedProductsData]);
 
     const [exclude_Rate, SetExclude_Rate] = useState({
         set_exclude_products: selectedRate,
@@ -1026,7 +1026,8 @@ function Rate(props) {
         collection_id: '',
         product_type: '',
         product_vendor: '',
-        exclude_products_textbox: ''
+        exclude_products_textbox: '',
+
     })
 
     const [formData, setFormData] = useState({
@@ -1062,7 +1063,7 @@ function Rate(props) {
             selectedByAmount: checkstate.selectedByAmount,
             selectedMultiplyLine: checkstate.selectedMultiplyLine,
             rate_based_on_surcharge,
-            productsData: selectedProductsData
+
         },
         rate_modifiers: rateModifiers,
         exclude_rate_for_products: exclude_Rate,
@@ -1134,7 +1135,7 @@ function Rate(props) {
                 unit_for: rate_based_on_surcharge?.unit_for || '',
                 min_charge_price: rate_based_on_surcharge?.min_charge_price || '',
                 max_charge_price: rate_based_on_surcharge?.max_charge_price || '',
-                productsData: selectedProductsData
+
             },
             rate_tier: {
                 ...prevFormData.rate_tier,
@@ -1154,7 +1155,7 @@ function Rate(props) {
         checkstate.selectedMultiplyLine, selectedTierType, tiers,
         exclude_Rate, rateModifiers, send_another_rate,
         checkedState.checked3, checkstate.selectedByUpdatePriceType,
-        checkstate.selectedByUpdatePriceEffect,selectedProductsData
+        checkstate.selectedByUpdatePriceEffect
     ]);
 
 
@@ -1258,7 +1259,7 @@ function Rate(props) {
 
             const cleanFormData = removeEmptyFields(formData);
 
-console.log(cleanFormData)
+            console.log(cleanFormData)
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, cleanFormData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -1288,7 +1289,7 @@ console.log(cleanFormData)
         }
     }, [formData.id, zone_id, navigate]);
 
-   
+
     const fetchProducts = async () => {
         try {
             const token = await getSessionToken(app);
@@ -1316,16 +1317,18 @@ console.log(cleanFormData)
         ));
     };
 
-    const handleProductSelection = (product) => {
-        setSelectedProductsData((prevData) => {
-            const isSelected = prevData.some(item => item.id === product.id);
-            if (isSelected) {
-                return prevData.filter(item => item.id !== product.id);
-            } else {
-                return [...prevData, { ...product, rate_price: '' }];
-            }
-        });
-    };
+    // const handleProductSelection = (product) => {
+    //     setSelectedProductsData((prevData) => {
+    //         const isSelected = prevData.some(item => item.id === product.id);
+    //         if (isSelected) {
+    //             return prevData.filter(item => item.id !== product.id);
+    //         } else {
+    //             return [...prevData, { ...product, rate_price: '' }];
+    //         }
+    //     });
+    // };
+
+  
     const resourceName = {
         singular: 'order',
         plural: 'products',
@@ -1336,54 +1339,90 @@ console.log(cleanFormData)
 
     const { selectedResources, allResourcesSelected, handleSelectionChange } =
         useIndexResourceState(filteredProducts);
+        useEffect(() => {
+      
+            const updatedSelectedProducts = selectedResources.map(id => {
+                const product = filteredProducts.find(product => product.id === id);
+                return {
+                    id: product.id,
+                    name: product.title,
+                    product_price: product.price,
+                };
+            });
+            setSelectedProductsData(updatedSelectedProducts);
+        }, [selectedResources, filteredProducts]);
 
-        const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
-            <IndexTable.Row
-                id={id}
-                key={id}
-                selected={selectedResources.includes(id)}
-                position={index}
-                onClick={() => handleProductSelection({
-                    id,
-                    name: title,
-                    tags: "Accessories", 
-                    product_vendor: "United By Blue",
-                    product_type: "Accessories",
-                    product_price: price,
-                    product_image_url: image,
-                   
-                })}
-            >
-                <IndexTable.Cell>
-                    <Thumbnail
-                        source={image}
-                        size="large"
-                        alt={title}
-                    />
-                </IndexTable.Cell>
-                <IndexTable.Cell>
-                    <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
-                        <Text fontWeight="bold" as="span">
-                            {title}
-                        </Text>
-                    </div>
-                </IndexTable.Cell>
-                <IndexTable.Cell>
+    const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
+        <IndexTable.Row
+            id={id}
+            key={id}
+            selected={selectedResources.includes(id)}
+            position={index}
+            onClick={() => handleProductSelection({
+                id,
+                name: title,
+                // tags: "", 
+                // product_vendor: "United By Blue",
+                // product_type: "Accessories",
+                product_price: price,
+                product_image_url: image,
+            })}
+        >
+            <IndexTable.Cell>
+                <Thumbnail
+                    source={image}
+                    size="large"
+                    alt={title}
+                />
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
                     <Text fontWeight="bold" as="span">
-                        {price}
+                        {title}
                     </Text>
-                </IndexTable.Cell>
-                <IndexTable.Cell>
-                    <TextField
+                </div>
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <Text fontWeight="bold" as="span">
+                    {price}
+                </Text>
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                {/* <TextField
                         type="text"
                         prefix={shop_currency}
                         placeholder='0.00'
                         value={selectedProductsData.find(product => product.id === id)?.rate_price || ''}
                         onChange={(value) => handleRatePriceChange(value, id)}
-                    />
-                </IndexTable.Cell>
-            </IndexTable.Row>
-        ));
+                    /> */}
+            </IndexTable.Cell>
+        </IndexTable.Row>
+    ));
+
+    const productData = filteredProducts.map(({ id, title, image, price }, index) => (
+        <IndexTable.Row
+            id={id}
+            key={id}
+            selected={selectedResources.includes(id)}
+            position={index}
+        >
+            <IndexTable.Cell>
+                <Thumbnail
+                    source={image}
+                    size="large"
+                    alt={title}
+                />
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+                    <Text fontWeight="bold" as="span">
+                        {title}
+                    </Text>
+                </div>
+            </IndexTable.Cell>
+        </IndexTable.Row>
+    ));
+
 
     if (loading) {
         return (
@@ -2740,6 +2779,48 @@ console.log(cleanFormData)
                                     </div>
                                     <p style={{ marginTop: "1%" }}>Note: Please enter the exact term for product title, collection id, product type, and product vendor that needs to be searched.
                                     </p>
+                                    <div style={{ marginTop: "2%", width: '20%' }} onClick={handleSearchClick}>
+                                        <Button variant="primary" >Search Product</Button></div>
+                                    <div style={{ marginTop: "4%" }}>
+                                        {showTable && (
+                                            <div>
+                                                <div>
+                                                    <TextField
+                                                        placeholder='search'
+                                                        onChange={handlesearchChange}
+                                                        value={value}
+                                                        type="text"
+                                                        prefix={<Icon source={SearchIcon} color="inkLighter" />}
+                                                        autoComplete="off"
+                                                        clearButton
+                                                        onClearButtonClick={handleClearButtonClick}
+                                                    />
+                                                </div>
+                                                <div style={{ marginTop: "4%" }}>
+                                                    <IndexTable
+                                                        resourceName={resourceName}
+                                                        itemCount={filteredProducts.length}
+                                                        selectedItemsCount={
+                                                            allResourcesSelected ? 'All' : selectedResources.length
+                                                        }
+                                                        onSelectionChange={handleSelectionChange}
+                                                        headings={[
+                                                            { title: 'Image' },
+                                                            { title: 'Title' },                                                  
+                                                        ]}
+                                                        pagination={{
+                                                            hasNext: hasNextPage,
+                                                            hasPrevious: hasPreviousPage,
+                                                            onNext: handleNextPage,
+                                                            onPrevious: handlePreviousPage,
+                                                        }}
+                                                    >
+                                                        {productData}
+                                                    </IndexTable>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
@@ -2808,7 +2889,7 @@ console.log(cleanFormData)
                             <LegacyCard sectioned>
                                 {rateModifiers.map((modifier, index) => (
                                     <div style={{ marginBottom: "3%" }}>
-                                        <Box key={index} borderColor="border" borderWidth="025">
+                                        <Box key={index} borderColor="border" borderWidth="025" borderRadius="200">
                                             <div style={{ padding: '10px' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                     <Button

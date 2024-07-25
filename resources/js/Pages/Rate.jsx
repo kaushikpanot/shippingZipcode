@@ -1405,29 +1405,8 @@ function Rate(props) {
     const handleSearchClick = () => {
         setShowTable(true);
     };
-    const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(filteredProducts);
 
-
-    // useEffect(() => {
-    //     console.log("exclude_Rate.productData:", exclude_Rate.productData);
-    //     const productIds = exclude_Rate.productData
-    //         .split(',')
-    //         .map(id => id.trim())
-    //         .filter(id => id);
-
-    //     console.log("Parsed productIds:", productIds);
-
-    //     setSelectedResources(productIds);
-    // }, [exclude_Rate.productData,selectedResources]);
-
-    // const handleSelectionChange = (newSelection) => {
-    //     console.log('newSelection',newSelection)
-    //     console.log("handleSelectionChange called with:", newSelection);
-    //     if (Array.isArray(newSelection)) {
-    //         setSelectedResources(newSelection);
-    //     }
-    // };
-
+    const {selectedResources,  allResourcesSelected, handleSelectionChange } = useIndexResourceState(filteredProducts);
 
     useEffect(() => {
         const productIds = selectedResources

@@ -727,31 +727,31 @@ function Rate(props) {
         { label: 'Between', value: 'between' },
     ];
     const time = [
-        { label: '00:00', value: '00' },
-        { label: '01:00', value: '01' },
-        { label: '02:00', value: '03' },
-        { label: '03:00', value: '03' },
-        { label: '04:00', value: '04' },
-        { label: '05:00', value: '05' },
-        { label: '06:00', value: '06' },
-        { label: '07:00', value: '07' },
-        { label: '08:00', value: '08' },
-        { label: '09:00', value: '09' },
-        { label: '10:00', value: '10' },
-        { label: '11:00', value: '11' },
-        { label: '12:00', value: '12' },
-        { label: '13:00', value: '13' },
-        { label: '14:00', value: '14' },
-        { label: '15:00', value: '15' },
-        { label: '16:00', value: '16' },
-        { label: '17:00', value: '17' },
-        { label: '18:00', value: '18' },
-        { label: '19:00', value: '19' },
-        { label: '20:00', value: '20' },
-        { label: '21:00', value: '21' },
-        { label: '22:00', value: '22' },
-        { label: '23:00', value: '23' },
-        { label: '24:00', value: '24' }
+        { label: '00:00', value: '00:00' },
+        { label: '01:00', value: '01:00' },
+        { label: '02:00', value: '02:00' },
+        { label: '03:00', value: '03:00' },
+        { label: '04:00', value: '04:00' },
+        { label: '05:00', value: '05:00' },
+        { label: '06:00', value: '06:00' },
+        { label: '07:00', value: '07:00' },
+        { label: '08:00', value: '08:00' },
+        { label: '09:00', value: '09:00' },
+        { label: '10:00', value: '10:00' },
+        { label: '11:00', value: '11:00' },
+        { label: '12:00', value: '12:00' },
+        { label: '13:00', value: '13:00' },
+        { label: '14:00', value: '14:00' },
+        { label: '15:00', value: '15:00' },
+        { label: '16:00', value: '16:00' },
+        { label: '17:00', value: '17:00' },
+        { label: '18:00', value: '18:00' },
+        { label: '19:00', value: '19:00' },
+        { label: '20:00', value: '20:00' },
+        { label: '21:00', value: '21:00' },
+        { label: '22:00', value: '22:00' },
+        { label: '23:00', value: '23:00' },
+        { label: '24:00', value: '24:00' }
     ];
     const lineItem = [
         { label: 'ANY product must satisfy this conditin ', value: 'any' },
@@ -1402,10 +1402,30 @@ function Rate(props) {
         singular: 'order',
         plural: 'products',
     };
+    
+   
+
     const handleSearchClick = () => {
         setShowTable(true);
+    }
+    const {  allResourcesSelected,  } = useIndexResourceState(filteredProducts);
+    const [selectedResources, setSelectedResources] = useState([]);
+    // useEffect(() => {
+    //     // Show only selected products by default
+    //     const selectedProducts = products.filter(product => selectedResources.includes(product.id));
+    //     setFilteredProducts(selectedProducts);
+    // }, [products, selectedResources]);
+    useEffect(() => {
+        if (exclude_Rate.productData) {
+            const selectedIds = exclude_Rate.productData.split(',').map(id => id.trim());
+            setSelectedResources(selectedIds);
+        }
+    }, [exclude_Rate.productData]);
+    
+    const handleSelectionChange = (newSelectedResources) => {
+        setSelectedResources(newSelectedResources);
     };
-    const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(filteredProducts);
+    
 
     useEffect(() => {
         const productIds = selectedResources
@@ -2904,7 +2924,7 @@ function Rate(props) {
                                                     </IndexTable>
                                                 </div>
                                             </div>
-                                        )}
+                                         )} 
                                     </div>
                                 </div>
                             )}

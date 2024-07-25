@@ -233,53 +233,180 @@ class ApiController extends Controller
         }
     }
 
+    // private function checkCondition($condition, $totalQuantity)
+    // {
+    //     if (isset($condition['condition'])) {
+    //         $result = false;
+
+    //         switch ($condition['condition']) {
+    //             case 'equal':
+    //                 $result = $totalQuantity == $condition['value'];
+    //                 break;
+    //             case 'notequal':
+    //                 $result = $totalQuantity != $condition['value'];
+    //                 break;
+    //             case 'gthenoequal':
+    //                 $result = $totalQuantity >= $condition['value'];
+    //                 break;
+    //             case 'lthenoequal':
+    //                 $result = $totalQuantity <= $condition['value'];
+    //                 break;
+    //             case 'between':
+    //                 $result = $totalQuantity >= $condition['value'] && $totalQuantity <= $condition['value2'];
+    //                 break;
+    //             case 'contains':
+    //                 $result = strpos($totalQuantity, $condition['value']) !== false;
+    //                 break;
+    //             case 'notcontains':
+    //                 $result = strpos($totalQuantity, $condition['value']) === false;
+    //                 break;
+    //             case 'startwith':
+    //                 $result = strpos($totalQuantity, $condition['value']) === 0;
+    //                 break;
+    //             case 'notstartwith':
+    //                 $result = strpos($totalQuantity, $condition['value']) !== 0;
+    //                 break;
+    //         }
+
+    //         Log::info('Query logs:', [
+    //             'totalQuantity' => $totalQuantity,
+    //             'condition' => $condition['condition'],
+    //             'condition_value' => $condition['value'],
+    //             'condition_value2' => $condition['value2'] ?? null,
+    //             'result' => $result
+    //         ]);
+
+    //         return $result;
+    //     }
+
+    //     return false; // Return false if condition is not properly set
+    // }
+
     private function checkCondition($condition, $totalQuantity)
     {
-        if (isset($condition['condition'])) {
-            $result = false;
-
-            switch ($condition['condition']) {
-                case 'equal':
-                    $result = $totalQuantity == $condition['value'];
-                    break;
-                case 'notequal':
-                    $result = $totalQuantity != $condition['value'];
-                    break;
-                case 'gthenoequal':
-                    $result = $totalQuantity >= $condition['value'];
-                    break;
-                case 'lthenoequal':
-                    $result = $totalQuantity <= $condition['value'];
-                    break;
-                case 'between':
-                    $result = $totalQuantity >= $condition['value'] && $totalQuantity <= $condition['value2'];
-                    break;
-                case 'contains':
-                    $result = strpos($totalQuantity, $condition['value']) !== false;
-                    break;
-                case 'notcontains':
-                    $result = strpos($totalQuantity, $condition['value']) === false;
-                    break;
-                case 'startwith':
-                    $result = strpos($totalQuantity, $condition['value']) === 0;
-                    break;
-                case 'notstartwith':
-                    $result = strpos($totalQuantity, $condition['value']) !== 0;
-                    break;
-            }
-
-            Log::info('Query logs:', [
+        if (!isset($condition['condition'], $condition['value'])) {
+            Log::warning('Invalid condition format', [
+                'condition' => $condition,
                 'totalQuantity' => $totalQuantity,
-                'condition' => $condition['condition'],
-                'condition_value' => $condition['value'],
-                'condition_value2' => $condition['value2'] ?? null,
-                'result' => $result
             ]);
-
-            return $result;
+            return false;
         }
 
-        return false; // Return false if condition is not properly set
+        $conditionType = $condition['condition'];
+        $value = $condition['value'];
+        $value2 = $condition['value2'] ?? null;
+
+        // Convert comma-separated string to array if needed
+        if (is_string($value) && strpos($value, ',') !== false) {
+            $value = explode(',', $value);
+        }
+
+        if (is_numeric($totalQuantity)) {
+            $totalQuantity = (float)$totalQuantity;
+        }
+
+        $result = false;
+
+        switch ($conditionType) {
+            case 'equal':
+                if (is_array($value)) {
+                    $result = in_array($totalQuantity, $value);
+                } else {
+                    $result = $totalQuantity == $value;
+                }
+                break;
+            case 'notequal':
+                if (is_array($value)) {
+                    $result = !in_array($totalQuantity, $value);
+                } else {
+                    $result = $totalQuantity != $value;
+                }
+                break;
+            case 'gthenoequal':
+                $result = $totalQuantity >= $value;
+                break;
+            case 'lthenoequal':
+                $result = $totalQuantity <= $value;
+                break;
+            case 'between':
+                if ($value2 !== null) {
+                    $result = $totalQuantity >= $value && $totalQuantity <= $value2;
+                } else {
+                    Log::warning('Missing value2 for "between" condition', [
+                        'totalQuantity' => $totalQuantity,
+                        'condition' => $conditionType,
+                        'value' => $value,
+                        'value2' => $value2
+                    ]);
+                }
+                break;
+            case 'contains':
+                if (is_array($value)) {
+                    foreach ($value as $val) {
+                        if (strpos((string)$totalQuantity, $val) !== false) {
+                            $result = true;
+                            break;
+                        }
+                    }
+                } else {
+                    $result = strpos((string)$totalQuantity, $value) !== false;
+                }
+                break;
+            case 'notcontains':
+                $result = true;
+                if (is_array($value)) {
+                    foreach ($value as $val) {
+                        if (strpos((string)$totalQuantity, $val) !== false) {
+                            $result = false;
+                            break;
+                        }
+                    }
+                } else {
+                    $result = strpos((string)$totalQuantity, $value) === false;
+                }
+                break;
+            case 'startwith':
+                if (is_array($value)) {
+                    foreach ($value as $val) {
+                        if (strpos((string)$totalQuantity, $val) === 0) {
+                            $result = true;
+                            break;
+                        }
+                    }
+                } else {
+                    $result = strpos((string)$totalQuantity, $value) === 0;
+                }
+                break;
+            case 'notstartwith':
+                $result = true;
+                if (is_array($value)) {
+                    foreach ($value as $val) {
+                        if (strpos((string)$totalQuantity, $val) === 0) {
+                            $result = false;
+                            break;
+                        }
+                    }
+                } else {
+                    $result = strpos((string)$totalQuantity, $value) !== 0;
+                }
+                break;
+            default:
+                Log::warning('Unknown condition type', [
+                    'condition' => $conditionType,
+                    'totalQuantity' => $totalQuantity,
+                ]);
+                break;
+        }
+
+        Log::info('Condition check result', [
+            'totalQuantity' => $totalQuantity,
+            'condition' => $conditionType,
+            'condition_value' => $value,
+            'condition_value2' => $value2,
+            'result' => $result
+        ]);
+
+        return $result;
     }
 
     /**
@@ -926,7 +1053,6 @@ class ApiController extends Controller
                 }
             }
 
-
             // tier_type
             if (!empty($rate->rate_tier) && $rate->rate_tier['tier_type'] !== 'selected') {
 
@@ -966,11 +1092,16 @@ class ApiController extends Controller
             // Exclude rate for products
             if (!empty($rate->exclude_rate_for_products) && $rate->exclude_rate_for_products['set_exclude_products'] !== 'selected') {
                 $excludeProducts = $rate->exclude_rate_for_products;
-                if ($excludeProducts['exclude_products_radio']) {
-                    dd($excludeProducts);
-                } else {
+                // if (isset($excludeProducts['exclude_products_radio']) && $excludeProducts['exclude_products_radio']) {
+                //     dd($excludeProducts);
+                // }
+
+                if (!$excludeProducts['exclude_products_radio']) {
                     if ($excludeProducts['set_exclude_products'] == 'product_vendor') {
                         $excludeProducts['set_exclude_products'] = 'vendor';
+                    } else if ($excludeProducts['set_exclude_products'] == 'custome_selection') {
+                        $excludeProducts['exclude_products_textbox'] = isset($excludeProducts['productData']) ? $excludeProducts['productData'] : "0";
+                        $excludeProducts['set_exclude_products'] = 'id';
                     }
 
                     $excludeType = $excludeProducts['set_exclude_products'];
@@ -988,9 +1119,112 @@ class ApiController extends Controller
                 }
             }
 
-            // if(!empty($rate->rate_based_on_surcharge) && $rate->rate_based_on_surcharge['based_on_cart']){
-            //     if($rate->rate_based_on_surcharge['based_on_cart'] == "Charge Per"){
-            //         // $subchargePrice = basePrice + (total_weight/uni_weight)* subcharge
+            //rate_based_on_surcharge
+            if (!empty($rate->rate_based_on_surcharge) && $rate->rate_based_on_surcharge['based_on_cart']) {
+                // dd($rate->rate_based_on_surcharge);
+                if ($rate->rate_based_on_surcharge['cart_and_product_surcharge'] == 'weight') {
+                    if ($rate->rate_based_on_surcharge['selectedByAmount'] == 'unit') {
+                        $subchargePrice = $rate->base_price + ($totalWeight / $rate->rate_based_on_surcharge['unit_for'] * $rate->rate_based_on_surcharge['charge_per_wight']);
+                        $rate->base_price = $subchargePrice;
+                    } else {
+                        $subchargePrice = $rate->base_price + ($totalWeight - $rate->rate_based_on_surcharge['unit_for'] * $rate->rate_based_on_surcharge['charge_per_wight']);
+                        $rate->base_price = $subchargePrice;
+                    }
+                }
+
+                if ($rate->rate_based_on_surcharge['cart_and_product_surcharge'] == 'Qty') {
+                    if ($rate->rate_based_on_surcharge['selectedByAmount'] == 'unit') {
+                        $subchargePrice = $rate->base_price + ($totalQuantity / $rate->rate_based_on_surcharge['unit_for'] * $rate->rate_based_on_surcharge['charge_per_wight']);
+                        $rate->base_price = $subchargePrice;
+                    } else {
+                        $subchargePrice = $rate->base_price + ($totalQuantity - $rate->rate_based_on_surcharge['unit_for'] * $rate->rate_based_on_surcharge['charge_per_wight']);
+                        $rate->base_price = $subchargePrice;
+                    }
+                }
+
+                if ($rate->rate_based_on_surcharge['cart_and_product_surcharge'] == 'Distance') {
+                    if ($rate->rate_based_on_surcharge['selectedByAmount'] == 'unit') {
+                        $subchargePrice = $rate->base_price + ($distance / $rate->rate_based_on_surcharge['unit_for'] * $rate->rate_based_on_surcharge['charge_per_wight']);
+                        $rate->base_price = $subchargePrice;
+                    } else {
+                        $subchargePrice = $rate->base_price + ($distance - $rate->rate_based_on_surcharge['unit_for'] * $rate->rate_based_on_surcharge['charge_per_wight']);
+                        $rate->base_price = $subchargePrice;
+                    }
+                }
+
+                if ($rate->rate_based_on_surcharge['cart_and_product_surcharge'] == 'Percentage') {
+                    $subchargePrice = $rate->base_price + ($rate->base_price * $rate->rate_based_on_surcharge['cart_total_percentage'] / 100);
+                    $rate->base_price = $subchargePrice;
+                }
+            }
+
+            if (!empty($rate->rate_modifiers) && is_array($rate->rate_modifiers)) {
+                foreach ($rate->rate_modifiers as $modifier) {
+                    if ($modifier['type'] === 'None') {
+                        $condition = [
+                            "condition" => $modifier['rateOperator'],
+                            "value" => ''
+                        ];
+                        $currentValue = '';
+
+                        if ($modifier['rateModifier'] === 'dayOfOrder') {
+                            $currentValue = Carbon::now()->format('l');
+                            $condition['value'] = ucfirst($modifier['rateDay']);
+                        } elseif ($modifier['rateModifier'] === 'time') {
+                            $currentValue = Carbon::now()->format('H:i');
+                            $condition['value'] = $modifier['rateDay'] . ":00";
+                        } elseif ($modifier['rateModifier'] === 'price') {
+                            $currentValue = $totalPrice;
+                            $condition['value'] = $modifier['rateDay'];
+                        } elseif ($modifier['rateModifier'] === 'weight') {
+                            $currentValue = $totalWeight;
+                            $condition['value'] = $modifier['rateDay'];
+                        } elseif ($modifier['rateModifier'] === 'quantity') {
+                            $currentValue = $totalQuantity;
+                            $condition['value'] = $modifier['rateDay'];
+                        } elseif ($modifier['rateModifier'] === 'distance') {
+                            $currentValue = $distance;
+                            $condition['value'] = $modifier['rateDay'];
+                        } elseif ($modifier['rateModifier'] === 'localCode') {
+                            $currentValue = $localeCode;
+                            $condition['value'] = $modifier['rateDay'];
+                        }
+
+                        if ($this->checkCondition($condition, $currentValue)) {
+                            $rate->name = $modifier['name'];
+                            $rate->description = $modifier['title'];
+
+                            switch ($modifier['modifierType']) {
+                                case 'Fixed':
+                                    $adjustment = $modifier['adjustment'];
+                                    $rate->base_price += $modifier['effect'] === 'Increase' ? $adjustment : -$adjustment;
+                                    break;
+
+                                case 'Percentage':
+                                    $adjustment = $rate->base_price * $modifier['adjustment'] / 100;
+                                    $rate->base_price += $modifier['effect'] === 'Increase' ? $adjustment : -$adjustment;
+                                    break;
+
+                                case 'Static':
+                                    $rate->base_price = $modifier['adjustment'];
+                                    break;
+
+                                case 'RemoveRate':
+                                    return null;
+
+                                default:
+                                    break;
+                            }
+                        }
+                    } else if($modifier['type'] === 'And'){
+                        dd("Hello");
+                    }
+                }
+            }
+
+            // if(!empty($rate->origin_locations)){
+            //     foreach($rate->origin_locations['updated_location'] as $location){
+            //         dump($location);
             //     }
             // }
 
@@ -1386,7 +1620,7 @@ class ApiController extends Controller
             $states = $this->getState($zone->countries->pluck('country', 'countryCode'));
 
             $rate = [
-               "shop_weight_unit"=>$user->shop_weight_unit
+                "shop_weight_unit" => $user->shop_weight_unit
             ];
 
             if (!empty($user->shop_currency)) {

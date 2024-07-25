@@ -254,8 +254,7 @@ function Rate(props) {
     const handleModalClose = useCallback(() => {
         setIsModalOpen(false);
     }, []);
-  
-    
+
     const handleAddRateModifier = () => {
         const newId = rateModifiers.length ? rateModifiers[rateModifiers.length - 1].id + 1 : 1;
         const defaultRateModifier = 'dayOfOrder';
@@ -311,6 +310,7 @@ function Rate(props) {
             )
         );
     };
+
     const rateTag = [
         { label: 'Equals', value: 'equal' },
         { label: 'Does Not Equal', value: 'notequal' },
@@ -1402,30 +1402,32 @@ function Rate(props) {
         singular: 'order',
         plural: 'products',
     };
-    
-   
-
     const handleSearchClick = () => {
         setShowTable(true);
-    }
-    const {  allResourcesSelected,  } = useIndexResourceState(filteredProducts);
-    const [selectedResources, setSelectedResources] = useState([]);
-    // useEffect(() => {
-    //     // Show only selected products by default
-    //     const selectedProducts = products.filter(product => selectedResources.includes(product.id));
-    //     setFilteredProducts(selectedProducts);
-    // }, [products, selectedResources]);
-    useEffect(() => {
-        if (exclude_Rate.productData) {
-            const selectedIds = exclude_Rate.productData.split(',').map(id => id.trim());
-            setSelectedResources(selectedIds);
-        }
-    }, [exclude_Rate.productData]);
-    
-    const handleSelectionChange = (newSelectedResources) => {
-        setSelectedResources(newSelectedResources);
     };
-    
+    const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(filteredProducts);
+
+
+    // useEffect(() => {
+    //     console.log("exclude_Rate.productData:", exclude_Rate.productData);
+    //     const productIds = exclude_Rate.productData
+    //         .split(',')
+    //         .map(id => id.trim())
+    //         .filter(id => id);
+
+    //     console.log("Parsed productIds:", productIds);
+
+    //     setSelectedResources(productIds);
+    // }, [exclude_Rate.productData,selectedResources]);
+
+    // const handleSelectionChange = (newSelection) => {
+    //     console.log('newSelection',newSelection)
+    //     console.log("handleSelectionChange called with:", newSelection);
+    //     if (Array.isArray(newSelection)) {
+    //         setSelectedResources(newSelection);
+    //     }
+    // };
+
 
     useEffect(() => {
         const productIds = selectedResources
@@ -2924,7 +2926,7 @@ function Rate(props) {
                                                     </IndexTable>
                                                 </div>
                                             </div>
-                                         )} 
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -3046,6 +3048,7 @@ function Rate(props) {
                                                         <Divider borderColor="border" />
                                                     </div>
                                                     <div
+                                                        key={modifier.id}
                                                         style={{
                                                             display: 'flex',
                                                             alignItems: 'center',
@@ -3059,29 +3062,23 @@ function Rate(props) {
                                                         <RadioButton
                                                             label="None"
                                                             checked={modifier.type === 'None'}
-                                                            id="None"
-                                                            name="type"
-                                                            onChange={() =>
-                                                                handleRateModifierChange(modifier.id, 'type')('None')
-                                                            }
+                                                            id={`None-${modifier.id}`}
+                                                            name={`type-${modifier.id}`}
+                                                            onChange={() => handleRateModifierChange(modifier.id, 'type')('None')}
                                                         />
                                                         <RadioButton
                                                             label="AND"
                                                             checked={modifier.type === 'AND'}
-                                                            id="AND"
-                                                            name="type"
-                                                            onChange={() =>
-                                                                handleRateModifierChange(modifier.id, 'type')('AND')
-                                                            }
+                                                            id={`AND-${modifier.id}`}
+                                                            name={`type-${modifier.id}`}
+                                                            onChange={() => handleRateModifierChange(modifier.id, 'type')('AND')}
                                                         />
                                                         <RadioButton
                                                             label="OR"
                                                             checked={modifier.type === 'OR'}
-                                                            id="OR"
-                                                            name="type"
-                                                            onChange={() =>
-                                                                handleRateModifierChange(modifier.id, 'type')('OR')
-                                                            }
+                                                            id={`OR-${modifier.id}`}
+                                                            name={`type-${modifier.id}`}
+                                                            onChange={() => handleRateModifierChange(modifier.id, 'type')('OR')}
                                                         />
                                                     </div>
                                                     <div style={{ marginTop: '2%' }}></div>
@@ -3476,25 +3473,21 @@ function Rate(props) {
                                                         }}
                                                     >
                                                         <Text variant="headingXs" as="h6">
-                                                            Behaviour :
+                                                            Behaviour:
                                                         </Text>
                                                         <RadioButton
                                                             label="Stack"
                                                             checked={modifier.behaviour === 'Stack'}
-                                                            id="Stack"
-                                                            name="behaviour"
-                                                            onChange={() =>
-                                                                handleRateModifierChange(modifier.id, 'behaviour')('Stack')
-                                                            }
+                                                            id={`Stack-${modifier.id}`}
+                                                            name={`behaviour-${modifier.id}`}
+                                                            onChange={() => handleRateModifierChange(modifier.id, 'behaviour')('Stack')}
                                                         />
                                                         <RadioButton
                                                             label="Terminate"
                                                             checked={modifier.behaviour === 'Terminate'}
-                                                            id="Terminate"
-                                                            name="behaviour"
-                                                            onChange={() =>
-                                                                handleRateModifierChange(modifier.id, 'behaviour')('Terminate')
-                                                            }
+                                                            id={`Terminate-${modifier.id}`}
+                                                            name={`behaviour-${modifier.id}`}
+                                                            onChange={() => handleRateModifierChange(modifier.id, 'behaviour')('Terminate')}
                                                         />
                                                     </div>
                                                     <Divider borderColor="border" />
@@ -3508,52 +3501,42 @@ function Rate(props) {
                                                         }}
                                                     >
                                                         <Text variant="headingXs" as="h6">
-                                                            Modifier Type :
+                                                            Modifier Type:
                                                         </Text>
                                                         <RadioButton
                                                             label="Fixed"
                                                             checked={modifier.modifierType === 'Fixed'}
-                                                            id="Fixed"
-                                                            name="modifierType"
-                                                            onChange={() =>
-                                                                handleRateModifierChange(modifier.id, 'modifierType')('Fixed')
-                                                            }
+                                                            id={`Fixed-${modifier.id}`}
+                                                            name={`modifierType-${modifier.id}`}
+                                                            onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('Fixed')}
                                                         />
                                                         <RadioButton
                                                             label="Percentage"
                                                             checked={modifier.modifierType === 'Percentage'}
-                                                            id="Percentage"
-                                                            name="modifierType"
-                                                            onChange={() =>
-                                                                handleRateModifierChange(modifier.id, 'modifierType')('Percentage')
-                                                            }
+                                                            id={`Percentage-${modifier.id}`}
+                                                            name={`modifierType-${modifier.id}`}
+                                                            onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('Percentage')}
                                                         />
                                                         <RadioButton
                                                             label="Static"
                                                             checked={modifier.modifierType === 'Static'}
-                                                            id="Static"
-                                                            name="modifierType"
-                                                            onChange={() =>
-                                                                handleRateModifierChange(modifier.id, 'modifierType')('Static')
-                                                            }
+                                                            id={`Static-${modifier.id}`}
+                                                            name={`modifierType-${modifier.id}`}
+                                                            onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('Static')}
                                                         />
                                                         <RadioButton
                                                             label="Remove Rate"
                                                             checked={modifier.modifierType === 'RemoveRate'}
-                                                            id="RemoveRate"
-                                                            name="modifierType"
-                                                            onChange={() =>
-                                                                handleRateModifierChange(modifier.id, 'modifierType')('RemoveRate')
-                                                            }
+                                                            id={`RemoveRate-${modifier.id}`}
+                                                            name={`modifierType-${modifier.id}`}
+                                                            onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('RemoveRate')}
                                                         />
                                                         <RadioButton
                                                             label="Show Only"
                                                             checked={modifier.modifierType === 'ShowOnly'}
-                                                            id="ShowOnly"
-                                                            name="modifierType"
-                                                            onChange={() =>
-                                                                handleRateModifierChange(modifier.id, 'modifierType')('ShowOnly')
-                                                            }
+                                                            id={`ShowOnly-${modifier.id}`}
+                                                            name={`modifierType-${modifier.id}`}
+                                                            onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('ShowOnly')}
                                                         />
                                                     </div>
 
@@ -3573,8 +3556,8 @@ function Rate(props) {
                                                                 <RadioButton
                                                                     label="Increase"
                                                                     checked={modifier.effect === 'Increase'}
-                                                                    id="Increase"
-                                                                    name="effect"
+                                                                    id={`Increase-${modifier.id}`}
+                                                                    name={`effect-${modifier.id}`}
                                                                     onChange={() =>
                                                                         handleRateModifierChange(modifier.id, 'effect')('Increase')
                                                                     }
@@ -3582,8 +3565,8 @@ function Rate(props) {
                                                                 <RadioButton
                                                                     label="Decrease"
                                                                     checked={modifier.effect === 'Decrease'}
-                                                                    id="Decrease"
-                                                                    name="effect"
+                                                                    id={`Decrease-${modifier.id}`}
+                                                                    name={`effect-${modifier.id}`}
                                                                     onChange={() =>
                                                                         handleRateModifierChange(modifier.id, 'effect')('Decrease')
                                                                     }

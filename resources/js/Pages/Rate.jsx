@@ -30,7 +30,7 @@ import {
     Collapsible,
     List,
     Modal
-    Modal
+
 } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon, SearchIcon, SelectIcon } from '@shopify/polaris-icons';
 import '../../../public/css/style.css';

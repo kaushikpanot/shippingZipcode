@@ -194,6 +194,48 @@ function Rate(props) {
 
 
     const [rateModifiers, setRateModifiers] = useState([]);
+     const rateModifiersOptions = [
+        { label: ' Order', value: '', disabled: true, className: 'select-header' },
+        { label: 'Day of Order is', value: 'dayOfOrder',mainlabel: "Order" },
+        { label: 'Time', value: 'time', mainlabel: "Order" },
+        { label: 'Price', value: 'price', mainlabel: "Order" },
+        { label: 'Weight', value: 'weight', mainlabel: "Order" },
+        { label: 'Quantity', value: 'quantity',mainlabel: "Order" },
+        { label: 'Distance', value: 'distance', mainlabel: "Order" },
+        { label: 'Local Code', value: 'localCode', mainlabel: "Order" },
+
+        { label: 'Delivery', value: '', disabled: true, className: 'select-header' },
+        { label: 'Day ', value: 'day', mainlabel: "Delivery" },
+        { label: 'Date', value: 'date',  mainlabel: "Delivery" },
+        { label: 'X Day from today', value: 'dayFromToday',  mainlabel: "Delivery" },
+        { label: 'Type', value: 'type',  mainlabel: "Delivery" },
+        { label: 'X Estimated Delivery Day ', value: 'estimatedDay',  mainlabel: "Delivery" },
+        { label: 'X Time From Current Time', value: 'timefromCurrent',  mainlabel: "Delivery" },
+        { label: 'First Available Day', value: 'available',  mainlabel: "Delivery" },
+
+        { label: 'Any Product', value: '', disabled: true, className: 'select-header' },
+        { label: 'Available Quantity ', value: 'availableQuan',  mainlabel: "any_Product" },
+        { label: 'IDs', value: 'ids',  mainlabel: "any_Product" },
+        { label: 'Title', value: 'time2',  mainlabel: "any_Product" },
+        { label: 'Tag', value: 'tag',  mainlabel: "any_Product" },
+        { label: 'Type', value: 'type2',  mainlabel: "any_Product" },
+        { label: 'SKU', value: 'sku',  mainlabel: "any_Product" },
+        { label: 'Properties', value: 'properties',  mainlabel: "any_Product" },
+        { label: 'Vendor', value: 'vendor',  mainlabel: "any_Product" },
+        { label: 'Collection IDs', value: 'collectionsIds',  mainlabel: "any_Product" },
+
+        { label: 'Customer', value: '', disabled: true, className: 'select-header' },
+        { label: 'Zip Code', value: 'zipcode',  mainlabel: "Customer" },
+        { label: 'Name', value: 'name',  mainlabel: "Customer" },
+        { label: 'City', value: 'city', mainlabel: "Customer" },
+        { label: 'Province Code', value: 'provinceCode', mainlabel: "Customer" },
+        { label: 'Address', value: 'address', mainlabel: "Customer" },
+        { label: 'Tag', value: 'tag2', mainlabel: "Customer" },
+
+        { label: 'Rate', value: '', disabled: true, className: 'select-header' },
+        { label: 'Calculate Rate Price', value: 'calculateRate', mainlabel: "Rate" },
+        { label: 'Third Party Service', value: 'thirdParty', mainlabel: "Rate" },
+    ];
     const [open, setOpen] = useState({});
 
     const handleToggle = (id) => () => {
@@ -211,23 +253,30 @@ function Rate(props) {
         setIsModalOpen(false);
     }, []);
   
-    
     const handleAddRateModifier = () => {
         const newId = rateModifiers.length ? rateModifiers[rateModifiers.length - 1].id + 1 : 1;
+        const defaultRateModifier = 'dayOfOrder';
+        const defaultOption = rateModifiersOptions.find(option => option.value === defaultRateModifier);
+    
         setRateModifiers((prevModifiers) => [
             ...prevModifiers,
             {
                 id: newId,
                 name: '',
                 title: '',
-                rateModifier: 'dayOfOrder',
+                rateModifier: defaultRateModifier,
+                rateModifier2: defaultRateModifier,
+                label1: defaultOption?.mainlabel || '',
+                label2: defaultOption?.mainlabel || '',
                 rateOperator: 'equals',
-                rateDay: rateModifiers.find(modifier => modifier.id in open)?.rateDay || '', // Use the updated rateDay
+                rateOperator2: 'equals',
+                rateDay: '',
+                rateDay2: '',
                 type: 'None',
                 behaviour: 'Stack',
                 modifierType: 'Fixed',
                 adjustment: '',
-                effect: 'Decrease'
+                effect: 'Decrease',
             },
         ]);
         setOpen((prevState) => ({
@@ -247,60 +296,18 @@ function Rate(props) {
         });
     };
     const handleRateModifierChange = (id, field) => (value) => {
+        const option = rateModifiersOptions.find(opt => opt.value === value);
         setRateModifiers((prevModifiers) =>
             prevModifiers.map((modifier) =>
                 modifier.id === id ? {
                     ...modifier,
                     [field]: value,
-                    ...(field === 'rateModifier' && { rateDay: null })
+                    ...(field === 'rateModifier' && { label1: option?.mainlabel || '', rateDay: null }),
+                    ...(field === 'rateModifier2' && { label2: option?.mainlabel || '', rateDay2: null }),
                 } : modifier
             )
         );
     };
-
-    const rateModifiersOptions = [
-        { label: ' Order', value: '', disabled: true, className: 'select-header' },
-        { label: 'Day of Order is', value: 'dayOfOrder' },
-        { label: 'Time', value: 'time' },
-        { label: 'Price', value: 'price' },
-        { label: 'Weight', value: 'weight' },
-        { label: 'Quantity', value: 'quantity' },
-        { label: 'Distance', value: 'distance' },
-        { label: 'Local Code', value: 'localCode' },
-
-        { label: 'Delivery', value: '', disabled: true, className: 'select-header' },
-        { label: 'Day ', value: 'day' },
-        { label: 'Date', value: 'date' },
-        { label: 'X Day from today', value: 'dayFromToday' },
-        { label: 'Type', value: 'type' },
-        { label: 'X Estimated Delivery Day ', value: 'estimatedDay' },
-        { label: 'X Time From Current Time', value: 'timefromCurrent' },
-        { label: 'First Available Day', value: 'available' },
-
-        { label: 'Any Product', value: '', disabled: true, className: 'select-header' },
-        { label: 'Available Quantity ', value: 'availableQuan' },
-        { label: 'IDs', value: 'ids' },
-        { label: 'Title', value: 'time2' },
-        { label: 'Tag', value: 'tag' },
-        { label: 'Type', value: 'type2' },
-        { label: 'SKU', value: 'sku' },
-        { label: 'Properties', value: 'properties' },
-        { label: 'Vendor', value: 'vendor' },
-        { label: 'Collection IDs', value: 'collectionsIds' },
-
-        { label: 'Customer', value: '', disabled: true, className: 'select-header' },
-        { label: 'Zip Code', value: 'zipcode' },
-        { label: 'Name', value: 'name' },
-        { label: 'City', value: 'city' },
-        { label: 'Province Code', value: 'provinceCode' },
-        { label: 'Address', value: 'address' },
-        { label: 'Tag', value: 'tag2' },
-
-        { label: 'Rate', value: '', disabled: true, className: 'select-header' },
-        { label: 'Calculate Rate Price', value: 'calculateRate' },
-        { label: 'Third Party Service', value: 'thirdParty' },
-    ];
-
     const rateTag = [
         { label: 'Equals', value: 'equal' },
         { label: 'Does Not Equal', value: 'notequal' },
@@ -3268,171 +3275,171 @@ useEffect(() => {
                                                                     <Select
                                                                         label="Apply this rate modifier when"
                                                                         options={rateModifiersOptions}
-                                                                        value={modifier.rateModifier}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateModifier')}
+                                                                        value={modifier.rateModifier2}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateModifier2')}
                                                                     />
-                                                                    {(modifier.rateModifier === 'dayOfOrder' || modifier.rateModifier === 'provinceCode' || modifier.rateModifier === 'zipcode' || modifier.rateModifier === 'collectionsIds' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'day' || modifier.rateModifier === 'date' || modifier.rateModifier === 'type' || modifier.rateModifier === 'ids') && (
+                                                                    {(modifier.rateModifier2 === 'dayOfOrder' || modifier.rateModifier2 === 'provinceCode' || modifier.rateModifier2 === 'zipcode' || modifier.rateModifier2 === 'collectionsIds' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'day' || modifier.rateModifier2 === 'date' || modifier.rateModifier2 === 'type' || modifier.rateModifier2 === 'ids') && (
                                                                         <Select
                                                                             label="Select Operator"
                                                                             options={day}
-                                                                            value={modifier.rateOperator}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                            value={modifier.rateOperator2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
                                                                         />
                                                                     )}
-                                                                    {(modifier.rateModifier === 'price' || modifier.rateModifier === 'time' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'calculateRate') && (
+                                                                    {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'time' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'calculateRate') && (
                                                                         <Select
                                                                             label="Select Operator"
                                                                             options={rateTimeOptions}
-                                                                            value={modifier.rateOperator}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                            value={modifier.rateOperator2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
                                                                         />
                                                                     )}
-                                                                    {modifier.rateModifier === 'quantity' && (
+                                                                    {modifier.rateModifier2 === 'quantity' && (
                                                                         <Select
                                                                             label="Select Operator"
                                                                             options={rateQuantityOptions}
-                                                                            value={modifier.rateOperator}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                            value={modifier.rateOperator2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
                                                                         />
                                                                     )}
-                                                                    {modifier.rateModifier === 'available' && (
+                                                                    {modifier.rateModifier2 === 'available' && (
                                                                         <Select
                                                                             label="Select Operator"
                                                                             options={rateAvailableOptions}
-                                                                            value={modifier.rateOperator}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                            value={modifier.rateOperator2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
                                                                         />
                                                                     )}
-                                                                    {modifier.rateModifier === 'availableQuan' && (
+                                                                    {modifier.rateModifier2 === 'availableQuan' && (
                                                                         <Select
                                                                             label="Select Operator"
                                                                             options={rateAvailableQuantity}
-                                                                            value={modifier.rateOperator}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                            value={modifier.rateOperator2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
                                                                         />
                                                                     )}
-                                                                    {(modifier.rateModifier === 'time2' || modifier.rateModifier === 'address') && (
+                                                                    {(modifier.rateModifier2 === 'time2' || modifier.rateModifier2 === 'address') && (
                                                                         <Select
                                                                             label="Select Operator"
                                                                             options={address}
-                                                                            value={modifier.rateOperator}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                            value={modifier.rateOperator2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
                                                                         />
                                                                     )}
-                                                                    {(modifier.rateModifier === 'tag' || modifier.rateModifier === 'thirdParty' || modifier.rateModifier === 'name' || modifier.rateModifier === 'city' || modifier.rateModifier === 'tag2' || modifier.rateModifier === 'vendor' || modifier.rateModifier === 'properties' || modifier.rateModifier === 'type2') && (
+                                                                    {(modifier.rateModifier2 === 'tag' || modifier.rateModifier2 === 'thirdParty' || modifier.rateModifier2 === 'name' || modifier.rateModifier2 === 'city' || modifier.rateModifier2 === 'tag2' || modifier.rateModifier2 === 'vendor' || modifier.rateModifier2 === 'properties' || modifier.rateModifier2 === 'type2') && (
                                                                         <Select
                                                                             label="Select Operator"
                                                                             options={rateTag}
-                                                                            value={modifier.rateOperator}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                            value={modifier.rateOperator2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
                                                                         />
                                                                     )}
-                                                                    {modifier.rateModifier === 'sku' && (
+                                                                    {modifier.rateModifier2 === 'sku' && (
                                                                         <Select
                                                                             label="Select Operator"
                                                                             options={ratesku}
-                                                                            value={modifier.rateOperator}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                            value={modifier.rateOperator2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
                                                                         />
                                                                     )}
 
                                                                 </FormLayout.Group>
                                                             </FormLayout>
                                                             <div style={{ marginTop: '5%', marginBottom: '3%' }}>
-                                                                {(modifier.rateModifier === 'dayOfOrder' || modifier.rateModifier === 'day') && (
+                                                                {(modifier.rateModifier2 === 'dayOfOrder' || modifier.rateModifier2 === 'day') && (
                                                                     <Select
                                                                         options={rateDayOptions}
-                                                                        value={modifier.rateDay}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                        value={modifier.rateDay2}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                     />
                                                                 )}
-                                                                {modifier.rateModifier === 'time' && (
+                                                                {modifier.rateModifier2 === 'time' && (
                                                                     <Select
                                                                         options={time}
-                                                                        value={modifier.rateDay}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                        value={modifier.rateDay2}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                     />
                                                                 )}
-                                                                {modifier.rateModifier === 'date' && (
+                                                                {modifier.rateModifier2 === 'date' && (
                                                                     <TextField
-                                                                        value={modifier.rateDay}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                        value={modifier.rateDay2}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                         type="date"
                                                                     />
                                                                 )}
-                                                                {(modifier.rateModifier === 'price' || modifier.rateModifier === 'calculateRate' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
+                                                                {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (
                                                                     <TextField
                                                                         type="number"
-                                                                        value={modifier.rateDay}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                        value={modifier.rateDay2}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                         autoComplete="off"
 
                                                                         placeholder={
-                                                                            modifier.rateModifier === 'price' ? "Price" :
-                                                                                modifier.rateModifier === 'weight' ? "Weight" :
-                                                                                    modifier.rateModifier === 'quantity' ? "Quantity" :
-                                                                                        modifier.rateModifier === 'distance' ? "Distance" :
-                                                                                            modifier.rateModifier === 'dayFromToday' ? "Order Delivery X day from today is" :
-                                                                                                modifier.rateModifier === 'timefromCurrent' ? "Order Delivery X hours from current is" :
-                                                                                                    modifier.rateModifier === 'estimatedDay' ? "Estimated Delivery day" :
-                                                                                                        modifier.rateModifier === 'availableQuan' ? "Quantity" :
-                                                                                                            modifier.rateModifier === 'calculateRate' ? "Calculate Rate Price" :
+                                                                            modifier.rateModifier2 === 'price' ? "Price" :
+                                                                                modifier.rateModifier2 === 'weight' ? "Weight" :
+                                                                                    modifier.rateModifier2 === 'quantity' ? "Quantity" :
+                                                                                        modifier.rateModifier2 === 'distance' ? "Distance" :
+                                                                                            modifier.rateModifier2 === 'dayFromToday' ? "Order Delivery X day from today is" :
+                                                                                                modifier.rateModifier2 === 'timefromCurrent' ? "Order Delivery X hours from current is" :
+                                                                                                    modifier.rateModifier2 === 'estimatedDay' ? "Estimated Delivery day" :
+                                                                                                        modifier.rateModifier2 === 'availableQuan' ? "Quantity" :
+                                                                                                            modifier.rateModifier2 === 'calculateRate' ? "Calculate Rate Price" :
                                                                                                                 "Local Code"
                                                                         }
 
                                                                     />
                                                                 )}
-                                                                {modifier.rateModifier === 'type' && (
+                                                                {modifier.rateModifier2 === 'type' && (
                                                                     <Select
                                                                         options={type}
-                                                                        value={modifier.rateDay}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                        value={modifier.rateDay2}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                     />
                                                                 )}
-                                                                {modifier.rateModifier === 'available' && (
+                                                                {modifier.rateModifier2 === 'available' && (
                                                                     <Select
                                                                         options={firstAvailableDay}
-                                                                        value={modifier.rateDay}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                        value={modifier.rateDay2}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                     />
                                                                 )}
-                                                                {(modifier.rateModifier === 'time2' || modifier.rateModifier === 'thirdParty' || modifier.rateModifier === 'tag2' || modifier.rateModifier === 'address' || modifier.rateModifier === 'provinceCode' || modifier.rateModifier === 'city' || modifier.rateModifier === 'tag' || modifier.rateModifier === 'sku' || modifier.rateModifier === 'type2' || modifier.rateModifier === 'properties' || modifier.rateModifier === 'vendor' || modifier.rateModifier === 'collectionsIds' || modifier.rateModifier === 'zipcode' || modifier.rateModifier === 'name') && (
+                                                                {(modifier.rateModifier2 === 'time2' || modifier.rateModifier2 === 'thirdParty' || modifier.rateModifier2 === 'tag2' || modifier.rateModifier2 === 'address' || modifier.rateModifier2 === 'provinceCode' || modifier.rateModifier2 === 'city' || modifier.rateModifier2 === 'tag' || modifier.rateModifier2 === 'sku' || modifier.rateModifier2 === 'type2' || modifier.rateModifier2 === 'properties' || modifier.rateModifier2 === 'vendor' || modifier.rateModifier2 === 'collectionsIds' || modifier.rateModifier2 === 'zipcode' || modifier.rateModifier2 === 'name') && (
                                                                     <TextField
                                                                         type="text"
-                                                                        value={modifier.rateDay}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                        value={modifier.rateDay2}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                         autoComplete="off"
                                                                         multiline={4}
                                                                         placeholder={
-                                                                            modifier.rateModifier === 'time2' ? "Title" :
-                                                                                modifier.rateModifier === 'tag' ? "Tag1,Tag2" :
-                                                                                    modifier.rateModifier === 'sku' ? "sku1,sku2" :
-                                                                                        modifier.rateModifier === 'type2' ? "type1,type2" :
-                                                                                            modifier.rateModifier === 'properties' ? "key:value,key:value" :
-                                                                                                modifier.rateModifier === 'vendor' ? "vendor1,vendor2" :
-                                                                                                    modifier.rateModifier === 'name' ? "Enter Name" :
-                                                                                                        modifier.rateModifier === 'city' ? "Enter city" :
-                                                                                                            modifier.rateModifier === 'provinceCode' ? "Enter Province Code" :
-                                                                                                                modifier.rateModifier === 'address' ? "Enter Address" :
-                                                                                                                    modifier.rateModifier === 'tag' ? "Enter Tag" :
-                                                                                                                        modifier.rateModifier === 'zipcode' ? "364001,364002,364003" :
-                                                                                                                            modifier.rateModifier === 'thirdParty' ? "services1,services2" :
+                                                                            modifier.rateModifier2 === 'time2' ? "Title" :
+                                                                                modifier.rateModifier2 === 'tag' ? "Tag1,Tag2" :
+                                                                                    modifier.rateModifier2 === 'sku' ? "sku1,sku2" :
+                                                                                        modifier.rateModifier2 === 'type2' ? "type1,type2" :
+                                                                                            modifier.rateModifier2 === 'properties' ? "key:value,key:value" :
+                                                                                                modifier.rateModifier2 === 'vendor' ? "vendor1,vendor2" :
+                                                                                                    modifier.rateModifier2 === 'name' ? "Enter Name" :
+                                                                                                        modifier.rateModifier2 === 'city' ? "Enter city" :
+                                                                                                            modifier.rateModifier2 === 'provinceCode' ? "Enter Province Code" :
+                                                                                                                modifier.rateModifier2 === 'address' ? "Enter Address" :
+                                                                                                                    modifier.rateModifier2 === 'tag' ? "Enter Tag" :
+                                                                                                                        modifier.rateModifier2 === 'zipcode' ? "364001,364002,364003" :
+                                                                                                                            modifier.rateModifier2 === 'thirdParty' ? "services1,services2" :
                                                                                                                                 "6557955412548511244"
                                                                         }
                                                                         helpText={
-                                                                            modifier.rateModifier === 'time2' ? "contains exact match product title with comma(,) seprator" :
-                                                                                modifier.rateModifier === 'tag' ? "add exact product tag with comma(,) separator" :
-                                                                                    modifier.rateModifier === 'sku' ? "add exact product sku with comma(,) separator" :
-                                                                                        modifier.rateModifier === 'type2' ? "add exact product type with comma(,) separator" :
-                                                                                            modifier.rateModifier === 'properties' ? "Add produt property like key:value" :
-                                                                                                modifier.rateModifier === 'vendor' ? "add exactvendor name with comma(,) separator" :
-                                                                                                    modifier.rateModifier === 'zipcode' ? "exact match zip codes with comma(,) separator" :
-                                                                                                        modifier.rateModifier === 'name' ? "contains match customer name with comma(,) separator" :
-                                                                                                            modifier.rateModifier === 'city' ? "contains match customer city with comma(,) separator" :
-                                                                                                                modifier.rateModifier === 'provinceCode' ? "Customer province code with comma(,) separator" :
-                                                                                                                    modifier.rateModifier === 'address' ? "contains match customer address with comma(,) separator" :
-                                                                                                                        modifier.rateModifier === 'tag2' ? "contains match customer address with comma(,) separator" :
-                                                                                                                            modifier.rateModifier === 'thirdParty' ? "add exact third party services with comma(,) separator" :
+                                                                            modifier.rateModifier2 === 'time2' ? "contains exact match product title with comma(,) seprator" :
+                                                                                modifier.rateModifier2 === 'tag' ? "add exact product tag with comma(,) separator" :
+                                                                                    modifier.rateModifier2 === 'sku' ? "add exact product sku with comma(,) separator" :
+                                                                                        modifier.rateModifier2 === 'type2' ? "add exact product type with comma(,) separator" :
+                                                                                            modifier.rateModifier2 === 'properties' ? "Add produt property like key:value" :
+                                                                                                modifier.rateModifier2 === 'vendor' ? "add exactvendor name with comma(,) separator" :
+                                                                                                    modifier.rateModifier2 === 'zipcode' ? "exact match zip codes with comma(,) separator" :
+                                                                                                        modifier.rateModifier2 === 'name' ? "contains match customer name with comma(,) separator" :
+                                                                                                            modifier.rateModifier2 === 'city' ? "contains match customer city with comma(,) separator" :
+                                                                                                                modifier.rateModifier2 === 'provinceCode' ? "Customer province code with comma(,) separator" :
+                                                                                                                    modifier.rateModifier2 === 'address' ? "contains match customer address with comma(,) separator" :
+                                                                                                                        modifier.rateModifier2 === 'tag2' ? "contains match customer address with comma(,) separator" :
+                                                                                                                            modifier.rateModifier2 === 'thirdParty' ? "add exact third party services with comma(,) separator" :
                                                                                                                                 "add collection ids with comma(,) separator"}
                                                                     />
                                                                 )}

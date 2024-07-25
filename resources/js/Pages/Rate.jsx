@@ -195,39 +195,40 @@ function Rate(props) {
 
 
     const [rateModifiers, setRateModifiers] = useState([]);
-     const rateModifiersOptions = [
+
+    const rateModifiersOptions = [
         { label: ' Order', value: '', disabled: true, className: 'select-header' },
-        { label: 'Day of Order is', value: 'dayOfOrder',mainlabel: "Order" },
+        { label: 'Day of Order is', value: 'dayOfOrder', mainlabel: "Order" },
         { label: 'Time', value: 'time', mainlabel: "Order" },
         { label: 'Price', value: 'price', mainlabel: "Order" },
         { label: 'Weight', value: 'weight', mainlabel: "Order" },
-        { label: 'Quantity', value: 'quantity',mainlabel: "Order" },
+        { label: 'Quantity', value: 'quantity', mainlabel: "Order" },
         { label: 'Distance', value: 'distance', mainlabel: "Order" },
         { label: 'Local Code', value: 'localCode', mainlabel: "Order" },
 
         { label: 'Delivery', value: '', disabled: true, className: 'select-header' },
         { label: 'Day ', value: 'day', mainlabel: "Delivery" },
-        { label: 'Date', value: 'date',  mainlabel: "Delivery" },
-        { label: 'X Day from today', value: 'dayFromToday',  mainlabel: "Delivery" },
-        { label: 'Type', value: 'type',  mainlabel: "Delivery" },
-        { label: 'X Estimated Delivery Day ', value: 'estimatedDay',  mainlabel: "Delivery" },
-        { label: 'X Time From Current Time', value: 'timefromCurrent',  mainlabel: "Delivery" },
-        { label: 'First Available Day', value: 'available',  mainlabel: "Delivery" },
+        { label: 'Date', value: 'date', mainlabel: "Delivery" },
+        { label: 'X Day from today', value: 'dayFromToday', mainlabel: "Delivery" },
+        { label: 'Type', value: 'type', mainlabel: "Delivery" },
+        { label: 'X Estimated Delivery Day ', value: 'estimatedDay', mainlabel: "Delivery" },
+        { label: 'X Time From Current Time', value: 'timefromCurrent', mainlabel: "Delivery" },
+        { label: 'First Available Day', value: 'available', mainlabel: "Delivery" },
 
         { label: 'Any Product', value: '', disabled: true, className: 'select-header' },
-        { label: 'Available Quantity ', value: 'availableQuan',  mainlabel: "any_Product" },
-        { label: 'IDs', value: 'ids',  mainlabel: "any_Product" },
-        { label: 'Title', value: 'time2',  mainlabel: "any_Product" },
-        { label: 'Tag', value: 'tag',  mainlabel: "any_Product" },
-        { label: 'Type', value: 'type2',  mainlabel: "any_Product" },
-        { label: 'SKU', value: 'sku',  mainlabel: "any_Product" },
-        { label: 'Properties', value: 'properties',  mainlabel: "any_Product" },
-        { label: 'Vendor', value: 'vendor',  mainlabel: "any_Product" },
-        { label: 'Collection IDs', value: 'collectionsIds',  mainlabel: "any_Product" },
+        { label: 'Available Quantity ', value: 'availableQuan', mainlabel: "any_Product" },
+        { label: 'IDs', value: 'ids', mainlabel: "any_Product" },
+        { label: 'Title', value: 'time2', mainlabel: "any_Product" },
+        { label: 'Tag', value: 'tag', mainlabel: "any_Product" },
+        { label: 'Type', value: 'type2', mainlabel: "any_Product" },
+        { label: 'SKU', value: 'sku', mainlabel: "any_Product" },
+        { label: 'Properties', value: 'properties', mainlabel: "any_Product" },
+        { label: 'Vendor', value: 'vendor', mainlabel: "any_Product" },
+        { label: 'Collection IDs', value: 'collectionsIds', mainlabel: "any_Product" },
 
         { label: 'Customer', value: '', disabled: true, className: 'select-header' },
-        { label: 'Zip Code', value: 'zipcode',  mainlabel: "Customer" },
-        { label: 'Name', value: 'name',  mainlabel: "Customer" },
+        { label: 'Zip Code', value: 'zipcode', mainlabel: "Customer" },
+        { label: 'Name', value: 'name', mainlabel: "Customer" },
         { label: 'City', value: 'city', mainlabel: "Customer" },
         { label: 'Province Code', value: 'provinceCode', mainlabel: "Customer" },
         { label: 'Address', value: 'address', mainlabel: "Customer" },
@@ -259,7 +260,7 @@ function Rate(props) {
         const newId = rateModifiers.length ? rateModifiers[rateModifiers.length - 1].id + 1 : 1;
         const defaultRateModifier = 'dayOfOrder';
         const defaultOption = rateModifiersOptions.find(option => option.value === defaultRateModifier);
-    
+
         setRateModifiers((prevModifiers) => [
             ...prevModifiers,
             {
@@ -270,8 +271,8 @@ function Rate(props) {
                 rateModifier2: defaultRateModifier,
                 label1: defaultOption?.mainlabel || '',
                 label2: defaultOption?.mainlabel || '',
-                rateOperator: 'equals',
-                rateOperator2: 'equals',
+                rateOperator: 'equal',
+                rateOperator2: 'equal',
                 rateDay: '',
                 rateDay2: '',
                 type: 'None',
@@ -329,14 +330,14 @@ function Rate(props) {
 
     ];
     const ratesku = [
-        { label: 'Equals', value: 'equal' },
+        { label: 'Equal', value: 'equal' },
         { label: 'Does Not Equal', value: 'notequal' },
         { label: 'Contains', value: 'contains' },
         { label: 'Does not contains', value: 'notcontains' },
         { label: 'Start with', value: 'startwith' },
     ];
     const rateTimeOptions = [
-        { label: 'Equals', value: 'equal' },
+        { label: 'Equal', value: 'equal' },
         { label: 'Does Not Equal', value: 'notequal' },
         { label: 'Less then or Equal', value: 'less' },
         { label: 'Greater then or Equal', value: 'greater' },
@@ -347,11 +348,11 @@ function Rate(props) {
     ];
 
     const rateAvailableOptions = [
-        { label: 'Equals', value: 'equal' },
+        { label: 'Equal', value: 'equal' },
 
     ];
     const rateQuantityOptions = [
-        { label: 'Equals', value: 'equal' },
+        { label: 'Equal', value: 'equal' },
         { label: 'Does Not Equal', value: 'notequal' },
         { label: 'Less then or Equal', value: 'lthenoequal' },
         { label: 'Greater then or Equal', value: 'gthenoequal' },
@@ -1404,51 +1405,61 @@ function Rate(props) {
     const handleSearchClick = () => {
         setShowTable(true);
     };
+    const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(filteredProducts);
 
-    const { selectedResources, allResourcesSelected, handleSelectionChange } =
-        useIndexResourceState(filteredProducts);
+    useEffect(() => {
+        const productIds = selectedResources
+            .map(id => {
+                const product = filteredProducts.find(product => product.id === id);
+                return product ? product.id : '';
+            })
+            .filter(id => id);
 
- useEffect(() => {
-   
-    const productIds = selectedResources
-        .map(id => {
-            const product = filteredProducts.find(product => product.id === id);
-            return product ? product.id : '';
-        })
-        .filter(id => id); 
+        const currentProductData = productIds.join(', ');
 
-    const currentProductData = productIds.join(', ');
+        setRateModifiers(prevModifiers => {
+            return prevModifiers.map(modifier =>
+                modifier.id in open ? {
+                    ...modifier,
+                    productData: currentProductData,
+                } : modifier
+            );
+        });
 
-    SetExclude_Rate(prevState => ({
-        ...prevState,
-        productData: currentProductData,
-    }));
-    if (formData.id) {
-        navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
-    }
-}, [selectedResources, filteredProducts, formData.id, zone_id, navigate]);
+        SetExclude_Rate(prevState => ({
+            ...prevState,
+            productData: currentProductData,
+        }));
+        if (formData.id) {
+            navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
+        }
+    }, [selectedResources, filteredProducts, formData.id, zone_id, navigate, open]);
 
-useEffect(() => {
-    // Create a comma-separated list of product IDs
-    const productIds = selectedResources
-        .map(id => {
-            const product = filteredProducts.find(product => product.id === id);
-            return product ? product.id : ''; // Extract product ID
-        })
-        .filter(id => id); // Remove any empty IDs
+    const productData = filteredProducts.map(({ id, title, image }, index) => (
+        <IndexTable.Row
+            id={id}
+            key={id}
+            selected={selectedResources.includes(id)}
+            position={index}
+        >
+            <IndexTable.Cell>
+                <Thumbnail
+                    source={image}
+                    size="small"
+                    alt={title}
+                />
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+                    <Text fontWeight="bold" as="span">
+                        {title}
+                    </Text>
+                </div>
+            </IndexTable.Cell>
+        </IndexTable.Row>
+    ));
 
-    const currentProductData = productIds.join(', ');
 
-    // Update existing rate modifiers with the current product IDs in rateDay
-    setRateModifiers(prevModifiers => {
-        return prevModifiers.map(modifier =>
-            modifier.id in open ? {
-                ...modifier,
-                rateDay: currentProductData, // Set the product IDs in rateDay
-            } : modifier
-        );
-    });
-}, [selectedResources, filteredProducts, open]);
     const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
         <IndexTable.Row
             id={id}
@@ -1496,29 +1507,6 @@ useEffect(() => {
         </IndexTable.Row>
     ));
 
-    const productData = filteredProducts.map(({ id, title, image }, index) => (
-        <IndexTable.Row
-            id={id}
-            key={id}
-            selected={selectedResources.includes(id)}
-            position={index}
-        >
-            <IndexTable.Cell>
-                <Thumbnail
-                    source={image}
-                    size="small"
-                    alt={title}
-                />
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
-                    <Text fontWeight="bold" as="span">
-                        {title}
-                    </Text>
-                </div>
-            </IndexTable.Cell>
-        </IndexTable.Row>
-    ));
 
 
     if (loading) {
@@ -3176,13 +3164,12 @@ useEffect(() => {
                                                         )}
                                                         {modifier.rateModifier === 'ids' && (
                                                             <TextField
-
-                                                                type='text' 
-                                                                value={selectedResources.join(', ')}
-                                                                onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                type='text'
+                                                                value={modifier.productData}
+                                                                onChange={handleRateModifierChange(modifier.id, 'productData')}
                                                                 multiline={4}
-                                                                onFocus={handleFocus}  // Open the modal when TextField is focused
-
+                                                                onFocus={handleFocus}
+                                                                helpText='add product ids with comma(,) separator'
                                                             />
                                                         )}
                                                         {(modifier.rateModifier === 'price' || modifier.rateModifier === 'calculateRate' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
@@ -3367,6 +3354,16 @@ useEffect(() => {
                                                                         value={modifier.rateDay2}
                                                                         onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                         type="date"
+                                                                    />
+                                                                )}
+                                                                {modifier.rateModifier2 === 'ids' && (
+                                                                    <TextField
+                                                                        type='text'
+                                                                        value={modifier.productData}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'productData')}
+                                                                        multiline={4}
+                                                                        onFocus={handleFocus}
+                                                                        helpText='add product ids with comma(,) separator'
                                                                     />
                                                                 )}
                                                                 {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (

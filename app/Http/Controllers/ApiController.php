@@ -623,7 +623,7 @@ class ApiController extends Controller
         switch ($conditionType) {
             case 'equal':
                 if (is_array($value) && is_array($totalQuantity)) {
-                    $result = !array_diff($value, $totalQuantity);
+                    $result = !empty(array_intersect($totalQuantity, $value));
                 } elseif (is_array($value)) {
                     $result = in_array($totalQuantity, $value);
                 } elseif (is_array($totalQuantity)) {
@@ -634,7 +634,7 @@ class ApiController extends Controller
                 break;
             case 'notequal':
                 if (is_array($value) && is_array($totalQuantity)) {
-                    $result = array_diff($value, $totalQuantity);
+                    $result = empty(array_intersect($totalQuantity, $value));
                 } elseif (is_array($value)) {
                     $result = !in_array($totalQuantity, $value);
                 } elseif (is_array($totalQuantity)) {
@@ -758,23 +758,45 @@ class ApiController extends Controller
 
     private function checkStartsWith($totalQuantity, $value)
     {
-        if (is_array($value)) {
+        // Case 1: Both value and totalQuantity are not arrays
+        if (!is_array($value) && !is_array($totalQuantity)) {
+            return strpos((string)$totalQuantity, $value) === 0;
+        }
+
+        // Case 2: Value is an array and totalQuantity is not
+        if (is_array($value) && !is_array($totalQuantity)) {
             foreach ($value as $val) {
-                foreach ((array)$totalQuantity as $qty) {
+                if (strpos((string)$totalQuantity, $val) === 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Case 3: Value is not an array and totalQuantity is an array
+        if (!is_array($value) && is_array($totalQuantity)) {
+            foreach ($totalQuantity as $qty) {
+                if (strpos((string)$qty, $value) === 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Case 4: Both value and totalQuantity are arrays
+        if (is_array($value) && is_array($totalQuantity)) {
+            foreach ($value as $val) {
+                foreach ($totalQuantity as $qty) {
                     if (strpos((string)$qty, $val) === 0) {
                         return true;
                     }
                 }
             }
-        } else {
-            foreach ((array)$totalQuantity as $qty) {
-                if (strpos((string)$qty, $value) === 0) {
-                    return true;
-                }
-            }
         }
+
         return false;
     }
+
 
     private function checkModular($totalQuantity, $value, $modular0)
     {
@@ -1005,7 +1027,7 @@ class ApiController extends Controller
                                 'total2' => fn ($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
                                 'weight2' => 'grams',
                                 'name' => 'name',
-                                // 'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
+                                'tag' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
                                 'type' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
                                 'sku' => 'sku',
                                 'vendor' => 'vendor'
@@ -1160,7 +1182,7 @@ class ApiController extends Controller
                                 'total2' => fn ($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
                                 'weight2' => 'grams',
                                 'name' => 'name',
-                                // 'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
+                                'tag' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
                                 'type' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
                                 'sku' => 'sku',
                                 'vendor' => 'vendor'
@@ -1317,7 +1339,7 @@ class ApiController extends Controller
                                 'total2' => fn ($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
                                 'weight2' => 'grams',
                                 'name' => 'name',
-                                // 'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
+                                'tag' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
                                 'type' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
                                 'sku' => 'sku',
                                 'vendor' => 'vendor'
@@ -1591,9 +1613,155 @@ class ApiController extends Controller
                             $rate->base_price = $maxChargePrice;
                         }
                         break;
+                    case 'Product':
+                        $surchargeData = collect($surcharge['productData']);
+                        $itemsProductIds = collect($items)->pluck('product_id');
 
+                        // Filter the surcharge data to only include items with matching product_id
+                        $filteredData = $surchargeData->filter(function ($item) use ($itemsProductIds) {
+                            return $itemsProductIds->contains($item['id']);
+                        });
+
+                        $filteredDataWithQuantity = $filteredData->map(function ($item) use ($items) {
+                            $quantity = collect($items)->firstWhere('product_id', $item['id'])['quantity'] ?? 0;
+                            $item['quantity'] = $quantity;
+                            return $item;
+                        })->toArray();
+
+                        $lastFilteredData = collect($filteredDataWithQuantity)->last();
+                        // dd($lastFilteredData);
+                        Log::info('lastFilteredData:', ['lastFilteredData' => $lastFilteredData]);
+                        if ($surcharge['selectedMultiplyLine'] == 'Yes' && !empty($lastFilteredData)) {
+                            $rate->base_price = ($rate->base_price + $lastFilteredData['rate_price']) * $lastFilteredData['quantity'];
+                        } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
+                            $rate->base_price = $rate->base_price + $lastFilteredData['rate_price'] + (($lastFilteredData['product_price'] % $surcharge['cart_total_percentage'] / 100) * $lastFilteredData['quantity']);
+                            if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
+                                $rate->base_price = $minChargePrice;
+                            } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
+                                $rate->base_price = $maxChargePrice;
+                            }
+                        }
+                        break;
+                    case 'Vendor':
+                        $itemsProductIds = collect($items)->pluck('vendor');
+
+                        $vendorsCommaSeparated = $itemsProductIds->implode(', ');
+
+                        $conditions = [
+                            'condition' => "equal",
+                            'value' => $surcharge['descriptions']
+                        ];
+
+                        if ($this->checkCondition($conditions, $vendorsCommaSeparated)) {
+                            if ($surcharge['selectedMultiplyLine'] == 'Yes') {
+                                $rate->base_price = $rate->base_price;
+                            } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
+                                $rate->base_price = $rate->base_price + ($rate->base_price % $surcharge['cart_total_percentage'] / 100);
+                                if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
+                                    $rate->base_price = $minChargePrice;
+                                } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
+                                    $rate->base_price = $maxChargePrice;
+                                }
+                            }
+                        } else {
+                            return null;
+                        }
+                        break;
+                    case 'Tag':
+                        $allTags = [];
+
+                        foreach ($items as $item) {
+                            $tags = $this->fetchShopifyProductData($userData, $item['product_id'], 'tags');
+                            $newtags = explode(',', $tags);
+                            if (is_array($newtags)) {
+                                $allTags = array_merge($allTags, $newtags);
+                            }
+                        }
+                        // Remove duplicate tags and join them into a comma-separated string
+                        $uniqueTags = array_unique($allTags);
+                        $tagsCommaSeparated = implode(', ', $uniqueTags);
+
+                        $conditions = [
+                            'condition' => "equal",
+                            'value' => $surcharge['descriptions']
+                        ];
+
+                        if ($this->checkCondition($conditions, $tagsCommaSeparated)) {
+                            if ($surcharge['selectedMultiplyLine'] == 'Yes') {
+                                $rate->base_price = $rate->base_price;
+                            } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
+                                $rate->base_price = $rate->base_price + ($rate->base_price % $surcharge['cart_total_percentage'] / 100);
+                                if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
+                                    $rate->base_price = $minChargePrice;
+                                } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
+                                    $rate->base_price = $maxChargePrice;
+                                }
+                            }
+                        } else {
+                            return null;
+                        }
+                        break;
+                    case 'Type':
+                        $allType = [];
+
+                        foreach ($items as $item) {
+                            $types = $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type');
+                            $newtypes = explode(',', $types);
+                            if (is_array($newtypes)) {
+                                $allType = array_merge($allType, $newtypes);
+                            }
+                        }
+                        // Remove duplicate tags and join them into a comma-separated string
+                        $uniqueTypes = array_unique($allType);
+                        $commaSeparated = implode(', ', $uniqueTypes);
+
+                        $conditions = [
+                            'condition' => "equal",
+                            'value' => $surcharge['descriptions']
+                        ];
+
+                        if ($this->checkCondition($conditions, $commaSeparated)) {
+                            if ($surcharge['selectedMultiplyLine'] == 'Yes') {
+                                $rate->base_price = $rate->base_price;
+                            } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
+                                $rate->base_price = $rate->base_price + ($rate->base_price % $surcharge['cart_total_percentage'] / 100);
+                                if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
+                                    $rate->base_price = $minChargePrice;
+                                } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
+                                    $rate->base_price = $maxChargePrice;
+                                }
+                            }
+                        } else {
+                            return null;
+                        }
+                        break;
+                    case 'SKU':
+                        $itemsProductSKU = collect($items)->pluck('sku');
+
+                        $skuCommaSeparated = $itemsProductSKU->implode(', ');
+
+                        $conditions = [
+                            'condition' => "equal",
+                            'value' => $surcharge['descriptions']
+                        ];
+
+                        if ($this->checkCondition($conditions, $skuCommaSeparated)) {
+                            if ($surcharge['selectedMultiplyLine'] == 'Yes') {
+                                $rate->base_price = $rate->base_price;
+                            } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
+                                $rate->base_price = $rate->base_price + ($rate->base_price % $surcharge['cart_total_percentage'] / 100);
+                                if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
+                                    $rate->base_price = $minChargePrice;
+                                } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
+                                    $rate->base_price = $maxChargePrice;
+                                }
+                            }
+                        } else {
+                            return null;
+                        }
+                        break;
                     default:
-                        // Handle unknown surcharge type
+                        // Handle unknown surcharge type Vendor
                         break;
                 }
             }
@@ -1612,8 +1780,14 @@ class ApiController extends Controller
                     'name' => fn () => $destinationData['name'],
                     'city' => fn () => $destinationData['city'],
                     'provinceCode' => fn () => $destinationData['province'],
-                    'address' => fn () => $destinationData['address1']
-                    // 'localCode' => fn() => $localeCode,
+                    'address' => fn () => $destinationData['address1'],
+                    'day' => fn ($day) => Carbon::now()->addDay($day)->format('l'),
+                    'date' => fn ($day) => Carbon::now()->addDay($day)->format('Y-m-d'),
+                    'dayFromToday' => fn ($day) => $day,
+                    'type' => fn () => null,
+                    'estimatedDay' => fn () => null,
+                    'timefromCurrent' => fn () => null,
+                    'available' => fn () => null
                 ];
 
                 $perProductArr = [
@@ -1621,52 +1795,10 @@ class ApiController extends Controller
                     'ids' => 'product_id',
                     'title' => 'name',
                     'tag' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
-                    'tags' => 'product_type',
-                    'price' => fn ($item) => $item['price'] / 100,
-                    'total2' => fn ($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
-                    'weight2' => 'grams',
-                    'name' => 'name',
-                    'type' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
+                    'type2' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
                     'sku' => 'sku',
                     'vendor' => 'vendor'
                 ];
-
-                // if ($condition['label'] == 'Per_Product') {
-                //     $fieldMap = [
-                //         'quantity' => 'quantity',
-                //         'ids' => 'id',
-                //         'title' => 'title',
-                //         'tags' => 'tags',
-                //         'tags' => 'product_type',
-                //         'price' => fn ($item) => $item['price'] / 100,
-                //         'total2' => fn ($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
-                //         'weight2' => 'grams',
-                //         'name' => 'name',
-                //         // 'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
-                //         'type' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
-                //         'sku' => 'sku',
-                //         'vendor' => 'vendor'
-                //     ];
-
-                //     if (array_key_exists($condition['name'], $fieldMap)) {
-                //         $perProductResult = [];
-                //         $perProductTag = [];
-                //         foreach ($items as $item) {
-                //             $totalQuantity = is_callable($fieldMap[$condition['name']])
-                //                 ? $fieldMap[$condition['name']]($item)
-                //                 : $item[$fieldMap[$condition['name']]];
-
-                //             $perProductResult[] = $this->checkCondition($condition, $totalQuantity);
-                //             $perProductTag[] = $this->fetchShopifyProductData($userData, $item['product_id'], 'tags');
-                //         }
-
-                //         if (!empty($perProductResult)) {
-                //             return $this->checkOtherCondition($perProductResult, $condition, $perProductTag);
-                //         }
-
-                //         return true; // Return true if all items pass the condition
-                //     }
-                // }
 
                 foreach ($rate->rate_modifiers as $modifier) {
                     $isApplicable = false;
@@ -1683,7 +1815,9 @@ class ApiController extends Controller
                         [
                             'condition' => $modifier['rateOperator'],
                             'value' => $modifier['rateDay'],
-                            'modifier' => $modifier['rateModifier']
+                            'modifier' => $modifier['rateModifier'],
+                            'label' => $modifier['label1'],
+                            'xDay' => $modifier['rateDay']
                         ],
                     ];
 
@@ -1692,14 +1826,15 @@ class ApiController extends Controller
                             $conditions[] = [
                                 'condition' => $modifier['rateOperator2'],
                                 'value' => $modifier['rateDay2'],
-                                'modifier' => $modifier['rateModifier2']
+                                'modifier' => $modifier['rateModifier2'],
+                                'label' => $modifier['label2'],
+                                'xDay' => $modifier['rateDay2'],
                             ];
                         }
                     }
 
                     $results = array_map(function ($condition) use ($modifierArray, $modifier, $items, $userData, $perProductArr) {
-                        // $currentValue = $modifierArray[$condition['modifier']]() ?? null;
-                        if ($modifier['label1'] == 'any_Product') {
+                        if ($condition['label'] == 'any_Product') {
                             if (array_key_exists($condition['modifier'], $perProductArr)) {
                                 foreach ($items as $item) {
                                     $totalQuantity = is_callable($perProductArr[$condition['modifier']])
@@ -1710,13 +1845,30 @@ class ApiController extends Controller
                                         return true; // Return true as soon as any item meets the condition
                                     }
                                 }
-
-                                return false; // Return false if no items meet the condition
                             }
+                            return false; // Return false if no items meet the condition
                         } else {
-                            $currentValue = $modifierArray[$condition['modifier']]() ?? null;
-                            return $this->checkCondition($condition, $currentValue);
+                            if (array_key_exists($condition['modifier'], $modifierArray)) {
+                                // $currentValue = $modifierArray[$condition['modifier']]();
+                                if (strpos($modifier['title'], "#") !== false) {
+                                    $deliveryDay = str_replace('#', '', $modifier['title']);
+                                } else if ($condition['modifier'] == 'dayFromToday') {
+                                    $deliveryDay = $condition['xDay'];
+                                    $condition['value'] = str_replace('#', '', $modifier['title']);
+                                } else {
+                                    $deliveryDay = 0;
+                                }
+
+                                $currentValue = is_callable($modifierArray[$condition['modifier']])
+                                    ? $modifierArray[$condition['modifier']]($deliveryDay)
+                                    : $modifierArray[$condition['modifier']]();
+
+                                return $this->checkCondition($condition, $currentValue);
+                            }
+                            return false;
                         }
+
+                        return false; // Default return false if no conditions are met
                     }, $conditions);
 
                     switch ($modifier['type']) {
@@ -1763,125 +1915,6 @@ class ApiController extends Controller
                 }
             }
 
-
-            // if (!empty($rate->rate_modifiers) && is_array($rate->rate_modifiers)) {
-            //     foreach ($rate->rate_modifiers as $modifier) {
-            //         if ($modifier['type'] === 'None') {
-            //             $condition = [
-            //                 "condition" => $modifier['rateOperator'],
-            //                 "value" => ''
-            //             ];
-            //             $currentValue = '';
-
-            //             if ($modifier['rateModifier'] === 'dayOfOrder') {
-            //                 $currentValue = Carbon::now()->format('l');
-            //                 $condition['value'] = ucfirst($modifier['rateDay']);
-            //             } elseif ($modifier['rateModifier'] === 'time') {
-            //                 $currentValue = Carbon::now()->format('H:i');
-            //                 $condition['value'] = $modifier['rateDay'] . ":00";
-            //             } elseif ($modifier['rateModifier'] === 'price') {
-            //                 $currentValue = $totalPrice;
-            //                 $condition['value'] = $modifier['rateDay'];
-            //             } elseif ($modifier['rateModifier'] === 'weight') {
-            //                 $currentValue = $totalWeight;
-            //                 $condition['value'] = $modifier['rateDay'];
-            //             } elseif ($modifier['rateModifier'] === 'quantity') {
-            //                 $currentValue = $totalQuantity;
-            //                 $condition['value'] = $modifier['rateDay'];
-            //             } elseif ($modifier['rateModifier'] === 'distance') {
-            //                 $currentValue = $distance;
-            //                 $condition['value'] = $modifier['rateDay'];
-            //             } elseif ($modifier['rateModifier'] === 'localCode') {
-            //                 $currentValue = $localeCode;
-            //                 $condition['value'] = $modifier['rateDay'];
-            //             }
-
-            //             if ($this->checkCondition($condition, $currentValue)) {
-            //                 $rate->name = $modifier['name'];
-            //                 $rate->description = $modifier['title'];
-
-            //                 switch ($modifier['modifierType']) {
-            //                     case 'Fixed':
-            //                         $adjustment = $modifier['adjustment'];
-            //                         $rate->base_price += $modifier['effect'] === 'Increase' ? $adjustment : -$adjustment;
-            //                         break;
-
-            //                     case 'Percentage':
-            //                         $adjustment = $rate->base_price * $modifier['adjustment'] / 100;
-            //                         $rate->base_price += $modifier['effect'] === 'Increase' ? $adjustment : -$adjustment;
-            //                         break;
-
-            //                     case 'Static':
-            //                         $rate->base_price = $modifier['adjustment'];
-            //                         break;
-
-            //                     case 'RemoveRate':
-            //                         return null;
-
-            //                     default:
-            //                         break;
-            //                 }
-            //             }
-            //         } else if ($modifier['type'] === "AND") {
-            //             $condition = [
-            //                 "condition" => $modifier['rateOperator'],
-            //                 "value" => ''
-            //             ];
-            //             $currentValue = '';
-
-            //             if ($modifier['rateModifier'] === 'dayOfOrder') {
-            //                 $currentValue = Carbon::now()->format('l');
-            //                 $condition['value'] = ucfirst($modifier['rateDay']);
-            //             } elseif ($modifier['rateModifier'] === 'time') {
-            //                 $currentValue = Carbon::now()->format('H:i');
-            //                 $condition['value'] = $modifier['rateDay'] . ":00";
-            //             } elseif ($modifier['rateModifier'] === 'price') {
-            //                 $currentValue = $totalPrice;
-            //                 $condition['value'] = $modifier['rateDay'];
-            //             } elseif ($modifier['rateModifier'] === 'weight') {
-            //                 $currentValue = $totalWeight;
-            //                 $condition['value'] = $modifier['rateDay'];
-            //             } elseif ($modifier['rateModifier'] === 'quantity') {
-            //                 $currentValue = $totalQuantity;
-            //                 $condition['value'] = $modifier['rateDay'];
-            //             } elseif ($modifier['rateModifier'] === 'distance') {
-            //                 $currentValue = $distance;
-            //                 $condition['value'] = $modifier['rateDay'];
-            //             } elseif ($modifier['rateModifier'] === 'localCode') {
-            //                 $currentValue = $localeCode;
-            //                 $condition['value'] = $modifier['rateDay'];
-            //             }
-
-            //             if ($this->checkCondition($condition, $currentValue)) {
-            //                 $rate->name = $modifier['name'];
-            //                 $rate->description = $modifier['title'];
-
-            //                 switch ($modifier['modifierType']) {
-            //                     case 'Fixed':
-            //                         $adjustment = $modifier['adjustment'];
-            //                         $rate->base_price += $modifier['effect'] === 'Increase' ? $adjustment : -$adjustment;
-            //                         break;
-
-            //                     case 'Percentage':
-            //                         $adjustment = $rate->base_price * $modifier['adjustment'] / 100;
-            //                         $rate->base_price += $modifier['effect'] === 'Increase' ? $adjustment : -$adjustment;
-            //                         break;
-
-            //                     case 'Static':
-            //                         $rate->base_price = $modifier['adjustment'];
-            //                         break;
-
-            //                     case 'RemoveRate':
-            //                         return null;
-
-            //                     default:
-            //                         break;
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
-
             // if(!empty($rate->origin_locations)){
             //     foreach($rate->origin_locations['updated_location'] as $location){
             //         dump($location);
@@ -1922,14 +1955,21 @@ class ApiController extends Controller
         // // Log::info('Shopify Carrier Service Request input:', ['filteredRates' => $filteredRates]);
 
         foreach ($filteredRates as $rate) {
+
+            if (strpos($rate['description'], "#") !== false) {
+                $deliveryDay = str_replace('#', '', $rate['description']);
+            } else {
+                $deliveryDay = 0;
+            }
+
             $response['rates'][] = [
                 'service_name' => $rate->name,
                 'service_code' => $rate->service_code,
                 'total_price' => $rate->base_price, // Convert to cents if needed
-                'description' => $rate->description,
+                'description' => Carbon::now()->addDay($deliveryDay)->format('l, d M'),
                 'currency' => $rate->zone->currency,
-                'min_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
-                'max_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
+                'min_delivery_date' => Carbon::now()->addDay($deliveryDay)->toIso8601String(),
+                'max_delivery_date' => Carbon::now()->addDay($deliveryDay)->toIso8601String(),
             ];
 
             if ($rate->send_another_rate['send_another_rate']) {

@@ -1496,7 +1496,7 @@ function Rate(props) {
             onClick={() => handleProductSelection({
                 id,
                 name: title,
-                // tags: "", 
+                // tags: "",
                 // product_vendor: "United By Blue",
                 // product_type: "Accessories",
                 product_price: price,
@@ -3591,7 +3591,7 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'adjustment')}
                                                                     autoComplete="off"
                                                                     placeholder="00"
-                                                                    error={errors[`adjustment${index}`]}
+                                                                    error={errors[`adjustment${modifier.id}`]}
                                                                 />
 
                                                             </div>

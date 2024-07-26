@@ -199,8 +199,8 @@ function Rate(props) {
     const rateModifiersOptions = [
         { label: ' Order', value: '', disabled: true, className: 'select-header' },
         { label: 'Day of Order is', value: 'dayOfOrder', mainlabel: "Order" },
-        { label: 'Time', value: 'times', mainlabel: "Order" },
-        { label: 'Price', value: 'prices', mainlabel: "Order" },
+        { label: 'Time', value: 'time', mainlabel: "Order" },
+        { label: 'Price', value: 'price', mainlabel: "Order" },
         { label: 'Weight', value: 'weight', mainlabel: "Order" },
         { label: 'Quantity', value: 'quantity', mainlabel: "Order" },
         { label: 'Distance', value: 'distance', mainlabel: "Order" },
@@ -3077,7 +3077,7 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
                                                                 />
                                                             )}
-                                                            {(modifier.rateModifier === 'prices' || modifier.rateModifier === 'times' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'calculateRate') && (
+                                                            {(modifier.rateModifier === 'price' || modifier.rateModifier === 'time' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'calculateRate') && (
                                                                 <Select
                                                                     label="Select Operator"
                                                                     options={rateTimeOptions}
@@ -3144,7 +3144,7 @@ function Rate(props) {
                                                                 onChange={handleRateModifierChange(modifier.id, 'rateDay')}
                                                             />
                                                         )}
-                                                        {modifier.rateModifier === 'times' && (
+                                                        {modifier.rateModifier === 'time' && (
                                                             <Select
                                                                 options={time}
                                                                 value={modifier.rateDay}
@@ -3168,7 +3168,7 @@ function Rate(props) {
                                                                 helpText='add product ids with comma(,) separator'
                                                             />
                                                         )}
-                                                        {(modifier.rateModifier === 'prices' || modifier.rateModifier === 'calculateRate' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
+                                                        {(modifier.rateModifier === 'price' || modifier.rateModifier === 'calculateRate' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
                                                             <TextField
                                                                 type="number"
                                                                 value={modifier.rateDay}
@@ -3176,7 +3176,7 @@ function Rate(props) {
                                                                 autoComplete="off"
 
                                                                 placeholder={
-                                                                    modifier.rateModifier === 'prices' ? "Price" :
+                                                                    modifier.rateModifier === 'price' ? "Price" :
                                                                         modifier.rateModifier === 'weight' ? "Weight" :
                                                                             modifier.rateModifier === 'quantity' ? "Quantity" :
                                                                                 modifier.rateModifier === 'distance' ? "Distance" :
@@ -3271,7 +3271,7 @@ function Rate(props) {
                                                                             onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
                                                                         />
                                                                     )}
-                                                                    {(modifier.rateModifier2 === 'prices' || modifier.rateModifier2 === 'times' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'calculateRate') && (
+                                                                    {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'time' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'calculateRate') && (
                                                                         <Select
                                                                             label="Select Operator"
                                                                             options={rateTimeOptions}
@@ -3338,7 +3338,7 @@ function Rate(props) {
                                                                         onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                     />
                                                                 )}
-                                                                {modifier.rateModifier2 === 'times' && (
+                                                                {modifier.rateModifier2 === 'time' && (
                                                                     <Select
                                                                         options={time}
                                                                         value={modifier.rateDay2}
@@ -3362,7 +3362,7 @@ function Rate(props) {
                                                                         helpText='add product ids with comma(,) separator'
                                                                     />
                                                                 )}
-                                                                {(modifier.rateModifier2 === 'prices' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (
+                                                                {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (
                                                                     <TextField
                                                                         type="number"
                                                                         value={modifier.rateDay2}
@@ -3370,7 +3370,7 @@ function Rate(props) {
                                                                         autoComplete="off"
 
                                                                         placeholder={
-                                                                            modifier.rateModifier2 === 'prices' ? "Price" :
+                                                                            modifier.rateModifier2 === 'price' ? "Price" :
                                                                                 modifier.rateModifier2 === 'weight' ? "Weight" :
                                                                                     modifier.rateModifier2 === 'quantity' ? "Quantity" :
                                                                                         modifier.rateModifier2 === 'distance' ? "Distance" :

@@ -1405,8 +1405,7 @@ function Rate(props) {
     const handleSearchClick = () => {
         setShowTable(true);
     };
-
-    const {selectedResources,  allResourcesSelected, handleSelectonChange } = useIndexResourceState(filteredProducts);
+    const {selectedResources,  allResourcesSelected, handleSelectionChange   } = useIndexResourceState(filteredProducts);
 
     useEffect(() => {
         const productIds = selectedResources

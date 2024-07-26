@@ -339,12 +339,12 @@ function Rate(props) {
     const rateTimeOptions = [
         { label: 'Equal', value: 'equal' },
         { label: 'Does Not Equal', value: 'notequal' },
-        { label: 'Less then or Equal', value: 'less' },
-        { label: 'Greater then or Equal', value: 'greater' },
+        { label: 'Less then or Equal', value: 'lthenoequal' },
+        { label: 'Greater then or Equal', value: 'gthenoequal' },
     ];
     const rateAvailableQuantity = [
-        { label: 'Less then or Equal', value: 'less' },
-        { label: 'Greater then or Equal', value: 'greater' },
+        { label: 'Less then or Equal', value: 'lthenoequal' },
+        { label: 'Greater then or Equal', value: 'gthenoequal' },
     ];
 
     const rateAvailableOptions = [
@@ -1406,7 +1406,7 @@ function Rate(props) {
         setShowTable(true);
     };
 
-    const {selectedResources,  allResourcesSelected, handleSelectionChange } = useIndexResourceState(filteredProducts);
+    const {selectedResources,  allResourcesSelected, handleSelectonChange } = useIndexResourceState(filteredProducts);
 
     useEffect(() => {
         const productIds = selectedResources

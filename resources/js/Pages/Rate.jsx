@@ -923,19 +923,31 @@ function Rate(props) {
     ];
 
     const handleAddItem = () => {
-        const newItem = {
-            name: 'quantity',
-            condition: 'equal',
-            value: '',
-            value2: '',
-            unit: 'items',
-            label: 'cart_order',
-            lineItem: 'anyTag',
-            tag: '',
-            per_product: 'any',
-        };
-        setItems(prevItems => [...prevItems, newItem]);
+        setItems(prevItems => {
+            // Determine the new ID based on the length of the items array
+            const newId = prevItems.length ? prevItems[prevItems.length - 1].id + 1 : 1;
+            console.log(newId)
+            const newItem = {
+                id: newId, // Assign a unique ID
+                name: 'quantity',
+                condition: 'equal',
+                value: '',
+                value2: '',
+                unit: 'items',
+                label: 'cart_order',
+                lineItem: 'anyTag',
+                tag: '',
+                per_product: 'any',
+            };
+
+            // Log the updated items to verify keys
+            const updatedItems = [...prevItems, newItem];
+
+
+            return updatedItems;
+        });
     };
+
 
     const handleConditionsChange = useCallback((index, field) => (value) => {
         setItems((prevState) => {
@@ -979,6 +991,7 @@ function Rate(props) {
                 return updatedItems;
             });
         }
+
         const updatedItem = {
             ...items[index],
             condition: isSecondSelect ? newValue : items[index].condition,
@@ -991,8 +1004,10 @@ function Rate(props) {
 
         const updatedItems = [...items];
         updatedItems[index] = updatedItem;
+        console.log(updatedItems.map(item => item.id || item.name)); // Verify keys here
         setItems(updatedItems);
     };
+
 
     const handleConditionChange = useCallback(
         (newValue, index, key) => {
@@ -1043,10 +1058,10 @@ function Rate(props) {
         product_vendor: '',
         descriptions: '',
         rate_price: '',
-        productData: [] 
+        productData: []
 
     })
-     
+
     const [send_another_rate, setsend_another_rate] = useState({
         send_another_rate: checkedState.checked3,
         another_rate_name: '',
@@ -1088,8 +1103,8 @@ function Rate(props) {
         Setrate_based_on_surcharge(prevState => ({
             ...prevState,
             productData: selectedProductsData
-          }));
-    }, [selectedProductsData,checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate, locations, checkedlocation]);
+        }));
+    }, [selectedProductsData, checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate, locations, checkedlocation]);
 
     const [exclude_Rate, SetExclude_Rate] = useState({
         set_exclude_products: selectedRate,
@@ -1169,6 +1184,7 @@ function Rate(props) {
         }));
     };
 
+
     useEffect(() => {
         const selectedStates = selectedOptions.map(option => ({
             name: state.find(state => state.value === option)?.label || '',
@@ -1207,7 +1223,15 @@ function Rate(props) {
                 unit_for: rate_based_on_surcharge?.unit_for || '',
                 min_charge_price: rate_based_on_surcharge?.min_charge_price || '',
                 max_charge_price: rate_based_on_surcharge?.max_charge_price || '',
-                productData: rate_based_on_surcharge?.productData || ''
+                productData: rate_based_on_surcharge?.productData || '',
+                descriptions: rate_based_on_surcharge?.descriptions || '',
+                cart_total_percentage: rate_based_on_surcharge?.cart_total_percentage || '',
+                product_title: rate_based_on_surcharge?.product_title || '',
+                collecion_id: rate_based_on_surcharge?.collecion_id || '',
+                product_type: rate_based_on_surcharge?.product_type || '',
+    product_vendor: rate_based_on_surcharge?.product_vendor || ''
+
+
 
             },
             rate_tier: {
@@ -1407,7 +1431,7 @@ function Rate(props) {
         setShowTable(true);
     };
 
-    const {selectedResources,  allResourcesSelected, handleSelectionChange  } = useIndexResourceState(filteredProducts);
+    const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(filteredProducts);
 
     useEffect(() => {
         const productIds = selectedResources
@@ -1439,8 +1463,8 @@ function Rate(props) {
 
     const productData = filteredProducts.map(({ id, title, image }, index) => (
         <IndexTable.Row
-        id={`${id}-${index}`} // Combine id with index to ensure uniqueness
-        key={`${id}-${index}`} // Combine id with index for unique key
+            id={`${id}-${index}`} // Combine id with index to ensure uniqueness
+            key={`${id}-${index}`} // Combine id with index for unique key
             selected={selectedResources.includes(id)}
             position={index}
         >
@@ -1464,8 +1488,8 @@ function Rate(props) {
 
     const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
         <IndexTable.Row
-        id={`${id}-${index}`} // Combine id with index to ensure uniqueness
-        key={`${id}-${index}`} // Combine id with index for unique key
+            id={`${id}-${index}`} // Combine id with index to ensure uniqueness
+            key={`${id}-${index}`} // Combine id with index for unique key
 
             selected={selectedResources.includes(id)}
             position={index}
@@ -1500,12 +1524,12 @@ function Rate(props) {
             </IndexTable.Cell>
             <IndexTable.Cell>
                 <TextField
-                        type="text"
-                        prefix={shop_currency}
-                        placeholder='0.00'
-                        value={selectedProductsData.find(product => product.id === id)?.rate_price || ''}
-                        onChange={(value) => handleRatePriceChange(value, id)}
-                    />
+                    type="text"
+                    prefix={shop_currency}
+                    placeholder='0.00'
+                    value={selectedProductsData.find(product => product.id === id)?.rate_price || ''}
+                    onChange={(value) => handleRatePriceChange(value, id)}
+                />
             </IndexTable.Cell>
         </IndexTable.Row>
     ));
@@ -1571,6 +1595,7 @@ function Rate(props) {
             primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
             secondaryActions={<Button onClick={() => BacktoZone(zone_id)}>Back</Button>}
         >
+
             <Divider borderColor="border" />
             <div style={{ marginTop: '2%', marginBottom: '2%' }}>
                 <Layout>
@@ -1646,7 +1671,7 @@ function Rate(props) {
                 </Layout>
             </div>
 
-            <Divider borderColor="border" />
+            {/* <Divider borderColor="border" />
             <div style={{ marginTop: '2%', marginBottom: '2%' }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
@@ -1919,13 +1944,13 @@ function Rate(props) {
                                                                         value={item.lineItem}
                                                                     />
                                                                 )}
-                                                                {/* {item.lineItem === 'anyTag' && (
+                                                                {item.lineItem === 'anyTag' && (
                                                                     <TextField
                                                                         value={item.tag}
                                                                         onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}
                                                                         placeholder='tag1,tag2,tag3'
                                                                     />
-                                                                )} */}
+                                                                )}
                                                             </div>
                                                             {(item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2') && (
                                                                 <div style={{
@@ -1981,7 +2006,7 @@ function Rate(props) {
                         </LegacyCard>
                     </Grid.Cell>
                 </Grid>
-            </div>
+            </div> */}
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%", }}>
@@ -2096,6 +2121,7 @@ function Rate(props) {
                     </Grid.Cell>
                 </Grid>
             </div>
+
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%", }}>
@@ -2770,6 +2796,8 @@ function Rate(props) {
                 </Grid>
             </div>
 
+
+
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
@@ -2955,6 +2983,10 @@ function Rate(props) {
 
             </div>
 
+
+
+
+
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
@@ -2975,9 +3007,9 @@ function Rate(props) {
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <div style={{ alignItems: "center" }}>
                             <LegacyCard sectioned>
-                                {rateModifiers.map((modifier, index) => (
-                                     <div style={{ marginBottom: "3%" }}  key={`modifyKey-${modifier.id}`} >
-                                        <Box  id={`modify-${modifier.id}`} borderColor="border" borderWidth="025" borderRadius="200">
+                                {rateModifiers.map((modifier) => (
+                                    <div style={{ marginBottom: "3%" }} key={`modifyKey-${modifier.id}`}>
+                                        <Box id={`modify-${modifier.id}`} borderColor="border" borderWidth="025" borderRadius="200">
                                             <div style={{ padding: '10px' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                     <Button
@@ -3623,16 +3655,19 @@ function Rate(props) {
                         <LegacyCard sectioned>
                             <TextField
                                 label="Merge rate tag"
-                                value={formData.merge_rate_tag}
+                                value={formData.merge_rate_tag || ''}
                                 onChange={handleRateFormChange('merge_rate_tag')}
                                 autoComplete="off"
                                 placeholder='tag1,tag2,tag3'
                             />
+
                         </LegacyCard>
                     </Grid.Cell>
                 </Grid>
 
             </div>
+
+
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
@@ -3697,6 +3732,7 @@ function Rate(props) {
                     </Grid.Cell>
                 </Grid>
             </div>
+
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
@@ -3974,7 +4010,7 @@ function Rate(props) {
                             </div>
                             <div style={{ marginTop: '4%', height: '400px', overflowY: 'scroll' }}>
                                 <IndexTable
-                                
+
                                     resourceName={resourceName}
                                     itemCount={filteredProducts.length}
                                     selectedItemsCount={allResourcesSelected ? 'All' : selectedResources.length}
@@ -3999,6 +4035,7 @@ function Rate(props) {
             )}
 
         </Page>
-    );
+    )
 }
-export default Rate;
+
+export default Rate

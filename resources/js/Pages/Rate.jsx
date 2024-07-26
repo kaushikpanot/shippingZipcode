@@ -100,9 +100,7 @@ function Rate(props) {
             setsend_another_rate({});
         }
         setCheckedState(newCheckedState);
-    };
-
-
+    }
     const [toastDuration, setToastDuration] = useState(3000);
     const [showToast, setShowToast] = useState(false);
     const [errorToast, setErroToast] = useState(false)
@@ -116,7 +114,6 @@ function Rate(props) {
     const [shop_weight_unit, setshop_weight_unit] = useState()
     const [shop_currency, setShop_currency] = useState()
     const [selectedProductsData, setSelectedProductsData] = useState([]);
-
     const [startCursor, setStartCursor] = useState('');
     const [endCursor, setEndCursor] = useState('');
     const [hasNextPage, setHasNextPage] = useState(false);
@@ -1046,9 +1043,10 @@ function Rate(props) {
         product_vendor: '',
         descriptions: '',
         rate_price: '',
+        productData: [] 
 
     })
-
+     
     const [send_another_rate, setsend_another_rate] = useState({
         send_another_rate: checkedState.checked3,
         another_rate_name: '',
@@ -1059,7 +1057,6 @@ function Rate(props) {
         another_service_code: "",
         another_merge_rate_tag: ''
     })
-
 
     useEffect(() => {
         setsend_another_rate(prevState => ({
@@ -1088,8 +1085,11 @@ function Rate(props) {
                 ship_from_locations: checkedState.checked2
             }
         }));
-
-    }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate, locations, checkedlocation]);
+        Setrate_based_on_surcharge(prevState => ({
+            ...prevState,
+            productData: selectedProductsData
+          }));
+    }, [selectedProductsData,checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate, locations, checkedlocation]);
 
     const [exclude_Rate, SetExclude_Rate] = useState({
         set_exclude_products: selectedRate,
@@ -1207,6 +1207,7 @@ function Rate(props) {
                 unit_for: rate_based_on_surcharge?.unit_for || '',
                 min_charge_price: rate_based_on_surcharge?.min_charge_price || '',
                 max_charge_price: rate_based_on_surcharge?.max_charge_price || '',
+                productData: rate_based_on_surcharge?.productData || ''
 
             },
             rate_tier: {
@@ -1387,16 +1388,16 @@ function Rate(props) {
         ));
     };
 
-    // const handleProductSelection = (product) => {
-    //     setSelectedProductsData((prevData) => {
-    //         const isSelected = prevData.some(item => item.id === product.id);
-    //         if (isSelected) {
-    //             return prevData.filter(item => item.id !== product.id);
-    //         } else {
-    //             return [...prevData, { ...product, rate_price: '' }];
-    //         }
-    //     });
-    // };
+    const handleProductSelection = (product) => {
+        setSelectedProductsData((prevData) => {
+            const isSelected = prevData.some(item => item.id === product.id);
+            if (isSelected) {
+                return prevData.filter(item => item.id !== product.id);
+            } else {
+                return [...prevData, { ...product, rate_price: '' }];
+            }
+        });
+    };
 
     const resourceName = {
         singular: 'order',
@@ -1498,13 +1499,13 @@ function Rate(props) {
                 </Text>
             </IndexTable.Cell>
             <IndexTable.Cell>
-                {/* <TextField
+                <TextField
                         type="text"
                         prefix={shop_currency}
                         placeholder='0.00'
                         value={selectedProductsData.find(product => product.id === id)?.rate_price || ''}
                         onChange={(value) => handleRatePriceChange(value, id)}
-                    /> */}
+                    />
             </IndexTable.Cell>
         </IndexTable.Row>
     ));

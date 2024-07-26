@@ -2975,7 +2975,7 @@ function Rate(props) {
                         <div style={{ alignItems: "center" }}>
                             <LegacyCard sectioned>
                                 {rateModifiers.map((modifier, index) => (
-                                      <div style={{ marginBottom: "3%" }}  key={`modifyKey-${modifier.id}`} >
+                                     <div style={{ marginBottom: "3%" }}  key={`modifyKey-${modifier.id}`} >
                                         <Box  id={`modify-${modifier.id}`} borderColor="border" borderWidth="025" borderRadius="200">
                                             <div style={{ padding: '10px' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>

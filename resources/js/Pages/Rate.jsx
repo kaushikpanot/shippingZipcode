@@ -3043,7 +3043,7 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'name')}
                                                                     autoComplete="off"
                                                                     placeholder="Rate Modifier Name"
-                                                                    error={errors[`name${index}`]}
+                                                                    error={errors[`name${modifier.id}`]}
                                                                 />
                                                                 <TextField
                                                                     type="text"

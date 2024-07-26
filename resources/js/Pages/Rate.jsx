@@ -199,8 +199,8 @@ function Rate(props) {
     const rateModifiersOptions = [
         { label: ' Order', value: '', disabled: true, className: 'select-header' },
         { label: 'Day of Order is', value: 'dayOfOrder', mainlabel: "Order" },
-        { label: 'Time', value: 'time', mainlabel: "Order" },
-        { label: 'Price', value: 'price', mainlabel: "Order" },
+        { label: 'Time', value: 'times', mainlabel: "Order" },
+        { label: 'Price', value: 'prices', mainlabel: "Order" },
         { label: 'Weight', value: 'weight', mainlabel: "Order" },
         { label: 'Quantity', value: 'quantity', mainlabel: "Order" },
         { label: 'Distance', value: 'distance', mainlabel: "Order" },
@@ -218,7 +218,7 @@ function Rate(props) {
         { label: 'Any Product', value: '', disabled: true, className: 'select-header' },
         { label: 'Available Quantity ', value: 'availableQuan', mainlabel: "any_Product" },
         { label: 'IDs', value: 'ids', mainlabel: "any_Product" },
-        { label: 'Title', value: 'time2', mainlabel: "any_Product" },
+        { label: 'Title', value: 'title', mainlabel: "any_Product" },
         { label: 'Tag', value: 'tag', mainlabel: "any_Product" },
         { label: 'Type', value: 'type2', mainlabel: "any_Product" },
         { label: 'SKU', value: 'sku', mainlabel: "any_Product" },
@@ -1405,7 +1405,8 @@ function Rate(props) {
     const handleSearchClick = () => {
         setShowTable(true);
     };
-    const {selectedResources,  allResourcesSelected, handleSelectionChange   } = useIndexResourceState(filteredProducts);
+
+    const {selectedResources,  allResourcesSelected, handleSelectionChange  } = useIndexResourceState(filteredProducts);
 
     useEffect(() => {
         const productIds = selectedResources
@@ -1437,8 +1438,8 @@ function Rate(props) {
 
     const productData = filteredProducts.map(({ id, title, image }, index) => (
         <IndexTable.Row
-            id={id}
-            key={id}
+        id={`${id}-${index}`} // Combine id with index to ensure uniqueness
+        key={`${id}-${index}`} // Combine id with index for unique key
             selected={selectedResources.includes(id)}
             position={index}
         >
@@ -1462,8 +1463,9 @@ function Rate(props) {
 
     const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
         <IndexTable.Row
-            id={id}
-            key={id}
+        id={`${id}-${index}`} // Combine id with index to ensure uniqueness
+        key={`${id}-${index}`} // Combine id with index for unique key
+
             selected={selectedResources.includes(id)}
             position={index}
             onClick={() => handleProductSelection({
@@ -2973,8 +2975,8 @@ function Rate(props) {
                         <div style={{ alignItems: "center" }}>
                             <LegacyCard sectioned>
                                 {rateModifiers.map((modifier, index) => (
-                                    <div style={{ marginBottom: "3%" }}>
-                                        <Box key={index} borderColor="border" borderWidth="025" borderRadius="200">
+                                      <div style={{ marginBottom: "3%" }}  key={`modifyKey-${modifier.id}`} >
+                                        <Box  id={`modify-${modifier.id}`} borderColor="border" borderWidth="025" borderRadius="200">
                                             <div style={{ padding: '10px' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                     <Button
@@ -3026,7 +3028,6 @@ function Rate(props) {
                                                         <Divider borderColor="border" />
                                                     </div>
                                                     <div
-                                                        key={modifier.id}
                                                         style={{
                                                             display: 'flex',
                                                             alignItems: 'center',
@@ -3076,7 +3077,7 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
                                                                 />
                                                             )}
-                                                            {(modifier.rateModifier === 'price' || modifier.rateModifier === 'time' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'calculateRate') && (
+                                                            {(modifier.rateModifier === 'prices' || modifier.rateModifier === 'times' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'calculateRate') && (
                                                                 <Select
                                                                     label="Select Operator"
                                                                     options={rateTimeOptions}
@@ -3108,7 +3109,7 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
                                                                 />
                                                             )}
-                                                            {(modifier.rateModifier === 'time2' || modifier.rateModifier === 'address') && (
+                                                            {(modifier.rateModifier === 'title' || modifier.rateModifier === 'address') && (
                                                                 <Select
                                                                     label="Select Operator"
                                                                     options={address}
@@ -3143,7 +3144,7 @@ function Rate(props) {
                                                                 onChange={handleRateModifierChange(modifier.id, 'rateDay')}
                                                             />
                                                         )}
-                                                        {modifier.rateModifier === 'time' && (
+                                                        {modifier.rateModifier === 'times' && (
                                                             <Select
                                                                 options={time}
                                                                 value={modifier.rateDay}
@@ -3167,7 +3168,7 @@ function Rate(props) {
                                                                 helpText='add product ids with comma(,) separator'
                                                             />
                                                         )}
-                                                        {(modifier.rateModifier === 'price' || modifier.rateModifier === 'calculateRate' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
+                                                        {(modifier.rateModifier === 'prices' || modifier.rateModifier === 'calculateRate' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
                                                             <TextField
                                                                 type="number"
                                                                 value={modifier.rateDay}
@@ -3175,7 +3176,7 @@ function Rate(props) {
                                                                 autoComplete="off"
 
                                                                 placeholder={
-                                                                    modifier.rateModifier === 'price' ? "Price" :
+                                                                    modifier.rateModifier === 'prices' ? "Price" :
                                                                         modifier.rateModifier === 'weight' ? "Weight" :
                                                                             modifier.rateModifier === 'quantity' ? "Quantity" :
                                                                                 modifier.rateModifier === 'distance' ? "Distance" :
@@ -3203,7 +3204,7 @@ function Rate(props) {
                                                                 onChange={handleRateModifierChange(modifier.id, 'rateDay')}
                                                             />
                                                         )}
-                                                        {(modifier.rateModifier === 'time2' || modifier.rateModifier === 'thirdParty' || modifier.rateModifier === 'tag2' || modifier.rateModifier === 'address' || modifier.rateModifier === 'provinceCode' || modifier.rateModifier === 'city' || modifier.rateModifier === 'tag' || modifier.rateModifier === 'sku' || modifier.rateModifier === 'type2' || modifier.rateModifier === 'properties' || modifier.rateModifier === 'vendor' || modifier.rateModifier === 'collectionsIds' || modifier.rateModifier === 'zipcode' || modifier.rateModifier === 'name') && (
+                                                        {(modifier.rateModifier === 'title' || modifier.rateModifier === 'thirdParty' || modifier.rateModifier === 'tag2' || modifier.rateModifier === 'address' || modifier.rateModifier === 'provinceCode' || modifier.rateModifier === 'city' || modifier.rateModifier === 'tag' || modifier.rateModifier === 'sku' || modifier.rateModifier === 'type2' || modifier.rateModifier === 'properties' || modifier.rateModifier === 'vendor' || modifier.rateModifier === 'collectionsIds' || modifier.rateModifier === 'zipcode' || modifier.rateModifier === 'name') && (
                                                             <TextField
                                                                 type="text"
                                                                 value={modifier.rateDay}
@@ -3211,7 +3212,7 @@ function Rate(props) {
                                                                 autoComplete="off"
                                                                 multiline={4}
                                                                 placeholder={
-                                                                    modifier.rateModifier === 'time2' ? "Title" :
+                                                                    modifier.rateModifier === 'title' ? "Title" :
                                                                         modifier.rateModifier === 'tag' ? "Tag1,Tag2" :
                                                                             modifier.rateModifier === 'sku' ? "sku1,sku2" :
                                                                                 modifier.rateModifier === 'type2' ? "type1,type2" :
@@ -3227,7 +3228,7 @@ function Rate(props) {
                                                                                                                         "6557955412548511244"
                                                                 }
                                                                 helpText={
-                                                                    modifier.rateModifier === 'time2' ? "contains exact match product title with comma(,) seprator" :
+                                                                    modifier.rateModifier === 'title' ? "contains exact match product title with comma(,) seprator" :
                                                                         modifier.rateModifier === 'tag' ? "add exact product tag with comma(,) separator" :
                                                                             modifier.rateModifier === 'sku' ? "add exact product sku with comma(,) separator" :
                                                                                 modifier.rateModifier === 'type2' ? "add exact product type with comma(,) separator" :
@@ -3270,7 +3271,7 @@ function Rate(props) {
                                                                             onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
                                                                         />
                                                                     )}
-                                                                    {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'time' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'calculateRate') && (
+                                                                    {(modifier.rateModifier2 === 'prices' || modifier.rateModifier2 === 'times' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'calculateRate') && (
                                                                         <Select
                                                                             label="Select Operator"
                                                                             options={rateTimeOptions}
@@ -3302,7 +3303,7 @@ function Rate(props) {
                                                                             onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
                                                                         />
                                                                     )}
-                                                                    {(modifier.rateModifier2 === 'time2' || modifier.rateModifier2 === 'address') && (
+                                                                    {(modifier.rateModifier2 === 'title' || modifier.rateModifier2 === 'address') && (
                                                                         <Select
                                                                             label="Select Operator"
                                                                             options={address}
@@ -3337,7 +3338,7 @@ function Rate(props) {
                                                                         onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                     />
                                                                 )}
-                                                                {modifier.rateModifier2 === 'time' && (
+                                                                {modifier.rateModifier2 === 'times' && (
                                                                     <Select
                                                                         options={time}
                                                                         value={modifier.rateDay2}
@@ -3361,7 +3362,7 @@ function Rate(props) {
                                                                         helpText='add product ids with comma(,) separator'
                                                                     />
                                                                 )}
-                                                                {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (
+                                                                {(modifier.rateModifier2 === 'prices' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (
                                                                     <TextField
                                                                         type="number"
                                                                         value={modifier.rateDay2}
@@ -3369,7 +3370,7 @@ function Rate(props) {
                                                                         autoComplete="off"
 
                                                                         placeholder={
-                                                                            modifier.rateModifier2 === 'price' ? "Price" :
+                                                                            modifier.rateModifier2 === 'prices' ? "Price" :
                                                                                 modifier.rateModifier2 === 'weight' ? "Weight" :
                                                                                     modifier.rateModifier2 === 'quantity' ? "Quantity" :
                                                                                         modifier.rateModifier2 === 'distance' ? "Distance" :
@@ -3397,7 +3398,7 @@ function Rate(props) {
                                                                         onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                     />
                                                                 )}
-                                                                {(modifier.rateModifier2 === 'time2' || modifier.rateModifier2 === 'thirdParty' || modifier.rateModifier2 === 'tag2' || modifier.rateModifier2 === 'address' || modifier.rateModifier2 === 'provinceCode' || modifier.rateModifier2 === 'city' || modifier.rateModifier2 === 'tag' || modifier.rateModifier2 === 'sku' || modifier.rateModifier2 === 'type2' || modifier.rateModifier2 === 'properties' || modifier.rateModifier2 === 'vendor' || modifier.rateModifier2 === 'collectionsIds' || modifier.rateModifier2 === 'zipcode' || modifier.rateModifier2 === 'name') && (
+                                                                {(modifier.rateModifier2 === 'title' || modifier.rateModifier2 === 'thirdParty' || modifier.rateModifier2 === 'tag2' || modifier.rateModifier2 === 'address' || modifier.rateModifier2 === 'provinceCode' || modifier.rateModifier2 === 'city' || modifier.rateModifier2 === 'tag' || modifier.rateModifier2 === 'sku' || modifier.rateModifier2 === 'type2' || modifier.rateModifier2 === 'properties' || modifier.rateModifier2 === 'vendor' || modifier.rateModifier2 === 'collectionsIds' || modifier.rateModifier2 === 'zipcode' || modifier.rateModifier2 === 'name') && (
                                                                     <TextField
                                                                         type="text"
                                                                         value={modifier.rateDay2}
@@ -3405,7 +3406,7 @@ function Rate(props) {
                                                                         autoComplete="off"
                                                                         multiline={4}
                                                                         placeholder={
-                                                                            modifier.rateModifier2 === 'time2' ? "Title" :
+                                                                            modifier.rateModifier2 === 'title' ? "Title" :
                                                                                 modifier.rateModifier2 === 'tag' ? "Tag1,Tag2" :
                                                                                     modifier.rateModifier2 === 'sku' ? "sku1,sku2" :
                                                                                         modifier.rateModifier2 === 'type2' ? "type1,type2" :
@@ -3421,7 +3422,7 @@ function Rate(props) {
                                                                                                                                 "6557955412548511244"
                                                                         }
                                                                         helpText={
-                                                                            modifier.rateModifier2 === 'time2' ? "contains exact match product title with comma(,) seprator" :
+                                                                            modifier.rateModifier2 === 'title' ? "contains exact match product title with comma(,) seprator" :
                                                                                 modifier.rateModifier2 === 'tag' ? "add exact product tag with comma(,) separator" :
                                                                                     modifier.rateModifier2 === 'sku' ? "add exact product sku with comma(,) separator" :
                                                                                         modifier.rateModifier2 === 'type2' ? "add exact product type with comma(,) separator" :
@@ -3972,6 +3973,7 @@ function Rate(props) {
                             </div>
                             <div style={{ marginTop: '4%', height: '400px', overflowY: 'scroll' }}>
                                 <IndexTable
+                                
                                     resourceName={resourceName}
                                     itemCount={filteredProducts.length}
                                     selectedItemsCount={allResourcesSelected ? 'All' : selectedResources.length}

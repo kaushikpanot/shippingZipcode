@@ -81,7 +81,6 @@ function Rate(props) {
             setDate([]);
         }
     };
-
     const [checkedState, setCheckedState] = useState({
         checked1: false,
         checked2: true,
@@ -125,7 +124,6 @@ function Rate(props) {
     const handleDateChange = (key, value) => {
         setDate(prevDates => {
             const updatedDates = { ...prevDates, [key]: value };
-
             if (key === 'endDate' && new Date(value) < new Date(updatedDates.startDate)) {
                 updatedDates.error = 'End date cannot be before start date.';
             } else if (key === 'startDate' && new Date(updatedDates.endDate) < new Date(value)) {
@@ -133,7 +131,6 @@ function Rate(props) {
             } else {
                 updatedDates.error = '';
             }
-
             return updatedDates;
         });
     };
@@ -142,13 +139,11 @@ function Rate(props) {
     const [tiers, setTiers] = useState([
         { minWeight: '', maxWeight: '', basePrice: '', perItem: '', percentCharge: '', perkg: '' }
     ]);
-
     const handleInputChange = (index, field, value) => {
         const newTiers = [...tiers];
         newTiers[index][field] = value;
         setTiers(newTiers);
     };
-
     const addTier = () => {
         setTiers([...tiers, { minWeight: '', maxWeight: '', basePrice: '' }]);
     };
@@ -156,7 +151,6 @@ function Rate(props) {
         const newTiers = tiers.filter((_, i) => i !== index);
         setTiers(newTiers);
     };
-
     const handleTierSelectChange = (value) => {
         setSelectedTierType(value);
         if (value === 'selected') {
@@ -171,14 +165,12 @@ function Rate(props) {
         { label: 'Order Quantity', value: 'order_quantity' },
         { label: 'Order Distance', value: 'order_distance' }
     ];
-
     const [selectedRate, setSelectedRate] = useState('selected');
     const handleRateSelectChange = (value) => {
         setSelectedRate(value);
         if (value === 'selected') {
             SetExclude_Rate([]);
         }
-
     };
     const rateOptions = [
         { label: 'Set Exclude Products Option', value: 'selected' },
@@ -189,10 +181,7 @@ function Rate(props) {
         { label: 'Product Type', value: 'product_type' },
         { label: 'Product Properties', value: 'product_properties' }
     ];
-
-
     const [rateModifiers, setRateModifiers] = useState([]);
-
     const rateModifiersOptions = [
         { label: ' Order', value: '', disabled: true, className: 'select-header' },
         { label: 'Day of Order is', value: 'dayOfOrder', mainlabel: "Order" },
@@ -236,7 +225,6 @@ function Rate(props) {
         { label: 'Third Party Service', value: 'thirdParty', mainlabel: "Rate" },
     ];
     const [open, setOpen] = useState({});
-
     const handleToggle = (id) => () => {
         setOpen((prevState) => ({
             ...prevState,
@@ -256,7 +244,6 @@ function Rate(props) {
         const newId = rateModifiers.length ? rateModifiers[rateModifiers.length - 1].id + 1 : 1;
         const defaultRateModifier = 'dayOfOrder';
         const defaultOption = rateModifiersOptions.find(option => option.value === defaultRateModifier);
-
         setRateModifiers((prevModifiers) => [
             ...prevModifiers,
             {
@@ -324,7 +311,6 @@ function Rate(props) {
         { label: 'Select First Available Day', value: 'firstDay' },
         { label: 'True', value: 'true' },
         { label: 'False', value: 'false' },
-
     ];
     const ratesku = [
         { label: 'Equal', value: 'equal' },
@@ -343,10 +329,8 @@ function Rate(props) {
         { label: 'Less then or Equal', value: 'lthenoequal' },
         { label: 'Greater then or Equal', value: 'gthenoequal' },
     ];
-
     const rateAvailableOptions = [
         { label: 'Equal', value: 'equal' },
-
     ];
     const rateQuantityOptions = [
         { label: 'Equal', value: 'equal' },
@@ -356,7 +340,6 @@ function Rate(props) {
         { label: 'Is modular 0', value: 'modular0' },
         { label: 'Is not modular 0', value: 'modularnot0' },
     ];
-
     const rateDayOptions = [
         { label: 'Select Day Of Order', value: 'selected' },
         { label: 'Sunday', value: 'Sunday' },
@@ -367,9 +350,7 @@ function Rate(props) {
         { label: 'Friday', value: 'Friday' },
         { label: 'Saturday', value: 'Saturday' },
     ];
-
     let app = "";
-
 
     const handleChange = useCallback((value) => {
         setZipcodeValue(value);
@@ -384,14 +365,11 @@ function Rate(props) {
                 }
             });
             console.log(response.data);
-
-
             const allStates = response.data.states;
             const formattedOptions = [];
             for (const country in allStates) {
                 if (allStates.hasOwnProperty(country)) {
                     const countryData = allStates[country];
-
                     const stateOptions = countryData.map(state => ({
                         value: state.code,
                         label: `${state.name} (${state.code})`
@@ -402,14 +380,12 @@ function Rate(props) {
                     });
                 }
             }
-
             setOptions(formattedOptions);
             setState(formattedOptions.map(section => section.options).flat());
             if (response.data.rate.zipcode) {
                 const zipCodes = response.data.rate.zipcode.zipcode?.map(zip => zip.toString()) || [];
                 const combinedZipCodes = zipCodes.join(',');
                 setZipcodeValue(combinedZipCodes);
-
                 setCheckState(prevState => ({
                     ...prevState,
                     selectedZipCondition: response.data.rate.zipcode.zipcodeSelection,
@@ -417,17 +393,14 @@ function Rate(props) {
                     selectedZipCode: response.data.rate.zipcode.isInclude,
                 }));
             }
-
             if (response.data.rate.zipcode.state) {
                 const fetchedSelectedOptions = response.data.rate.zipcode.state.map(state => state.code);
                 setSelectedOptions(fetchedSelectedOptions);
             }
-
-
             if (response.data.rate.exclude_rate_for_products) {
                 setSelectedRate(response.data.rate.exclude_rate_for_products.set_exclude_products);
                 SetExclude_Rate(response.data.rate.exclude_rate_for_products);
-            }
+            } 
             if (response.data.rate.rate_modifiers) {
                 setRateModifiers(response.data.rate.rate_modifiers);
             }
@@ -445,7 +418,6 @@ function Rate(props) {
                     Shipping: condition.name === 'type2' && condition.value.includes('Shipping'),
                 }));
                 setDeliveryType(initialDeliveryType);
-
                 const initialDeliveryday = cartCondition.map(condition => ({
                     id: condition.id,
                     Sunday: (condition.name === 'dayOfWeek' || condition.name === 'day') && condition.value.includes('Sunday'),
@@ -458,7 +430,6 @@ function Rate(props) {
                 }));
                 setDayOfWeekSelection(initialDeliveryday);
             }
-
             if (response.data.rate.send_another_rate) {
                 setCheckState(prevState => ({
                     ...prevState,
@@ -471,7 +442,6 @@ function Rate(props) {
                 }));
                 setsend_another_rate(response.data.rate.send_another_rate);
             }
-
             if (response.data.rate.rate_based_on_surcharge) {
                 setCheckState(prevState => ({
                     ...prevState,
@@ -494,12 +464,10 @@ function Rate(props) {
                     cart_total_percentage: surchargeData.cart_total_percentage || '',
                 });
             }
-
             if (response.data.rate.rate_tier) {
                 setSelectedTierType(response.data.rate.rate_tier.tier_type);
                 setTiers(response.data.rate.rate_tier.rateTier);
             }
-
             setFormData({
                 name: response.data.rate.name,
                 base_price: response.data.rate.base_price,
@@ -510,7 +478,6 @@ function Rate(props) {
                 status: response.data.rate.status,
                 merge_rate_tag: response.data.rate.merge_rate_tag
             });
-
             if (response.data.rate.scheduleRate) {
                 setDate(prevState => ({
                     ...prevState,
@@ -522,8 +489,6 @@ function Rate(props) {
                     selectedByschedule: response.data.rate.scheduleRate.schedule_rate,
                 }));
             }
-
-
             if (response.data.rate.origin_locations) {
                 setCheckedState(prevState => ({
                     ...prevState,
@@ -538,17 +503,14 @@ function Rate(props) {
                 }, {});
                 setCheckedlocation(initialCheckedState);
             }
-
         } catch (error) {
             console.error("Error fetching edit data:", error);
         }
     };
 
-
     const getLocation = async () => {
         try {
             const token = await getSessionToken(app);
-
             const response = await axios.get(`${apiCommonURL}/api/shop/location`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -565,7 +527,6 @@ function Rate(props) {
         }
     };
     const [checkedlocation, setCheckedlocation] = useState({});
-
     const handleLocationChange = (location) => {
         setCheckedlocation(prevState => {
             const isChecked = prevState[location.name]?.checked;
@@ -613,7 +574,6 @@ function Rate(props) {
     const getstate = async () => {
         try {
             const token = await getSessionToken(app);
-
             const response = await axios.get(`${apiCommonURL}/api/rate/${zone_id}/create`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -626,12 +586,10 @@ function Rate(props) {
             for (const country in allStates) {
                 if (allStates.hasOwnProperty(country)) {
                     const countryData = allStates[country];
-
                     const stateOptions = countryData.map(state => ({
                         value: state.code,
                         label: state.nameCode
                     }));
-
                     formattedOptions.push({
                         title: country,
                         options: stateOptions
@@ -791,7 +749,6 @@ function Rate(props) {
         local: false,
         Store: false,
         Shipping: false,
-
     }]);
 
     const [dayOfWeekSelection, setDayOfWeekSelection] = useState([{
@@ -806,7 +763,6 @@ function Rate(props) {
     }]);
 
     const [items, setItems] = useState([]);
-
     const handleItemDateChange = (index, key, value) => {
         setItems(prevItems => {
             const updatedItems = [...prevItems];
@@ -939,15 +895,10 @@ function Rate(props) {
                 tag: '',
                 per_product: 'any',
             };
-
-            // Log the updated items to verify keys
             const updatedItems = [...prevItems, newItem];
-
-
             return updatedItems;
         });
     };
-
 
     const handleConditionsChange = useCallback((index, field) => (value) => {
         setItems((prevState) => {
@@ -962,7 +913,6 @@ function Rate(props) {
 
     const handleSelectChange = (index, newValue, isSecondSelect) => {
         const selectedOption = validations.find(option => option.value === newValue) || {};
-
         if (newValue === 'type2') {
             setDeliveryType(prevState => {
                 const updatedItems = [...prevState];
@@ -991,7 +941,6 @@ function Rate(props) {
                 return updatedItems;
             });
         }
-
         const updatedItem = {
             ...items[index],
             condition: isSecondSelect ? newValue : items[index].condition,
@@ -1001,13 +950,11 @@ function Rate(props) {
             value: isSecondSelect ? items[index].value : '',
             value2: isSecondSelect ? items[index].value : '',
         };
-
         const updatedItems = [...items];
         updatedItems[index] = updatedItem;
-        console.log(updatedItems.map(item => item.id || item.name)); // Verify keys here
+        console.log(updatedItems.map(item => item.id || item.name)); 
         setItems(updatedItems);
     };
-
 
     const handleConditionChange = useCallback(
         (newValue, index, key) => {
@@ -1032,15 +979,14 @@ function Rate(props) {
         navigate(`/Zone/${zone_id}`);
     };
 
-
     useEffect(() => {
         app = createApp({
             apiKey: SHOPIFY_API_KEY,
             host: props.host,
         });
-
-        editRate();
-
+        if (formData.id) {
+            editRate();
+        }
         getLocation();
         getstate();
         fetchProducts()
@@ -1059,7 +1005,6 @@ function Rate(props) {
         descriptions: '',
         rate_price: '',
         productData: []
-
     })
 
     const [send_another_rate, setsend_another_rate] = useState({
@@ -1092,7 +1037,6 @@ function Rate(props) {
                 name: location.name,
                 address: location.address1 || '-'
             }));
-
         setFormData(prevState => ({
             ...prevState,
             origin_locations: {
@@ -1150,7 +1094,6 @@ function Rate(props) {
             selectedByAmount: checkstate.selectedByAmount,
             selectedMultiplyLine: checkstate.selectedMultiplyLine,
             rate_based_on_surcharge,
-
         },
         rate_modifiers: rateModifiers,
         exclude_rate_for_products: exclude_Rate,
@@ -1168,7 +1111,6 @@ function Rate(props) {
             ...prevState,
             [field]: value,
         }));
-
         SetExclude_Rate((prevState) => ({
             ...prevState,
             [field]: value,
@@ -1177,20 +1119,17 @@ function Rate(props) {
             ...prevState,
             [field]: value,
         }));
-
         setErrors((prevErrors) => ({
             ...prevErrors,
             [field]: '',
         }));
     };
 
-
     useEffect(() => {
         const selectedStates = selectedOptions.map(option => ({
             name: state.find(state => state.value === option)?.label || '',
             code: option
         }));
-
         setFormData(prevFormData => ({
             ...prevFormData,
             id: id,
@@ -1229,10 +1168,7 @@ function Rate(props) {
                 product_title: rate_based_on_surcharge?.product_title || '',
                 collecion_id: rate_based_on_surcharge?.collecion_id || '',
                 product_type: rate_based_on_surcharge?.product_type || '',
-    product_vendor: rate_based_on_surcharge?.product_vendor || ''
-
-
-
+                product_vendor: rate_based_on_surcharge?.product_vendor || ''
             },
             rate_tier: {
                 ...prevFormData.rate_tier,
@@ -1254,7 +1190,6 @@ function Rate(props) {
         checkedState.checked3, checkstate.selectedByUpdatePriceType,
         checkstate.selectedByUpdatePriceEffect
     ]);
-
 
     const removeEmptyFields = (obj) => {
         return Object.entries(obj)
@@ -1283,15 +1218,12 @@ function Rate(props) {
                 newErrors.adjustment_price = 'Adjustment Price is required';
             }
         }
-
-
         if (checkstate.selectedStateCondition !== 'All' && selectedOptions.length === 0) {
             newErrors.selectedOptions = 'Please select at least one country.';
         }
         if (checkstate.selectedZipCondition !== 'All' && !zipcodeValue) {
             newErrors.zipcodeValue = 'The zipcodes field is required.';
         }
-
         if (
             (selectedRate === 'product_vendor' ||
                 selectedRate === 'product_sku' ||
@@ -1301,7 +1233,6 @@ function Rate(props) {
         ) {
             newErrors.exclude_products_textbox = 'Exclude products field is required';
         }
-
         if (selectedTierType !== 'selected') {
             tiers.forEach((tier, index) => {
                 if (!tier.minWeight)
@@ -1320,15 +1251,12 @@ function Rate(props) {
                     newErrors[`adjustment${index}`] = `Adjustment for Modifier ${index + 1} is required`;
             });
         }
-
         if (items.length > 0) {
             items.forEach((item, index) => {
                 if (!item.value)
                     newErrors[`value${index}`] = 'Value is required.';
             });
         }
-
-
         if (checkedState.checked1) {
             if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
                 if (!rate_based_on_surcharge.charge_per_wight) {
@@ -1345,7 +1273,6 @@ function Rate(props) {
 
             }
         }
-
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             setToastContent('Sorry. Couldn’t be saved. Please try again.');
@@ -1359,22 +1286,17 @@ function Rate(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
-
             const cleanFormData = removeEmptyFields(formData);
-
             console.log(cleanFormData)
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, cleanFormData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
-
             setFormData(prevFormData => ({
                 ...prevFormData,
                 id: response.data.id,
             }))
-
-
             setErrors({});
             setToastContent('Rate saved successfully');
             setShowToast(true);
@@ -1440,9 +1362,7 @@ function Rate(props) {
                 return product ? product.id : '';
             })
             .filter(id => id);
-
         const currentProductData = productIds.join(', ');
-
         setRateModifiers(prevModifiers => {
             return prevModifiers.map(modifier =>
                 modifier.id in open ? {
@@ -1451,7 +1371,6 @@ function Rate(props) {
                 } : modifier
             );
         });
-
         SetExclude_Rate(prevState => ({
             ...prevState,
             productData: currentProductData,
@@ -1463,8 +1382,8 @@ function Rate(props) {
 
     const productData = filteredProducts.map(({ id, title, image }, index) => (
         <IndexTable.Row
-            id={`${id}-${index}`} // Combine id with index to ensure uniqueness
-            key={`${id}-${index}`} // Combine id with index for unique key
+            id={`${id}-${index}`}
+            key={`${id}-${index}`}
             selected={selectedResources.includes(id)}
             position={index}
         >
@@ -1485,11 +1404,10 @@ function Rate(props) {
         </IndexTable.Row>
     ));
 
-
     const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
         <IndexTable.Row
-            id={`${id}-${index}`} // Combine id with index to ensure uniqueness
-            key={`${id}-${index}`} // Combine id with index for unique key
+            id={`${id}-${index}`}
+            key={`${id}-${index}`}
 
             selected={selectedResources.includes(id)}
             position={index}
@@ -1533,8 +1451,6 @@ function Rate(props) {
             </IndexTable.Cell>
         </IndexTable.Row>
     ));
-
-
 
     if (loading) {
         return (
@@ -1609,6 +1525,9 @@ function Rate(props) {
                                     <List.Item>
                                         Specify which rates should apply in this zone
                                     </List.Item>
+                                    {/* <List.Item>
+                                       <a href='https://www.youtube.com/embed/43ER3QBDFow' style={{color:"#ff8930"}}>Watch Video Guide</a> 
+                                    </List.Item> */}
                                 </List>
                             </div>
                         </div>
@@ -1671,7 +1590,7 @@ function Rate(props) {
                 </Layout>
             </div>
 
-            {/* <Divider borderColor="border" />
+            <Divider borderColor="border" />
             <div style={{ marginTop: '2%', marginBottom: '2%' }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
@@ -2006,7 +1925,7 @@ function Rate(props) {
                         </LegacyCard>
                     </Grid.Cell>
                 </Grid>
-            </div> */}
+            </div>
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%", }}>
@@ -2023,6 +1942,9 @@ function Rate(props) {
                                     </List.Item>
                                     <List.Item>
                                         If you want to exclude the specific Zipcode from that state then you can use exclude ZipCode on Allow Zipcode settings.
+                                    </List.Item>
+                                    <List.Item>
+                                        To format zipcodes/pincodes correctly and remove unnecessary blank space,  <a href="https://sbz.cirkleinc.com/zipcode-formatter.php" target="_blank" style={{ textDecoration: "none", color: "#1e87f0" }}>Click here.</a>
                                     </List.Item>
                                 </List>
                             </div>
@@ -2980,12 +2902,7 @@ function Rate(props) {
                         </LegacyCard>
                     </Grid.Cell>
                 </Grid>
-
             </div>
-
-
-
-
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
@@ -3007,8 +2924,8 @@ function Rate(props) {
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <div style={{ alignItems: "center" }}>
                             <LegacyCard sectioned>
-                                {rateModifiers.map((modifier) => (
-                                    <div style={{ marginBottom: "3%" }} key={`modifyKey-${modifier.id}`}>
+                                {rateModifiers.map((modifier, index) => (
+                                    <div style={{ marginBottom: "3%" }} key={`modifyKey-${modifier.id}-${index}`}>
                                         <Box id={`modify-${modifier.id}`} borderColor="border" borderWidth="025" borderRadius="200">
                                             <div style={{ padding: '10px' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -3278,8 +3195,6 @@ function Rate(props) {
                                                             />
                                                         )}
                                                     </div>
-
-
                                                     {(modifier.type === 'AND' || modifier.type === 'OR') && (
                                                         <div style={{ marginTop: '5%' }}>
                                                             <div style={{ float: 'left', width: '45%', marginTop: "0.5%" }}><hr /></div>
@@ -3551,7 +3466,6 @@ function Rate(props) {
                                                             onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('ShowOnly')}
                                                         />
                                                     </div>
-
                                                     {modifier.modifierType !== 'Static' && modifier.modifierType !== 'RemoveRate' && modifier.modifierType !== 'ShowOnly' && (
                                                         <div>
                                                             <Divider borderColor="border" />
@@ -3591,7 +3505,7 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'adjustment')}
                                                                     autoComplete="off"
                                                                     placeholder="00"
-                                                                    error={errors[`adjustment${index}`]}
+                                                                    error={errors[`adjustment${modifier.id}`]}
                                                                 />
 
                                                             </div>
@@ -3664,10 +3578,7 @@ function Rate(props) {
                         </LegacyCard>
                     </Grid.Cell>
                 </Grid>
-
             </div>
-
-
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>

@@ -3528,7 +3528,7 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'adjustment')}
                                                                     autoComplete="off"
                                                                     placeholder="00"
-                                                                    error={errors[`adjustment${index}`]}
+                                                                    error={errors[`adjustment${modifier.id}`]}
                                                                 />
                                                             </FormLayout>
                                                         </div>

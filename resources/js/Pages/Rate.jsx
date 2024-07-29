@@ -400,7 +400,7 @@ function Rate(props) {
             if (response.data.rate.exclude_rate_for_products) {
                 setSelectedRate(response.data.rate.exclude_rate_for_products.set_exclude_products);
                 SetExclude_Rate(response.data.rate.exclude_rate_for_products);
-            } 
+            }
             if (response.data.rate.rate_modifiers) {
                 setRateModifiers(response.data.rate.rate_modifiers);
             }
@@ -952,7 +952,7 @@ function Rate(props) {
         };
         const updatedItems = [...items];
         updatedItems[index] = updatedItem;
-        console.log(updatedItems.map(item => item.id || item.name)); 
+        console.log(updatedItems.map(item => item.id || item.name));
         setItems(updatedItems);
     };
 
@@ -984,9 +984,7 @@ function Rate(props) {
             apiKey: SHOPIFY_API_KEY,
             host: props.host,
         });
-        if (formData.id) {
-            editRate();
-        }
+        editRate();
         getLocation();
         getstate();
         fetchProducts()

@@ -24,8 +24,8 @@ return new class extends Migration
             $table->tinyInteger('price_calculation_type')->comment("0=SUM, 1=AVERAGE, 2=LOWEST, 3=HIGHEST, 4=MULTIPLY of the values");
             $table->text('tags_to_combine');
             $table->text('tags_to_exclude')->nullable()->comment('Tags To Exclude from Rate Calculation');
-            $table->decimal('min_shipping_rate', 8,2)->default('0.00');
-            $table->decimal('mix_shipping_rate')->default('0.00');
+            $table->decimal('min_shipping_rate', 8, 2)->default(0.00);
+            $table->decimal('mix_shipping_rate', 8, 2)->default(0.00);
             $table->boolean('status')->comment('1=enabled, 0=disabled')->default(1);
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();

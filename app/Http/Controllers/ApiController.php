@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\DistanceHelper;
+use App\Models\MixMergeRate;
 use App\Models\Rate;
 use App\Models\RateZipcode;
 use App\Models\Setting;
@@ -755,7 +756,6 @@ class ApiController extends Controller
         return false;
     }
 
-
     private function checkStartsWith($totalQuantity, $value)
     {
         // Case 1: Both value and totalQuantity are not arrays
@@ -941,6 +941,7 @@ class ApiController extends Controller
 
         $setting = Setting::where('user_id', $userId)->first();
         $response = [];
+        $mixMergeRate = MixMergeRate::where('user_id', $userId)->get();
 
         if (!empty($setting) && !$setting->status) {
             return response()->json($response);
@@ -952,7 +953,7 @@ class ApiController extends Controller
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode')->get();
 
-        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPriceFormatted, $totalPrice, $distance, $userData, $setting) {
+        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPriceFormatted, $totalPrice, $distance, $userData) {
             $zipcode = optional($rate->zipcode);
             // Check cart conditions
             $conditionsMet = false;
@@ -1947,8 +1948,28 @@ class ApiController extends Controller
                 }
             }
 
+            // dump(MixMergeRate::whereRaw("FIND_IN_SET(?, tags_to_combine)", [$rate->merge_rate_tag])->get());
+
             return $rate;
         })->filter();
+
+        $matches = [];
+
+        // foreach ($mixMergeRate as $mixRate) {
+        //     $combineTag = explode(',', $mixRate->tags_to_combine);
+        //     foreach ($filteredRates as $filteredRate) {
+        //         $ratemergetag = explode(',', $filteredRate->merge_rate_tag);
+        //         dd($ratemergetag);
+        //         $commonSkills = array_intersect($userSkills, $requiredSkills);
+        //         if (!empty($commonSkills)) {
+        //             $matches[] = [
+        //                 'user_id' => $user->id,
+        //                 'job_id' => $job->id,
+        //                 'common_skills' => implode(',', $commonSkills)
+        //             ];
+        //         }
+        //     }
+        // }
 
         // dd($setting->shippingRate);
         if ($setting->shippingRate == 'Only Higher') {

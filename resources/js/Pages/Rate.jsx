@@ -1412,7 +1412,7 @@ function Rate(props) {
             onClick={() => handleProductSelection({
                 id,
                 name: title,
-                // tags: "", 
+                // tags: "",
                 // product_vendor: "United By Blue",
                 // product_type: "Accessories",
                 product_price: price,

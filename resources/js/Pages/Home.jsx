@@ -69,7 +69,6 @@ function Home(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-         
             const ruledata = response.data.zones;
             setZoneDetails(ruledata);
             setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
@@ -142,7 +141,7 @@ function Home(props) {
     const paginatedZones = filteredZones.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const rowMarkup = paginatedZones.map(
-        ({ id, name, countries, currency }, index) => (
+        ({ id, name, countries, currency }, index) => (          
             <IndexTable.Row
                 id={id}
                 key={id}

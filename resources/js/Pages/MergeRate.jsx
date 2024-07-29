@@ -52,7 +52,7 @@ function MergeRate(props) {
   const [itemsPerPage] = useState(5);
   const [active, setActive] = useState(false);
   const [toastActive, setToastActive] = useState(false);
-  const [selectedZoneId, setselectedZoneId] = useState(null);
+  const [selectedRateId, setselectedRateId] = useState(null);
   const [textFieldValue, setTextFieldValue] = useState("");
 
   const toggleToast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
@@ -67,49 +67,46 @@ function MergeRate(props) {
       host: props.host,
   });
 
-  const getZoneDetails = async () => {
+  const getMergeRateDetails = async () => {
       const token = await getSessionToken(app);
-
+    
       setLoading(true)
       try {
-          const response = await axios.get(`${apiCommonURL}/api/zones`, {
+          const response = await axios.get(`${apiCommonURL}/api/mixMergeRate`, {
               headers: {
                   'Authorization': `Bearer ${token}`
               }
-          });
-       
-          const ruledata = response.data.zones;
-          setMixMergeRate(ruledata);
-          setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
+          })
+          setMixMergeRate(response.data.mixMergeRates);
           setLoading(false);
-          console.log(response.data)
+          console.log(response.data,'hello')
       } catch (error) {
           console.error(error, 'error from');
       }
   };
  
   useEffect(() => {
-      getZoneDetails();
+      getMergeRateDetails();
   }, []);
 
-  const handleEditZone = (zone_id) => {
-      navigate(`/Zone/${zone_id}`);
+  const handleEditMergeRate = (id) => {
+      navigate(`/add-edit-merge-rate/${id}`);
   };
   const AddRateNavigate = () => {
       navigate('/add-edit-merge-rate');
   }
+  
   const handleDelete = async () => {
       try {
-          setLoadingDelete(true)
           const token = await getSessionToken(app);
-          await axios.delete(`${apiCommonURL}/api/zone/${selectedZoneId}`, {
+          await axios.delete(`${apiCommonURL}/api/mixMergeRate/${selectedRateId}`, {
               headers: {
                   'Authorization': `Bearer ${token}`
               }
           });
           toggleModal();
           toggleToast();
-          getZoneDetails();
+          getMergeRateDetails();
       } catch (error) {
           console.error('Error deleting Mix merge:', error);
       }
@@ -143,14 +140,9 @@ function MergeRate(props) {
   const { selectedResources, allResourcesSelected, handleSelectionChange } =
       useIndexResourceState(mixMergeRate);
 
-  const filteredZones = mixMergeRate.filter(mergeRate =>
-    mergeRate.name.toLowerCase().includes(textFieldValue.toLowerCase())
-  );
 
-  const paginatedZones = filteredZones.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  const rowMarkup = paginatedZones.map(
-      ({ id, name, countries, currency }, index) => (
+  const rowMarkup = mixMergeRate.map(
+      ({ id, rate_name, service_code, description}, index) => (
           <IndexTable.Row
               id={id}
               key={id}
@@ -160,28 +152,20 @@ function MergeRate(props) {
               <IndexTable.Cell>
                   <Link
                       dataPrimaryLink
-                      onClick={() => handleEditZone(id)}>
+                      onClick={() => handleEditMergeRate(id)}>
                       <Text variant="bodyMd" fontWeight="bold" as="span">
-                          {name}
+                          {rate_name}
                       </Text>
                   </Link>
               </IndexTable.Cell>
               <IndexTable.Cell>
-                  {countries.map((countryObj, countryIndex) => {
-                      const countryName = countryObj.country.split(' (')[0];
-                      return (
-                          <Text variant="bodyMd" key={countryIndex} as="span">
-                              {countryName}
-                              {countryIndex < countries.length - 1 && ", "}
-                          </Text>
-                      );
-                  })}
+                 {service_code}
               </IndexTable.Cell>
-              <IndexTable.Cell> {currency}</IndexTable.Cell>
+              <IndexTable.Cell> {description}</IndexTable.Cell>
               <IndexTable.Cell>
                   <ButtonGroup>
-                      <Button icon={EditIcon} variant="primary" onClick={() => handleEditZone(id)} />
-                      <Button icon={DeleteIcon} variant="primary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedZoneId(id); toggleModal(); }} />
+                      <Button icon={EditIcon} variant="primary" onClick={() => handleEditMergeRate(id)} />
+                      <Button icon={DeleteIcon} variant="primary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedRateId(id); toggleModal(); }} />
                   </ButtonGroup>
               </IndexTable.Cell>
           </IndexTable.Row>
@@ -258,7 +242,7 @@ function MergeRate(props) {
                             <div style={{ marginTop: "2.5%", position: 'relative' }}>
                                     <IndexTable
                                         resourceName={resourceName}
-                                        itemCount={filteredZones.length}
+                                        itemCount={mixMergeRate.length}
                                         selectedItemsCount={
                                             allResourcesSelected ? 'All' : selectedResources.length
                                         }

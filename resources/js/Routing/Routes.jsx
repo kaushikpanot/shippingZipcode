@@ -22,6 +22,7 @@ export default function Routing(props) {
             <Route exact path="/Zone/:zone_id" element={<Zone {...props} />} />
             <Route exact path="/mixMergeRate" element={<MergeRate {...props} />} />
             <Route exact path="/add-edit-merge-rate" element={<AddEditMixMergeRate {...props} />} />
+            <Route exact path="/add-edit-merge-rate/:id" element={<AddEditMixMergeRate {...props} />} />
         </Routes>
     );
 }

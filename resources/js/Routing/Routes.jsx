@@ -7,6 +7,7 @@ import Rate from '../Pages/Rate';
 import Zone from '../Pages/Zone'
 import Settings from '../Pages/Settings'
 import MergeRate from '../Pages/MergeRate';
+import AddEditMixMergeRate from '../Pages/AddEditMixMergeRate';
 
 
 export default function Routing(props) {
@@ -20,6 +21,7 @@ export default function Routing(props) {
             <Route exact path="/Zone" element={<Zone {...props} />} />
             <Route exact path="/Zone/:zone_id" element={<Zone {...props} />} />
             <Route exact path="/mixMergeRate" element={<MergeRate {...props} />} />
+            <Route exact path="/add-edit-merge-rate" element={<AddEditMixMergeRate {...props} />} />
         </Routes>
     );
 }

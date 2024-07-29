@@ -220,7 +220,7 @@ function Home(props) {
                         <Card roundedAbove="sm">
                             <BlockStack gap="200">
                                 <InlineGrid columns="1fr auto">
-                                    <Text as="h2" variant="headingSm">
+                                    <Text variant="headingLg" as="h5">
                                         Zones
                                     </Text>
                                     <Button

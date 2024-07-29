@@ -952,7 +952,7 @@ class ApiController extends Controller
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode')->get();
 
-        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPriceFormatted, $totalPrice, $distance, $userData) {
+        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPriceFormatted, $totalPrice, $distance, $userData, $setting) {
             $zipcode = optional($rate->zipcode);
             // Check cart conditions
             $conditionsMet = false;
@@ -1442,79 +1442,24 @@ class ApiController extends Controller
                 return null;
             }
 
-            // Schedule Rate => This rate is only available on a specific date & time
-            if ($rate->schedule_rate) {
-                if (!empty($rate->schedule_start_date_time) && !empty($rate->schedule_end_date_time)) {
-                    $currentDateTime = Carbon::now()->format('d-m-Y H:i A');
-                    $checkScheduleDateTime = $currentDateTime >= $rate->schedule_start_date_time && $currentDateTime <= $rate->schedule_end_date_time;
-                    if (!$checkScheduleDateTime) {
+            // Check state selection
+            if ($zipcode->stateSelection === 'Custom') {
+                $states = collect($zipcode->state)->pluck('code')->all();
+                if (!in_array($destinationData['province'], $states)) {
+                    return null;
+                }
+            }
+
+            // Check zipcode selection
+            if ($zipcode->zipcodeSelection === 'Custom') {
+                $zipcodes = $zipcode->zipcode;
+                if ($zipcode->isInclude === 'Include') {
+                    if (!in_array($destinationZipcode, $zipcodes)) {
                         return null;
                     }
-                }
-            }
-
-            // tier_type
-            if (!empty($rate->rate_tier) && $rate->rate_tier['tier_type'] !== 'selected') {
-
-                if ($rate->rate_tier['tier_type'] == 'order_price') {
-
-                    foreach ($rate->rate_tier['rateTier'] as $tier) {
-                        $checkRateTier = $totalPrice >= $tier['minWeight'] && $totalPrice <= $tier['maxWeight'];
-
-                        $perItem = isset($tier['perItem']) ? $totalQuantity * $tier['perItem'] : 0;
-                        $percentCharge = isset($tier['percentCharge']) ? $totalPrice * $tier['percentCharge'] / 100 : 0;
-                        $perkg = isset($tier['perkg']) ? $totalWeight * $tier['perkg'] : 0;
-
-                        if ($checkRateTier) {
-                            $rate->base_price = $tier['basePrice'] + $perItem + $percentCharge + $perkg;
-                        }
-                    }
-                } else {
-
-                    $matchValue = 0;
-                    if ($rate->rate_tier['tier_type'] == 'order_quantity') {
-                        $matchValue = $totalQuantity;
-                    } else if ($rate->rate_tier['tier_type'] == 'order_weight') {
-                        $matchValue = $totalWeight;
-                    } else if ($rate->rate_tier['tier_type'] == 'order_distance') {
-                        $matchValue = $distance;
-                    }
-
-                    foreach ($rate->rate_tier['rateTier'] as $tier) {
-                        $checkRateTier = $matchValue >= $tier['minWeight'] && $matchValue <= $tier['maxWeight'];
-                        if ($checkRateTier) {
-                            $rate->base_price = $tier['basePrice'];
-                        }
-                    }
-                }
-            }
-
-            // Exclude rate for products
-            if (!empty($rate->exclude_rate_for_products) && $rate->exclude_rate_for_products['set_exclude_products'] !== 'selected') {
-                $excludeProducts = $rate->exclude_rate_for_products;
-                // if (isset($excludeProducts['exclude_products_radio']) && $excludeProducts['exclude_products_radio']) {
-                //     dd($excludeProducts);
-                // }
-
-                if (!$excludeProducts['exclude_products_radio']) {
-                    if ($excludeProducts['set_exclude_products'] == 'product_vendor') {
-                        $excludeProducts['set_exclude_products'] = 'vendor';
-                    } else if ($excludeProducts['set_exclude_products'] == 'custome_selection') {
-                        $excludeProducts['exclude_products_textbox'] = isset($excludeProducts['productData']) ? $excludeProducts['productData'] : "0";
-                        $excludeProducts['set_exclude_products'] = 'id';
-                    }
-
-                    $excludeType = $excludeProducts['set_exclude_products'];
-                    $excludeText = explode(',', $excludeProducts['exclude_products_textbox']);
-
-                    foreach ($items as $item) {
-                        $productData = ($excludeType != 'product_sku') ?
-                            $this->fetchShopifyProductData($userData, $item['product_id'], $excludeType) :
-                            $item['sku'];
-
-                        if ($this->arraysHaveCommonElement($excludeText, explode(',', $productData))) {
-                            return null;
-                        }
+                } elseif ($zipcode->isInclude === 'Exclude') {
+                    if (in_array($destinationZipcode, $zipcodes)) {
+                        return null;
                     }
                 }
             }
@@ -1766,6 +1711,73 @@ class ApiController extends Controller
                 }
             }
 
+            // tier_type
+            if (!empty($rate->rate_tier) && $rate->rate_tier['tier_type'] !== 'selected') {
+
+                if ($rate->rate_tier['tier_type'] == 'order_price') {
+
+                    foreach ($rate->rate_tier['rateTier'] as $tier) {
+                        $checkRateTier = $totalPrice >= $tier['minWeight'] && $totalPrice <= $tier['maxWeight'];
+
+                        $perItem = isset($tier['perItem']) ? $totalQuantity * $tier['perItem'] : 0;
+                        $percentCharge = isset($tier['percentCharge']) ? $totalPrice * $tier['percentCharge'] / 100 : 0;
+                        $perkg = isset($tier['perkg']) ? $totalWeight * $tier['perkg'] : 0;
+
+                        if ($checkRateTier) {
+                            $rate->base_price = $tier['basePrice'] + $perItem + $percentCharge + $perkg;
+                        }
+                    }
+                } else {
+
+                    $matchValue = 0;
+                    if ($rate->rate_tier['tier_type'] == 'order_quantity') {
+                        $matchValue = $totalQuantity;
+                    } else if ($rate->rate_tier['tier_type'] == 'order_weight') {
+                        $matchValue = $totalWeight;
+                    } else if ($rate->rate_tier['tier_type'] == 'order_distance') {
+                        $matchValue = $distance;
+                    }
+
+                    foreach ($rate->rate_tier['rateTier'] as $tier) {
+                        $checkRateTier = $matchValue >= $tier['minWeight'] && $matchValue <= $tier['maxWeight'];
+                        if ($checkRateTier) {
+                            $rate->base_price = $tier['basePrice'];
+                        }
+                    }
+                }
+            }
+
+            // Exclude rate for products
+            if (!empty($rate->exclude_rate_for_products) && $rate->exclude_rate_for_products['set_exclude_products'] !== 'selected') {
+                $excludeProducts = $rate->exclude_rate_for_products;
+                // if (isset($excludeProducts['exclude_products_radio']) && $excludeProducts['exclude_products_radio']) {
+                //     dd($excludeProducts);
+                // }
+
+                if (!$excludeProducts['exclude_products_radio']) {
+                    if ($excludeProducts['set_exclude_products'] == 'product_vendor') {
+                        $excludeProducts['set_exclude_products'] = 'vendor';
+                    } else if ($excludeProducts['set_exclude_products'] == 'custome_selection') {
+                        $excludeProducts['exclude_products_textbox'] = isset($excludeProducts['productData']) ? $excludeProducts['productData'] : "0";
+                        $excludeProducts['set_exclude_products'] = 'id';
+                    }
+
+                    $excludeType = $excludeProducts['set_exclude_products'];
+                    $excludeText = explode(',', $excludeProducts['exclude_products_textbox']);
+
+                    foreach ($items as $item) {
+                        $productData = ($excludeType != 'product_sku') ?
+                            $this->fetchShopifyProductData($userData, $item['product_id'], $excludeType) :
+                            $item['sku'];
+
+                        if ($this->arraysHaveCommonElement($excludeText, explode(',', $productData))) {
+                            return null;
+                        }
+                    }
+                }
+            }
+
+            // Rate Modifiers
             if (!empty($rate->rate_modifiers) && is_array($rate->rate_modifiers)) {
 
                 $modifierArray = [
@@ -1915,40 +1927,41 @@ class ApiController extends Controller
                 }
             }
 
-            // if(!empty($rate->origin_locations)){
-            //     foreach($rate->origin_locations['updated_location'] as $location){
-            //         dump($location);
-            //     }
-            // }
+            // Origin Locations
+            if (!empty($rate->origin_locations)) {
+                foreach ($rate->origin_locations['updated_location'] as $location) {
+                    if (strpos($location['address'], $destinationData['address1']) !== false) {
+                        return $rate;
+                    }
+                }
+            }
 
-            // Check state selection
-            // if ($zipcode->stateSelection === 'Custom') {
-            //     $states = collect($zipcode->state)->pluck('code')->all();
-            //     if (!in_array($destinationData['province'], $states)) {
-            //         return null;
-            //     }
-            // }
-
-            // Check zipcode selection
-            // if ($zipcode->zipcodeSelection === 'Custom') {
-            //     $zipcodes = $zipcode->zipcode;
-            //     if ($zipcode->isInclude === 'Include') {
-            //         if (!in_array($destinationZipcode, $zipcodes)) {
-            //             return null;
-            //         }
-            //     } elseif ($zipcode->isInclude === 'Exclude') {
-            //         if (in_array($destinationZipcode, $zipcodes)) {
-            //             return null;
-            //         }
-            //     }
-            // }
-
-            // if($rate->send_another_rate['send_another_rate']){
-            //     dump($rate->send_another_rate);
-            // }
+            // Schedule Rate => This rate is only available on a specific date & time
+            if ($rate->schedule_rate) {
+                if (!empty($rate->schedule_start_date_time) && !empty($rate->schedule_end_date_time)) {
+                    $currentDateTime = Carbon::now()->format('d-m-Y H:i A');
+                    $checkScheduleDateTime = $currentDateTime >= $rate->schedule_start_date_time && $currentDateTime <= $rate->schedule_end_date_time;
+                    if (!$checkScheduleDateTime) {
+                        return null;
+                    }
+                }
+            }
 
             return $rate;
         })->filter();
+
+        // dd($setting->shippingRate);
+        if ($setting->shippingRate == 'Only Higher') {
+            $maxRate = $filteredRates->max('base_price');
+            $filteredRates = $filteredRates->filter(function ($rate) use ($maxRate) {
+                return $rate['base_price'] == $maxRate;
+            });
+        } elseif ($setting->shippingRate == 'Only Lower') {
+            $minRate = $filteredRates->min('base_price');
+            $filteredRates = $filteredRates->filter(function ($rate) use ($minRate) {
+                return $rate['base_price'] == $minRate;
+            });
+        }
 
         // // Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
         // Log::info('Query logs:', ['totalQuantity' => $totalQuantity]);

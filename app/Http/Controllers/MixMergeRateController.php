@@ -94,7 +94,7 @@ class MixMergeRateController extends Controller
 
             $rules = [
                 'user_id' => 'required|exists:users,id', // Ensure the user exists
-                'setting_id' => 'required|exists:settings,id', // Ensure the setting exists
+                // 'setting_id' => 'required|exists:settings,id', // Ensure the setting exists
                 'rate_name' => 'required|string|max:255', // Ensure it's a string with a reasonable length
                 'condition' => 'required|integer', // Fixed typo from 'intizer' to 'integer'
                 'price_calculation_type' => 'required|integer',
@@ -105,8 +105,8 @@ class MixMergeRateController extends Controller
             $messages = [
                 'user_id.required' => 'The user ID is required.',
                 'user_id.exists' => 'The selected user ID does not exist.',
-                'setting_id.required' => 'The setting ID is required.',
-                'setting_id.exists' => 'The selected setting ID does not exist.',
+                // 'setting_id.required' => 'The setting ID is required.',
+                // 'setting_id.exists' => 'The selected setting ID does not exist.',
                 'rate_name.required' => 'The rate name is required.',
                 'rate_name.string' => 'The rate name must be a valid string.',
                 'rate_name.max' => 'The rate name may not be greater than 255 characters.',

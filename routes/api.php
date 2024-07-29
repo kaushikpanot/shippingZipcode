@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('carrier/callback', [ApiController::class, 'handleCallback']);
 Route::get('conditionConvertSymbol/{name}', [ApiController::class, 'conditionConvertSymbol']);
 
-// Route::middleware(['verify.shopify.jwt'])->group(function () {
+Route::middleware(['verify.shopify.jwt'])->group(function () {
     Route::resource('settings', SettingContoller::class);
     Route::resource('mixMergeRate', MixMergeRateController::class);
 
@@ -47,4 +47,4 @@ Route::get('conditionConvertSymbol/{name}', [ApiController::class, 'conditionCon
         Route::get('shop/location', 'getShopLocation');
         Route::post('products', 'getProductList');
     });
-// });
+});

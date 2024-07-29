@@ -111,7 +111,7 @@ function MergeRate(props) {
           toggleToast();
           getZoneDetails();
       } catch (error) {
-          console.error('Error deleting Mix merge Rate:', error);
+          console.error('Error deleting Mix merge:', error);
       }
       finally {
           setLoadingDelete(false)

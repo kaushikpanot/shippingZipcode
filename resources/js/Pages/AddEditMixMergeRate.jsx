@@ -24,15 +24,26 @@ function AddEditMixMergeRate(props) {
   const [toastContent, setToastContent] = useState("");
   const [showToast, setShowToast] = useState(false);
   const toastDuration = 3000;
+  const condition = [
+    { label: 'All rates must have at least one tag', value: 0 },
+    { label: 'Any rates found with tag', value: 1 },
+  ];
 
+  const price_calculation_type  = [
+    { label: 'SUM of the values', value: 0 },
+    { label: 'AVERAGE of the values', value: 1 },
+    { label: 'LOWEST of the values', value: 2 },
+    { label: 'HIGHEST of the values', value: 3 },
+    { label: 'MULTIPLY of the values', value: 4 },
+  ];
   const [formData, setFormData] = useState({
     rate_name: "",
     service_code: '',
     description: '',
     id: "",
     status: 1,
-    condition: "all",
-    price_calculation_type: "sum",
+    condition: 0,
+    price_calculation_type: 0,
     tags_to_combine: "",
     tags_to_exclude: "",
     min_shipping_rate: "",
@@ -59,27 +70,17 @@ function AddEditMixMergeRate(props) {
     },
     [],
   );
-  const handleSelectChange = (id, value) => {
-    setFormData((prevState) => ({
+
+    const handleSelectChange = (field, value) => {
+    setFormData(prevState => ({
       ...prevState,
-      [id]: value,
+      [field]: value
     }));
   };
 
   const statusOptions = [
     { label: 'Enabled', value: 'Enabled' },
     { label: 'Disabled', value: 'Disabled' },
-  ];
-  const condition = [
-    { label: 'All rates must have at least one tag', value: 'all' },
-    { label: 'Any rates found with tag', value: 'any' },
-  ];
-  const price_calculation_type = [
-    { label: 'SUM of the values', value: 'sum' },
-    { label: 'AVERAGE of the values', value: 'avrage' },
-    { label: 'LOWEST of the values', value: 'lowest' },
-    { label: 'HIGHEST of the values', value: 'highest' },
-    { label: 'MULTIPLY of the values', value: 'muliptly' },
   ];
   const navigateHome = () => {
     // 👇️ Navigate to /
@@ -108,7 +109,6 @@ function AddEditMixMergeRate(props) {
                 'Authorization': `Bearer ${token}`
             }
         });
-        console.log()
         setToastContent("Merge rate Add successfully..");
         setShowToast(true);
         // setTimeout(() => {
@@ -208,8 +208,7 @@ function AddEditMixMergeRate(props) {
                     label="Merge rate Condition"
                     options={condition}
                     value={formData.condition}
-                    onChange={(value) => handleSelectChange('condition', value)}
-
+                    onChange={(value) => handleSelectChange('condition', parseInt(value))}
                   />
                 </div>
                 <div style={{ marginTop: "2 %" }} className='zonetext'>
@@ -217,7 +216,7 @@ function AddEditMixMergeRate(props) {
                     label="Merge Rate Price Calculation Type"
                     options={price_calculation_type}
                     value={formData.price_calculation_type}
-                    onChange={(value) => handleSelectChange('price_calculation_type', value)}
+                    onChange={(value) => handleSelectChange('price_calculation_type', parseInt(value))}
                   />
                 </div>
                 <div style={{ marginTop: "3.5%" }} className='zonetext'>

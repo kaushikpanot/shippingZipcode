@@ -7,11 +7,15 @@ import axios from 'axios';
 import '../../../public/css/style.css';
 import createApp from '@shopify/app-bridge';
 import { getSessionToken } from "@shopify/app-bridge-utils";
+import { PlusIcon } from '@shopify/polaris-icons';
+import { useNavigate } from 'react-router-dom';
+
 
 const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 const Settings = (props) => {
+  const  navigate = useNavigate()
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -92,7 +96,7 @@ const Settings = (props) => {
         primaryAction={<Button variant="primary" onClick={handleSaveSettings}>Save</Button>}
       // secondaryActions={<Button onClick={navigateHome}>Back</Button>}
       >
-         <Divider borderColor="border" />
+        <Divider borderColor="border" />
         <Grid>
           <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
             <div style={{ paddingTop: '18%' }}>
@@ -122,9 +126,9 @@ const Settings = (props) => {
           </Grid.Cell>
 
         </Grid>
-        <div style={{marginBottom:"2%"}}></div>
+        <div style={{ marginBottom: "2%" }}></div>
         <Divider borderColor="border" />
-        <div style={{ marginTop: "2%",marginBottom:"2%" }}>
+        <div style={{ marginTop: "2%", marginBottom: "2%" }}>
           <Grid>
             <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
               <div style={{ paddingTop: '18%' }}>
@@ -190,10 +194,12 @@ const Settings = (props) => {
       </Page>
     );
   }
-
+  const handleAddMixMergeRate = () => {
+    navigate('/mixMergeRate');
+  };
   return (
     <Page
-     
+
       title="Settings"
       primaryAction={<Button onClick={handleSaveSettings} variant='primary'>Save</Button>}
     >
@@ -296,6 +302,9 @@ const Settings = (props) => {
           </Grid.Cell>
           <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
             <LegacyCard sectioned>
+              <div style={{ marginBottom: "2%", marginLeft: "83%" }}>
+                <Button variant='primary' onClick={handleAddMixMergeRate}  >Merge Rates</Button>
+              </div>
               <Banner tone="warning">
                 <p>
                   If the first option of mix/merge rate setting is Yes (Automatic), the merge rate will not work.

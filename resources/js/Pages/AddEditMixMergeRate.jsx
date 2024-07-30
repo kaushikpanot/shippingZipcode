@@ -170,7 +170,6 @@ function AddEditMixMergeRate(props) {
       }))
       setToastContent("Merge rate Add successfully..");
       setShowToast(true);
-      console.log(response.data.id)
 
     } catch (error) {
       console.error('Error occurs', error);

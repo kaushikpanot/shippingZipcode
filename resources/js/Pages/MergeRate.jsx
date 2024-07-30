@@ -67,7 +67,7 @@ function MergeRate(props) {
         apiKey: SHOPIFY_API_KEY,
         host: props.host,
     });
-
+    
     const getMergeRateDetails = async () => {
         const token = await getSessionToken(app);
 

@@ -44,6 +44,7 @@ function Rate(props) {
     const { id, zone_id } = useParams();
     const [loading, setLoading] = useState(true);
     const [state, setState] = useState([])
+    const [originalOptions, setOriginalOptions] = useState([]);
     const [selectedOptions, setSelectedOptions] = useState([]);
     const [options, setOptions] = useState([]);
     const [inputValue, setInputValue] = useState('');
@@ -580,8 +581,8 @@ function Rate(props) {
                 }
             });
             const allStates = response.data.states;
-            setshop_weight_unit(response.data.rate.shop_weight_unit)
-            setShop_currency(response.data.rate.shop_currency)
+            setshop_weight_unit(response.data.rate.shop_weight_unit);
+            setShop_currency(response.data.rate.shop_currency);
             const formattedOptions = [];
             for (const country in allStates) {
                 if (allStates.hasOwnProperty(country)) {
@@ -597,6 +598,7 @@ function Rate(props) {
                 }
             }
             setOptions(formattedOptions);
+            setOriginalOptions(formattedOptions); // Save the original options
             setState(formattedOptions.map(section => section.options).flat());
         } catch (error) {
             console.error("Error fetching shop location:", error);
@@ -607,12 +609,12 @@ function Rate(props) {
         (value) => {
             setInputValue(value);
             if (value === '') {
-                setOptions(options);
+                setOptions(originalOptions); // Reset to the original options
                 return;
             }
             const filterRegex = new RegExp(value, 'i');
             const resultOptions = [];
-            options.forEach((opt) => {
+            originalOptions.forEach((opt) => { // Use originalOptions to filter
                 const filteredOptions = opt.options.filter((option) =>
                     option.label.match(filterRegex),
                 );
@@ -623,7 +625,7 @@ function Rate(props) {
             });
             setOptions(resultOptions);
         },
-        [options],
+        [originalOptions], // Depend on originalOptions
     );
 
     const removeTag = useCallback(
@@ -1861,8 +1863,8 @@ function Rate(props) {
                                                                         value={item.lineItem}
                                                                     />
                                                                 )}
-                                                               
-                                                                  {/* {item.lineItem === 'anyTag'  && (
+
+                                                                {/* {item.lineItem === 'anyTag'  && (
                                                                         <TextField
                                                                             value={item.tag}
                                                                             onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}

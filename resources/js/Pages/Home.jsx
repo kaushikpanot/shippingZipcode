@@ -73,7 +73,6 @@ function Home(props) {
             setZoneDetails(ruledata);
             setTotalPages(Math.ceil(ruledata.length / itemsPerPage));
             setLoading(false);
-            console.log(response.data)
         } catch (error) {
             console.error(error, 'error from');
         }

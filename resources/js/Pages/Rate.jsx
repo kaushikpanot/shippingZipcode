@@ -365,7 +365,6 @@ function Rate(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            console.log(response.data);
             const allStates = response.data.states;
             const formattedOptions = [];
             for (const country in allStates) {
@@ -598,7 +597,7 @@ function Rate(props) {
                 }
             }
             setOptions(formattedOptions);
-            setOriginalOptions(formattedOptions); // Save the original options
+            setOriginalOptions(formattedOptions);
             setState(formattedOptions.map(section => section.options).flat());
         } catch (error) {
             console.error("Error fetching shop location:", error);
@@ -609,12 +608,12 @@ function Rate(props) {
         (value) => {
             setInputValue(value);
             if (value === '') {
-                setOptions(originalOptions); // Reset to the original options
+                setOptions(originalOptions);
                 return;
             }
             const filterRegex = new RegExp(value, 'i');
             const resultOptions = [];
-            originalOptions.forEach((opt) => { // Use originalOptions to filter
+            originalOptions.forEach((opt) => {
                 const filteredOptions = opt.options.filter((option) =>
                     option.label.match(filterRegex),
                 );
@@ -625,7 +624,7 @@ function Rate(props) {
             });
             setOptions(resultOptions);
         },
-        [originalOptions], // Depend on originalOptions
+        [originalOptions],
     );
 
     const removeTag = useCallback(
@@ -745,14 +744,12 @@ function Rate(props) {
         { label: 'ALL product must satisfy this conditin ', value: 'all' },
         { label: 'NONE of product must satisfy this conditin ', value: 'none' },
     ]
-
     const [deliveryType, setDeliveryType] = useState([{
         id: 0,
         local: false,
         Store: false,
         Shipping: false,
     }]);
-
     const [dayOfWeekSelection, setDayOfWeekSelection] = useState([{
         id: 0,
         Monday: false,
@@ -882,11 +879,9 @@ function Rate(props) {
 
     const handleAddItem = () => {
         setItems(prevItems => {
-            // Determine the new ID based on the length of the items array
             const newId = prevItems.length ? prevItems[prevItems.length - 1].id + 1 : 1;
-            console.log(newId)
             const newItem = {
-                id: newId, // Assign a unique ID
+                id: newId,
                 name: 'quantity',
                 condition: 'equal',
                 value: '',
@@ -954,7 +949,6 @@ function Rate(props) {
         };
         const updatedItems = [...items];
         updatedItems[index] = updatedItem;
-        console.log(updatedItems.map(item => item.id || item.name));
         setItems(updatedItems);
     };
 
@@ -1025,12 +1019,10 @@ function Rate(props) {
             update_price_type: checkstate.selectedByUpdatePriceType,
             update_price_effect: checkstate.selectedByUpdatePriceEffect
         }));
-
         SetExclude_Rate(prevState => ({
             ...prevState,
             set_exclude_products: selectedRate,
         }));
-
         const updated_location = locations
             .filter(location => checkedlocation[location.name]?.checked)
             .map(location => ({
@@ -1276,7 +1268,6 @@ function Rate(props) {
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             setToastContent('Sorry. Couldn’t be saved. Please try again.');
-            // console.log(newErrors)
             setErroToast(true);
             return;
         }
@@ -1287,7 +1278,6 @@ function Rate(props) {
             });
             const token = await getSessionToken(app);
             const cleanFormData = removeEmptyFields(formData);
-            console.log(cleanFormData)
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, cleanFormData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -1382,8 +1372,8 @@ function Rate(props) {
 
     const productData = filteredProducts.map(({ id, title, image }, index) => (
         <IndexTable.Row
-            id={`${id}-${index}`}
-            key={`${id}-${index}`}
+            id={id}
+            key={id}
             selected={selectedResources.includes(id)}
             position={index}
         >
@@ -1406,9 +1396,8 @@ function Rate(props) {
 
     const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
         <IndexTable.Row
-            id={`${id}-${index}`}
-            key={`${id}-${index}`}
-
+            id={id}
+            key={id}
             selected={selectedResources.includes(id)}
             position={index}
             onClick={() => handleProductSelection({
@@ -1476,7 +1465,6 @@ function Rate(props) {
                                         <SkeletonBodyText lines={2} />
                                     </LegacyCard>
                                 </div>
-
                                 <Divider borderColor="border" />
                                 <div style={{ marginTop: "2%", }}>
                                     <LegacyCard sectioned>
@@ -1511,7 +1499,6 @@ function Rate(props) {
             primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
             secondaryActions={<Button onClick={() => BacktoZone(zone_id)}>Back</Button>}
         >
-
             <Divider borderColor="border" />
             <div style={{ marginTop: '2%', marginBottom: '2%' }}>
                 <Layout>
@@ -1714,7 +1701,6 @@ function Rate(props) {
                                                                         error={errors[`value${index}`]}
                                                                     />
                                                                 )}
-
                                                                 {item.condition === 'between' && (
                                                                     <div>
                                                                         {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'name2' && item.name !== 'email' && item.name !== 'phone' && item.name !== 'company' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'Customer' && item.name !== 'localcode' && (
@@ -1727,7 +1713,6 @@ function Rate(props) {
                                                                         )}
                                                                     </div>
                                                                 )}
-
                                                                 {item.name === 'dayIs' && (
                                                                     <TextField
                                                                         value={item.value}
@@ -1795,8 +1780,6 @@ function Rate(props) {
                                                                             checked={dayOfWeekSelection[index].Saturday}
                                                                             onChange={() => handleDayCheckboxChange('Saturday', index)}
                                                                         />
-
-
                                                                     </div>
                                                                 )}
                                                                 {item.name === 'date' && (
@@ -1836,7 +1819,6 @@ function Rate(props) {
                                                                             checked={deliveryType[index].Shipping}
                                                                             onChange={() => handleCheckboxChange('Shipping', index)}
                                                                         />
-
                                                                     </div>
                                                                 )}
                                                                 {items.length > 1 && (
@@ -1863,7 +1845,6 @@ function Rate(props) {
                                                                         value={item.lineItem}
                                                                     />
                                                                 )}
-
                                                                 {/* {item.lineItem === 'anyTag'  && (
                                                                         <TextField
                                                                             value={item.tag}
@@ -1911,7 +1892,6 @@ function Rate(props) {
                                             </div>
                                         ))}
                                     </div>
-
                                     <div style={{ marginTop: "2%" }}>
                                         <Button
                                             icon={PlusIcon}
@@ -1953,7 +1933,6 @@ function Rate(props) {
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
-
                             <div>
                                 {state.length > 0 && (
                                     <>
@@ -1992,7 +1971,6 @@ function Rate(props) {
                                     </>
                                 )}
                             </div>
-
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%", }}>
                                 <Text variant="headingXs" as="h6">
                                     ZipCode
@@ -2044,7 +2022,6 @@ function Rate(props) {
                     </Grid.Cell>
                 </Grid>
             </div>
-
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%", }}>
@@ -2230,7 +2207,6 @@ function Rate(props) {
                                                     />
                                                 </FormLayout.Group>
                                             </FormLayout>
-
                                             <div style={{ marginTop: "4%" }}></div>
                                             <Text variant="headingSm" as="h6">
                                                 By Product Surcharge:
@@ -2612,7 +2588,7 @@ function Rate(props) {
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
-                            <div >
+                            <div>
                                 <Select
                                     options={tierOptions}
                                     onChange={handleTierSelectChange}
@@ -2698,7 +2674,6 @@ function Rate(props) {
                                                     </div>
                                                 )}
                                                 <div style={{ marginTop: "3%" }}> <Divider borderColor="border" /></div>
-
                                             </div>
                                         ))}
                                         <div style={{ marginTop: '2%' }}>
@@ -2718,8 +2693,6 @@ function Rate(props) {
                     </Grid.Cell>
                 </Grid>
             </div>
-
-
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
@@ -2769,7 +2742,6 @@ function Rate(props) {
                                             onChange={() => handlecheckedChange('exclude_products_radio', 1)}
                                         />
                                     </div>
-
                                     <Divider borderColor="border" />
                                     <div style={{ marginTop: "2%" }}>
                                         <FormLayout>
@@ -2936,8 +2908,7 @@ function Rate(props) {
                                                         ariaControls={`collapsible-${modifier.id}`}
                                                         icon={SelectIcon}
                                                     />
-                                                    <p
-                                                        style={{ color: '#ef5350', fontWeight: 'bold', cursor: 'pointer' }}
+                                                    <p style={{ color: '#ef5350', fontWeight: 'bold', cursor: 'pointer' }}
                                                         onClick={() => handleRemoveRateModifier(modifier.id)}
                                                     >
                                                         Remove Rate Modifier
@@ -3084,7 +3055,6 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
                                                                 />
                                                             )}
-
                                                         </FormLayout.Group>
                                                     </FormLayout>
                                                     <div style={{ marginTop: '5%', marginBottom: '3%' }}>
@@ -3125,7 +3095,6 @@ function Rate(props) {
                                                                 value={modifier.rateDay}
                                                                 onChange={handleRateModifierChange(modifier.id, 'rateDay')}
                                                                 autoComplete="off"
-
                                                                 placeholder={
                                                                     modifier.rateModifier === 'price' ? "Price" :
                                                                         modifier.rateModifier === 'weight' ? "Weight" :
@@ -3138,7 +3107,6 @@ function Rate(props) {
                                                                                                     modifier.rateModifier === 'calculateRate' ? "Calculate Rate Price" :
                                                                                                         "Local Code"
                                                                 }
-
                                                             />
                                                         )}
                                                         {modifier.rateModifier === 'type' && (
@@ -3201,8 +3169,6 @@ function Rate(props) {
                                                             <div style={{ float: 'left', width: '45%', marginTop: "0.5%" }}><hr /></div>
                                                             <div style={{ float: 'right', width: '45%', marginTop: "0.5%" }}><hr /></div>
                                                             <p style={{ textAlign: "center" }}>{modifier.type} </p>
-
-
                                                             <div style={{ marginTop: '4%' }}></div>
                                                             <FormLayout>
                                                                 <FormLayout.Group>
@@ -3276,7 +3242,6 @@ function Rate(props) {
                                                                             onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
                                                                         />
                                                                     )}
-
                                                                 </FormLayout.Group>
                                                             </FormLayout>
                                                             <div style={{ marginTop: '5%', marginBottom: '3%' }}>
@@ -3317,7 +3282,6 @@ function Rate(props) {
                                                                         value={modifier.rateDay2}
                                                                         onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                         autoComplete="off"
-
                                                                         placeholder={
                                                                             modifier.rateModifier2 === 'price' ? "Price" :
                                                                                 modifier.rateModifier2 === 'weight' ? "Weight" :
@@ -3330,7 +3294,6 @@ function Rate(props) {
                                                                                                             modifier.rateModifier2 === 'calculateRate' ? "Calculate Rate Price" :
                                                                                                                 "Local Code"
                                                                         }
-
                                                                     />
                                                                 )}
                                                                 {modifier.rateModifier2 === 'type' && (
@@ -3498,7 +3461,6 @@ function Rate(props) {
                                                                         handleRateModifierChange(modifier.id, 'effect')('Decrease')
                                                                     }
                                                                 />
-
                                                                 <TextField
                                                                     type="text"
                                                                     label="Adjustment"
@@ -3508,7 +3470,6 @@ function Rate(props) {
                                                                     placeholder="00"
                                                                     error={errors[`adjustment${modifier.id}`]}
                                                                 />
-
                                                             </div>
                                                         </div>
                                                     )}
@@ -3516,7 +3477,6 @@ function Rate(props) {
                                                         <div style={{
                                                             marginTop: '2%',
                                                             marginBottom: '2%',
-
                                                         }}>
                                                             <div style={{ marginBottom: "2%" }}>
                                                                 <Divider borderColor="border" />
@@ -3560,7 +3520,6 @@ function Rate(props) {
                                 <List>
                                     <List.Item>
                                         We recommend using the same Shipping Tag for all related Shipping rates when merge shipping rates.
-
                                     </List.Item>
                                 </List>
                             </div>
@@ -3575,7 +3534,6 @@ function Rate(props) {
                                 autoComplete="off"
                                 placeholder='tag1,tag2,tag3'
                             />
-
                         </LegacyCard>
                     </Grid.Cell>
                 </Grid>
@@ -3613,7 +3571,6 @@ function Rate(props) {
                                     <div style={{ marginTop: "1%" }}>
                                         <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                                             {locations.map(location => {
-
                                                 return (
                                                     <div key={location.id} style={{ width: '50%', height: '5%', padding: '5px' }}>
                                                         <LegacyCard>
@@ -3645,7 +3602,6 @@ function Rate(props) {
                 </Grid>
             </div>
 
-
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
@@ -3654,7 +3610,6 @@ function Rate(props) {
                             <Text variant="headingLg" as="h5">
                                 Schedule Rate
                             </Text>
-
                             <div style={{ marginTop: "4%" }}>
                                 <List>
                                     <List.Item>
@@ -3721,7 +3676,6 @@ function Rate(props) {
                                 <List>
                                     <List.Item>
                                         By selecting the Send Another Rate option it will allow to set another additional rate.
-
                                     </List.Item>
                                 </List>
                             </div>
@@ -3847,7 +3801,6 @@ function Rate(props) {
                                         <div style={{ marginTop: '3%' }}>
                                             <Divider borderColor="border" />
                                         </div>
-
                                         <div style={{ marginTop: '3%' }}>
                                             <FormLayout>
                                                 <FormLayout.Group>

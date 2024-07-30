@@ -135,7 +135,7 @@ class MixMergeRateController extends Controller
                 $message = 'Mix merge rate updated successfully.';
             }
 
-            return response()->json(['status' => true, 'message' => $message]);
+            return response()->json(['status' => true, 'message' => $message, 'id'=>$mergeRate->id]);
         } catch (ValidationException $e) {
             return response()->json(['status' => false, 'message' => $e->validator->errors()]);
         } catch (\Throwable $th) {

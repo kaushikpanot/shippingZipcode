@@ -1861,13 +1861,14 @@ function Rate(props) {
                                                                         value={item.lineItem}
                                                                     />
                                                                 )}
-                                                                {item.lineItem === 'anyTag' && (
-                                                                    <TextField
-                                                                        value={item.tag}
-                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}
-                                                                        placeholder='tag1,tag2,tag3'
-                                                                    />
-                                                                )}
+                                                               
+                                                                  {/* {item.lineItem === 'anyTag'  && (
+                                                                        <TextField
+                                                                            value={item.tag}
+                                                                            onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}
+                                                                            placeholder='tag1,tag2,tag3'
+                                                                        />
+                                                                    )} */}
                                                             </div>
                                                             {(item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2') && (
                                                                 <div style={{

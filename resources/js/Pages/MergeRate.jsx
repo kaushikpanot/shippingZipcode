@@ -45,21 +45,22 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 function MergeRate(props) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [loadingDelete, setLoadingDelete] = useState(false)
+  const [loadingDelete, setLoadingDelete] = useState(false);
   const [mixMergeRate, setMixMergeRate] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage] = useState(5);
   const [active, setActive] = useState(false);
   const [toastActive, setToastActive] = useState(false);
-  const [selectedRateId, setselectedRateId] = useState(null);
+  const [selectedRateId, setSelectedRateId] = useState(null);
   const [textFieldValue, setTextFieldValue] = useState("");
-
+  const [rateName, setRateName] = useState("");
+  
   const toggleToast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
   const toggleModal = useCallback(() => setActive((active) => !active), []);
 
   const toastMarkup = toastActive ? (
-      <Toast content="Zone  deleted" onDismiss={toggleToast} />
+      <Toast content="Zone deleted" onDismiss={toggleToast} />
   ) : null;
 
   const app = createApp({
@@ -70,16 +71,15 @@ function MergeRate(props) {
   const getMergeRateDetails = async () => {
       const token = await getSessionToken(app);
     
-      setLoading(true)
+      setLoading(true);
       try {
           const response = await axios.get(`${apiCommonURL}/api/mixMergeRate`, {
               headers: {
                   'Authorization': `Bearer ${token}`
               }
-          })
+          });
           setMixMergeRate(response.data.mixMergeRates);
           setLoading(false);
-          console.log(response.data,'hello')
       } catch (error) {
           console.error(error, 'error from');
       }
@@ -94,7 +94,7 @@ function MergeRate(props) {
   };
   const AddRateNavigate = () => {
       navigate('/add-edit-merge-rate');
-  }
+  };
   
   const handleDelete = async () => {
       try {
@@ -109,9 +109,8 @@ function MergeRate(props) {
           getMergeRateDetails();
       } catch (error) {
           console.error('Error deleting Mix merge:', error);
-      }
-      finally {
-          setLoadingDelete(false)
+      } finally {
+          setLoadingDelete(false);
       }
   };
 
@@ -132,6 +131,12 @@ function MergeRate(props) {
       }
   }, [currentPage]);
 
+  const handleDeleteClick = (id, rateName) => {
+      setSelectedRateId(id);
+      setRateName(rateName);
+      toggleModal();
+  };
+
   const resourceName = {
       singular: 'Mix merge rates',
       plural: 'Mix Merge Rates',
@@ -142,7 +147,7 @@ function MergeRate(props) {
 
 
   const rowMarkup = mixMergeRate.map(
-      ({ id, rate_name, service_code, description}, index) => (
+      ({ id, rate_name, service_code, description }, index) => (
           <IndexTable.Row
               id={id}
               key={id}
@@ -165,7 +170,7 @@ function MergeRate(props) {
               <IndexTable.Cell>
                   <ButtonGroup>
                       <Button icon={EditIcon} variant="primary" onClick={() => handleEditMergeRate(id)} />
-                      <Button icon={DeleteIcon} variant="primary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedRateId(id); toggleModal(); }} />
+                      <Button icon={DeleteIcon} variant="primary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteClick(id, rate_name); }} />
                   </ButtonGroup>
               </IndexTable.Cell>
           </IndexTable.Row>
@@ -201,6 +206,7 @@ function MergeRate(props) {
           </Page>
       );
   }
+
   return (
     <Page fullWidth>
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
@@ -220,14 +226,12 @@ function MergeRate(props) {
                                     >
                                         Merge Rate 
                                     </Button>
-                                 
                                 </InlineGrid>
                                 <div style={{marginTop:"1%", fontWeight:"bold"}}>
                                 <Text as="p" variant="bodyMd">
                                 If the first option of the mix/merge rate setting on the shipping settings page is No (Manually - Using merge rate), this merge rate setting will work.
                                 </Text>
                                 </div>
-
                             </BlockStack>
                             <div style={{ marginTop: "3%" }}>
                                 <TextField
@@ -248,9 +252,9 @@ function MergeRate(props) {
                                         }
                                         onSelectionChange={handleSelectionChange}
                                         headings={[
-                                            { title: 'Zipcode Rule Name' },
-                                            { title: 'Country' },
-                                            { title: 'currency' },
+                                            { title: 'Rate Name' },
+                                            { title: 'Service Code' },
+                                            { title: 'Description' },
                                             { title: 'Action' },
                                         ]}
                                         paginated
@@ -269,33 +273,32 @@ function MergeRate(props) {
                     <Grid.Cell columnSpan={{ md: 1, lg: 1, xl: 1 }}>&nbsp;</Grid.Cell>
                 </Grid>
             </div>
-
-            <Modal
-                open={active}
-                onClose={toggleModal}
-                title="Delete Zone"
-                primaryAction={{
-                    content: 'Delete',
-                    destructive: true,
-                    onAction: handleDelete,
-                }}
-                secondaryActions={[
-                    {
-                        content: 'Cancel',
-                        onAction: toggleModal,
-                    },
-                ]}
-            >
-                <Modal.Section>
-                    <TextContainer>
-                        <p>Are you sure you want to delete this Rate?</p>
-                    </TextContainer>
-                </Modal.Section>
-            </Modal>
-            {toastMarkup}
-        </Page>
-  )
+      <Modal
+          open={active}
+          onClose={toggleModal}
+          title="Delete Rate"
+          primaryAction={{
+              content: 'Delete',
+              destructive: true,
+              onAction: handleDelete,
+              loading: loadingDelete
+          }}
+          secondaryActions={[
+              {
+                  content: 'Cancel',
+                  onAction: toggleModal,
+              },
+          ]}
+      >
+          <Modal.Section>
+              <TextContainer>
+                  <p>Are you sure you want to delete the rate "{rateName}"?</p>
+              </TextContainer>
+          </Modal.Section>
+      </Modal>
+      {toastMarkup}
+    </Page>
+  );
 }
 
-export default MergeRate
-
+export default MergeRate;

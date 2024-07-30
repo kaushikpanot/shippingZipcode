@@ -115,11 +115,8 @@ function AddEditMixMergeRate(props) {
           tags_to_combine: response.data.mixMergeRate.tags_to_combine,
           tags_to_exclude: response.data.mixMergeRate.tags_to_exclude,
       }));
-
       console.log(response.data)
-
       setLoading(false);
-
     } catch (error) {
       console.error('Error occurs', error);
     }
@@ -171,8 +168,7 @@ function AddEditMixMergeRate(props) {
         <Grid.Cell columnSpan={{ xs: 2, sm: 3, md: 3, lg: 2, xl: 2 }}></Grid.Cell>
         <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
           <Page
-            // title={zone_id ? 'Edit Zone' : 'Add Zone'}
-            title='Add Merge Rate'
+            title={id ? 'Edit Merge Rate' : 'Add Merge Rate'}
             primaryAction={<Button variant="primary" onClick={saevMergeRate} >Save</Button>}
             secondaryActions={<Button onClick={navigateHome} >Back</Button>}>
 

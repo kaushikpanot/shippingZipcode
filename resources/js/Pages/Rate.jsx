@@ -50,7 +50,6 @@ function Rate(props) {
     const [inputValue, setInputValue] = useState('');
     const [zipcodeValue, setZipcodeValue] = useState('');
     const navigate = useNavigate();
-    const [product, setProduct] = useState();
     const [checkstate, setCheckState] = useState({
         selectedCondition: 0,
         selectedStateCondition: 'All',
@@ -462,8 +461,11 @@ function Rate(props) {
                     max_charge_price: surchargeData.max_charge_price || '',
                     rate_price: surchargeData.rate_price || '',
                     cart_total_percentage: surchargeData.cart_total_percentage || '',
+                    // productData: surchargeData.productData || '',
                 });
+               
             }
+           
             if (response.data.rate.rate_tier) {
                 setSelectedTierType(response.data.rate.rate_tier.tier_type);
                 setTiers(response.data.rate.rate_tier.rateTier);
@@ -888,7 +890,7 @@ function Rate(props) {
                 value2: '',
                 unit: 'items',
                 label: 'cart_order',
-                lineItem: 'anyTag',
+                lineItem: 'any',
                 tag: '',
                 per_product: 'any',
             };
@@ -980,7 +982,9 @@ function Rate(props) {
             apiKey: SHOPIFY_API_KEY,
             host: props.host,
         });
-        editRate();
+        if(id){
+            editRate();
+        }
         getLocation();
         getstate();
         fetchProducts()
@@ -1195,7 +1199,6 @@ function Rate(props) {
                 return acc;
             }, {});
     };
-
     const saveRate = async () => {
         const newErrors = {};
         if (!formData.name) newErrors.name = 'Rate name is required';
@@ -1300,7 +1303,7 @@ function Rate(props) {
     const fetchProducts = async () => {
         try {
             const token = await getSessionToken(app);
-            const response = await axios.post(`${apiCommonURL}/api/products`, product, {
+            const response = await axios.post(`${apiCommonURL}/api/products`, products, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -1317,7 +1320,6 @@ function Rate(props) {
             console.error('Error fetching product data:', error);
         }
     };
-
     const handleRatePriceChange = (value, id) => {
         setSelectedProductsData((prevData) => prevData.map(product =>
             product.id === id ? { ...product, rate_price: value } : product
@@ -1342,8 +1344,11 @@ function Rate(props) {
     const handleSearchClick = () => {
         setShowTable(true);
     };
-
+   
+      
     const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(filteredProducts);
+
+  
 
     useEffect(() => {
         const productIds = selectedResources
@@ -1634,7 +1639,8 @@ function Rate(props) {
                                     <Divider borderColor="border" />
                                     <div>
                                         {items.map((item, index) => (
-                                            <div key={index}>
+                                            <div key={item.id}>
+
                                                 <Grid>
                                                     <Grid.Cell columnSpan={{ xs: 2, sm: 3, md: 3, lg: 2, xl: 2 }}>
                                                         <div style={{ paddingTop: '20%', textAlign: 'center', }}>
@@ -1838,20 +1844,21 @@ function Rate(props) {
                                                                 marginBottom: "2%",
                                                             }}>
                                                                 {item.name === 'lineitem' && (
-                                                                    <Select
-                                                                        key={index}
-                                                                        options={lineItem}
-                                                                        onChange={handleConditionsChange(index, 'lineItem')}
-                                                                        value={item.lineItem}
-                                                                    />
-                                                                )}
-                                                                {/* {item.lineItem === 'anyTag'  && (
-                                                                        <TextField
-                                                                            value={item.tag}
-                                                                            onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}
-                                                                            placeholder='tag1,tag2,tag3'
+                                                                    <>
+                                                                        <Select
+                                                                            options={lineItem}
+                                                                            onChange={handleConditionsChange(index, 'lineItem')}
+                                                                            value={item.lineItem}
                                                                         />
-                                                                    )} */}
+                                                                        {item.lineItem === 'anyTag' && (
+                                                                            <TextField
+                                                                                value={item.tag}
+                                                                                onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}
+                                                                                placeholder='tag1,tag2,tag3'
+                                                                            />
+                                                                        )}
+                                                                    </>
+                                                                )}
                                                             </div>
                                                             {(item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2') && (
                                                                 <div style={{

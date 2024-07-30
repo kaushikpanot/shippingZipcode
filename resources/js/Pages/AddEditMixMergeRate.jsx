@@ -123,8 +123,6 @@ function AddEditMixMergeRate(props) {
         tags_to_combine: response.data.mixMergeRate.tags_to_combine,
         tags_to_exclude: response.data.mixMergeRate.tags_to_exclude,
       }));
-      console.log(response.data)
-      setLoading(false);
     } catch (error) {
       console.error('Error occurs', error);
     }
@@ -170,8 +168,6 @@ function AddEditMixMergeRate(props) {
       }))
       setToastContent("Merge rate Add successfully..");
       setShowToast(true);
-      console.log(response.data.id)
-
     } catch (error) {
       console.error('Error occurs', error);
       setToastContent("Error occurred while saving data");

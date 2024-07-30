@@ -350,7 +350,6 @@ function Zone(props) {
                 id: response.data.id,
             }))
 
-            console.log(response.data)
             setToastContent("Zone saved successfully.");
             setShowToast(true);
             // setTimeout(() => {

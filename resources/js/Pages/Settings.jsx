@@ -51,7 +51,6 @@ const Settings = (props) => {
   const getSettingData = async () => {
     try {
       const token = await getSessionToken(app);
-      console.log(token)
       const response = await axios.get(`${apiCommonURL}/api/settings`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -61,7 +60,6 @@ const Settings = (props) => {
       const data = response.data.settings;
       setSettings(data);
       setLoading(false)
-      console.log(data)
     } catch (error) {
       console.error("Error fetching settings data:", error);
     }

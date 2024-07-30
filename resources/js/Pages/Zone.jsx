@@ -132,16 +132,12 @@ function Zone(props) {
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
             });
-
             const token = await getSessionToken(app);
             const response = await axios.post(`${apiCommonURL}/api/zone/detail`, editdata, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
-
-
             setFormData(prevState => ({
                 ...prevState,
                 name: response.data.zone.name,
@@ -149,19 +145,16 @@ function Zone(props) {
                 id: response.data.zone.id,
                 status: response.data.zone.status,
             }));
-
             setSelectedOptions(response.data.zone.country);
-
             const ratedata = response.data.rates;
             setTotalPages(Math.ceil(ratedata.length / itemsPerPage));
             setRate(ratedata);
-
             setLoading(false);
-
         } catch (error) {
             console.error('Error occurs', error);
         }
     }
+    
     const getCurrency = async () => {
         try {
             const token = await getSessionToken(app);

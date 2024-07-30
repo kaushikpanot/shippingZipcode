@@ -25,6 +25,14 @@ function AddEditMixMergeRate(props) {
   const [toastContent, setToastContent] = useState("");
   const [showToast, setShowToast] = useState(false);
   const toastDuration = 3000;
+  const [active, setActive] = useState(false);
+
+  const toggleActive = useCallback(() => setActive((active) => !active), []);
+
+  const toastMarkup = active ? (
+    <Toast content="Sorry. Couldn’t be saved. Please try again."  error onDismiss={toggleActive} />
+  ) : null;
+
   const condition = [
     { label: 'All rates must have at least one tag', value: 0 },
     { label: 'Any rates found with tag', value: 1 },
@@ -39,16 +47,16 @@ function AddEditMixMergeRate(props) {
   ];
   const [formData, setFormData] = useState({
     rate_name: "",
+    id: 0,
     service_code: '',
     description: '',
-    id: "",
     status: 1,
     condition: 0,
     price_calculation_type: 0,
     tags_to_combine: "",
     tags_to_exclude: "",
-    min_shipping_rate: "",
-    mix_shipping_rate: ""
+    min_shipping_rate: 0,
+    mix_shipping_rate: 0
   });
   const handleZoneDataChange = (field) => (value) => {
     setFormData((prevState) => ({
@@ -102,18 +110,18 @@ function AddEditMixMergeRate(props) {
         }
       });
       setFormData(prevState => ({
-          ...prevState,
-          rate_name: response.data.mixMergeRate.rate_name,
-          description: response.data.mixMergeRate.description,
-          id: response.data.mixMergeRate.id,
-          status: response.data.mixMergeRate.status,
-          condition: response.data.mixMergeRate.condition,
-          min_shipping_rate: response.data.mixMergeRate.min_shipping_rate,
-          mix_shipping_rate: response.data.mixMergeRate.mix_shipping_rate,
-          price_calculation_type: response.data.mixMergeRate.price_calculation_type,
-          service_code: response.data.mixMergeRate.service_code,
-          tags_to_combine: response.data.mixMergeRate.tags_to_combine,
-          tags_to_exclude: response.data.mixMergeRate.tags_to_exclude,
+        ...prevState,
+        rate_name: response.data.mixMergeRate.rate_name,
+        description: response.data.mixMergeRate.description,
+        id: response.data.mixMergeRate.id,
+        status: response.data.mixMergeRate.status,
+        condition: response.data.mixMergeRate.condition,
+        min_shipping_rate: response.data.mixMergeRate.min_shipping_rate,
+        mix_shipping_rate: response.data.mixMergeRate.mix_shipping_rate,
+        price_calculation_type: response.data.mixMergeRate.price_calculation_type,
+        service_code: response.data.mixMergeRate.service_code,
+        tags_to_combine: response.data.mixMergeRate.tags_to_combine,
+        tags_to_exclude: response.data.mixMergeRate.tags_to_exclude,
       }));
       console.log(response.data)
       setLoading(false);
@@ -122,11 +130,13 @@ function AddEditMixMergeRate(props) {
     }
   }
   useEffect(() => {
-  
     if (id) {
       editMergeRate();
     }
-}, [])
+    if (formData.id) {
+      navigate(`/add-edit-merge-rate/${formData.id}`);
+  }
+  }, [navigate,formData.id,id])
 
   const saevMergeRate = async () => {
     try {
@@ -134,9 +144,13 @@ function AddEditMixMergeRate(props) {
       if (!formData.rate_name) {
         newErrors.rate_name = 'The Rate name field is required.';
       }
+      if (!formData.tags_to_combine) {
+        newErrors.tags_to_combine = 'The tag to combine field is required.';
+      }
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
+        toggleActive();
         return;
       }
       const app = createApp({
@@ -150,11 +164,13 @@ function AddEditMixMergeRate(props) {
           'Authorization': `Bearer ${token}`
         }
       });
+      setFormData(prevFormData => ({
+        ...prevFormData,
+        id: response.data.id,
+      }))
       setToastContent("Merge rate Add successfully..");
       setShowToast(true);
-      // setTimeout(() => {
-      //     navigate('/Home');
-      // }, 1000);
+      console.log(response.data.id)
 
     } catch (error) {
       console.error('Error occurs', error);
@@ -266,6 +282,7 @@ function AddEditMixMergeRate(props) {
                       value={formData.tags_to_combine}
                       onChange={handleZoneDataChange('tags_to_combine')}
                       placeholder='Example:merge1,merge2,merge3'
+                      error={errors.tags_to_combine}
                     // helpText='Enter multiple shipping rate tags by comma(,) separated.'
                     />
                   </div>
@@ -309,6 +326,7 @@ function AddEditMixMergeRate(props) {
       {showToast && (
         <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
       )}
+       {toastMarkup}
     </div>
 
   )

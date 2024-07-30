@@ -60,7 +60,7 @@ function MergeRate(props) {
   const toggleModal = useCallback(() => setActive((active) => !active), []);
 
   const toastMarkup = toastActive ? (
-      <Toast content="Zone deleted" onDismiss={toggleToast} />
+      <Toast content="Merge rate deleted successfully."  error onDismiss={toggleToast} />
   ) : null;
 
   const app = createApp({
@@ -292,7 +292,7 @@ function MergeRate(props) {
       >
           <Modal.Section>
               <TextContainer>
-                  <p>Are you sure you want to delete the rate "{rateName}"?</p>
+                  <p >Are you sure you want to delete the rate <strong style={{fontWeight:"bolder"}}>" {rateName} "</strong> ?</p>
               </TextContainer>
           </Modal.Section>
       </Modal>

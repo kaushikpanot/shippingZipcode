@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('carrier/callback', [ApiController::class, 'handleCallback']);
 Route::get('conditionConvertSymbol/{name}', [ApiController::class, 'conditionConvertSymbol']);
+// Route::get('customer', [ApiController::class, 'getCustomerByNameAndPostalCode']);
+
 
 Route::middleware(['verify.shopify.jwt'])->group(function () {
     Route::resource('settings', SettingContoller::class);

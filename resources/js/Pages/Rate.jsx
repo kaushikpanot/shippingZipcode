@@ -59,7 +59,7 @@ function Rate(props) {
         selectedByUpdatePriceType: 0,
         selectedByUpdatePriceEffect: 0,
         selectedZipCondition: 'All',
-        selectedZipCode: 'Exclude',
+        selectedZipCode: 'Include',
         selectedMultiplyLine: 'Yes',
         selectedPriceReplace: 'BasePrice',
         exclude_products_radio: 0, // 0=Remove rate  1=Reduce only product price, weight and quantity
@@ -100,7 +100,7 @@ function Rate(props) {
         }
         setCheckedState(newCheckedState);
     }
-    const [toastDuration, setToastDuration] = useState(3000);
+    const [toastDuration] = useState(3000);
     const [showToast, setShowToast] = useState(false);
     const [errorToast, setErroToast] = useState(false)
     const [toastContent, setToastContent] = useState("");
@@ -113,10 +113,12 @@ function Rate(props) {
     const [shop_weight_unit, setshop_weight_unit] = useState()
     const [shop_currency, setShop_currency] = useState()
     const [selectedProductsData, setSelectedProductsData] = useState([]);
-    const [startCursor, setStartCursor] = useState('');
-    const [endCursor, setEndCursor] = useState('');
-    const [hasNextPage, setHasNextPage] = useState(false);
-    const [hasPreviousPage, setHasPreviousPage] = useState(false);
+    const [pageInfo, setPageInfo] = useState({
+        startCursor: null,
+        endCursor: null,
+        hasNextPage: false,
+        hasPreviousPage: false
+    });
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [date, setDate] = useState({ startDate: '', endDate: '' });
@@ -179,7 +181,7 @@ function Rate(props) {
         { label: 'Product Tag', value: 'product_tag' },
         { label: 'Product SKU', value: 'product_sku' },
         { label: 'Product Type', value: 'product_type' },
-        { label: 'Product Properties', value: 'product_properties' }
+        // { label: 'Product Properties', value: 'product_properties' }
     ];
     const [rateModifiers, setRateModifiers] = useState([]);
     const rateModifiersOptions = [
@@ -208,7 +210,7 @@ function Rate(props) {
         { label: 'Tag', value: 'tag', mainlabel: "any_Product" },
         { label: 'Type', value: 'type2', mainlabel: "any_Product" },
         { label: 'SKU', value: 'sku', mainlabel: "any_Product" },
-        { label: 'Properties', value: 'properties', mainlabel: "any_Product" },
+        // { label: 'Properties', value: 'properties', mainlabel: "any_Product" },
         { label: 'Vendor', value: 'vendor', mainlabel: "any_Product" },
         { label: 'Collection IDs', value: 'collectionsIds', mainlabel: "any_Product" },
 
@@ -220,9 +222,9 @@ function Rate(props) {
         { label: 'Address', value: 'address', mainlabel: "Customer" },
         { label: 'Tag', value: 'tag2', mainlabel: "Customer" },
 
-        { label: 'Rate', value: '', disabled: true, className: 'select-header' },
-        { label: 'Calculate Rate Price', value: 'calculateRate', mainlabel: "Rate" },
-        { label: 'Third Party Service', value: 'thirdParty', mainlabel: "Rate" },
+        // { label: 'Rate', value: '', disabled: true, className: 'select-header' },
+        // { label: 'Calculate Rate Price', value: 'calculateRate', mainlabel: "Rate" },
+        // { label: 'Third Party Service', value: 'thirdParty', mainlabel: "Rate" },
     ];
     const [open, setOpen] = useState({});
     const handleToggle = (id) => () => {
@@ -364,6 +366,7 @@ function Rate(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
+            console.log(response.data)
             const allStates = response.data.states;
             const formattedOptions = [];
             for (const country in allStates) {
@@ -463,22 +466,34 @@ function Rate(props) {
                     cart_total_percentage: surchargeData.cart_total_percentage || '',
                     // productData: surchargeData.productData || '',
                 });
-               
+
             }
-           
+
             if (response.data.rate.rate_tier) {
                 setSelectedTierType(response.data.rate.rate_tier.tier_type);
                 setTiers(response.data.rate.rate_tier.rateTier);
             }
-            setFormData({
-                name: response.data.rate.name,
-                base_price: response.data.rate.base_price,
-                service_code: response.data.rate.service_code,
-                description: response.data.rate.description,
-                id: response.data.rate.id,
-                zone_id: response.data.rate.zone_id,
-                status: response.data.rate.status,
-                merge_rate_tag: response.data.rate.merge_rate_tag
+            const rate = response.data.rate;
+            setFormData(prevState => {
+                const updatedProductData = (prevState.productdata || []).map(item => {
+                    return {
+                        ...item,
+                        value: item.id === rate.id ? rate.value : item.value
+                    };
+                });
+                console.log('updated products data',updatedProductData)
+                return {
+                    ...prevState,
+                    name: rate.name,
+                    base_price: rate.base_price,
+                    service_code: rate.service_code,
+                    description: rate.description,
+                    id: rate.id,
+                    zone_id: rate.zone_id,
+                    status: rate.status,
+                    merge_rate_tag: rate.merge_rate_tag,
+                    productdata: updatedProductData 
+                };
             });
             if (response.data.rate.scheduleRate) {
                 setDate(prevState => ({
@@ -560,18 +575,6 @@ function Rate(props) {
         setValue('');
         setFilteredProducts(products);
     }, [products]);
-
-    const handleNextPage = () => {
-        if (hasNextPage) {
-            fetchProducts(endCursor);
-        }
-    };
-
-    const handlePreviousPage = () => {
-        if (hasPreviousPage) {
-            fetchProducts(startCursor);
-        }
-    };
 
     const getstate = async () => {
         try {
@@ -836,8 +839,8 @@ function Rate(props) {
         { label: 'Cart / Order', value: '', disabled: true, className: 'select-header' },
         { label: 'Quantity', value: 'quantity', unit: 'items', mainlabel: "Cart_Order" },
         { label: 'Total', value: 'total', unit: shop_currency, mainlabel: "Cart_Order" },
-        { label: 'Sale Product Total', value: 's&ptotal', unit: shop_currency, mainlabel: "Cart_Order" },
-        { label: 'Non Sale Product Total', value: 'ns&ptotal', unit: shop_currency, mainlabel: "Cart_Order" },
+        // { label: 'Sale Product Total', value: 's&ptotal', unit: shop_currency, mainlabel: "Cart_Order" },
+        // { label: 'Non Sale Product Total', value: 'ns&ptotal', unit: shop_currency, mainlabel: "Cart_Order" },
         { label: 'Weight', value: 'weight', unit: shop_weight_unit, mainlabel: "Cart_Order" },
         { label: 'Line Item', value: 'lineitem', mainlabel: "Cart_Order" },
         { label: 'Distance', value: 'distance', unit: 'km', mainlabel: "Cart_Order" },
@@ -855,7 +858,7 @@ function Rate(props) {
         { label: 'SKU', value: 'sku', mainlabel: 'Per_Product' },
         { label: 'Type', value: 'type', mainlabel: 'Per_Product' },
         { label: 'Vendor', value: 'vendor', mainlabel: 'Per_Product' },
-        { label: 'Properties', value: 'properties', mainlabel: 'Per_Product' },
+        // { label: 'Properties', value: 'properties', mainlabel: 'Per_Product' },
 
         { label: 'Customer', value: '', disabled: true, className: 'select-header' },
         { label: 'Name', value: 'name2', mainlabel: 'Customer' },
@@ -982,7 +985,7 @@ function Rate(props) {
             apiKey: SHOPIFY_API_KEY,
             host: props.host,
         });
-        if(id){
+        if (id) {
             editRate();
         }
         getLocation();
@@ -1095,7 +1098,8 @@ function Rate(props) {
         exclude_rate_for_products: exclude_Rate,
         status: 1,
         merge_rate_tag: '',
-        origin_locations: []
+        origin_locations: [],
+        productdata: [],
     });
 
     const handleRateFormChange = (field) => (value) => {
@@ -1134,13 +1138,13 @@ function Rate(props) {
                 conditionMatch: checkstate.selectedCondition,
                 cartCondition: items,
             },
-            zipcode: {
+           zipcode: {
                 ...prevFormData.zipcode,
                 state: selectedStates,
                 stateSelection: checkstate.selectedStateCondition,
                 zipcodeSelection: checkstate.selectedZipCondition,
-                isInclude: checkstate.selectedZipCode,
-                zipcode: zipcodeValue.split(',').map(zip => zip.trim())
+                 isInclude: checkstate.selectedZipCode,
+                zipcode: zipcodeValue?.split(',').map(zip => zip.trim())
             },
             scheduleRate: {
                 ...prevFormData.scheduleRate,
@@ -1293,6 +1297,7 @@ function Rate(props) {
             setErrors({});
             setToastContent('Rate saved successfully');
             setShowToast(true);
+            editRate();
 
         } catch (error) {
             console.error('Error occurs', error);
@@ -1300,10 +1305,18 @@ function Rate(props) {
             setShowToast(true);
         }
     };
-    const fetchProducts = async () => {
+    const fetchProducts = async (cursor, direction) => {
         try {
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
             const token = await getSessionToken(app);
-            const response = await axios.post(`${apiCommonURL}/api/products`, products, {
+            const payload = {
+                ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
+                // query: textFieldValue,
+            };
+            const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -1311,32 +1324,27 @@ function Rate(props) {
             const productData = response.data;
             setProducts(productData.products);
             setFilteredProducts(productData.products);
-            setStartCursor(productData.startCursor);
-            setEndCursor(productData.endCursor);
-            setHasNextPage(productData.hasNextPage);
-            setHasPreviousPage(productData.hasPreviousPage);
+            setPageInfo({
+                startCursor: productData.startCursor,
+                endCursor: productData.endCursor,
+                hasNextPage: productData.hasNextPage,
+                hasPreviousPage: productData.hasPreviousPage,
+            });
             setLoading(false)
         } catch (error) {
             console.error('Error fetching product data:', error);
         }
     };
-    const handleRatePriceChange = (value, id) => {
-        setSelectedProductsData((prevData) => prevData.map(product =>
-            product.id === id ? { ...product, rate_price: value } : product
-        ));
+    const handleNextPage = () => {
+        if (pageInfo.hasNextPage) {
+            fetchProducts(pageInfo.endCursor, 'next');
+        }
     };
-
-    const handleProductSelection = (product) => {
-        setSelectedProductsData((prevData) => {
-            const isSelected = prevData.some(item => item.id === product.id);
-            if (isSelected) {
-                return prevData.filter(item => item.id !== product.id);
-            } else {
-                return [...prevData, { ...product, rate_price: '' }];
-            }
-        });
+    const handlePreviousPage = () => {
+        if (pageInfo.hasPreviousPage) {
+            fetchProducts(pageInfo.startCursor, 'prev');
+        }
     };
-
     const resourceName = {
         singular: 'order',
         plural: 'products',
@@ -1344,36 +1352,14 @@ function Rate(props) {
     const handleSearchClick = () => {
         setShowTable(true);
     };
-   
-      
+
     const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(filteredProducts);
 
-  
-
     useEffect(() => {
-        const productIds = selectedResources
-            .map(id => {
-                const product = filteredProducts.find(product => product.id === id);
-                return product ? product.id : '';
-            })
-            .filter(id => id);
-        const currentProductData = productIds.join(', ');
-        setRateModifiers(prevModifiers => {
-            return prevModifiers.map(modifier =>
-                modifier.id in open ? {
-                    ...modifier,
-                    productData: currentProductData,
-                } : modifier
-            );
-        });
-        SetExclude_Rate(prevState => ({
-            ...prevState,
-            productData: currentProductData,
-        }));
         if (formData.id) {
             navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
         }
-    }, [selectedResources, filteredProducts, formData.id, zone_id, navigate, open]);
+    }, [formData.id, zone_id, navigate]);
 
     const productData = filteredProducts.map(({ id, title, image }, index) => (
         <IndexTable.Row
@@ -1398,54 +1384,93 @@ function Rate(props) {
             </IndexTable.Cell>
         </IndexTable.Row>
     ));
+    const handleProductChange = (productId, checked, text = '') => {
+        Setrate_based_on_surcharge((prevState) => {
+            let updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
+    
+            if (checked) {
+                const product = products.find(product => product.id == productId);
+                if (product) {
+                    const existingProductIndex = updatedProductData.findIndex(item => item.id == productId);
+    
+                    if (existingProductIndex !== -1) {
+                        updatedProductData[existingProductIndex] = {
+                            ...updatedProductData[existingProductIndex],
+                            value: text
+                        };
+                    } else {
+                        updatedProductData = [
+                            ...updatedProductData,
+                            {
+                                id: product.id,
+                                title: product.title,
+                                price: product.price,
+                                value: text
+                            }
+                        ];
+                    }
+                }
+            } else {
+                updatedProductData = updatedProductData.filter(item => item.id !== productId);
+            }
+    
+            return {
+                ...prevState,
+                productdata: updatedProductData,
+            };
+        });
+    };
+    console.log(formData.productdata)
+    const selectedCount = Array.isArray(formData.productdata) ? formData.productdata.length : 0;
 
-    const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
-        <IndexTable.Row
-            id={id}
-            key={id}
-            selected={selectedResources.includes(id)}
-            position={index}
-            onClick={() => handleProductSelection({
-                id,
-                name: title,
-                // tags: "",
-                // product_vendor: "United By Blue",
-                // product_type: "Accessories",
-                product_price: price,
-                product_image_url: image,
-            })}
-        >
-            <IndexTable.Cell>
-                <Thumbnail
-                    source={image}
-                    size="large"
-                    alt={title}
-                />
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+ 
+    const rowMarkup = products.map(({ id, title, image, price }, index) => {
+        const isChecked = Array.isArray(formData.productdata) && formData.productdata.some(item => item.id === id);
+        const productValue = Array.isArray(formData.productdata) ? formData.productdata.find(item => item.id === id)?.value || '' : '';
+    
+        return (
+            <IndexTable.Row
+                id={id}
+                key={id}
+                position={index}
+            >
+                 <IndexTable.Cell>
+                    <Checkbox
+                        checked={isChecked}
+                        onChange={(checked) => handleProductChange(id, checked, productValue)}
+                    />
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <Thumbnail
+                        source={image}
+                        size="small"
+                        alt={title}
+                    />
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+                        <Text fontWeight="bold" as="span">
+                            {title}
+                        </Text>
+                    </div>
+                </IndexTable.Cell>
+                <IndexTable.Cell>
                     <Text fontWeight="bold" as="span">
-                        {title}
+                        {price}
                     </Text>
-                </div>
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <Text fontWeight="bold" as="span">
-                    {price}
-                </Text>
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <TextField
-                    type="text"
-                    prefix={shop_currency}
-                    placeholder='0.00'
-                    value={selectedProductsData.find(product => product.id === id)?.rate_price || ''}
-                    onChange={(value) => handleRatePriceChange(value, id)}
-                />
-            </IndexTable.Cell>
-        </IndexTable.Row>
-    ));
-
+                </IndexTable.Cell>
+               
+                <IndexTable.Cell>
+                    <TextField
+                        value={productValue}
+                        onChange={(text) => handleProductChange(id, isChecked, text)}
+                        disabled={!isChecked}
+                    />
+                </IndexTable.Cell>
+            </IndexTable.Row>
+        );
+    });
+    
     if (loading) {
         return (
             <Page
@@ -1905,7 +1930,7 @@ function Rate(props) {
                                             variant='primary'
                                             onClick={handleAddItem}
                                         >
-                                            Add Theme
+                                            Add Conditions
                                         </Button>
                                     </div>
                                 </div>
@@ -2011,14 +2036,14 @@ function Rate(props) {
                                         <RadioButton
                                             label="Include ZipCodes"
                                             checked={checkstate.selectedZipCode === 'Include'}
-                                            id="include"
+                                            id="Include"
                                             name="isInclude"
                                             onChange={() => handlecheckedChange('selectedZipCode', 'Include')}
                                         />
                                         <RadioButton
                                             label="Exclude ZipCodes"
                                             checked={checkstate.selectedZipCode === 'Exclude'}
-                                            id="exclude"
+                                            id="Exclude"
                                             name="isInclude"
                                             onChange={() => handlecheckedChange('selectedZipCode', 'Exclude')}
                                         />
@@ -2438,20 +2463,19 @@ function Rate(props) {
                                                                     <IndexTable
                                                                         resourceName={resourceName}
                                                                         itemCount={filteredProducts.length}
-                                                                        selectedItemsCount={
-                                                                            allResourcesSelected ? 'All' : selectedResources.length
-                                                                        }
-                                                                        onSelectionChange={handleSelectionChange}
+
                                                                         headings={[
+                                                                            { title: ` ${selectedCount} Selected` }, // Show count here
                                                                             { title: 'Image' },
                                                                             { title: 'Title' },
                                                                             { title: 'Price' },
                                                                             { title: 'Rate Price' },
                                                                         ]}
+                                                                        selectable={false}
                                                                         pagination={{
-                                                                            hasNext: hasNextPage,
-                                                                            hasPrevious: hasPreviousPage,
+                                                                            hasNext: pageInfo.hasNextPage,
                                                                             onNext: handleNextPage,
+                                                                            hasPrevious: pageInfo.hasPreviousPage,
                                                                             onPrevious: handlePreviousPage,
                                                                         }}
                                                                     >
@@ -2802,7 +2826,7 @@ function Rate(props) {
                                     <div style={{ marginTop: "4%" }}>
                                         {showTable && (
                                             <div>
-                                                <div>
+                                                {/* <div>
                                                     <TextField
                                                         placeholder='search'
                                                         onChange={handlesearchChange}
@@ -2835,7 +2859,7 @@ function Rate(props) {
                                                     >
                                                         {productData}
                                                     </IndexTable>
-                                                </div>
+                                                </div> */}
                                             </div>
                                         )}
                                     </div>
@@ -3868,7 +3892,7 @@ function Rate(props) {
 
                     <Modal.Section>
                         <div style={{ position: 'relative' }}>
-                            <div style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
+                            {/* <div style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
                                 <TextField
                                     placeholder='search'
                                     onChange={handlesearchChange}
@@ -3900,7 +3924,7 @@ function Rate(props) {
                                 >
                                     {productData}
                                 </IndexTable>
-                            </div>
+                            </div> */}
                         </div>
                     </Modal.Section>
                 </Modal>

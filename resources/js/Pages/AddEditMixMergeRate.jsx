@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useDebugValue } from 'react'
 import axios from 'axios';
 import {
   Page,
@@ -10,7 +10,10 @@ import {
   Select,
   TextField,
   FormLayout,
-  Toast
+  Toast,
+  SkeletonBodyText,
+  SkeletonDisplayText,
+  Card
 } from '@shopify/polaris';
 import createApp from '@shopify/app-bridge';
 import { getSessionToken } from "@shopify/app-bridge-utils";
@@ -26,11 +29,12 @@ function AddEditMixMergeRate(props) {
   const [showToast, setShowToast] = useState(false);
   const toastDuration = 3000;
   const [active, setActive] = useState(false);
+  const [loading, setLoading] = useState(false)
 
   const toggleActive = useCallback(() => setActive((active) => !active), []);
 
   const toastMarkup = active ? (
-    <Toast content="Sorry. Couldn’t be saved. Please try again."  error onDismiss={toggleActive} />
+    <Toast content="Sorry. Couldn’t be saved. Please try again." error onDismiss={toggleActive} />
   ) : null;
 
   const condition = [
@@ -98,6 +102,7 @@ function AddEditMixMergeRate(props) {
 
   const editMergeRate = async () => {
     try {
+      setLoading(true)
       const app = createApp({
         apiKey: SHOPIFY_API_KEY,
         host: props.host,
@@ -123,8 +128,7 @@ function AddEditMixMergeRate(props) {
         tags_to_combine: response.data.mixMergeRate.tags_to_combine,
         tags_to_exclude: response.data.mixMergeRate.tags_to_exclude,
       }));
-      console.log(response.data)
-      setLoading(false);
+      setLoading(false)
     } catch (error) {
       console.error('Error occurs', error);
     }
@@ -135,8 +139,8 @@ function AddEditMixMergeRate(props) {
     }
     if (formData.id) {
       navigate(`/add-edit-merge-rate/${formData.id}`);
-  }
-  }, [navigate,formData.id,id])
+    }
+  }, [navigate, formData.id, id])
 
   const saevMergeRate = async () => {
     try {
@@ -170,14 +174,61 @@ function AddEditMixMergeRate(props) {
       }))
       setToastContent("Merge rate Add successfully..");
       setShowToast(true);
-      console.log(response.data.id)
-
     } catch (error) {
       console.error('Error occurs', error);
       setToastContent("Error occurred while saving data");
       setShowToast(true);
     }
   }
+  if (loading) {
+    return (
+      <Grid>
+        <Grid.Cell columnSpan={{ xs: 2, sm: 3, md: 3, lg: 2, xl: 2 }}></Grid.Cell>
+        <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+          <Page
+            title='Edit Merge Rate'
+            primaryAction={<Button variant="primary" >Save</Button>}
+            secondaryActions={<Button >Back</Button>}
+          >
+            <Divider borderColor="border" />
+            <div style={{ marginTop: "2%", marginBottom: "3%" }}>
+              <div style={{ marginTop: "5%" }}>
+                <SkeletonDisplayText size="small" />
+                <div style={{ paddingTop: '2%', fontSize: '14px' }}>
+                  <SkeletonBodyText lines={2} />
+                </div>
+              </div>
+            </div>
+            <LegacyCard sectioned>
+              <div style={{  marginBottom: "3%"  }}>
+                <LegacyCard sectioned>
+                  <SkeletonBodyText lines={2} />
+                </LegacyCard>
+              </div>
+              <Divider borderColor="border" />
+              <div style={{ marginTop: "2%", }}>
+                <LegacyCard sectioned>
+                  <SkeletonBodyText lines={2} />
+                </LegacyCard>
+              </div>
+              <div style={{ marginTop: "2%", }}>
+                <LegacyCard sectioned>
+                  <SkeletonBodyText lines={2} />
+                </LegacyCard>
+              </div>
+              <div style={{ marginTop: "2%", }}>
+                <LegacyCard sectioned>
+                  <SkeletonBodyText lines={2} />
+                </LegacyCard>
+              </div>
+            </LegacyCard>
+          </Page>
+        </Grid.Cell>
+        <Grid.Cell columnSpan={{ xs: 2, sm: 3, md: 3, lg: 2, xl: 2 }}></Grid.Cell>
+      </Grid>
+    );
+  }
+
   return (
     <div>
       <Grid>
@@ -326,7 +377,7 @@ function AddEditMixMergeRate(props) {
       {showToast && (
         <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
       )}
-       {toastMarkup}
+      {toastMarkup}
     </div>
 
   )

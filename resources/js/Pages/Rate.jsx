@@ -44,12 +44,12 @@ function Rate(props) {
     const { id, zone_id } = useParams();
     const [loading, setLoading] = useState(true);
     const [state, setState] = useState([])
+    const [originalOptions, setOriginalOptions] = useState([]);
     const [selectedOptions, setSelectedOptions] = useState([]);
     const [options, setOptions] = useState([]);
     const [inputValue, setInputValue] = useState('');
     const [zipcodeValue, setZipcodeValue] = useState('');
     const navigate = useNavigate();
-    const [product, setProduct] = useState();
     const [checkstate, setCheckState] = useState({
         selectedCondition: 0,
         selectedStateCondition: 'All',
@@ -59,7 +59,7 @@ function Rate(props) {
         selectedByUpdatePriceType: 0,
         selectedByUpdatePriceEffect: 0,
         selectedZipCondition: 'All',
-        selectedZipCode: 'Exclude',
+        selectedZipCode: 'Include',
         selectedMultiplyLine: 'Yes',
         selectedPriceReplace: 'BasePrice',
         exclude_products_radio: 0, // 0=Remove rate  1=Reduce only product price, weight and quantity
@@ -100,7 +100,7 @@ function Rate(props) {
         }
         setCheckedState(newCheckedState);
     }
-    const [toastDuration, setToastDuration] = useState(3000);
+    const [toastDuration] = useState(3000);
     const [showToast, setShowToast] = useState(false);
     const [errorToast, setErroToast] = useState(false)
     const [toastContent, setToastContent] = useState("");
@@ -113,10 +113,12 @@ function Rate(props) {
     const [shop_weight_unit, setshop_weight_unit] = useState()
     const [shop_currency, setShop_currency] = useState()
     const [selectedProductsData, setSelectedProductsData] = useState([]);
-    const [startCursor, setStartCursor] = useState('');
-    const [endCursor, setEndCursor] = useState('');
-    const [hasNextPage, setHasNextPage] = useState(false);
-    const [hasPreviousPage, setHasPreviousPage] = useState(false);
+    const [pageInfo, setPageInfo] = useState({
+        startCursor: null,
+        endCursor: null,
+        hasNextPage: false,
+        hasPreviousPage: false
+    });
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [date, setDate] = useState({ startDate: '', endDate: '' });
@@ -179,7 +181,7 @@ function Rate(props) {
         { label: 'Product Tag', value: 'product_tag' },
         { label: 'Product SKU', value: 'product_sku' },
         { label: 'Product Type', value: 'product_type' },
-        { label: 'Product Properties', value: 'product_properties' }
+        // { label: 'Product Properties', value: 'product_properties' }
     ];
     const [rateModifiers, setRateModifiers] = useState([]);
     const rateModifiersOptions = [
@@ -208,7 +210,7 @@ function Rate(props) {
         { label: 'Tag', value: 'tag', mainlabel: "any_Product" },
         { label: 'Type', value: 'type2', mainlabel: "any_Product" },
         { label: 'SKU', value: 'sku', mainlabel: "any_Product" },
-        { label: 'Properties', value: 'properties', mainlabel: "any_Product" },
+        // { label: 'Properties', value: 'properties', mainlabel: "any_Product" },
         { label: 'Vendor', value: 'vendor', mainlabel: "any_Product" },
         { label: 'Collection IDs', value: 'collectionsIds', mainlabel: "any_Product" },
 
@@ -220,9 +222,9 @@ function Rate(props) {
         { label: 'Address', value: 'address', mainlabel: "Customer" },
         { label: 'Tag', value: 'tag2', mainlabel: "Customer" },
 
-        { label: 'Rate', value: '', disabled: true, className: 'select-header' },
-        { label: 'Calculate Rate Price', value: 'calculateRate', mainlabel: "Rate" },
-        { label: 'Third Party Service', value: 'thirdParty', mainlabel: "Rate" },
+        // { label: 'Rate', value: '', disabled: true, className: 'select-header' },
+        // { label: 'Calculate Rate Price', value: 'calculateRate', mainlabel: "Rate" },
+        // { label: 'Third Party Service', value: 'thirdParty', mainlabel: "Rate" },
     ];
     const [open, setOpen] = useState({});
     const handleToggle = (id) => () => {
@@ -364,7 +366,7 @@ function Rate(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            console.log(response.data);
+            console.log(response.data)
             const allStates = response.data.states;
             const formattedOptions = [];
             for (const country in allStates) {
@@ -462,21 +464,36 @@ function Rate(props) {
                     max_charge_price: surchargeData.max_charge_price || '',
                     rate_price: surchargeData.rate_price || '',
                     cart_total_percentage: surchargeData.cart_total_percentage || '',
+                    // productData: surchargeData.productData || '',
                 });
+
             }
+
             if (response.data.rate.rate_tier) {
                 setSelectedTierType(response.data.rate.rate_tier.tier_type);
                 setTiers(response.data.rate.rate_tier.rateTier);
             }
-            setFormData({
-                name: response.data.rate.name,
-                base_price: response.data.rate.base_price,
-                service_code: response.data.rate.service_code,
-                description: response.data.rate.description,
-                id: response.data.rate.id,
-                zone_id: response.data.rate.zone_id,
-                status: response.data.rate.status,
-                merge_rate_tag: response.data.rate.merge_rate_tag
+            const rate = response.data.rate;
+            setFormData(prevState => {
+                const updatedProductData = (prevState.productdata || []).map(item => {
+                    return {
+                        ...item,
+                        value: item.id === rate.id ? rate.value : item.value
+                    };
+                });
+                console.log('updated products data',updatedProductData)
+                return {
+                    ...prevState,
+                    name: rate.name,
+                    base_price: rate.base_price,
+                    service_code: rate.service_code,
+                    description: rate.description,
+                    id: rate.id,
+                    zone_id: rate.zone_id,
+                    status: rate.status,
+                    merge_rate_tag: rate.merge_rate_tag,
+                    productdata: updatedProductData 
+                };
             });
             if (response.data.rate.scheduleRate) {
                 setDate(prevState => ({
@@ -559,18 +576,6 @@ function Rate(props) {
         setFilteredProducts(products);
     }, [products]);
 
-    const handleNextPage = () => {
-        if (hasNextPage) {
-            fetchProducts(endCursor);
-        }
-    };
-
-    const handlePreviousPage = () => {
-        if (hasPreviousPage) {
-            fetchProducts(startCursor);
-        }
-    };
-
     const getstate = async () => {
         try {
             const token = await getSessionToken(app);
@@ -580,8 +585,8 @@ function Rate(props) {
                 }
             });
             const allStates = response.data.states;
-            setshop_weight_unit(response.data.rate.shop_weight_unit)
-            setShop_currency(response.data.rate.shop_currency)
+            setshop_weight_unit(response.data.rate.shop_weight_unit);
+            setShop_currency(response.data.rate.shop_currency);
             const formattedOptions = [];
             for (const country in allStates) {
                 if (allStates.hasOwnProperty(country)) {
@@ -597,6 +602,7 @@ function Rate(props) {
                 }
             }
             setOptions(formattedOptions);
+            setOriginalOptions(formattedOptions);
             setState(formattedOptions.map(section => section.options).flat());
         } catch (error) {
             console.error("Error fetching shop location:", error);
@@ -607,12 +613,12 @@ function Rate(props) {
         (value) => {
             setInputValue(value);
             if (value === '') {
-                setOptions(options);
+                setOptions(originalOptions);
                 return;
             }
             const filterRegex = new RegExp(value, 'i');
             const resultOptions = [];
-            options.forEach((opt) => {
+            originalOptions.forEach((opt) => {
                 const filteredOptions = opt.options.filter((option) =>
                     option.label.match(filterRegex),
                 );
@@ -623,7 +629,7 @@ function Rate(props) {
             });
             setOptions(resultOptions);
         },
-        [options],
+        [originalOptions],
     );
 
     const removeTag = useCallback(
@@ -743,14 +749,12 @@ function Rate(props) {
         { label: 'ALL product must satisfy this conditin ', value: 'all' },
         { label: 'NONE of product must satisfy this conditin ', value: 'none' },
     ]
-
     const [deliveryType, setDeliveryType] = useState([{
         id: 0,
         local: false,
         Store: false,
         Shipping: false,
     }]);
-
     const [dayOfWeekSelection, setDayOfWeekSelection] = useState([{
         id: 0,
         Monday: false,
@@ -835,8 +839,8 @@ function Rate(props) {
         { label: 'Cart / Order', value: '', disabled: true, className: 'select-header' },
         { label: 'Quantity', value: 'quantity', unit: 'items', mainlabel: "Cart_Order" },
         { label: 'Total', value: 'total', unit: shop_currency, mainlabel: "Cart_Order" },
-        { label: 'Sale Product Total', value: 's&ptotal', unit: shop_currency, mainlabel: "Cart_Order" },
-        { label: 'Non Sale Product Total', value: 'ns&ptotal', unit: shop_currency, mainlabel: "Cart_Order" },
+        // { label: 'Sale Product Total', value: 's&ptotal', unit: shop_currency, mainlabel: "Cart_Order" },
+        // { label: 'Non Sale Product Total', value: 'ns&ptotal', unit: shop_currency, mainlabel: "Cart_Order" },
         { label: 'Weight', value: 'weight', unit: shop_weight_unit, mainlabel: "Cart_Order" },
         { label: 'Line Item', value: 'lineitem', mainlabel: "Cart_Order" },
         { label: 'Distance', value: 'distance', unit: 'km', mainlabel: "Cart_Order" },
@@ -854,7 +858,7 @@ function Rate(props) {
         { label: 'SKU', value: 'sku', mainlabel: 'Per_Product' },
         { label: 'Type', value: 'type', mainlabel: 'Per_Product' },
         { label: 'Vendor', value: 'vendor', mainlabel: 'Per_Product' },
-        { label: 'Properties', value: 'properties', mainlabel: 'Per_Product' },
+        // { label: 'Properties', value: 'properties', mainlabel: 'Per_Product' },
 
         { label: 'Customer', value: '', disabled: true, className: 'select-header' },
         { label: 'Name', value: 'name2', mainlabel: 'Customer' },
@@ -880,18 +884,16 @@ function Rate(props) {
 
     const handleAddItem = () => {
         setItems(prevItems => {
-            // Determine the new ID based on the length of the items array
             const newId = prevItems.length ? prevItems[prevItems.length - 1].id + 1 : 1;
-            console.log(newId)
             const newItem = {
-                id: newId, // Assign a unique ID
+                id: newId,
                 name: 'quantity',
                 condition: 'equal',
                 value: '',
                 value2: '',
                 unit: 'items',
                 label: 'cart_order',
-                lineItem: 'anyTag',
+                lineItem: 'any',
                 tag: '',
                 per_product: 'any',
             };
@@ -952,7 +954,6 @@ function Rate(props) {
         };
         const updatedItems = [...items];
         updatedItems[index] = updatedItem;
-        console.log(updatedItems.map(item => item.id || item.name));
         setItems(updatedItems);
     };
 
@@ -984,7 +985,9 @@ function Rate(props) {
             apiKey: SHOPIFY_API_KEY,
             host: props.host,
         });
-        editRate();
+        if (id) {
+            editRate();
+        }
         getLocation();
         getstate();
         fetchProducts()
@@ -1023,12 +1026,10 @@ function Rate(props) {
             update_price_type: checkstate.selectedByUpdatePriceType,
             update_price_effect: checkstate.selectedByUpdatePriceEffect
         }));
-
         SetExclude_Rate(prevState => ({
             ...prevState,
             set_exclude_products: selectedRate,
         }));
-
         const updated_location = locations
             .filter(location => checkedlocation[location.name]?.checked)
             .map(location => ({
@@ -1097,7 +1098,8 @@ function Rate(props) {
         exclude_rate_for_products: exclude_Rate,
         status: 1,
         merge_rate_tag: '',
-        origin_locations: []
+        origin_locations: [],
+        productdata: [],
     });
 
     const handleRateFormChange = (field) => (value) => {
@@ -1136,13 +1138,13 @@ function Rate(props) {
                 conditionMatch: checkstate.selectedCondition,
                 cartCondition: items,
             },
-            zipcode: {
+           zipcode: {
                 ...prevFormData.zipcode,
                 state: selectedStates,
                 stateSelection: checkstate.selectedStateCondition,
                 zipcodeSelection: checkstate.selectedZipCondition,
-                isInclude: checkstate.selectedZipCode,
-                zipcode: zipcodeValue.split(',').map(zip => zip.trim())
+                 isInclude: checkstate.selectedZipCode,
+                zipcode: zipcodeValue?.split(',').map(zip => zip.trim())
             },
             scheduleRate: {
                 ...prevFormData.scheduleRate,
@@ -1201,7 +1203,6 @@ function Rate(props) {
                 return acc;
             }, {});
     };
-
     const saveRate = async () => {
         const newErrors = {};
         if (!formData.name) newErrors.name = 'Rate name is required';
@@ -1274,7 +1275,6 @@ function Rate(props) {
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             setToastContent('Sorry. Couldn’t be saved. Please try again.');
-            // console.log(newErrors)
             setErroToast(true);
             return;
         }
@@ -1285,7 +1285,6 @@ function Rate(props) {
             });
             const token = await getSessionToken(app);
             const cleanFormData = removeEmptyFields(formData);
-            console.log(cleanFormData)
             const response = await axios.post(`${apiCommonURL}/api/rate/save`, cleanFormData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -1298,6 +1297,7 @@ function Rate(props) {
             setErrors({});
             setToastContent('Rate saved successfully');
             setShowToast(true);
+            editRate();
 
         } catch (error) {
             console.error('Error occurs', error);
@@ -1305,10 +1305,18 @@ function Rate(props) {
             setShowToast(true);
         }
     };
-    const fetchProducts = async () => {
+    const fetchProducts = async (cursor, direction) => {
         try {
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
             const token = await getSessionToken(app);
-            const response = await axios.post(`${apiCommonURL}/api/products`, product, {
+            const payload = {
+                ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
+                // query: textFieldValue,
+            };
+            const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -1316,33 +1324,27 @@ function Rate(props) {
             const productData = response.data;
             setProducts(productData.products);
             setFilteredProducts(productData.products);
-            setStartCursor(productData.startCursor);
-            setEndCursor(productData.endCursor);
-            setHasNextPage(productData.hasNextPage);
-            setHasPreviousPage(productData.hasPreviousPage);
+            setPageInfo({
+                startCursor: productData.startCursor,
+                endCursor: productData.endCursor,
+                hasNextPage: productData.hasNextPage,
+                hasPreviousPage: productData.hasPreviousPage,
+            });
             setLoading(false)
         } catch (error) {
             console.error('Error fetching product data:', error);
         }
     };
-
-    const handleRatePriceChange = (value, id) => {
-        setSelectedProductsData((prevData) => prevData.map(product =>
-            product.id === id ? { ...product, rate_price: value } : product
-        ));
+    const handleNextPage = () => {
+        if (pageInfo.hasNextPage) {
+            fetchProducts(pageInfo.endCursor, 'next');
+        }
     };
-
-    const handleProductSelection = (product) => {
-        setSelectedProductsData((prevData) => {
-            const isSelected = prevData.some(item => item.id === product.id);
-            if (isSelected) {
-                return prevData.filter(item => item.id !== product.id);
-            } else {
-                return [...prevData, { ...product, rate_price: '' }];
-            }
-        });
+    const handlePreviousPage = () => {
+        if (pageInfo.hasPreviousPage) {
+            fetchProducts(pageInfo.startCursor, 'prev');
+        }
     };
-
     const resourceName = {
         singular: 'order',
         plural: 'products',
@@ -1354,34 +1356,15 @@ function Rate(props) {
     const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(filteredProducts);
 
     useEffect(() => {
-        const productIds = selectedResources
-            .map(id => {
-                const product = filteredProducts.find(product => product.id === id);
-                return product ? product.id : '';
-            })
-            .filter(id => id);
-        const currentProductData = productIds.join(', ');
-        setRateModifiers(prevModifiers => {
-            return prevModifiers.map(modifier =>
-                modifier.id in open ? {
-                    ...modifier,
-                    productData: currentProductData,
-                } : modifier
-            );
-        });
-        SetExclude_Rate(prevState => ({
-            ...prevState,
-            productData: currentProductData,
-        }));
         if (formData.id) {
             navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
         }
-    }, [selectedResources, filteredProducts, formData.id, zone_id, navigate, open]);
+    }, [formData.id, zone_id, navigate]);
 
     const productData = filteredProducts.map(({ id, title, image }, index) => (
         <IndexTable.Row
-            id={`${id}-${index}`}
-            key={`${id}-${index}`}
+            id={id}
+            key={id}
             selected={selectedResources.includes(id)}
             position={index}
         >
@@ -1401,55 +1384,93 @@ function Rate(props) {
             </IndexTable.Cell>
         </IndexTable.Row>
     ));
+    const handleProductChange = (productId, checked, text = '') => {
+        Setrate_based_on_surcharge((prevState) => {
+            let updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
+    
+            if (checked) {
+                const product = products.find(product => product.id == productId);
+                if (product) {
+                    const existingProductIndex = updatedProductData.findIndex(item => item.id == productId);
+    
+                    if (existingProductIndex !== -1) {
+                        updatedProductData[existingProductIndex] = {
+                            ...updatedProductData[existingProductIndex],
+                            value: text
+                        };
+                    } else {
+                        updatedProductData = [
+                            ...updatedProductData,
+                            {
+                                id: product.id,
+                                title: product.title,
+                                price: product.price,
+                                value: text
+                            }
+                        ];
+                    }
+                }
+            } else {
+                updatedProductData = updatedProductData.filter(item => item.id !== productId);
+            }
+    
+            return {
+                ...prevState,
+                productdata: updatedProductData,
+            };
+        });
+    };
+    console.log(formData.productdata)
+    const selectedCount = Array.isArray(formData.productdata) ? formData.productdata.length : 0;
 
-    const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => (
-        <IndexTable.Row
-            id={`${id}-${index}`}
-            key={`${id}-${index}`}
-
-            selected={selectedResources.includes(id)}
-            position={index}
-            onClick={() => handleProductSelection({
-                id,
-                name: title,
-                // tags: "",
-                // product_vendor: "United By Blue",
-                // product_type: "Accessories",
-                product_price: price,
-                product_image_url: image,
-            })}
-        >
-            <IndexTable.Cell>
-                <Thumbnail
-                    source={image}
-                    size="large"
-                    alt={title}
-                />
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+ 
+    const rowMarkup = products.map(({ id, title, image, price }, index) => {
+        const isChecked = Array.isArray(formData.productdata) && formData.productdata.some(item => item.id === id);
+        const productValue = Array.isArray(formData.productdata) ? formData.productdata.find(item => item.id === id)?.value || '' : '';
+    
+        return (
+            <IndexTable.Row
+                id={id}
+                key={id}
+                position={index}
+            >
+                 <IndexTable.Cell>
+                    <Checkbox
+                        checked={isChecked}
+                        onChange={(checked) => handleProductChange(id, checked, productValue)}
+                    />
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <Thumbnail
+                        source={image}
+                        size="small"
+                        alt={title}
+                    />
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+                        <Text fontWeight="bold" as="span">
+                            {title}
+                        </Text>
+                    </div>
+                </IndexTable.Cell>
+                <IndexTable.Cell>
                     <Text fontWeight="bold" as="span">
-                        {title}
+                        {price}
                     </Text>
-                </div>
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <Text fontWeight="bold" as="span">
-                    {price}
-                </Text>
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <TextField
-                    type="text"
-                    prefix={shop_currency}
-                    placeholder='0.00'
-                    value={selectedProductsData.find(product => product.id === id)?.rate_price || ''}
-                    onChange={(value) => handleRatePriceChange(value, id)}
-                />
-            </IndexTable.Cell>
-        </IndexTable.Row>
-    ));
-
+                </IndexTable.Cell>
+               
+                <IndexTable.Cell>
+                    <TextField
+                        value={productValue}
+                        onChange={(text) => handleProductChange(id, isChecked, text)}
+                        disabled={!isChecked}
+                    />
+                </IndexTable.Cell>
+            </IndexTable.Row>
+        );
+    });
+    
     if (loading) {
         return (
             <Page
@@ -1474,7 +1495,6 @@ function Rate(props) {
                                         <SkeletonBodyText lines={2} />
                                     </LegacyCard>
                                 </div>
-
                                 <Divider borderColor="border" />
                                 <div style={{ marginTop: "2%", }}>
                                     <LegacyCard sectioned>
@@ -1509,7 +1529,6 @@ function Rate(props) {
             primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
             secondaryActions={<Button onClick={() => BacktoZone(zone_id)}>Back</Button>}
         >
-
             <Divider borderColor="border" />
             <div style={{ marginTop: '2%', marginBottom: '2%' }}>
                 <Layout>
@@ -1645,7 +1664,8 @@ function Rate(props) {
                                     <Divider borderColor="border" />
                                     <div>
                                         {items.map((item, index) => (
-                                            <div key={index}>
+                                            <div key={item.id}>
+
                                                 <Grid>
                                                     <Grid.Cell columnSpan={{ xs: 2, sm: 3, md: 3, lg: 2, xl: 2 }}>
                                                         <div style={{ paddingTop: '20%', textAlign: 'center', }}>
@@ -1712,7 +1732,6 @@ function Rate(props) {
                                                                         error={errors[`value${index}`]}
                                                                     />
                                                                 )}
-
                                                                 {item.condition === 'between' && (
                                                                     <div>
                                                                         {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'name2' && item.name !== 'email' && item.name !== 'phone' && item.name !== 'company' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'Customer' && item.name !== 'localcode' && (
@@ -1725,7 +1744,6 @@ function Rate(props) {
                                                                         )}
                                                                     </div>
                                                                 )}
-
                                                                 {item.name === 'dayIs' && (
                                                                     <TextField
                                                                         value={item.value}
@@ -1793,8 +1811,6 @@ function Rate(props) {
                                                                             checked={dayOfWeekSelection[index].Saturday}
                                                                             onChange={() => handleDayCheckboxChange('Saturday', index)}
                                                                         />
-
-
                                                                     </div>
                                                                 )}
                                                                 {item.name === 'date' && (
@@ -1834,7 +1850,6 @@ function Rate(props) {
                                                                             checked={deliveryType[index].Shipping}
                                                                             onChange={() => handleCheckboxChange('Shipping', index)}
                                                                         />
-
                                                                     </div>
                                                                 )}
                                                                 {items.length > 1 && (
@@ -1854,21 +1869,21 @@ function Rate(props) {
                                                                 marginBottom: "2%",
                                                             }}>
                                                                 {item.name === 'lineitem' && (
-                                                                    <Select
-                                                                        key={index}
-                                                                        options={lineItem}
-                                                                        onChange={handleConditionsChange(index, 'lineItem')}
-                                                                        value={item.lineItem}
-                                                                    />
-                                                                )}
-                                                               
-                                                                  {/* {item.lineItem === 'anyTag'  && (
-                                                                        <TextField
-                                                                            value={item.tag}
-                                                                            onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}
-                                                                            placeholder='tag1,tag2,tag3'
+                                                                    <>
+                                                                        <Select
+                                                                            options={lineItem}
+                                                                            onChange={handleConditionsChange(index, 'lineItem')}
+                                                                            value={item.lineItem}
                                                                         />
-                                                                    )} */}
+                                                                        {item.lineItem === 'anyTag' && (
+                                                                            <TextField
+                                                                                value={item.tag}
+                                                                                onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}
+                                                                                placeholder='tag1,tag2,tag3'
+                                                                            />
+                                                                        )}
+                                                                    </>
+                                                                )}
                                                             </div>
                                                             {(item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2') && (
                                                                 <div style={{
@@ -1909,14 +1924,13 @@ function Rate(props) {
                                             </div>
                                         ))}
                                     </div>
-
                                     <div style={{ marginTop: "2%" }}>
                                         <Button
                                             icon={PlusIcon}
                                             variant='primary'
                                             onClick={handleAddItem}
                                         >
-                                            Add Theme
+                                            Add Conditions
                                         </Button>
                                     </div>
                                 </div>
@@ -1951,7 +1965,6 @@ function Rate(props) {
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
-
                             <div>
                                 {state.length > 0 && (
                                     <>
@@ -1990,7 +2003,6 @@ function Rate(props) {
                                     </>
                                 )}
                             </div>
-
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%", }}>
                                 <Text variant="headingXs" as="h6">
                                     ZipCode
@@ -2024,14 +2036,14 @@ function Rate(props) {
                                         <RadioButton
                                             label="Include ZipCodes"
                                             checked={checkstate.selectedZipCode === 'Include'}
-                                            id="include"
+                                            id="Include"
                                             name="isInclude"
                                             onChange={() => handlecheckedChange('selectedZipCode', 'Include')}
                                         />
                                         <RadioButton
                                             label="Exclude ZipCodes"
                                             checked={checkstate.selectedZipCode === 'Exclude'}
-                                            id="exclude"
+                                            id="Exclude"
                                             name="isInclude"
                                             onChange={() => handlecheckedChange('selectedZipCode', 'Exclude')}
                                         />
@@ -2042,7 +2054,6 @@ function Rate(props) {
                     </Grid.Cell>
                 </Grid>
             </div>
-
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%", }}>
@@ -2228,7 +2239,6 @@ function Rate(props) {
                                                     />
                                                 </FormLayout.Group>
                                             </FormLayout>
-
                                             <div style={{ marginTop: "4%" }}></div>
                                             <Text variant="headingSm" as="h6">
                                                 By Product Surcharge:
@@ -2453,20 +2463,19 @@ function Rate(props) {
                                                                     <IndexTable
                                                                         resourceName={resourceName}
                                                                         itemCount={filteredProducts.length}
-                                                                        selectedItemsCount={
-                                                                            allResourcesSelected ? 'All' : selectedResources.length
-                                                                        }
-                                                                        onSelectionChange={handleSelectionChange}
+
                                                                         headings={[
+                                                                            { title: ` ${selectedCount} Selected` }, // Show count here
                                                                             { title: 'Image' },
                                                                             { title: 'Title' },
                                                                             { title: 'Price' },
                                                                             { title: 'Rate Price' },
                                                                         ]}
+                                                                        selectable={false}
                                                                         pagination={{
-                                                                            hasNext: hasNextPage,
-                                                                            hasPrevious: hasPreviousPage,
+                                                                            hasNext: pageInfo.hasNextPage,
                                                                             onNext: handleNextPage,
+                                                                            hasPrevious: pageInfo.hasPreviousPage,
                                                                             onPrevious: handlePreviousPage,
                                                                         }}
                                                                     >
@@ -2610,7 +2619,7 @@ function Rate(props) {
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
-                            <div >
+                            <div>
                                 <Select
                                     options={tierOptions}
                                     onChange={handleTierSelectChange}
@@ -2696,7 +2705,6 @@ function Rate(props) {
                                                     </div>
                                                 )}
                                                 <div style={{ marginTop: "3%" }}> <Divider borderColor="border" /></div>
-
                                             </div>
                                         ))}
                                         <div style={{ marginTop: '2%' }}>
@@ -2716,8 +2724,6 @@ function Rate(props) {
                     </Grid.Cell>
                 </Grid>
             </div>
-
-
 
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
@@ -2767,7 +2773,6 @@ function Rate(props) {
                                             onChange={() => handlecheckedChange('exclude_products_radio', 1)}
                                         />
                                     </div>
-
                                     <Divider borderColor="border" />
                                     <div style={{ marginTop: "2%" }}>
                                         <FormLayout>
@@ -2821,7 +2826,7 @@ function Rate(props) {
                                     <div style={{ marginTop: "4%" }}>
                                         {showTable && (
                                             <div>
-                                                <div>
+                                                {/* <div>
                                                     <TextField
                                                         placeholder='search'
                                                         onChange={handlesearchChange}
@@ -2854,7 +2859,7 @@ function Rate(props) {
                                                     >
                                                         {productData}
                                                     </IndexTable>
-                                                </div>
+                                                </div> */}
                                             </div>
                                         )}
                                     </div>
@@ -2934,8 +2939,7 @@ function Rate(props) {
                                                         ariaControls={`collapsible-${modifier.id}`}
                                                         icon={SelectIcon}
                                                     />
-                                                    <p
-                                                        style={{ color: '#ef5350', fontWeight: 'bold', cursor: 'pointer' }}
+                                                    <p style={{ color: '#ef5350', fontWeight: 'bold', cursor: 'pointer' }}
                                                         onClick={() => handleRemoveRateModifier(modifier.id)}
                                                     >
                                                         Remove Rate Modifier
@@ -3082,7 +3086,6 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
                                                                 />
                                                             )}
-
                                                         </FormLayout.Group>
                                                     </FormLayout>
                                                     <div style={{ marginTop: '5%', marginBottom: '3%' }}>
@@ -3123,7 +3126,6 @@ function Rate(props) {
                                                                 value={modifier.rateDay}
                                                                 onChange={handleRateModifierChange(modifier.id, 'rateDay')}
                                                                 autoComplete="off"
-
                                                                 placeholder={
                                                                     modifier.rateModifier === 'price' ? "Price" :
                                                                         modifier.rateModifier === 'weight' ? "Weight" :
@@ -3136,7 +3138,6 @@ function Rate(props) {
                                                                                                     modifier.rateModifier === 'calculateRate' ? "Calculate Rate Price" :
                                                                                                         "Local Code"
                                                                 }
-
                                                             />
                                                         )}
                                                         {modifier.rateModifier === 'type' && (
@@ -3199,8 +3200,6 @@ function Rate(props) {
                                                             <div style={{ float: 'left', width: '45%', marginTop: "0.5%" }}><hr /></div>
                                                             <div style={{ float: 'right', width: '45%', marginTop: "0.5%" }}><hr /></div>
                                                             <p style={{ textAlign: "center" }}>{modifier.type} </p>
-
-
                                                             <div style={{ marginTop: '4%' }}></div>
                                                             <FormLayout>
                                                                 <FormLayout.Group>
@@ -3274,7 +3273,6 @@ function Rate(props) {
                                                                             onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
                                                                         />
                                                                     )}
-
                                                                 </FormLayout.Group>
                                                             </FormLayout>
                                                             <div style={{ marginTop: '5%', marginBottom: '3%' }}>
@@ -3315,7 +3313,6 @@ function Rate(props) {
                                                                         value={modifier.rateDay2}
                                                                         onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                         autoComplete="off"
-
                                                                         placeholder={
                                                                             modifier.rateModifier2 === 'price' ? "Price" :
                                                                                 modifier.rateModifier2 === 'weight' ? "Weight" :
@@ -3328,7 +3325,6 @@ function Rate(props) {
                                                                                                             modifier.rateModifier2 === 'calculateRate' ? "Calculate Rate Price" :
                                                                                                                 "Local Code"
                                                                         }
-
                                                                     />
                                                                 )}
                                                                 {modifier.rateModifier2 === 'type' && (
@@ -3496,7 +3492,6 @@ function Rate(props) {
                                                                         handleRateModifierChange(modifier.id, 'effect')('Decrease')
                                                                     }
                                                                 />
-
                                                                 <TextField
                                                                     type="text"
                                                                     label="Adjustment"
@@ -3506,7 +3501,6 @@ function Rate(props) {
                                                                     placeholder="00"
                                                                     error={errors[`adjustment${modifier.id}`]}
                                                                 />
-
                                                             </div>
                                                         </div>
                                                     )}
@@ -3514,7 +3508,6 @@ function Rate(props) {
                                                         <div style={{
                                                             marginTop: '2%',
                                                             marginBottom: '2%',
-
                                                         }}>
                                                             <div style={{ marginBottom: "2%" }}>
                                                                 <Divider borderColor="border" />
@@ -3558,7 +3551,6 @@ function Rate(props) {
                                 <List>
                                     <List.Item>
                                         We recommend using the same Shipping Tag for all related Shipping rates when merge shipping rates.
-
                                     </List.Item>
                                 </List>
                             </div>
@@ -3573,7 +3565,6 @@ function Rate(props) {
                                 autoComplete="off"
                                 placeholder='tag1,tag2,tag3'
                             />
-
                         </LegacyCard>
                     </Grid.Cell>
                 </Grid>
@@ -3611,7 +3602,6 @@ function Rate(props) {
                                     <div style={{ marginTop: "1%" }}>
                                         <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                                             {locations.map(location => {
-
                                                 return (
                                                     <div key={location.id} style={{ width: '50%', height: '5%', padding: '5px' }}>
                                                         <LegacyCard>
@@ -3643,7 +3633,6 @@ function Rate(props) {
                 </Grid>
             </div>
 
-
             <Divider borderColor="border" />
             <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                 <Grid>
@@ -3652,7 +3641,6 @@ function Rate(props) {
                             <Text variant="headingLg" as="h5">
                                 Schedule Rate
                             </Text>
-
                             <div style={{ marginTop: "4%" }}>
                                 <List>
                                     <List.Item>
@@ -3719,7 +3707,6 @@ function Rate(props) {
                                 <List>
                                     <List.Item>
                                         By selecting the Send Another Rate option it will allow to set another additional rate.
-
                                     </List.Item>
                                 </List>
                             </div>
@@ -3845,7 +3832,6 @@ function Rate(props) {
                                         <div style={{ marginTop: '3%' }}>
                                             <Divider borderColor="border" />
                                         </div>
-
                                         <div style={{ marginTop: '3%' }}>
                                             <FormLayout>
                                                 <FormLayout.Group>
@@ -3906,7 +3892,7 @@ function Rate(props) {
 
                     <Modal.Section>
                         <div style={{ position: 'relative' }}>
-                            <div style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
+                            {/* <div style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
                                 <TextField
                                     placeholder='search'
                                     onChange={handlesearchChange}
@@ -3938,7 +3924,7 @@ function Rate(props) {
                                 >
                                     {productData}
                                 </IndexTable>
-                            </div>
+                            </div> */}
                         </div>
                     </Modal.Section>
                 </Modal>

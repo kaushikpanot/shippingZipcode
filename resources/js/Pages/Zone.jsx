@@ -56,6 +56,7 @@ function Zone(props) {
     const [selectedZoneId, setselectedZoneId] = useState(null);
     const [active, setActive] = useState(false);
     const [selectedOptions, setSelectedOptions] = useState([]);
+    const [allCountries, setAllCountries] = useState([]);
     const [inputValue, setInputValue] = useState('');
     const [textFieldValue, setTextFieldValue] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -124,7 +125,7 @@ function Zone(props) {
     };
     const handleEditRate = (id) => {
         navigate(`/Zone/${zone_id}/Rate/Edit/${id}`);
-      
+
     };
     const editAndSet = async () => {
         try {
@@ -154,7 +155,7 @@ function Zone(props) {
             console.error('Error occurs', error);
         }
     }
-    
+
     const getCurrency = async () => {
         try {
             const token = await getSessionToken(app);
@@ -164,7 +165,7 @@ function Zone(props) {
                 }
             });
             const currencyes = response.data.currencies;
-          
+
             const currencyOptions = currencyes.map(currency => ({
                 label: currency.currency_code_symbol,
                 value: currency.code
@@ -196,7 +197,9 @@ function Zone(props) {
                 label: state.nameCode,
                 value: state.code
             }));
+           console.log(response.data)
             setCountry(stateList);
+            setAllCountries(stateList);
         } catch (error) {
             console.error("Error fetching country:", error);
         }
@@ -240,16 +243,16 @@ function Zone(props) {
         (value) => {
             setInputValue(value);
             if (value === '') {
-                getCountry();
+                setCountry(allCountries);
                 return;
             }
             const filterRegex = new RegExp(value, 'i');
-            const resultOptions = country.filter((option) =>
+            const resultOptions = allCountries.filter((option) =>
                 option.label.match(filterRegex),
             );
             setCountry(resultOptions);
         },
-        [country],
+        [allCountries],
     );
 
     const removeTag = useCallback(
@@ -259,7 +262,6 @@ function Zone(props) {
         },
         [selectedOptions],
     );
-
     const verticalContentMarkup =
         selectedOptions.length > 0 ? (
             <LegacyStack spacing="extraTight" alignment="center">
@@ -328,6 +330,7 @@ function Zone(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
+            
             const selectedCountries = selectedOptions.map(option => {
                 const selectedCountry = country.find(country => country.value === option);
                 return {
@@ -346,10 +349,9 @@ function Zone(props) {
             });
             setFormData(prevFormData => ({
                 ...prevFormData,
-                id:response.data.id,
+                id: response.data.id,
             }))
-        
-            console.log(response.data)
+
             setToastContent("Zone saved successfully.");
             setShowToast(true);
             // setTimeout(() => {
@@ -413,8 +415,8 @@ function Zone(props) {
         return (
             <Page
                 title={zone_id ? 'Edit Zone' : 'Add Zone'}
-                primaryAction={<Button variant="primary" onClick={saveZone}>Save</Button>}
-                secondaryActions={<Button onClick={navigateHome}>Back</Button>}
+                primaryAction={<Button variant="primary" >Save</Button>}
+                secondaryActions={<Button>Back</Button>}
             >
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
@@ -526,7 +528,6 @@ function Zone(props) {
                                     textField={textField}
                                     onSelect={setSelectedOptions}
                                     listTitle="Suggested Countries"
-
                                 />
                             </div>
                             <div style={{ marginTop: "2%", marginBottom: "2%" }} className='zonetext'>

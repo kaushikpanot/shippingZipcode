@@ -19,6 +19,22 @@ const Settings = (props) => {
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(true);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
   const [settings, setSettings] = useState({
     status: 0,
     shippingRate: 'All',

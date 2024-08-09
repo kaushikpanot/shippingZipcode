@@ -330,6 +330,7 @@ function Zone(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
+            
             const selectedCountries = selectedOptions.map(option => {
                 const selectedCountry = country.find(country => country.value === option);
                 return {
@@ -414,8 +415,8 @@ function Zone(props) {
         return (
             <Page
                 title={zone_id ? 'Edit Zone' : 'Add Zone'}
-                primaryAction={<Button variant="primary" onClick={saveZone}>Save</Button>}
-                secondaryActions={<Button onClick={navigateHome}>Back</Button>}
+                primaryAction={<Button variant="primary" >Save</Button>}
+                secondaryActions={<Button>Back</Button>}
             >
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>

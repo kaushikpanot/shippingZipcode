@@ -49,44 +49,6 @@ class ApiController extends Controller
                 ], 404);
             }
 
-            // // Define the REST API endpoint
-            // $restEndpoint = "https://{$shop}/admin/api/2024-04/countries.json";
-
-            // // Headers for Shopify API request
-            // $customHeaders = [
-            //     'X-Shopify-Access-Token' => $token,
-            // ];
-
-            // Make HTTP GET request to Shopify REST API endpoint
-            // $response = Http::withHeaders($customHeaders)->get($restEndpoint);
-
-            // Check if the request was successful
-            // if ($response->successful()) {
-            //     // Decode the JSON response
-            //     $countriesList = $response->json('countries');
-
-            //     $collection = collect($countriesList);
-
-            //     $countries = $collection->map(function ($country) {
-            //         unset($country['tax_name'], $country['tax'], $country['provinces']);
-            //         return $country;
-            //     });
-
-            //     $responseData = [
-            //         'countries' => $countries->all()
-            //     ];
-
-            //     return response()->json($responseData);
-            // } else {
-            //     // Handle non-successful responses
-            //     return response()->json(['status' => false, 'error' => 'Unable to fetch country list']);
-            // }
-
-            // Fetch JSON data from the external API
-            // $jsonData = file_get_contents('http://country.io/names.json');
-
-            // Decode JSON data into a PHP associative array
-            // $countriesArray = json_decode($jsonData, true);
             $countriesArray = CountryState::getCountries();
 
             // Initialize an empty array to hold the formatted data
@@ -797,7 +759,6 @@ class ApiController extends Controller
         return false;
     }
 
-
     private function checkModular($totalQuantity, $value, $modular0)
     {
         foreach ((array)$totalQuantity as $qty) {
@@ -807,7 +768,6 @@ class ApiController extends Controller
         }
         return true;
     }
-
 
     /**
      * Fetches data from Shopify product API.
@@ -953,7 +913,7 @@ class ApiController extends Controller
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode')->get();
 
-        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPriceFormatted, $totalPrice, $distance, $userData) {
+        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPrice, $distance, $userData) {
             $zipcode = optional($rate->zipcode);
             // Check cart conditions
             $conditionsMet = false;
@@ -962,7 +922,7 @@ class ApiController extends Controller
                     $conditionsMet = true;
                     break;
                 case 1: // All conditions must be true
-                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPriceFormatted, $distance, $userData) {
+                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData) {
 
                         if ($condition['label'] == 'Cart_Order') {
 
@@ -992,7 +952,7 @@ class ApiController extends Controller
                                     break;
 
                                 case 'total':
-                                    $comparativeValue = $totalPriceFormatted;
+                                    $comparativeValue = $totalPrice;
                                     break;
 
                                 case 'lineitem':
@@ -1117,7 +1077,7 @@ class ApiController extends Controller
                     });
                     break;
                 case 2: // Any condition must be true
-                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPriceFormatted, $distance, $userData) {
+                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData) {
 
                         if ($condition['label'] == 'Cart_Order') {
 
@@ -1147,7 +1107,7 @@ class ApiController extends Controller
                                     break;
 
                                 case 'total':
-                                    $comparativeValue = $totalPriceFormatted;
+                                    $comparativeValue = $totalPrice;
                                     break;
 
                                 case 'lineitem':
@@ -1274,7 +1234,7 @@ class ApiController extends Controller
                     });
                     break;
                 case 3: // All conditions must be false to return true, if any condition is true return false
-                    $conditionsMet = !collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPriceFormatted, $distance, $userData) {
+                    $conditionsMet = !collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData) {
 
                         if ($condition['label'] == 'Cart_Order') {
 
@@ -1304,7 +1264,7 @@ class ApiController extends Controller
                                     break;
 
                                 case 'total':
-                                    $comparativeValue = $totalPriceFormatted;
+                                    $comparativeValue = $totalPrice;
                                     break;
 
                                 case 'lineitem':
@@ -1956,166 +1916,122 @@ class ApiController extends Controller
             $grouped = $collection->groupBy('merge_rate_tag');
 
             $newRates = [];
+            $newGrouped = [];
+            $filteredRates = [];
 
             foreach ($grouped as $key => $value) {
                 if (!empty($key)) {
-                    // Fetch MixMergeRate for the current key
                     $MixMergeRate = MixMergeRate::whereRaw("FIND_IN_SET(?, tags_to_combine)", [$key])
                         ->where('user_id', $userId)
                         ->where('status', 1)
                         ->first();
 
-                    if (!empty($MixMergeRate)) {
-                        $allTagBasePrice = 0; // Initialize the base price
+                    if ($MixMergeRate) {
+                        $mixMergeRateId = $MixMergeRate->id;
 
-                        // Perform calculations based on price_calculation_type
-                        switch ($MixMergeRate->price_calculation_type) {
-                            case 0:
-                                $allTagBasePrice = $value->sum('base_price');
-                                break;
-                            case 1:
-                                $allTagBasePrice = number_format($value->avg('base_price'), 2);
-                                break;
-                            case 2:
-                                $allTagBasePrice = $value->min('base_price');
-                                break;
-                            case 3:
-                                $allTagBasePrice = $value->max('base_price');
-                                break;
-                            case 4:
-                                $allTagBasePrice = $value->reduce(function ($carry, $item) {
-                                    return $carry * $item->base_price;
-                                }, 1);
-                                break;
-                            default:
-                                $allTagBasePrice = $value->first()->base_price;
-                                break;
+                        if (!isset($newGrouped[$mixMergeRateId])) {
+                            $newGrouped[$mixMergeRateId] = [];
                         }
 
-                        // Add to the newRates array
-                        $newRates[] = (object)[
-                            'name' => $MixMergeRate->rate_name,
-                            'service_code' => $MixMergeRate->service_code,
-                            'description' => $MixMergeRate->description,
-                            'base_price' => $allTagBasePrice,
-                            'zone' => $value->first()->zone,
-                        ];
+                        $tagsToExclude = explode(',', $MixMergeRate->tags_to_exclude);
+                        if(!in_array($key, $tagsToExclude)){
+                            $newGrouped[$mixMergeRateId] = array_merge($newGrouped[$mixMergeRateId], $value->toArray());
+                        }
                     }
+                } else {
+                    $filteredRates = $value;
+                }
+
+                if ($value->isNotEmpty()) {
+                    $currency = $value->first()['zone']; // Assuming 'zone' is equivalent to 'currency' context
                 }
             }
 
-            // Replace filteredRates with newRates
-            $filteredRates = collect($newRates);
+            foreach ($newGrouped as $newKey => $newValue) {
+                $newValueCollect = collect($newValue);
+                $MixMergeRate = MixMergeRate::find($newKey);
+
+                if ($MixMergeRate) {
+                    $allTagBasePrice = 0;
+
+                    switch ($MixMergeRate->price_calculation_type) {
+                        case 0: // Sum
+                            $allTagBasePrice = $newValueCollect->sum('base_price');
+                            if ($MixMergeRate->min_shipping_rate > $allTagBasePrice && $MixMergeRate->min_shipping_rate != 0) {
+                                $allTagBasePrice = $MixMergeRate->min_shipping_rate;
+                            } else if ($MixMergeRate->mix_shipping_rate < $allTagBasePrice && $MixMergeRate->mix_shipping_rate != 0) {
+                                $allTagBasePrice = $MixMergeRate->mix_shipping_rate;
+                            }
+                            break;
+                        case 1: // Average
+                            $allTagBasePrice = round($newValueCollect->avg('base_price'), 2);
+                            if ($MixMergeRate->min_shipping_rate > $allTagBasePrice && $MixMergeRate->min_shipping_rate != 0) {
+                                $allTagBasePrice = $MixMergeRate->min_shipping_rate;
+                            } else if ($MixMergeRate->mix_shipping_rate < $allTagBasePrice && $MixMergeRate->mix_shipping_rate != 0) {
+                                $allTagBasePrice = $MixMergeRate->mix_shipping_rate;
+                            }
+                            break;
+                        case 2: // Minimum
+                            $allTagBasePrice = $newValueCollect->min('base_price');
+                            if ($MixMergeRate->min_shipping_rate > $allTagBasePrice && $MixMergeRate->min_shipping_rate != 0) {
+                                $allTagBasePrice = $MixMergeRate->min_shipping_rate;
+                            } else if ($MixMergeRate->mix_shipping_rate < $allTagBasePrice && $MixMergeRate->mix_shipping_rate != 0) {
+                                $allTagBasePrice = $MixMergeRate->mix_shipping_rate;
+                            }
+                            break;
+                        case 3: // Maximum
+                            $allTagBasePrice = $newValueCollect->max('base_price');
+                            if ($MixMergeRate->min_shipping_rate > $allTagBasePrice && $MixMergeRate->min_shipping_rate != 0) {
+                                $allTagBasePrice = $MixMergeRate->min_shipping_rate;
+                            } else if ($MixMergeRate->mix_shipping_rate < $allTagBasePrice && $MixMergeRate->mix_shipping_rate != 0) {
+                                $allTagBasePrice = $MixMergeRate->mix_shipping_rate;
+                            }
+                            break;
+                        case 4: // Product
+                            $allTagBasePrice = $newValueCollect->reduce(function ($carry, $item) {
+                                return $carry * $item['base_price'];
+                            }, 1);
+                            if ($MixMergeRate->min_shipping_rate > $allTagBasePrice && $MixMergeRate->min_shipping_rate != 0) {
+                                $allTagBasePrice = $MixMergeRate->min_shipping_rate;
+                            } else if ($MixMergeRate->mix_shipping_rate < $allTagBasePrice && $MixMergeRate->mix_shipping_rate != 0) {
+                                $allTagBasePrice = $MixMergeRate->mix_shipping_rate;
+                            }
+                            break;
+                        default: // Default to the first item's base price if all else fails
+                            $allTagBasePrice = $newValueCollect->first()['base_price'];
+                            break;
+                    }
+
+                    $newRates[] = (object)[
+                        'name' => $MixMergeRate->rate_name,
+                        'service_code' => $MixMergeRate->service_code,
+                        'description' => $MixMergeRate->description,
+                        'base_price' => $allTagBasePrice,
+                        'zone' => $currency
+                        // 'send_another_rate' => $newValueCollect->
+                    ];
+                }
+            }
+
+            // Merge new rates with existing filtered rates without overwriting existing entries
+            $filteredRates = $filteredRates->merge(collect($newRates));
         }
-
-        // if ($setting->mix_merge_rate == 1) {
-        //     $sumBasePrice = 0;
-        //     $allTagBasePrice = [];
-        //     $newRates = [];
-        //     $totalRates = count($filteredRates);
-        //     $MixMergeRateData = null;
-
-        //     foreach ($filteredRates as $key => $mixRate) {
-        //         $combineTag = $mixRate['merge_rate_tag'];
-        //         $MixMergeRate = MixMergeRate::whereRaw("FIND_IN_SET(?, tags_to_combine)", [$combineTag])->where('user_id', $userId)->where('status', 1)->first();
-
-        //         if (!empty($MixMergeRate)) {
-        //             $MixMergeRateData = $MixMergeRate;
-
-        //             if ($MixMergeRate->condition == 1) {
-        //                 // Determine the base price based on price_calculation_type
-        //                 switch ($MixMergeRateData->price_calculation_type) {
-        //                     case 0:
-        //                         $sumBasePrice = $filteredRates->sum('base_price');
-        //                         break;
-        //                     case 1:
-        //                         $sumBasePrice = number_format($filteredRates->avg('base_price'), 2);
-        //                         break;
-        //                     case 2:
-        //                         $sumBasePrice = $filteredRates->min('base_price');
-        //                         break;
-        //                     case 3:
-        //                         $sumBasePrice = $filteredRates->max('base_price');
-        //                         break;
-        //                     case 4:
-        //                         $sumBasePrice = $filteredRates->reduce(function ($carry, $item) {
-        //                             return $carry * $item['base_price'];
-        //                         }, 1);
-        //                         break;
-        //                     default:
-        //                         $sumBasePrice = $mixRate->base_price;
-        //                         break;
-        //                 }
-
-        //                 // Create a new rate based on the current MixMergeRateData
-        //                 $newRates[] = (object)[
-        //                     'name' => $MixMergeRateData->rate_name,
-        //                     'service_code' => $MixMergeRateData->service_code,
-        //                     'description' => $MixMergeRateData->description,
-        //                     'base_price' => $sumBasePrice,
-        //                     'zone' => $mixRate['zone'],
-        //                 ];
-
-        //                 // Replace all existing rates and exit loop
-        //                 $filteredRates = collect($newRates);
-        //                 break;
-        //             } else {
-        //                 $allTagBasePrice[] = $mixRate['base_price'];
-        //                 unset($filteredRates[$key]);
-        //             }
-        //         }
-        //     }
-
-        //     if ($MixMergeRateData && !empty($allTagBasePrice)) {
-        //         // Determine the base price based on price_calculation_type for remaining rates
-        //         switch ($MixMergeRateData->price_calculation_type) {
-        //             case 0:
-        //                 $allTagBasePrice = array_sum(array_map('floatval', $allTagBasePrice));
-        //                 break;
-        //             case 1:
-        //                 $allTagBasePrice = collect($allTagBasePrice)->map(fn ($value) => (float)$value)->avg();
-        //                 break;
-        //             case 2:
-        //                 $allTagBasePrice = min(array_map('floatval', $allTagBasePrice));
-        //                 break;
-        //             case 3:
-        //                 $allTagBasePrice = max(array_map('floatval', $allTagBasePrice));
-        //                 break;
-        //             case 4:
-        //                 $allTagBasePrice = collect($allTagBasePrice)->reduce(function ($carry, $item) {
-        //                     return $carry * $item;
-        //                 }, 1);
-        //                 break;
-        //             default:
-        //                 $allTagBasePrice = $mixRate['base_price'];
-        //                 break;
-        //         }
-
-        //         $filteredRates[] = (object)[
-        //             'name' => $MixMergeRateData->rate_name,
-        //             'service_code' => $MixMergeRateData->service_code,
-        //             'description' => $MixMergeRateData->description,
-        //             'base_price' => number_format($allTagBasePrice, 2) ?? 0,
-        //             'zone' => $mixRate['zone'],
-        //         ];
-        //     }
-        // }
 
         if ($setting->shippingRate == 'Only Higher') {
             $maxRate = $filteredRates->max('base_price');
             $filteredRates = $filteredRates->filter(function ($rate) use ($maxRate) {
-                return $rate['base_price'] == $maxRate;
+                return $rate->base_price == $maxRate;
             });
         } elseif ($setting->shippingRate == 'Only Lower') {
             $minRate = $filteredRates->min('base_price');
             $filteredRates = $filteredRates->filter(function ($rate) use ($minRate) {
-                return $rate['base_price'] == $minRate;
+                return $rate->base_price == $minRate;
             });
         }
 
-        // // Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
+        // Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
         // Log::info('Query logs:', ['totalQuantity' => $totalQuantity]);
-        // // Log::info('Shopify Carrier Service Request input:', ['filteredRates' => $filteredRates]);
+        // Log::info('Shopify Carrier Service Request input:', ['filteredRates' => $filteredRates]);
 
         foreach ($filteredRates as $rate) {
             // dd($rate->name);

@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Validator;
 use Throwable;
 use CountryState;
 use Currency\Util\CurrencySymbolUtil;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\Rule;
 use Kyon147\LaraShopify\Facades\Shopify;
@@ -853,33 +854,43 @@ class ApiController extends Controller
 
     private function getCustomerByPhone($userData, $phone, $field)
     {
-        // https://jaypal-demo.myshopify.com/admin/api/2024-04/customers/search.json
-        $query = "phone:$phone";
-
-        $restEndpoint = "https://{$userData['name']}/admin/api/2024-04/customers/search.json?query=" . urlencode($query);
-        $customHeaders = ['X-Shopify-Access-Token' => $userData['password']];
-        $response = Http::withHeaders($customHeaders)->get($restEndpoint);
-
-        // Check if the response was successful
-        if ($response->successful()) {
-            $customers = $response->json()['customers'];
-            Log::info("customers", ['customers' => $customers[0][$field]]);
-            if (!empty($customers)) {
-                return $customers[0][$field]; // Return all matching customers
-            } else {
-                return null; // No customer found
-            }
-        } else {
-            // Handle the error
+        if(empty($catchData)){
             return null;
+        } else {
+            // if()
+            return $catchData[$field];
         }
+        // if(null != $phone){
+        //     return null;
+        // }
+        // // https://jaypal-demo.myshopify.com/admin/api/2024-04/customers/search.json
+        // $query = "phone:$phone";
+
+        // $restEndpoint = "https://{$userData['name']}/admin/api/2024-04/customers/search.json?query=" . urlencode($query);
+        // $customHeaders = ['X-Shopify-Access-Token' => $userData['password']];
+        // $response = Http::withHeaders($customHeaders)->get($restEndpoint);
+
+        // // Check if the response was successful
+        // if ($response->successful()) {
+        //     $customers = $response->json()['customers'];
+        //     if (!empty($customers)) {
+        //         Log::info("customers", ['customers' => $customers[0][$field]]);
+        //         return $customers[0][$field]; // Return all matching customers
+        //     } else {
+        //         return null; // No customer found
+        //     }
+        // } else {
+        //     // Handle the error
+        //     return null;
+        // }
     }
 
     public function handleCallback(Request $request)
     {
         $input = $request->input();
 
-        // Log::info('input logs:', ['totalQuantity' => $input]);
+        $catchData = Cache::get('customerData');
+        Log::info('input logs:', ['customerData' => $request->header()]);
 
         $shopDomain = $request->header();
 
@@ -1051,7 +1062,6 @@ class ApiController extends Controller
                                 'city' => 'city',
                                 'provinceCode' => 'province',
                                 'tag2' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags'),
-                                'previousCount' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags'),
                                 'previousCount' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'orders_count'),
                                 'previousSpent' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'total_spent'),
                             ];
@@ -1211,12 +1221,18 @@ class ApiController extends Controller
                                 'addrss1' => 'address2',
                                 'address2' => 'address3',
                                 'city' => 'city',
-                                'provinceCode' => 'province'
+                                'provinceCode' => 'province',
+                                'tag2' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags'),
+                                'previousCount' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'orders_count'),
+                                'previousSpent' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'total_spent'),
                             ];
 
                             if (array_key_exists($condition['name'], $fieldMap)) {
                                 $field = $fieldMap[$condition['name']];
-                                $totalQuantity = isset($destinationData[$field]) ? $destinationData[$field] : null;
+                                // Determine if the field or callback is callable
+                                $totalQuantity = is_callable($field)
+                                    ? $field($destinationData)
+                                    : ($destinationData[$field] ?? null);
 
                                 return $this->checkCondition($condition, $totalQuantity);
                             }
@@ -1368,12 +1384,18 @@ class ApiController extends Controller
                                 'addrss1' => 'address2',
                                 'address2' => 'address3',
                                 'city' => 'city',
-                                'provinceCode' => 'province'
+                                'provinceCode' => 'province',
+                                'tag2' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags'),
+                                'previousCount' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'orders_count'),
+                                'previousSpent' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'total_spent'),
                             ];
 
                             if (array_key_exists($condition['name'], $fieldMap)) {
                                 $field = $fieldMap[$condition['name']];
-                                $totalQuantity = isset($destinationData[$field]) ? $destinationData[$field] : null;
+                                // Determine if the field or callback is callable
+                                $totalQuantity = is_callable($field)
+                                    ? $field($destinationData)
+                                    : ($destinationData[$field] ?? null);
 
                                 return $this->checkCondition($condition, $totalQuantity);
                             }

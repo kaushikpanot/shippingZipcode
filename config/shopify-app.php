@@ -201,7 +201,7 @@ return [
     |
     */
 
-    'api_scopes' => env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,write_shipping,write_customers,read_customers,write_orders,read_orders, read_shipping, read_checkouts, write_checkouts'),
+    'api_scopes' => env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,write_shipping,write_customers,read_customers,write_orders,read_orders, read_shipping, read_checkouts, write_checkouts', 'read_price_rules', 'write_price_rules'),
     /*
     |--------------------------------------------------------------------------
     | Shopify API Grant Mode

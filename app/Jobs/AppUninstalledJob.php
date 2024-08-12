@@ -33,7 +33,7 @@ class AppUninstalledJob implements ShouldQueue
     {
         try {
             $data = file_get_contents('php://input');
-            
+
             // Check if the received data is valid JSON
             if ($data === false) {
                 Log::warning('Failed to get input data');
@@ -50,7 +50,8 @@ class AppUninstalledJob implements ShouldQueue
 
             Log::info('Decoded Webhook Data:', ['data' => $data_json]);
 
-            $to = $data_json['email'];
+            // $to = $data_json['email'];
+            $to = "kaushik.panot@meetanshi.com";
             $name = $data_json['shop_owner'];
             $shopDomain = $data_json['domain'];
 

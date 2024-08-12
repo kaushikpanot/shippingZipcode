@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\InstallMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class HomeController extends Controller
 {
@@ -54,6 +56,9 @@ class HomeController extends Controller
             User::where('id',$token['id'])->update(['shop_currency'=>$shopJson['shop']['currency']]);
         }
 
+        $this->mendatoryWebhook($shop);
+        $this->getStoreOwnerEmail($shop);
+
         return view('welcome', compact('shop', 'host'));
     }
 
@@ -64,7 +69,7 @@ class HomeController extends Controller
         return view('welcome', compact('shop', 'host'));
     }
 
-    public function mendatoryWebhook($shopDetail)
+    private function mendatoryWebhook($shopDetail)
     {
         // Log::info('input logs:', ['shopDetail' => $shopDetail]);
 
@@ -72,13 +77,11 @@ class HomeController extends Controller
 
         $topics = [
             'customers/update',
-            'customers/delete',
-            'shop/update'
+            'customers/delete'
+            // 'shop/update'
         ];
 
         $apiVersion = config('services.shopify.api_version');
-
-        // Log::info('input logs:', ['shopurl' => $shopDetail]);
 
         $url = "https://{$token['name']}/admin/api/{$apiVersion}/webhooks.json";
         $envUrl = env('VITE_COMMON_API_URL');
@@ -104,12 +107,12 @@ class HomeController extends Controller
             $response = Http::withHeaders($customHeaders)->post($url, $body);
             $jsonResponse = $response->json();
 
-            // Log::info('input logs:', ['shopDetail' => $jsonResponse]);
+            Log::info('input logs:', ['shopDetail' => $jsonResponse]);
         }
         return true;
     }
 
-    protected function getStoreOwnerEmail($shop)
+    private function getStoreOwnerEmail($shop)
     {
         $user = User::where('name', $shop)->pluck('password')->first();
         $apiVersion = config('services.shopify.api_version');
@@ -141,8 +144,8 @@ class HomeController extends Controller
             $data = json_decode($response, true);
             // Log::info('input logs:', ['shopDetail' => $data]);
             if (@$data['shop']) {
-                // $storeOwnerEmail = "kaushik.panot@meetanshi.com";
-                $storeOwnerEmail = $data['shop']['email'];
+                $storeOwnerEmail = "kaushik.panot@meetanshi.com";
+                // $storeOwnerEmail = $data['shop']['email'];
                 $store_name = $data['shop']['name'];
                 // User::where('name', $shop)->update(['store_owner_email' => $storeOwnerEmail, 'store_name' => $store_name]);
                 $details = [
@@ -153,7 +156,7 @@ class HomeController extends Controller
                 $name = $data['shop']['shop_owner'];
                 $shopDomain = $data['shop']['domain'];
 
-                // Mail::to($storeOwnerEmail)->send(new InstallMail($name, $shopDomain));
+                Mail::to($storeOwnerEmail)->send(new InstallMail($name, $shopDomain));
 
                 return true;
             }

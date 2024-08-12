@@ -2,16 +2,13 @@
 
 namespace App\Jobs;
 
-use GuzzleHttp\Client;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Session;
 
 class CheckoutsCreateJob implements ShouldQueue
 {
@@ -31,6 +28,7 @@ class CheckoutsCreateJob implements ShouldQueue
     public function handle(): void
     {
         if (isset($this->webhookData['customer'])) {
+            // Log::info("CheckoutsCreateJob", ["webhookData" => $this->webhookData]);
             // Log::info("CheckoutsCreateJob", ["webhookData" => $this->webhookData]);
             Cache::forever('customerData', ["customer" => $this->webhookData['customer']]);
             // Session::put('customerData', ["customer"=>$this->webhookData['customer']]);

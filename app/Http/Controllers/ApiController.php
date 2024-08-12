@@ -889,8 +889,9 @@ class ApiController extends Controller
     {
         $input = $request->input();
 
+        Log::info('input logs:', ['customerData' => session()->all()]);
+
         $catchData = Cache::get('customerData');
-        Log::info('input logs:', ['customerData' => $request->header()]);
 
         $shopDomain = $request->header();
 
@@ -2137,7 +2138,7 @@ class ApiController extends Controller
         }
 
         // Log::info('Shopify Carrier Service input:', ["input" => $input]);
-        Log::info('Shopify Carrier Service response:', ["response" => $response]);
+        // Log::info('Shopify Carrier Service response:', ["response" => $response]);
 
         return response()->json($response);
     }

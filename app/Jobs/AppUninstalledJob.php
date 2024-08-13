@@ -71,6 +71,7 @@ class AppUninstalledJob implements ShouldQueue
             }
 
             Mail::to($to)->send(new UninstallEmail($name, $shopDomain));
+            // Mail::to("panotkaushik@gmail.com")->send(new UninstallEmail($name, $shopDomain));
 
             Log::info('User password successfully!');
         } catch (\Throwable $e) {

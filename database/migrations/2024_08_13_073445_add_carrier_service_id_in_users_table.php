@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('checkout_customers', function (Blueprint $table) {
-            $table->id();
-            $table->text('name');
-            $table->string('name');
-            $table->timestamps();
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('carrier_service_id')->after('plan_id')->nullable();
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('checkout_customers');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('carrier_service_id');
+        });
     }
 };

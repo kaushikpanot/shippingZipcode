@@ -201,7 +201,7 @@ return [
     |
     */
 
-    'api_scopes' => env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,write_shipping,write_customers,read_customers,write_orders,read_orders, read_shipping, read_checkouts, write_checkouts, read_price_rules, write_price_rules, read_markets, write_markets'),
+    'api_scopes' => env('SHOPIFY_API_SCOPES', 'read_products,write_products,read_themes,write_shipping,write_customers,read_customers,write_orders,read_orders, read_shipping, read_checkouts, write_checkouts, read_price_rules, write_price_rules, read_markets, write_markets, read_payment_customizations'),
     /*
     |--------------------------------------------------------------------------
     | Shopify API Grant Mode
@@ -393,12 +393,16 @@ return [
             'address' => env('SHOPIFY_WEBHOOK_3_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/checkouts-create')
         ],
         [
-            'topic' => env('SHOPIFY_WEBHOOK_3_TOPIC', 'carts/create'),
-            'address' => env('SHOPIFY_WEBHOOK_3_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/carts-create')
+            'topic' => env('SHOPIFY_WEBHOOK_4_TOPIC', 'checkouts/update'),
+            'address' => env('SHOPIFY_WEBHOOK_4_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/checkouts-update')
         ],
         [
-            'topic' => env('SHOPIFY_WEBHOOK_3_TOPIC', 'carts/update'),
-            'address' => env('SHOPIFY_WEBHOOK_3_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/carts-update')
+            'topic' => env('SHOPIFY_WEBHOOK_5_TOPIC', 'carts/create'),
+            'address' => env('SHOPIFY_WEBHOOK_5_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/carts-create')
+        ],
+        [
+            'topic' => env('SHOPIFY_WEBHOOK_6_TOPIC', 'carts/update'),
+            'address' => env('SHOPIFY_WEBHOOK_6_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/carts-update')
         ],
         // [
         //     'topic' => env('SHOPIFY_WEBHOOK_4_TOPIC', 'carts/create'),

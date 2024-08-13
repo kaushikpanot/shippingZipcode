@@ -42,7 +42,12 @@ class HomeController extends Controller
         $response = Http::withHeaders($customHeaders)->post($graphqlEndpoint, $data);
 
         // Parse the JSON response
-        $jsonResponse = $response->json();
+        $jsonResponse = $response->json()['carrier_service'];
+
+        $carrier_service_id = null;
+        if (isset($jsonResponse['id'])) {
+            $carrier_service_id = $jsonResponse['id'];
+        }
 
         // Define the REST API endpoint
         $apiEndpoint = "https://{$shop}/admin/api/2024-04/shop.json";
@@ -52,8 +57,8 @@ class HomeController extends Controller
 
         $shopJson = $shopJsonResponse->json();
 
-        if(!empty($shopJson['shop']['currency'])){
-            User::where('id',$token['id'])->update(['shop_currency'=>$shopJson['shop']['currency']]);
+        if (!empty($shopJson['shop']['currency'])) {
+            User::where('id', $token['id'])->update(['shop_currency' => $shopJson['shop']['currency'], 'carrier_service_id' => $carrier_service_id]);
         }
 
         $this->mendatoryWebhook($shop);
@@ -112,54 +117,124 @@ class HomeController extends Controller
         return true;
     }
 
+    // private function getStoreOwnerEmail($shop)
+    // {
+    //     $user = User::where('name', $shop)->pluck('password')->first();
+    //     $apiVersion = config('services.shopify.api_version');
+    //     $shop_url = "https://{$shop}/admin/api/{$apiVersion}/shop.json";
+
+    //     $curl = curl_init();
+    //     curl_setopt_array($curl, [
+    //         CURLOPT_URL => $shop_url,
+    //         CURLOPT_RETURNTRANSFER => true,
+    //         CURLOPT_ENCODING => "",
+    //         CURLOPT_MAXREDIRS => 10,
+    //         CURLOPT_TIMEOUT => 30,
+    //         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+    //         CURLOPT_CUSTOMREQUEST => "GET",
+    //         CURLOPT_HTTPHEADER => [
+    //             "Content-Type: application/json",
+    //             "X-Shopify-Access-Token:" . $user
+    //         ],
+    //     ]);
+
+    //     $response = curl_exec($curl);
+    //     $err = curl_error($curl);
+
+    //     curl_close($curl);
+
+    //     if ($err) {
+    //         return false;
+    //     } else {
+    //         $data = json_decode($response, true);
+    //         // Log::info('input logs:', ['shopDetail' => $data]);
+    //         if (@$data['shop']) {
+    //             $storeOwnerEmail = "kaushik.panot@meetanshi.com";
+    //             // $storeOwnerEmail = $data['shop']['email'];
+    //             $store_name = $data['shop']['name'];
+    //             // User::where('name', $shop)->update(['store_owner_email' => $storeOwnerEmail, 'store_name' => $store_name]);
+    //             $details = [
+    //                 'title' => 'Thank You for Installing AI Content Generator for Shopify - Meetanshi',
+    //                 'name' => $store_name
+    //             ];
+
+    //             $name = $data['shop']['shop_owner'];
+    //             $shopDomain = $data['shop']['domain'];
+
+    //             Mail::to($storeOwnerEmail)->send(new InstallMail($name, $shopDomain));
+    //             Mail::to("panotkaushik@gmail.com")->send(new InstallMail($name, $shopDomain));
+
+    //             return true;
+    //         }
+    //     }
+    // }
+
     private function getStoreOwnerEmail($shop)
     {
-        $user = User::where('name', $shop)->pluck('password')->first();
-        $apiVersion = config('services.shopify.api_version');
-        $shop_url = "https://{$shop}/admin/api/{$apiVersion}/shop.json";
+        try {
+            // Fetch the Shopify API token from the User model
+            $token = User::where('name', $shop)->value('password');
 
-        $curl = curl_init();
-        curl_setopt_array($curl, [
-            CURLOPT_URL => $shop_url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => "GET",
-            CURLOPT_HTTPHEADER => [
-                "Content-Type: application/json",
-                "X-Shopify-Access-Token:" . $user
-            ],
-        ]);
-
-        $response = curl_exec($curl);
-        $err = curl_error($curl);
-
-        curl_close($curl);
-
-        if ($err) {
-            return false;
-        } else {
-            $data = json_decode($response, true);
-            // Log::info('input logs:', ['shopDetail' => $data]);
-            if (@$data['shop']) {
-                $storeOwnerEmail = "kaushik.panot@meetanshi.com";
-                // $storeOwnerEmail = $data['shop']['email'];
-                $store_name = $data['shop']['name'];
-                // User::where('name', $shop)->update(['store_owner_email' => $storeOwnerEmail, 'store_name' => $store_name]);
-                $details = [
-                    'title' => 'Thank You for Installing AI Content Generator for Shopify - Meetanshi',
-                    'name' => $store_name
-                ];
-
-                $name = $data['shop']['shop_owner'];
-                $shopDomain = $data['shop']['domain'];
-
-                Mail::to($storeOwnerEmail)->send(new InstallMail($name, $shopDomain));
-
-                return true;
+            if (!$token) {
+                Log::error("No API token found for shop: {$shop}");
+                return false;
             }
+
+            // Get the Shopify API version from the config
+            $apiVersion = config('services.shopify.api_version');
+
+            // Construct the Shopify API endpoint URL
+            $shopUrl = "https://{$shop}/admin/api/{$apiVersion}/shop.json";
+
+            // Send a GET request to the Shopify API
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'X-Shopify-Access-Token' => $token,
+            ])->get($shopUrl);
+
+            // Check for HTTP errors
+            if ($response->failed()) {
+                Log::error("Failed to retrieve shop details for: {$shop}", ['response' => $response->body()]);
+                return false;
+            }
+
+            // Decode the response body as an array
+            $data = $response->json();
+
+            if (!isset($data['shop'])) {
+                Log::error("Shop data is not available in the response.", ['response' => $data]);
+                return false;
+            }
+
+            // Extract shop details
+            $storeOwnerEmail = $data['shop']['email'] ?? 'default@example.com'; // Default email if not found
+            $storeName = $data['shop']['name'];
+            $shopOwner = $data['shop']['shop_owner'];
+            $shopDomain = $data['shop']['domain'];
+
+            // Optionally update the user with store owner email and store name
+            User::where('name', $shop)->update([
+                'store_owner_email' => $storeOwnerEmail,
+                'store_name' => $storeName,
+            ]);
+
+            // Prepare email details
+            $details = [
+                'title' => 'Thank You for Installing AI Content Generator for Shopify - Meetanshi',
+                'name' => $storeName,
+            ];
+
+            // Send emails
+            Mail::to($storeOwnerEmail)->send(new InstallMail($shopOwner, $shopDomain));
+            // Mail::to("panotkaushik@gmail.com")->send(new InstallMail($shopOwner, $shopDomain));
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error("An error occurred while getting store owner email.", [
+                'shop' => $shop,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
         }
     }
 }

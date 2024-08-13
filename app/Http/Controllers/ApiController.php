@@ -779,13 +779,77 @@ class ApiController extends Controller
      * @param string $field The specific field to retrieve from the product data
      * @return mixed The requested product field data
      */
+
     private function fetchShopifyProductData($userData, $productId, $field)
     {
-        $restEndpoint = "https://{$userData['name']}/admin/api/2024-01/products/{$productId}.json";
-        $customHeaders = ['X-Shopify-Access-Token' => $userData['password']];
-        $response = Http::withHeaders($customHeaders)->get($restEndpoint);
+        $apiVersion = config('services.shopify.api_version');
+        $shopName = $userData['name'];
+        $accessToken = $userData['password'];
 
-        return $response->json('product')[$field];
+        // Set up common headers
+        $customHeaders = [
+            'X-Shopify-Access-Token' => $accessToken,
+            'Content-Type' => 'application/json',
+        ];
+
+        // Fetch product data using REST API
+        $restEndpoint = "https://{$shopName}/admin/api/{$apiVersion}/products/{$productId}.json";
+        $restResponse = Http::withHeaders($customHeaders)->get($restEndpoint);
+
+        if ($restResponse->failed()) {
+            return null;
+        }
+
+        $productData = $restResponse->json('product');
+
+        // If the specific field is 'collections', fetch collection data using GraphQL
+        if ($field === 'collections') {
+            $collections = $this->fetchShopifyProductCollections($shopName, $apiVersion, $productId, $accessToken);
+            return $collections;
+        }
+
+        return $productData[$field] ?? null;
+    }
+
+    private function fetchShopifyProductCollections($shopName, $apiVersion, $productId, $accessToken)
+    {
+        $query = <<<GRAPHQL
+            {
+                product(id: "gid://shopify/Product/{$productId}") {
+                    collections(first: 10) {
+                        edges {
+                            node {
+                                id
+                                title
+                            }
+                        }
+                    }
+                }
+            }
+            GRAPHQL;
+
+        $graphqlEndpoint = "https://{$shopName}/admin/api/{$apiVersion}/graphql.json";
+        $graphqlResponse = Http::withHeaders([
+            'X-Shopify-Access-Token' => $accessToken,
+            'Content-Type' => 'application/json',
+        ])->post($graphqlEndpoint, [
+            'query' => $query,
+        ]);
+
+        if ($graphqlResponse->failed()) {
+            return null;
+        }
+
+        $data = $graphqlResponse->json();
+        $collections = $data['data']['product']['collections']['edges'] ?? [];
+
+        // Extract the collection IDs and join them into a comma-separated string
+        $collectionIds = array_map(function ($edge) {
+            $expload = explode('/', $edge['node']['id']);
+            return $expload[4];
+        }, $collections);
+
+        return implode(',', $collectionIds);
     }
 
     private function checkOtherCondition($array, $condition, $tags)
@@ -852,46 +916,86 @@ class ApiController extends Controller
         return !empty(array_intersect($array1, $array2));
     }
 
-    private function getCustomerByPhone($userData, $phone, $field)
+    private function getCustomerByPhone($userData, $phone, $field, $customer_id)
     {
-        if(empty($catchData)){
+        if (empty($customer_id)) {
             return null;
         } else {
-            // if()
-            return $catchData[$field];
+            $catchData = Cache::get($customer_id);
+            Log::info('header logs:', ['catchData' => $catchData]);
+            Log::info('header logs:', ['catchData' => $catchData['customer'][$field]]);
+
+            if (empty($catchData)) {
+                return null;
+            } else {
+                return $catchData['customer'][$field];
+            }
         }
-        // if(null != $phone){
-        //     return null;
-        // }
-        // // https://jaypal-demo.myshopify.com/admin/api/2024-04/customers/search.json
-        // $query = "phone:$phone";
-
-        // $restEndpoint = "https://{$userData['name']}/admin/api/2024-04/customers/search.json?query=" . urlencode($query);
-        // $customHeaders = ['X-Shopify-Access-Token' => $userData['password']];
-        // $response = Http::withHeaders($customHeaders)->get($restEndpoint);
-
-        // // Check if the response was successful
-        // if ($response->successful()) {
-        //     $customers = $response->json()['customers'];
-        //     if (!empty($customers)) {
-        //         Log::info("customers", ['customers' => $customers[0][$field]]);
-        //         return $customers[0][$field]; // Return all matching customers
-        //     } else {
-        //         return null; // No customer found
-        //     }
-        // } else {
-        //     // Handle the error
-        //     return null;
-        // }
     }
 
-    public function handleCallback(Request $request)
+    private function fetchShopifyVariantMetafields($shopName, $apiVersion, $productId, $accessToken)
+    {
+        $query = <<<GRAPHQL
+            {
+                product(id: "gid://shopify/Product/{$productId}") {
+                    variants(first: 10) {
+                        edges {
+                            node {
+                                id
+                                metafields(first: 10) {
+                                    edges {
+                                        node {
+                                            id
+                                            namespace
+                                            key
+                                            value
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            GRAPHQL;
+
+        $graphqlEndpoint = "https://{$shopName}/admin/api/{$apiVersion}/graphql.json";
+        $graphqlResponse = Http::withHeaders([
+            'X-Shopify-Access-Token' => $accessToken,
+            'Content-Type' => 'application/json',
+        ])->post($graphqlEndpoint, [
+            'query' => $query,
+        ]);
+
+        if ($graphqlResponse->failed()) {
+            throw new \Exception('Failed to fetch variant metafields from Shopify');
+        }
+
+        $data = $graphqlResponse->json();
+        $variants = $data['data']['product']['variants']['edges'] ?? [];
+
+        // Extract metafields for each variant
+        $variantMetafields = [];
+        foreach ($variants as $variant) {
+            $metafields = $variant['node']['metafields']['edges'] ?? [];
+            $variantMetafields[$variant['node']['id']] = array_map(function ($edge) {
+                return [
+                    'id' => $edge['node']['id'],
+                    'namespace' => $edge['node']['namespace'],
+                    'key' => $edge['node']['key'],
+                    'value' => $edge['node']['value'],
+                ];
+            }, $metafields);
+        }
+
+        return $variantMetafields;
+    }
+
+    public function handleCallback(Request $request, $customer_id)
     {
         $input = $request->input();
 
-        Log::info('input logs:', ['customerData' => session()->all()]);
-
-        $catchData = Cache::get('customerData');
+        Log::info('header logs:', ['customerData' => $customer_id]);
 
         $shopDomain = $request->header();
 
@@ -950,7 +1054,7 @@ class ApiController extends Controller
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode')->get();
 
-        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPrice, $distance, $userData) {
+        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id) {
             $zipcode = optional($rate->zipcode);
             // Check cart conditions
             $conditionsMet = false;
@@ -959,7 +1063,7 @@ class ApiController extends Controller
                     $conditionsMet = true;
                     break;
                 case 1: // All conditions must be true
-                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData) {
+                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id) {
 
                         if ($condition['label'] == 'Cart_Order') {
 
@@ -1021,12 +1125,12 @@ class ApiController extends Controller
                         if ($condition['label'] == 'Per_Product') {
                             $fieldMap = [
                                 'quantity2' => 'quantity',
-                                'price' => fn ($item) => $item['price'] / 100,
-                                'total2' => fn ($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
+                                'price' => fn($item) => $item['price'] / 100,
+                                'total2' => fn($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
                                 'weight2' => 'grams',
                                 'name' => 'name',
-                                'tag' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
-                                'type' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
+                                'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
+                                'type' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
                                 'sku' => 'sku',
                                 'vendor' => 'vendor'
                             ];
@@ -1062,9 +1166,9 @@ class ApiController extends Controller
                                 'address2' => 'address3',
                                 'city' => 'city',
                                 'provinceCode' => 'province',
-                                'tag2' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags'),
-                                'previousCount' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'orders_count'),
-                                'previousSpent' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'total_spent'),
+                                'tag2' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags', $customer_id),
+                                'previousCount' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'orders_count', $customer_id),
+                                'previousSpent' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'total_spent', $customer_id),
                             ];
 
                             if (array_key_exists($condition['name'], $fieldMap)) {
@@ -1120,7 +1224,7 @@ class ApiController extends Controller
                     });
                     break;
                 case 2: // Any condition must be true
-                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData) {
+                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id) {
 
                         if ($condition['label'] == 'Cart_Order') {
 
@@ -1182,12 +1286,12 @@ class ApiController extends Controller
                         if ($condition['label'] == 'Per_Product') {
                             $fieldMap = [
                                 'quantity2' => 'quantity',
-                                'price' => fn ($item) => $item['price'] / 100,
-                                'total2' => fn ($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
+                                'price' => fn($item) => $item['price'] / 100,
+                                'total2' => fn($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
                                 'weight2' => 'grams',
                                 'name' => 'name',
-                                'tag' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
-                                'type' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
+                                'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
+                                'type' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
                                 'sku' => 'sku',
                                 'vendor' => 'vendor'
                             ];
@@ -1223,9 +1327,9 @@ class ApiController extends Controller
                                 'address2' => 'address3',
                                 'city' => 'city',
                                 'provinceCode' => 'province',
-                                'tag2' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags'),
-                                'previousCount' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'orders_count'),
-                                'previousSpent' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'total_spent'),
+                                'tag2' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags', $customer_id),
+                                'previousCount' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'orders_count', $customer_id),
+                                'previousSpent' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'total_spent', $customer_id),
                             ];
 
                             if (array_key_exists($condition['name'], $fieldMap)) {
@@ -1283,7 +1387,7 @@ class ApiController extends Controller
                     });
                     break;
                 case 3: // All conditions must be false to return true, if any condition is true return false
-                    $conditionsMet = !collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData) {
+                    $conditionsMet = !collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id) {
 
                         if ($condition['label'] == 'Cart_Order') {
 
@@ -1345,12 +1449,12 @@ class ApiController extends Controller
                         if ($condition['label'] == 'Per_Product') {
                             $fieldMap = [
                                 'quantity2' => 'quantity',
-                                'price' => fn ($item) => $item['price'] / 100,
-                                'total2' => fn ($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
+                                'price' => fn($item) => $item['price'] / 100,
+                                'total2' => fn($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
                                 'weight2' => 'grams',
                                 'name' => 'name',
-                                'tag' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
-                                'type' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
+                                'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
+                                'type' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
                                 'sku' => 'sku',
                                 'vendor' => 'vendor'
                             ];
@@ -1386,9 +1490,9 @@ class ApiController extends Controller
                                 'address2' => 'address3',
                                 'city' => 'city',
                                 'provinceCode' => 'province',
-                                'tag2' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags'),
-                                'previousCount' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'orders_count'),
-                                'previousSpent' => fn ($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'total_spent'),
+                                'tag2' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags', $customer_id),
+                                'previousCount' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'orders_count', $customer_id),
+                                'previousSpent' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'total_spent', $customer_id),
                             ];
 
                             if (array_key_exists($condition['name'], $fieldMap)) {
@@ -1590,7 +1694,7 @@ class ApiController extends Controller
                         })->toArray();
 
                         $lastFilteredData = collect($filteredDataWithQuantity)->last();
-                        // dd($lastFilteredData);
+
                         Log::info('lastFilteredData:', ['lastFilteredData' => $lastFilteredData]);
                         if ($surcharge['selectedMultiplyLine'] == 'Yes' && !empty($lastFilteredData)) {
                             $rate->base_price = ($rate->base_price + $lastFilteredData['rate_price']) * $lastFilteredData['quantity'];
@@ -1616,8 +1720,8 @@ class ApiController extends Controller
                         if ($this->checkCondition($conditions, $vendorsCommaSeparated)) {
                             if ($surcharge['selectedMultiplyLine'] == 'Yes') {
                                 $rate->base_price = $rate->base_price;
-                            } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
-                                $rate->base_price = $rate->base_price + ($rate->base_price % $surcharge['cart_total_percentage'] / 100);
+                            } elseif ($surcharge['selectedMultiplyLine'] == 'per') {
+                                $rate->base_price = $rate->base_price + ($rate->base_price * $surcharge['cart_total_percentage'] / 100);
                                 if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
                                     $rate->base_price = $minChargePrice;
                                 } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
@@ -1650,8 +1754,8 @@ class ApiController extends Controller
                         if ($this->checkCondition($conditions, $tagsCommaSeparated)) {
                             if ($surcharge['selectedMultiplyLine'] == 'Yes') {
                                 $rate->base_price = $rate->base_price;
-                            } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
-                                $rate->base_price = $rate->base_price + ($rate->base_price % $surcharge['cart_total_percentage'] / 100);
+                            } elseif ($surcharge['selectedMultiplyLine'] == 'per') {
+                                $rate->base_price = $rate->base_price + ($rate->base_price * $surcharge['cart_total_percentage'] / 100);
                                 if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
                                     $rate->base_price = $minChargePrice;
                                 } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
@@ -1684,13 +1788,49 @@ class ApiController extends Controller
                         if ($this->checkCondition($conditions, $commaSeparated)) {
                             if ($surcharge['selectedMultiplyLine'] == 'Yes') {
                                 $rate->base_price = $rate->base_price;
-                            } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
-                                $rate->base_price = $rate->base_price + ($rate->base_price % $surcharge['cart_total_percentage'] / 100);
+                            } elseif ($surcharge['selectedMultiplyLine'] == 'per') {
+                                $rate->base_price = $rate->base_price + ($rate->base_price * $surcharge['cart_total_percentage'] / 100);
                                 if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
                                     $rate->base_price = $minChargePrice;
                                 } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
                                     $rate->base_price = $maxChargePrice;
                                 }
+                            }
+                        } else {
+                            return null;
+                        }
+                        break;
+                    case 'Collection':
+                        $allCollection = [];
+
+                        foreach ($items as $item) {
+                            $types = $this->fetchShopifyProductData($userData, $item['product_id'], 'collections');
+                            $newcollections = explode(',', $types);
+                            if (is_array($newcollections)) {
+                                $allCollection = array_merge($allCollection, $newcollections);
+                            }
+                        }
+                        // Remove duplicate tags and join them into a comma-separated string
+                        $uniqueCollections = array_unique($allCollection);
+                        $commaSeparated = implode(', ', $uniqueCollections);
+
+                        $conditions = [
+                            'condition' => "equal",
+                            'value' => $surcharge['descriptions']
+                        ];
+
+                        if ($this->checkCondition($conditions, $commaSeparated)) {
+                            if ($surcharge['selectedMultiplyLine'] == 'Yes') {
+                                $rate->base_price = $rate->base_price;
+                                Log::info('kpanot1:', ['kpanot1' => $rate->base_price]);
+                            } elseif ($surcharge['selectedMultiplyLine'] == 'per') {
+                                $rate->base_price = $rate->base_price + ($rate->base_price * $surcharge['cart_total_percentage'] / 100);
+                                if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
+                                    $rate->base_price = $minChargePrice;
+                                } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
+                                    $rate->base_price = $maxChargePrice;
+                                }
+                                Log::info('kpanot:', ['kpanot' => $rate->base_price]);
                             }
                         } else {
                             return null;
@@ -1710,7 +1850,7 @@ class ApiController extends Controller
                             if ($surcharge['selectedMultiplyLine'] == 'Yes') {
                                 $rate->base_price = $rate->base_price;
                             } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
-                                $rate->base_price = $rate->base_price + ($rate->base_price % $surcharge['cart_total_percentage'] / 100);
+                                $rate->base_price = $rate->base_price + ($rate->base_price * $surcharge['cart_total_percentage'] / 100);
                                 if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
                                     $rate->base_price = $minChargePrice;
                                 } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
@@ -1797,33 +1937,35 @@ class ApiController extends Controller
             if (!empty($rate->rate_modifiers) && is_array($rate->rate_modifiers)) {
 
                 $modifierArray = [
-                    'dayOfOrder' => fn () => Carbon::now()->format('l'),
-                    'time' => fn () => Carbon::now()->format('H:i'),
-                    'price' => fn () => $totalPrice,
-                    'weight' => fn () => $totalWeight,
-                    'quantity' => fn () => $totalQuantity,
-                    'distance' => fn () => $distance,
-                    'localCode' => fn () => $localeCode,
-                    'zipcode' => fn () => $destinationZipcode,
-                    'name' => fn () => $destinationData['name'],
-                    'city' => fn () => $destinationData['city'],
-                    'provinceCode' => fn () => $destinationData['province'],
-                    'address' => fn () => $destinationData['address1'],
-                    'day' => fn ($day) => Carbon::now()->addDay($day)->format('l'),
-                    'date' => fn ($day) => Carbon::now()->addDay($day)->format('Y-m-d'),
-                    'dayFromToday' => fn ($day) => $day,
-                    'type' => fn () => null,
-                    'estimatedDay' => fn () => null,
-                    'timefromCurrent' => fn () => null,
-                    'available' => fn () => null
+                    'dayOfOrder' => fn() => Carbon::now()->format('l'),
+                    'time' => fn() => Carbon::now()->format('H:i'),
+                    'price' => fn() => $totalPrice,
+                    'weight' => fn() => $totalWeight,
+                    'quantity' => fn() => $totalQuantity,
+                    'distance' => fn() => $distance,
+                    'localCode' => fn() => $localeCode,
+                    'zipcode' => fn() => $destinationZipcode,
+                    'name' => fn() => $destinationData['name'],
+                    'city' => fn() => $destinationData['city'],
+                    'provinceCode' => fn() => $destinationData['province'],
+                    'address' => fn() => $destinationData['address1'],
+                    'day' => fn($day) => Carbon::now()->addDay($day)->format('l'),
+                    'date' => fn($day) => Carbon::now()->addDay($day)->format('Y-m-d'),
+                    'dayFromToday' => fn($day) => $day,
+                    'type' => fn() => null,
+                    'estimatedDay' => fn() => null,
+                    'timefromCurrent' => fn() => null,
+                    'available' => fn() => null,
+                    'tag2' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags', $customer_id),
                 ];
 
                 $perProductArr = [
                     'availableQuan' => 'quantity',
                     'ids' => 'product_id',
                     'title' => 'name',
-                    'tag' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
-                    'type2' => fn ($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
+                    'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
+                    'type2' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
+                    'collectionsIds' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'collections'),
                     'sku' => 'sku',
                     'vendor' => 'vendor'
                 ];
@@ -2099,7 +2241,7 @@ class ApiController extends Controller
             $response['rates'][] = [
                 'service_name' => $rate->name,
                 'service_code' => $rate->service_code,
-                'total_price' => $rate->base_price, // Convert to cents if needed
+                'total_price' => $rate->base_price * 100, // Convert to cents if needed
                 'description' => Carbon::now()->addDay($deliveryDay)->format('l, d M'),
                 'currency' => $rate->zone->currency,
                 'min_delivery_date' => Carbon::now()->addDay($deliveryDay)->toIso8601String(),
@@ -2128,7 +2270,7 @@ class ApiController extends Controller
                 $response['rates'][] = [
                     "service_name" => $rate->send_another_rate['another_rate_name'],
                     "service_code" => $rate->send_another_rate['another_service_code'],
-                    "total_price" => $finalTotalPrice,
+                    "total_price" => $finalTotalPrice * 100,
                     "description" => $rate->send_another_rate['another_rate_description'],
                     "currency" => $rate->zone->currency,
                     'min_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
@@ -2138,7 +2280,7 @@ class ApiController extends Controller
         }
 
         // Log::info('Shopify Carrier Service input:', ["input" => $input]);
-        // Log::info('Shopify Carrier Service response:', ["response" => $response]);
+        Log::info('Shopify Carrier Service response:', ["response" => $response]);
 
         return response()->json($response);
     }

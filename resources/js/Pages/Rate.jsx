@@ -29,7 +29,8 @@ import {
     Box,
     Collapsible,
     List,
-    Modal
+    Modal,
+    Spinner
 
 } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon, SearchIcon, SelectIcon } from '@shopify/polaris-icons';
@@ -43,6 +44,7 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 function Rate(props) {
     const { id, zone_id } = useParams();
     const [loading, setLoading] = useState(true);
+    const [loadingButton, setLoadingButton] = useState(false);
     const [state, setState] = useState([])
     const [originalOptions, setOriginalOptions] = useState([]);
     const [selectedOptions, setSelectedOptions] = useState([]);
@@ -59,7 +61,7 @@ function Rate(props) {
         selectedByUpdatePriceType: 0,
         selectedByUpdatePriceEffect: 0,
         selectedZipCondition: 'All',
-        selectedZipCode: 'Include',
+        selectedZipCode: 'exclude',
         selectedMultiplyLine: 'Yes',
         selectedPriceReplace: 'BasePrice',
         exclude_products_radio: 0, // 0=Remove rate  1=Reduce only product price, weight and quantity
@@ -108,11 +110,12 @@ function Rate(props) {
     const [toastActive, setToastActive] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
     const [locations, setLocations] = useState([]);
-    const [showTable, setShowTable] = useState(false);
+    const [showAllProducts, setShowAllProducts] = useState(false);
+    const [showAllProduct, setShowAllProduct] = useState(false);
+    const [loadingTable, setLoadingTable] = useState(false)
     const [value, setValue] = useState('');
     const [shop_weight_unit, setshop_weight_unit] = useState()
     const [shop_currency, setShop_currency] = useState()
-    const [selectedProductsData, setSelectedProductsData] = useState([]);
     const [pageInfo, setPageInfo] = useState({
         startCursor: null,
         endCursor: null,
@@ -120,7 +123,7 @@ function Rate(props) {
         hasPreviousPage: false
     });
     const [products, setProducts] = useState([]);
-    const [filteredProducts, setFilteredProducts] = useState([]);
+    const [selectedProductIds, setSelectedProductIds] = useState([]);
     const [date, setDate] = useState({ startDate: '', endDate: '' });
 
     const handleDateChange = (key, value) => {
@@ -246,6 +249,7 @@ function Rate(props) {
         const newId = rateModifiers.length ? rateModifiers[rateModifiers.length - 1].id + 1 : 1;
         const defaultRateModifier = 'dayOfOrder';
         const defaultOption = rateModifiersOptions.find(option => option.value === defaultRateModifier);
+
         setRateModifiers((prevModifiers) => [
             ...prevModifiers,
             {
@@ -265,13 +269,38 @@ function Rate(props) {
                 modifierType: 'Fixed',
                 adjustment: '',
                 effect: 'Decrease',
+                productData: []
             },
         ]);
+
         setOpen((prevState) => ({
             ...prevState,
             [newId]: true,
         }));
     };
+    useEffect(() => {
+        if (rateModifiers.length === 0) return;
+
+        const selectedProducts = products.filter(product => selectedProductIds.includes(product.id));
+
+        setRateModifiers((prevModifiers) => {
+            // Find the latest modifier to update
+            const lastModifierIndex = prevModifiers.length - 1;
+            if (lastModifierIndex < 0) return prevModifiers;
+
+            const updatedModifiers = [...prevModifiers];
+            updatedModifiers[lastModifierIndex] = {
+                ...updatedModifiers[lastModifierIndex],
+                productData: selectedProducts.map(({ id, title, price }) => ({
+                    id,
+                    title,
+                    price,
+                })),
+            };
+
+            return updatedModifiers;
+        });
+    }, [selectedProductIds, products]);
 
     const handleRemoveRateModifier = (id) => {
         setRateModifiers((prevModifiers) =>
@@ -405,7 +434,13 @@ function Rate(props) {
             }
             if (response.data.rate.rate_modifiers) {
                 setRateModifiers(response.data.rate.rate_modifiers);
+
+                const selectedIds = response.data.rate.rate_modifiers.flatMap(modifier =>
+                    modifier.productData ? modifier.productData.map(product => product.id) : []
+                );
+                setSelectedProductIds(selectedIds);
             }
+
             if (response.data.rate.cart_condition) {
                 setCheckState(prevState => ({
                     ...prevState,
@@ -481,7 +516,6 @@ function Rate(props) {
                         value: item.id === rate.id ? rate.value : item.value
                     };
                 });
-                console.log('updated products data',updatedProductData)
                 return {
                     ...prevState,
                     name: rate.name,
@@ -492,7 +526,7 @@ function Rate(props) {
                     zone_id: rate.zone_id,
                     status: rate.status,
                     merge_rate_tag: rate.merge_rate_tag,
-                    productdata: updatedProductData 
+                    productdata: updatedProductData
                 };
             });
             if (response.data.rate.scheduleRate) {
@@ -573,7 +607,6 @@ function Rate(props) {
     );
     const handleClearButtonClick = useCallback(() => {
         setValue('');
-        setFilteredProducts(products);
     }, [products]);
 
     const getstate = async () => {
@@ -999,10 +1032,6 @@ function Rate(props) {
         min_charge_price: '',
         max_charge_price: '',
         cart_total_percentage: '',
-        product_title: '',
-        collecion_id: '',
-        product_type: '',
-        product_vendor: '',
         descriptions: '',
         rate_price: '',
         productData: []
@@ -1017,6 +1046,17 @@ function Rate(props) {
         adjustment_price: '',
         another_service_code: "",
         another_merge_rate_tag: ''
+    })
+
+    const [exclude_Rate, SetExclude_Rate] = useState({
+        set_exclude_products: selectedRate,
+        exclude_products_radio: checkstate.exclude_products_radio,
+        product_title: '',
+        collection_id: '',
+        product_type: '',
+        product_vendor: '',
+        exclude_products_textbox: '',
+        productsData: []
     })
 
     useEffect(() => {
@@ -1043,22 +1083,8 @@ function Rate(props) {
                 ship_from_locations: checkedState.checked2
             }
         }));
-        Setrate_based_on_surcharge(prevState => ({
-            ...prevState,
-            productData: selectedProductsData
-        }));
-    }, [selectedProductsData, checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate, locations, checkedlocation]);
 
-    const [exclude_Rate, SetExclude_Rate] = useState({
-        set_exclude_products: selectedRate,
-        exclude_products_radio: checkstate.exclude_products_radio,
-        product_title: '',
-        collection_id: '',
-        product_type: '',
-        product_vendor: '',
-        exclude_products_textbox: '',
-        productData: ''
-    })
+    }, [checkedState.checked3, checkstate.selectedByUpdatePriceType, checkstate.selectedByUpdatePriceEffect, selectedRate, locations, checkedlocation]);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -1138,12 +1164,12 @@ function Rate(props) {
                 conditionMatch: checkstate.selectedCondition,
                 cartCondition: items,
             },
-           zipcode: {
+            zipcode: {
                 ...prevFormData.zipcode,
                 state: selectedStates,
                 stateSelection: checkstate.selectedStateCondition,
                 zipcodeSelection: checkstate.selectedZipCondition,
-                 isInclude: checkstate.selectedZipCode,
+                isInclude: checkstate.selectedZipCode,
                 zipcode: zipcodeValue?.split(',').map(zip => zip.trim())
             },
             scheduleRate: {
@@ -1279,6 +1305,7 @@ function Rate(props) {
             return;
         }
         try {
+            setLoadingButton(true);
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
@@ -1298,43 +1325,79 @@ function Rate(props) {
             setToastContent('Rate saved successfully');
             setShowToast(true);
             editRate();
-
+            setLoadingButton(false);
         } catch (error) {
             console.error('Error occurs', error);
             setToastContent('Error occurred while saving data');
             setShowToast(true);
         }
+        finally {
+            setLoadingButton(false);
+        }
     };
+    const [textFields, setTextFields] = useState({
+        fullProductTitle: '',
+        collectionId: '',
+        productType: '',
+        productVendor: ''
+    });
+
+    const handleTextFieldChange = (field) => (value) => {
+        setTextFields((prevFields) => {
+            const updatedFields = {
+                fullProductTitle: field === 'fullProductTitle' ? value : '',
+                collectionId: field === 'collectionId' ? value : '',
+                productType: field === 'productType' ? value : '',
+                productVendor: field === 'productVendor' ? value : '',
+            };
+    
+            return {
+                ...prevFields,
+                ...updatedFields,
+            };
+        });
+    };
+    
     const fetchProducts = async (cursor, direction) => {
         try {
+          setLoadingTable(true)
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
             });
             const token = await getSessionToken(app);
+    
+            const queryArray = Object.values(textFields).filter(value => value.trim() !== '');
+            const queryString = queryArray.join(' ');
+    
             const payload = {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
-                // query: textFieldValue,
+                query: queryString 
             };
+        
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
                 headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                    'Authorization': `Bearer ${token}`,
+                },
             });
+    
             const productData = response.data;
             setProducts(productData.products);
-            setFilteredProducts(productData.products);
             setPageInfo({
                 startCursor: productData.startCursor,
                 endCursor: productData.endCursor,
                 hasNextPage: productData.hasNextPage,
                 hasPreviousPage: productData.hasPreviousPage,
             });
-            setLoading(false)
+            setLoading(false);
+            setLoadingTable(false)
         } catch (error) {
+            setLoadingTable
+            setLoading(false);
             console.error('Error fetching product data:', error);
         }
     };
+    
     const handleNextPage = () => {
         if (pageInfo.hasNextPage) {
             fetchProducts(pageInfo.endCursor, 'next');
@@ -1349,11 +1412,17 @@ function Rate(props) {
         singular: 'order',
         plural: 'products',
     };
+    // const handleSearchClick = () => {
+    //     setShowAllProducts(true);
+    // };
     const handleSearchClick = () => {
-        setShowTable(true);
+        fetchProducts();
+        setShowAllProducts(true);
     };
-
-    const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(filteredProducts);
+    const handleClick = () => {
+        fetchProducts();
+        setShowAllProduct(!showAllProducts);
+    };
 
     useEffect(() => {
         if (formData.id) {
@@ -1361,38 +1430,15 @@ function Rate(props) {
         }
     }, [formData.id, zone_id, navigate]);
 
-    const productData = filteredProducts.map(({ id, title, image }, index) => (
-        <IndexTable.Row
-            id={id}
-            key={id}
-            selected={selectedResources.includes(id)}
-            position={index}
-        >
-            <IndexTable.Cell>
-                <Thumbnail
-                    source={image}
-                    size="small"
-                    alt={title}
-                />
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
-                    <Text fontWeight="bold" as="span">
-                        {title}
-                    </Text>
-                </div>
-            </IndexTable.Cell>
-        </IndexTable.Row>
-    ));
     const handleProductChange = (productId, checked, text = '') => {
         Setrate_based_on_surcharge((prevState) => {
             let updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
-    
+
             if (checked) {
                 const product = products.find(product => product.id == productId);
                 if (product) {
                     const existingProductIndex = updatedProductData.findIndex(item => item.id == productId);
-    
+
                     if (existingProductIndex !== -1) {
                         updatedProductData[existingProductIndex] = {
                             ...updatedProductData[existingProductIndex],
@@ -1413,28 +1459,30 @@ function Rate(props) {
             } else {
                 updatedProductData = updatedProductData.filter(item => item.id !== productId);
             }
-    
+
             return {
                 ...prevState,
-                productdata: updatedProductData,
+                productData: updatedProductData,
             };
         });
     };
-    console.log(formData.productdata)
-    const selectedCount = Array.isArray(formData.productdata) ? formData.productdata.length : 0;
 
- 
-    const rowMarkup = products.map(({ id, title, image, price }, index) => {
-        const isChecked = Array.isArray(formData.productdata) && formData.productdata.some(item => item.id === id);
-        const productValue = Array.isArray(formData.productdata) ? formData.productdata.find(item => item.id === id)?.value || '' : '';
-    
+    const selectedCount = rate_based_on_surcharge.productData.length
+    const filteredProducts = showAllProducts
+        ? products.filter(product => product.title.toLowerCase().includes)
+        : products.filter(product => rate_based_on_surcharge.productData.some(item => item.id === product.id));
+
+    const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => {
+        const isChecked = Array.isArray(rate_based_on_surcharge.productData) && rate_based_on_surcharge.productData.some(item => item.id === id);
+        const productValue = Array.isArray(rate_based_on_surcharge.productData) ? rate_based_on_surcharge.productData.find(item => item.id === id)?.value || '' : '';
+
         return (
             <IndexTable.Row
                 id={id}
                 key={id}
                 position={index}
             >
-                 <IndexTable.Cell>
+                <IndexTable.Cell>
                     <Checkbox
                         checked={isChecked}
                         onChange={(checked) => handleProductChange(id, checked, productValue)}
@@ -1459,23 +1507,116 @@ function Rate(props) {
                         {price}
                     </Text>
                 </IndexTable.Cell>
-               
+
                 <IndexTable.Cell>
                     <TextField
                         value={productValue}
                         onChange={(text) => handleProductChange(id, isChecked, text)}
                         disabled={!isChecked}
+                        placeholder={isChecked ? '0.00' : ''}
+                        prefix={isChecked ? shop_currency : undefined}
                     />
+
                 </IndexTable.Cell>
             </IndexTable.Row>
         );
     });
-    
+
+    const filteredProduct = showAllProduct
+        ? products
+        : products.filter(product => exclude_Rate.productsData.some(selectedProduct => selectedProduct.id === product.id));
+    const selectedCount1 = exclude_Rate.productsData.length
+    const productData1 = filteredProduct.map(({ id, title, image, price }, index) => {
+        return (
+            <IndexTable.Row
+                id={id}
+                key={id}
+                position={index}
+            >
+                <IndexTable.Cell>
+                    <Checkbox
+                        checked={exclude_Rate.productsData?.some(product => product.id === id) || false}
+                        onChange={() => toggleProduct(id, title, price)}
+                    />
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <Thumbnail
+                        source={image}
+                        size="small"
+                        alt={title}
+                    />
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <Text fontWeight="bold" as="span">
+                        {title}
+                    </Text>
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <Text fontWeight="bold" as="span">
+                        {price}
+                    </Text>
+                </IndexTable.Cell>
+            </IndexTable.Row>
+        );
+    });
+    const toggleProduct = (id, title, price) => {
+        SetExclude_Rate(prevState => {
+            const currentProductData = Array.isArray(prevState.productsData) ? prevState.productsData : [];
+            const isSelected = currentProductData.some(product => product.id === id);
+            const updatedProductData = isSelected
+                ? currentProductData.filter(product => product.id !== id)
+                : [...currentProductData, { id, title, price }];
+            return { ...prevState, productsData: updatedProductData };
+        });
+    };
+
+    const handleCheckboxChange2 = (id) => {
+        setSelectedProductIds((prevSelected) =>
+            prevSelected.includes(id)
+                ? prevSelected.filter((productId) => productId !== id)
+                : [...prevSelected, id]
+        );
+    };
+    const selectedCount2 = selectedProductIds.length;
+    const productData2 = products.map(({ id, title, image, price }, index) => (
+        <IndexTable.Row
+            id={id}
+            key={id}
+            position={index}
+        >
+            <IndexTable.Cell>
+                <Checkbox
+                    checked={selectedProductIds.includes(id)}
+                    onChange={() => handleCheckboxChange2(id)}
+                />
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <Thumbnail
+                    source={image}
+                    size="small"
+                    alt={title}
+                />
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+                    <Text fontWeight="bold" as="span">
+                        {title}
+                    </Text>
+                </div>
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <Text fontWeight="bold" as="span">
+                    {price}
+                </Text>
+            </IndexTable.Cell>
+        </IndexTable.Row>
+    ));
+
     if (loading) {
         return (
             <Page
                 title={id ? 'Edit Rate' : 'Add Rate'}
-                primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
+                primaryAction={<Button variant="primary"    >Save</Button>}
                 secondaryActions={<Button onClick={BacktoZone}>Back</Button>}
             >
                 <Grid>
@@ -1526,7 +1667,7 @@ function Rate(props) {
     return (
         <Page
             title={id ? 'Edit Rate' : 'Add Rate'}
-            primaryAction={<Button variant="primary" onClick={saveRate}>Save</Button>}
+            primaryAction={<Button variant="primary" onClick={saveRate} loading={loadingButton}>Save</Button>}
             secondaryActions={<Button onClick={() => BacktoZone(zone_id)}>Back</Button>}
         >
             <Divider borderColor="border" />
@@ -2042,10 +2183,10 @@ function Rate(props) {
                                         />
                                         <RadioButton
                                             label="Exclude ZipCodes"
-                                            checked={checkstate.selectedZipCode === 'Exclude'}
-                                            id="Exclude"
-                                            name="isInclude"
-                                            onChange={() => handlecheckedChange('selectedZipCode', 'Exclude')}
+                                            checked={checkstate.selectedZipCode === 'exclude'}
+                                            id="exclude"
+                                            name="isexcludea"
+                                            onChange={() => handlecheckedChange('selectedZipCode', 'exclude')}
                                         />
                                     </div>
                                 </div>
@@ -2089,37 +2230,46 @@ function Rate(props) {
                                     <Text variant="headingSm" as="h6">
                                         By Cart Surcharge
                                     </Text>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '30%', paddingTop: '1%' }}>
-                                        <RadioButton
-                                            label="Item Weight"
-                                            checked={checkstate.selectedByCart === 'weight'}
-                                            id="weight"
-                                            name="weight"
-                                            onChange={() => handlecheckedChange('selectedByCart', 'weight')}
-                                        />
-                                        <RadioButton
-                                            label="Item Qty"
-                                            checked={checkstate.selectedByCart === 'Qty'}
-                                            id="Qty"
-                                            name="Qty"
-                                            onChange={() => handlecheckedChange('selectedByCart', 'Qty')}
-                                        />
+                                    <div style={{ display: 'flex', marginTop: "1%" }}>
+                                        <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
+                                            <RadioButton
+                                                label="Item Weight"
+                                                checked={checkstate.selectedByCart === 'weight'}
+                                                id="weight"
+                                                name="weight"
+                                                onChange={() => handlecheckedChange('selectedByCart', 'weight')}
+                                            />
+                                        </div>
+                                        <div style={{ flex: 1, width: "50%" }}>
+                                            <RadioButton
+                                                label="Item Qty"
+                                                checked={checkstate.selectedByCart === 'Qty'}
+                                                id="Qty"
+                                                name="Qty"
+                                                onChange={() => handlecheckedChange('selectedByCart', 'Qty')}
+                                            />
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '21.5%', marginBottom: "2%" }}>
-                                        <RadioButton
-                                            label="Cart Total Percentage"
-                                            checked={checkstate.selectedByCart === 'Percentage'}
-                                            id="Percentage"
-                                            name="Percentage"
-                                            onChange={() => handlecheckedChange('selectedByCart', 'Percentage')}
-                                        />
-                                        <RadioButton
-                                            label="Based On Distance"
-                                            checked={checkstate.selectedByCart === 'Distance'}
-                                            id="Distance"
-                                            name="Distance"
-                                            onChange={() => handlecheckedChange('selectedByCart', 'Distance')}
-                                        />
+
+                                    <div style={{ display: 'flex', }}>
+                                        <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
+                                            <RadioButton
+                                                label="Cart Total Percentage"
+                                                checked={checkstate.selectedByCart === 'Percentage'}
+                                                id="Percentage"
+                                                name="Percentage"
+                                                onChange={() => handlecheckedChange('selectedByCart', 'Percentage')}
+                                            />
+                                        </div>
+                                        <div style={{ flex: 1, width: "50%" }}>
+                                            <RadioButton
+                                                label="Based On Distance"
+                                                checked={checkstate.selectedByCart === 'Distance'}
+                                                id="Distance"
+                                                name="Distance"
+                                                onChange={() => handlecheckedChange('selectedByCart', 'Distance')}
+                                            />
+                                        </div>
                                     </div>
                                     {checkstate.selectedByCart === 'Distance' && (
                                         <div>
@@ -2130,69 +2280,89 @@ function Rate(props) {
                                     <Text variant="headingSm" as="h6">
                                         By Product Surcharge
                                     </Text>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '35.5%', paddingTop: '1%' }}>
-                                        <RadioButton
-                                            label="Product"
-                                            checked={checkstate.selectedByCart === 'Product'}
-                                            id="Product"
-                                            name="Product"
-                                            onChange={() => handlecheckedChange('selectedByCart', 'Product')}
-                                        />
-                                        <RadioButton
-                                            label="Vendor"
-                                            checked={checkstate.selectedByCart === 'Vendor'}
-                                            id="Vendor"
-                                            name="Vendor"
-                                            onChange={() => handlecheckedChange('selectedByCart', 'Vendor')}
-                                        />
+
+                                    <div style={{ display: 'flex',  marginTop: "1%" }}>
+                                        <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
+                                            <RadioButton
+                                                label="Product"
+                                                checked={checkstate.selectedByCart === 'Product'}
+                                                id="Product"
+                                                name="Product"
+                                                onChange={() => handlecheckedChange('selectedByCart', 'Product')}
+                                            />
+                                        </div>
+                                        <div style={{ flex: 1, width: "50%" }}>
+                                            <RadioButton
+                                                label="Vendor"
+                                                checked={checkstate.selectedByCart === 'Vendor'}
+                                                id="Vendor"
+                                                name="Vendor"
+                                                onChange={() => handlecheckedChange('selectedByCart', 'Vendor')}
+                                            />
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '36.5%' }}>
-                                        <RadioButton
-                                            label="Variant"
-                                            checked={checkstate.selectedByCart === 'Variant'}
-                                            id="Variant"
-                                            name="Variant"
-                                            onChange={() => handlecheckedChange('selectedByCart', 'Variant')}
-                                        />
-                                        <RadioButton
-                                            label="Product Tag"
-                                            checked={checkstate.selectedByCart === 'Tag'}
-                                            id="Tag"
-                                            name="Tag"
-                                            onChange={() => handlecheckedChange('selectedByCart', 'Tag')}
-                                        />
+
+                                    <div style={{ display: 'flex', }}>
+                                        <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
+                                            <RadioButton
+                                                label="Variant"
+                                                checked={checkstate.selectedByCart === 'Variant'}
+                                                id="Variant"
+                                                name="Variant"
+                                                onChange={() => handlecheckedChange('selectedByCart', 'Variant')}
+                                            />
+                                        </div>
+                                        <div style={{ flex: 1, width: "50%" }}>
+                                            <RadioButton
+                                                label="Product Tag"
+                                                checked={checkstate.selectedByCart === 'Tag'}
+                                                id="Tag"
+                                                name="Tag"
+                                                onChange={() => handlecheckedChange('selectedByCart', 'Tag')}
+                                            />
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '30.8%' }}>
-                                        <RadioButton
-                                            label="Product Type"
-                                            checked={checkstate.selectedByCart === 'Type'}
-                                            id="Type"
-                                            name="Type"
-                                            onChange={() => handlecheckedChange('selectedByCart', 'Type')}
-                                        />
-                                        <RadioButton
-                                            label="Product SKU"
-                                            checked={checkstate.selectedByCart === 'SKU'}
-                                            id="SKU"
-                                            name="SKU"
-                                            onChange={() => handlecheckedChange('selectedByCart', 'SKU')}
-                                        />
+
+                                    <div style={{ display: 'flex', }}>
+                                        <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
+                                            <RadioButton
+                                                label="Product Type"
+                                                checked={checkstate.selectedByCart === 'Type'}
+                                                id="Type"
+                                                name="Type"
+                                                onChange={() => handlecheckedChange('selectedByCart', 'Type')}
+                                            />
+                                        </div>
+                                        <div style={{ flex: 1, width: "50%" }}>
+                                            <RadioButton
+                                                label="Product SKU"
+                                                checked={checkstate.selectedByCart === 'SKU'}
+                                                id="SKU"
+                                                name="SKU"
+                                                onChange={() => handlecheckedChange('selectedByCart', 'SKU')}
+                                            />
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '23.5%' }}>
-                                        <RadioButton
-                                            label="Product Collection Id"
-                                            checked={checkstate.selectedByCart === 'Collection'}
-                                            id="Collection"
-                                            name="Collection"
-                                            onChange={() => handlecheckedChange('selectedByCart', 'Collection')}
-                                        />
-                                        <RadioButton
-                                            label="Variant Metafields"
-                                            checked={checkstate.selectedByCart === 'Metafields'}
-                                            id="Metafields"
-                                            name="Metafields"
-                                            onChange={() => handlecheckedChange('selectedByCart', 'Metafields')}
-                                        />
+
+                                    <div style={{ display: 'flex', }}>
+                                        <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
+                                            <RadioButton
+                                                label="Product Collection Id"
+                                                checked={checkstate.selectedByCart === 'Collection'}
+                                                id="Collection"
+                                                name="Collection"
+                                                onChange={() => handlecheckedChange('selectedByCart', 'Collection')}
+                                            />
+                                        </div>
+                                        <div style={{ flex: 1, width: "50%" }}>
+                                            <RadioButton
+                                                label="Variant Metafields"
+                                                checked={checkstate.selectedByCart === 'Metafields'}
+                                                id="Metafields"
+                                                name="Metafields"
+                                                onChange={() => handlecheckedChange('selectedByCart', 'Metafields')}
+                                            />
+                                        </div>
                                     </div>
                                     <div style={{ marginBottom: "2%" }}></div>
                                     <Divider borderColor="border-inverse" />
@@ -2404,16 +2574,16 @@ function Rate(props) {
                                                                     label="Full Product Title"
                                                                     autoComplete="off"
                                                                     placeholder='Enter Full Product Title'
-                                                                    value={rate_based_on_surcharge.product_title}
-                                                                    onChange={handleRateFormChange('product_title')}
+                                                                    value={textFields.fullProductTitle}
+                                                                    onChange={handleTextFieldChange('fullProductTitle')}
                                                                 />
                                                                 <TextField
                                                                     type="text"
                                                                     label="Enter Collection ID"
                                                                     autoComplete="off"
                                                                     placeholder='Enter Collection ID'
-                                                                    value={rate_based_on_surcharge.collecion_id}
-                                                                    onChange={handleRateFormChange('collecion_id')}
+                                                                    value={textFields.collectionId}
+                                                                    onChange={handleTextFieldChange('collectionId')}
                                                                 />
                                                             </FormLayout.Group>
                                                         </FormLayout>
@@ -2426,26 +2596,26 @@ function Rate(props) {
                                                                     label="Full Product Type"
                                                                     autoComplete="off"
                                                                     placeholder='Enter Full Product Type'
-                                                                    value={rate_based_on_surcharge.product_type}
-                                                                    onChange={handleRateFormChange('product_type')}
+                                                                    value={textFields.productType}
+                                                                    onChange={handleTextFieldChange('productType')}
                                                                 />
                                                                 <TextField
                                                                     type="text"
                                                                     label="Full Product Vendor"
                                                                     autoComplete="off"
                                                                     placeholder='Enter Full Product Vendor'
-                                                                    value={rate_based_on_surcharge.product_vendor}
-                                                                    onChange={handleRateFormChange('product_vendor')}
+                                                                    value={textFields.productVendor}
+                                                                    onChange={handleTextFieldChange('productVendor')}
                                                                 />
                                                             </FormLayout.Group>
                                                         </FormLayout>
                                                     </div>
                                                     <p style={{ marginTop: "2%" }}>Note: Please enter the exact term for product title, collection id, product type, and product vendor that needs to be searched.
                                                     </p>
-                                                    <div style={{ marginTop: "2%", width: '20%' }} onClick={handleSearchClick}>
-                                                        <Button variant="primary" >Search Product</Button></div>
+                                                    <div style={{ marginTop: "2%", width: '20%' }} >
+                                                        <Button variant="primary" onClick={handleSearchClick} >Search Product</Button></div>
                                                     <div style={{ marginTop: "4%" }}>
-                                                        {showTable && (
+                                                        {filteredProducts.length > 0 && (
                                                             <div>
                                                                 <div>
                                                                     <TextField
@@ -2462,10 +2632,10 @@ function Rate(props) {
                                                                 <div style={{ marginTop: "4%" }}>
                                                                     <IndexTable
                                                                         resourceName={resourceName}
-                                                                        itemCount={filteredProducts.length}
+                                                                        itemCount={products.length}
 
                                                                         headings={[
-                                                                            { title: ` ${selectedCount} Selected` }, // Show count here
+                                                                            { title: ` ${selectedCount} Selected` },
                                                                             { title: 'Image' },
                                                                             { title: 'Title' },
                                                                             { title: 'Price' },
@@ -2479,7 +2649,18 @@ function Rate(props) {
                                                                             onPrevious: handlePreviousPage,
                                                                         }}
                                                                     >
-                                                                        {rowMarkup}
+                                                                        {loadingTable ? (
+                                                                            <IndexTable.Row>
+                                                                                <IndexTable.Cell colSpan={5}>
+                                                                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                                                                        <Spinner accessibilityLabel="Loading products" size="small" />
+                                                                                    </div>
+                                                                                </IndexTable.Cell>
+                                                                            </IndexTable.Row>
+                                                                        ) : (
+                                                                            rowMarkup
+                                                                        )}
+
                                                                     </IndexTable>
                                                                 </div>
                                                             </div>
@@ -2782,8 +2963,8 @@ function Rate(props) {
                                                     label="Full Product Title"
                                                     autoComplete="off"
                                                     placeholder='Enter Full Product Title'
-                                                    value={exclude_Rate.product_title}
-                                                    onChange={handleRateFormChange('product_title')}
+                                                    value={textFields.fullProductTitle}
+                                                    onChange={handleTextFieldChange('fullProductTitle')}
                                                 />
                                                 <TextField
                                                     type="text"
@@ -2821,47 +3002,57 @@ function Rate(props) {
                                     </div>
                                     <p style={{ marginTop: "1%" }}>Note: Please enter the exact term for product title, collection id, product type, and product vendor that needs to be searched.
                                     </p>
-                                    <div style={{ marginTop: "2%", width: '20%' }} onClick={handleSearchClick}>
-                                        <Button variant="primary" >Search Product</Button></div>
+                                    <div style={{ marginTop: "2%", width: '20%' }}>
+                                        <Button variant="primary" onClick={handleClick}>Search Product</Button></div>
                                     <div style={{ marginTop: "4%" }}>
-                                        {showTable && (
+                                        <div>
                                             <div>
-                                                {/* <div>
-                                                    <TextField
-                                                        placeholder='search'
-                                                        onChange={handlesearchChange}
-                                                        value={value}
-                                                        type="text"
-                                                        prefix={<Icon source={SearchIcon} color="inkLighter" />}
-                                                        autoComplete="off"
-                                                        clearButton
-                                                        onClearButtonClick={handleClearButtonClick}
-                                                    />
-                                                </div>
-                                                <div style={{ marginTop: "4%" }}>
-                                                    <IndexTable
-                                                        resourceName={resourceName}
-                                                        itemCount={filteredProducts.length}
-                                                        selectedItemsCount={
-                                                            allResourcesSelected ? 'All' : selectedResources.length
-                                                        }
-                                                        onSelectionChange={handleSelectionChange}
-                                                        headings={[
-                                                            { title: 'Image' },
-                                                            { title: 'Title' },
-                                                        ]}
-                                                        pagination={{
-                                                            hasNext: hasNextPage,
-                                                            hasPrevious: hasPreviousPage,
-                                                            onNext: handleNextPage,
-                                                            onPrevious: handlePreviousPage,
-                                                        }}
-                                                    >
-                                                        {productData}
-                                                    </IndexTable>
-                                                </div> */}
+                                                <TextField
+                                                    placeholder='search'
+                                                    onChange={handlesearchChange}
+                                                    value={value}
+                                                    type="text"
+                                                    prefix={<Icon source={SearchIcon} color="inkLighter" />}
+                                                    autoComplete="off"
+                                                    clearButton
+                                                    onClearButtonClick={handleClearButtonClick}
+                                                />
                                             </div>
-                                        )}
+                                            <div style={{ marginTop: "4%" }}>
+                                                <IndexTable
+                                                    resourceName={resourceName}
+                                                    itemCount={products.length}
+
+                                                    headings={[
+                                                        { title: ` ${selectedCount1} Selected` },
+                                                        { title: 'Image' },
+                                                        { title: 'Title' },
+                                                        { title: 'Price' },
+
+                                                    ]}
+                                                    selectable={false}
+                                                    pagination={{
+                                                        hasNext: pageInfo.hasNextPage,
+                                                        onNext: handleNextPage,
+                                                        hasPrevious: pageInfo.hasPreviousPage,
+                                                        onPrevious: handlePreviousPage,
+                                                    }}
+                                                >
+                                                    {loadingTable ? (
+                                                        <IndexTable.Row>
+                                                            <IndexTable.Cell colSpan={5}>
+                                                                <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                                                    <Spinner accessibilityLabel="Loading products" size="small" />
+                                                                </div>
+                                                            </IndexTable.Cell>
+                                                        </IndexTable.Row>
+                                                    ) : (
+                                                        productData1
+                                                    )}
+
+                                                </IndexTable>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -2963,7 +3154,7 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'name')}
                                                                     autoComplete="off"
                                                                     placeholder="Rate Modifier Name"
-                                                                    error={errors[`name${modifier.id}`]}
+                                                                    error={errors[`name${index}`]}
                                                                 />
                                                                 <TextField
                                                                     type="text"
@@ -3113,11 +3304,13 @@ function Rate(props) {
                                                         {modifier.rateModifier === 'ids' && (
                                                             <TextField
                                                                 type='text'
-                                                                value={modifier.productData}
+                                                                value={modifier.productData
+                                                                    ? modifier.productData.map(product => product.id).join(',')
+                                                                    : ''}
                                                                 onChange={handleRateModifierChange(modifier.id, 'productData')}
                                                                 multiline={4}
-                                                                onFocus={handleFocus}
-                                                                helpText='add product ids with comma(,) separator'
+                                                                onFocus={() => handleFocus(modifier.id)}
+                                                                helpText='Add product IDs with comma(,) separator'
                                                             />
                                                         )}
                                                         {(modifier.rateModifier === 'price' || modifier.rateModifier === 'calculateRate' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
@@ -3195,6 +3388,9 @@ function Rate(props) {
                                                             />
                                                         )}
                                                     </div>
+
+
+
                                                     {(modifier.type === 'AND' || modifier.type === 'OR') && (
                                                         <div style={{ marginTop: '5%' }}>
                                                             <div style={{ float: 'left', width: '45%', marginTop: "0.5%" }}><hr /></div>
@@ -3300,12 +3496,13 @@ function Rate(props) {
                                                                 {modifier.rateModifier2 === 'ids' && (
                                                                     <TextField
                                                                         type='text'
-                                                                        value={modifier.productData}
+                                                                        value={modifier.productData ? String(modifier.productData) : ''}
                                                                         onChange={handleRateModifierChange(modifier.id, 'productData')}
                                                                         multiline={4}
                                                                         onFocus={handleFocus}
                                                                         helpText='add product ids with comma(,) separator'
                                                                     />
+
                                                                 )}
                                                                 {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (
                                                                     <TextField
@@ -3520,7 +3717,7 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'adjustment')}
                                                                     autoComplete="off"
                                                                     placeholder="00"
-                                                                    error={errors[`adjustment${modifier.id}`]}
+                                                                    error={errors[`adjustment${index}`]}
                                                                 />
                                                             </FormLayout>
                                                         </div>
@@ -3659,8 +3856,8 @@ function Rate(props) {
                                 <RadioButton
                                     label="Yes"
                                     checked={checkstate.selectedByschedule === 1}
-                                    id="Yes"
-                                    name="Yes"
+                                    id="Yess"
+                                    name="Yess"
                                     onChange={() => handlecheckedChange('selectedByschedule', 1)}
                                 />
                                 <RadioButton
@@ -3879,20 +4076,18 @@ function Rate(props) {
                     primaryAction={{
                         content: 'Add',
                         onAction: handleModalClose,
-
+                        disabled: selectedProductIds.length === 0,
                     }}
                     secondaryActions={[
                         {
-                            content: 'Cancel ',
+                            content: 'Cancel',
                             onAction: handleModalClose,
-
                         },
                     ]}
                 >
-
                     <Modal.Section>
                         <div style={{ position: 'relative' }}>
-                            {/* <div style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
+                            <div style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
                                 <TextField
                                     placeholder='search'
                                     onChange={handlesearchChange}
@@ -3906,28 +4101,39 @@ function Rate(props) {
                             </div>
                             <div style={{ marginTop: '4%', height: '400px', overflowY: 'scroll' }}>
                                 <IndexTable
-
                                     resourceName={resourceName}
-                                    itemCount={filteredProducts.length}
-                                    selectedItemsCount={allResourcesSelected ? 'All' : selectedResources.length}
-                                    onSelectionChange={handleSelectionChange}
+                                    itemCount={products.length}
                                     headings={[
+                                        { title: ` ${selectedCount2} Selected` },
                                         { title: 'Image' },
                                         { title: 'Title' },
+                                        { title: 'Price' },
                                     ]}
+                                    selectable={false}
                                     pagination={{
-                                        hasNext: hasNextPage,
-                                        hasPrevious: hasPreviousPage,
+                                        hasNext: pageInfo.hasNextPage,
                                         onNext: handleNextPage,
+                                        hasPrevious: pageInfo.hasPreviousPage,
                                         onPrevious: handlePreviousPage,
                                     }}
                                 >
-                                    {productData}
+                                    {loadingTable ? (
+                                        <IndexTable.Row>
+                                            <IndexTable.Cell colSpan={5}>
+                                                <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                                    <Spinner accessibilityLabel="Loading products" size="small" />
+                                                </div>
+                                            </IndexTable.Cell>
+                                        </IndexTable.Row>
+                                    ) : (
+                                        productData2
+                                    )}
                                 </IndexTable>
-                            </div> */}
+                            </div>
                         </div>
                     </Modal.Section>
                 </Modal>
+
             )}
 
         </Page>

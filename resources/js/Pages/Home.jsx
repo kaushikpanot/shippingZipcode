@@ -248,16 +248,17 @@ function Home(props) {
                                     <IndexTable
                                         resourceName={resourceName}
                                         itemCount={filteredZones.length}
-                                        selectedItemsCount={
-                                            allResourcesSelected ? 'All' : selectedResources.length
-                                        }
-                                        onSelectionChange={handleSelectionChange}
+                                        // selectedItemsCount={
+                                        //     allResourcesSelected ? 'All' : selectedResources.length
+                                        // }
+                                        // onSelectionChange={handleSelectionChange}
                                         headings={[
                                             { title: 'Zipcode Rule Name' },
                                             { title: 'Country' },
                                             { title: 'currency' },
                                             { title: 'Action' },
                                         ]}
+                                        selectable={false}
                                         paginated
                                         pagination={{
                                             hasPrevious: currentPage > 1,

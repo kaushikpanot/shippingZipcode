@@ -370,8 +370,8 @@ function Zone(props) {
         }
     }, [formData.id, zone_id, navigate]);
 
-    const { selectedResources, allResourcesSelected, handleSelectionChange } =
-        useIndexResourceState(rate);
+    // const { selectedResources, allResourcesSelected, handleSelectionChange } =
+    //     useIndexResourceState(rate);
 
     const filteredZones = rate.filter(zone =>
         zone.name.toLowerCase().includes(textFieldValue.toLowerCase())
@@ -386,7 +386,7 @@ function Zone(props) {
             <IndexTable.Row
                 id={id}
                 key={id}
-                selected={selectedResources.includes(id)}
+        
                 position={index}
             >
                 <IndexTable.Cell>
@@ -583,10 +583,10 @@ function Zone(props) {
                                     itemCount={rate.length}
                                     emptyState={emptyStateMarkup}
 
-                                    selectedItemsCount={
-                                        allResourcesSelected ? 'All' : selectedResources.length
-                                    }
-                                    onSelectionChange={handleSelectionChange}
+                                    // selectedItemsCount={
+                                    //     allResourcesSelected ? 'All' : selectedResources.length
+                                    // }
+                                    // onSelectionChange={handleSelectionChange}
                                     headings={[
                                         { title: 'Rate Name' },
                                         { title: 'Service Code' },
@@ -602,6 +602,7 @@ function Zone(props) {
                                         onNext: handleNextPage,
                                         onPrevious: handlePreviousPage,
                                     }}
+                                    selectable={false}
                                 >
                                     {rowMarkup}
                                 </IndexTable>

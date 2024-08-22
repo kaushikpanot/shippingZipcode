@@ -9,7 +9,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class UninstallEmail extends Mailable
+class InstallSupportMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -31,7 +31,7 @@ class UninstallEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'We’re Sorry to See You Go – Feedback Appreciated',
+            subject: 'Welcome to Meetanshi Shipping Zipcode! Your Installation is Complete',
         );
     }
 
@@ -41,7 +41,7 @@ class UninstallEmail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.uninstall',
+            view: 'emails.install',
         );
     }
 

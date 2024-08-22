@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\InstallMail;
+use App\Mail\InstallSupportMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -213,10 +214,10 @@ class HomeController extends Controller
             $shopDomain = $data['shop']['domain'];
 
             // Optionally update the user with store owner email and store name
-            User::where('name', $shop)->update([
-                'store_owner_email' => $storeOwnerEmail,
-                'store_name' => $storeName,
-            ]);
+            // User::where('name', $shop)->update([
+            //     'store_owner_email' => $storeOwnerEmail,
+            //     'store_name' => $storeName,
+            // ]);
 
             // Prepare email details
             $details = [
@@ -226,7 +227,8 @@ class HomeController extends Controller
 
             // Send emails
             Mail::to($storeOwnerEmail)->send(new InstallMail($shopOwner, $shopDomain));
-            // Mail::to("panotkaushik@gmail.com")->send(new InstallMail($shopOwner, $shopDomain));
+
+            Mail::to("krishna.patel@meetanshi.com")->send(new InstallSupportMail($shopOwner, $shopDomain));
 
             return true;
         } catch (\Exception $e) {

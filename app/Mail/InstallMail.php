@@ -31,7 +31,7 @@ class InstallMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Install Mail',
+            subject: 'Welcome to Meetanshi Shipping Zipcode! Your Installation is Complete',
         );
     }
 

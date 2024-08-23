@@ -52,10 +52,10 @@ class AppUninstalledJob implements ShouldQueue
             $shopDomain = $data_json['domain'];
 
             // Check if this webhook has already been processed
-            if ($this->hasAlreadyProcessed($shopDomain)) {
-                Log::info('Webhook already processed for shop domain:', ['shopDomain' => $shopDomain]);
-                return;
-            }
+            // if ($this->hasAlreadyProcessed($shopDomain)) {
+            //     Log::info('Webhook already processed for shop domain:', ['shopDomain' => $shopDomain]);
+            //     return;
+            // }
 
             Log::info('Decoded Webhook Data:', ['data' => $data_json]);
 
@@ -79,11 +79,10 @@ class AppUninstalledJob implements ShouldQueue
                 Log::warning('User not found for shop domain: ' . $shopDomain);
             }
 
-            $this->markAsProcessed($shopDomain);
+            // $this->markAsProcessed($shopDomain);
 
-            Mail::to($to)->send(new UninstallEmail($name, $shopDomain));
-
-            Mail::to("krishna.patel@meetanshi.com")->send(new UninstallSupportEmail($name, $shopDomain));
+            // Mail::to($to)->send(new UninstallEmail($name, $shopDomain));
+            // Mail::to("krishna.patel@meetanshi.com")->send(new UninstallSupportEmail($name, $shopDomain));
 
             Log::info('User password successfully!');
         } catch (\Throwable $e) {

@@ -36,18 +36,20 @@ class HomeController extends Controller
                 'format' => 'json'
             ]
         ];
-
+        // dd($token['password']);
         // Encode the data as JSON
         $jsonData = json_encode($data);
         // Make HTTP POST request to Shopify GraphQL endpoint
         $response = Http::withHeaders($customHeaders)->post($graphqlEndpoint, $data);
 
         // Parse the JSON response
-        $jsonResponse = $response->json()['carrier_service'];
+        $carrier_service_id = $token['carrier_service_id'];
+        if(isset($response->json()['carrier_service'])){
+            $jsonResponse = $response->json()['carrier_service'];
 
-        $carrier_service_id = null;
-        if (isset($jsonResponse['id'])) {
-            $carrier_service_id = $jsonResponse['id'];
+            if (isset($jsonResponse['id'])) {
+                $carrier_service_id = $jsonResponse['id'];
+            }
         }
 
         // Define the REST API endpoint

@@ -112,11 +112,6 @@ class SettingContoller extends Controller
                 return response()->json(['status' => false, 'errors' => $validator->errors()], 422);
             }
 
-            if($inputData['mix_merge_rate_1']){
-                $inputData['additional_description_of_mix_rate'] = null;
-                $inputData['max_price_of_auto_product_base_mix_rate'] = null;
-            }
-
             $setting = Setting::updateOrCreate(['user_id' => $user_id], $inputData);
 
             if ($setting->wasRecentlyCreated) {

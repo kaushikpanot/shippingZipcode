@@ -991,7 +991,7 @@ class ApiController extends Controller
         return $variantMetafields;
     }
 
-    public function handleCallback(Request $request, $customer_id)
+    public function handleCallback(Request $request, $customer_id=null)
     {
         $input = $request->input();
 

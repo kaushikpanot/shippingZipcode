@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // });
 
-Route::post('carrier/callback/{customer_id}', [ApiController::class, 'handleCallback']);
+Route::post('carrier/callback/{customer_id?}', [ApiController::class, 'handleCallback']);
 Route::get('conditionConvertSymbol/{name}', [ApiController::class, 'conditionConvertSymbol']);
 // Route::get('customer', [ApiController::class, 'getCustomerByNameAndPostalCode']);
 

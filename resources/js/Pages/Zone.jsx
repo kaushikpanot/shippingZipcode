@@ -27,7 +27,8 @@ import {
     Tag,
     LegacyStack,
     Icon,
-    List
+    List,
+    Tooltip 
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
@@ -62,6 +63,7 @@ function Zone(props) {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [itemsPerPage] = useState(5);
+    const [loadingButton, setLoadingButton] = useState(false);
 
     const [toastActive, setToastActive] = useState(false);
     const toggleToast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
@@ -342,6 +344,7 @@ function Zone(props) {
                 ...formData,
                 country: selectedCountries,
             };
+            setLoadingButton(true);
             const response = await axios.post(`${apiCommonURL}/api/zone/save`, dataToSubmit, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -362,6 +365,9 @@ function Zone(props) {
             console.error('Error occurs', error);
             setToastContent("Error occurred while saving data");
             setShowToast(true);
+        }
+        finally {
+            setLoadingButton(false);
         }
     }
     useEffect(() => {
@@ -403,7 +409,9 @@ function Zone(props) {
                 <IndexTable.Cell>{description}</IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
+                    {/* <Tooltip active content="Edit Rate"> */}
                         <Button icon={EditIcon} variant="tertiary" onClick={() => handleEditRate(id)} />
+                        {/* </Tooltip> */}
                         <Button icon={DeleteIcon} variant="tertiary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedZoneId(id); toggleModal(); }} />
                     </ButtonGroup>
                 </IndexTable.Cell>
@@ -480,7 +488,7 @@ function Zone(props) {
     return (
         <Page
             title={zone_id ? 'Edit Zone' : 'Add Zone'}
-            primaryAction={<Button variant="primary" onClick={saveZone}>Save</Button>}
+            primaryAction={<Button variant="primary" onClick={saveZone} loading={loadingButton}>Save</Button>}
             secondaryActions={<Button onClick={navigateHome}>Back</Button>}
         >
             <Divider borderColor="border" />
@@ -488,7 +496,7 @@ function Zone(props) {
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                         <div style={{ paddingTop: '10%' }}>
-                            <Text variant="headingLg" as="h5">
+                        <Text variant="headingMd" as="h6">
                                 Zone Details
                             </Text>
                             <div style={{ marginTop: "4%" }}>

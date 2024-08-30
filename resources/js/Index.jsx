@@ -4,9 +4,9 @@ import '@shopify/polaris/build/esm/styles.css';
 import '../../public/css/style.css';
 import translations from "@shopify/polaris/locales/en.json";
 import { BrowserRouter } from 'react-router-dom';
-import Main from './Pages/Main'
 import { Frame } from '@shopify/polaris';
 import { getSessionToken } from "@shopify/app-bridge-utils";
+import Main from './Pages/Main';
 
 export default function Index(props) {
 

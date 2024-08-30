@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import moment from 'moment';
+import Demo from './Demo'
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Page,
@@ -30,8 +31,8 @@ import {
     Collapsible,
     List,
     Modal,
-    Spinner
-
+    Spinner,
+    Tooltip
 } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon, SearchIcon, SelectIcon } from '@shopify/polaris-icons';
 import '../../../public/css/style.css';
@@ -125,17 +126,28 @@ function Rate(props) {
     const [products, setProducts] = useState([]);
     const [selectedProductIds, setSelectedProductIds] = useState([]);
     const [date, setDate] = useState({ startDate: '', endDate: '' });
-
     const handleDateChange = (key, value) => {
         setDate(prevDates => {
             const updatedDates = { ...prevDates, [key]: value };
+    
             if (key === 'endDate' && new Date(value) < new Date(updatedDates.startDate)) {
-                updatedDates.error = 'End date cannot be before start date.';
+                setErrors(prevErrors => ({
+                    ...prevErrors,
+                    endDate: 'End date  & time cannot be before start date.',
+                }));
             } else if (key === 'startDate' && new Date(updatedDates.endDate) < new Date(value)) {
-                updatedDates.error = 'End date cannot be before start date.';
+                setErrors(prevErrors => ({
+                    ...prevErrors,
+                    endDate: 'End date  & time cannot be before start date.',
+                }));
             } else {
-                updatedDates.error = '';
+                setErrors(prevErrors => ({
+                    ...prevErrors,
+                    endDate: '',
+                    startDate:''
+                }));
             }
+    
             return updatedDates;
         });
     };
@@ -145,10 +157,18 @@ function Rate(props) {
         { minWeight: '', maxWeight: '', basePrice: '', perItem: '', percentCharge: '', perkg: '' }
     ]);
     const handleInputChange = (index, field, value) => {
+        setErrors(prevErrors => {
+            const updatedErrors = { ...prevErrors };
+            if (value) {
+                delete updatedErrors[`${field}${index}`];
+            }
+            return updatedErrors;
+        });
         const newTiers = [...tiers];
         newTiers[index][field] = value;
         setTiers(newTiers);
     };
+
     const addTier = () => {
         setTiers([...tiers, { minWeight: '', maxWeight: '', basePrice: '' }]);
     };
@@ -312,6 +332,7 @@ function Rate(props) {
             return newState;
         });
     };
+
     const handleRateModifierChange = (id, field) => (value) => {
         const option = rateModifiersOptions.find(opt => opt.value === value);
         setRateModifiers((prevModifiers) =>
@@ -324,7 +345,19 @@ function Rate(props) {
                 } : modifier
             )
         );
+
+        // Clear error for this specific field
+        setErrors(prevErrors => {
+            const newErrors = { ...prevErrors };
+            if (field === 'name') {
+                delete newErrors[`name${id}`];
+            } else if (field === 'adjustment') {
+                delete newErrors[`adjustment${id}`];
+            }
+            return newErrors;
+        });
     };
+
 
     const rateTag = [
         { label: 'Equals', value: 'equal' },
@@ -384,8 +417,16 @@ function Rate(props) {
     let app = "";
 
     const handleChange = useCallback((value) => {
+        setErrors(prevErrors => {
+            const updatedErrors = { ...prevErrors };
+            if (value) {
+                delete updatedErrors.zipcodeValue;
+            }
+            return updatedErrors;
+        });
         setZipcodeValue(value);
     }, []);
+
 
     const editRate = async () => {
         try {
@@ -395,7 +436,6 @@ function Rate(props) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            console.log(response.data)
             const allStates = response.data.states;
             const formattedOptions = [];
             for (const country in allStates) {
@@ -932,9 +972,9 @@ function Rate(props) {
             };
             const updatedItems = [...prevItems, newItem];
             return updatedItems;
+
         });
     };
-
     const handleConditionsChange = useCallback((index, field) => (value) => {
         setItems((prevState) => {
             const updatedItems = [...prevState];
@@ -948,6 +988,7 @@ function Rate(props) {
 
     const handleSelectChange = (index, newValue, isSecondSelect) => {
         const selectedOption = validations.find(option => option.value === newValue) || {};
+
         if (newValue === 'type2') {
             setDeliveryType(prevState => {
                 const updatedItems = [...prevState];
@@ -976,15 +1017,17 @@ function Rate(props) {
                 return updatedItems;
             });
         }
+
         const updatedItem = {
             ...items[index],
             condition: isSecondSelect ? newValue : items[index].condition,
             name: isSecondSelect ? items[index].name : newValue,
-            unit: isSecondSelect ? items[index].unit : selectedOption.unit || '',
-            label: selectedOption.mainlabel || '',
+            unit: isSecondSelect ? items[index].unit : selectedOption.unit || items[index].unit,
+            label: selectedOption.mainlabel || items[index].label,
             value: isSecondSelect ? items[index].value : '',
             value2: isSecondSelect ? items[index].value : '',
         };
+
         const updatedItems = [...items];
         updatedItems[index] = updatedItem;
         setItems(updatedItems);
@@ -992,6 +1035,13 @@ function Rate(props) {
 
     const handleConditionChange = useCallback(
         (newValue, index, key) => {
+            setErrors(prevErrors => {
+                const updatedErrors = { ...prevErrors };
+                if (newValue) {
+                    delete updatedErrors[`value${index}`];
+                }
+                return updatedErrors;
+            });
             setItems(prevItems => {
                 return prevItems.map((item, idx) => {
                     if (idx === index) {
@@ -1003,6 +1053,7 @@ function Rate(props) {
         },
         []
     );
+
 
     const handleDeleteItem = (index) => {
         const updatedItems = items.filter((item, i) => i !== index);
@@ -1229,6 +1280,7 @@ function Rate(props) {
                 return acc;
             }, {});
     };
+
     const saveRate = async () => {
         const newErrors = {};
         if (!formData.name) newErrors.name = 'Rate name is required';
@@ -1269,11 +1321,11 @@ function Rate(props) {
             });
         }
         if (rateModifiers.length > 0) {
-            rateModifiers.forEach((modifier, index) => {
+            rateModifiers.forEach((modifier, id) => {
                 if (!modifier.name)
-                    newErrors[`name${index}`] = `Rate modifier name for Modifier ${index + 1} is required`;
+                    newErrors[`name${id}`] = `Rate modifier name for Modifier ${id + 1} is required`;
                 if (!modifier.adjustment)
-                    newErrors[`adjustment${index}`] = `Adjustment for Modifier ${index + 1} is required`;
+                    newErrors[`adjustment${id}`] = `Adjustment for Modifier ${id + 1} is required`;
             });
         }
         if (items.length > 0) {
@@ -1296,6 +1348,18 @@ function Rate(props) {
                     newErrors.cart_total_percentage = 'The cart total percentage field is required.';
                 }
 
+            }
+        }
+
+        if (checkstate.selectedByschedule === 1) {
+            if (!date.startDate) {
+                newErrors.startDate = 'The start date & time field is required.';
+            }
+            if (!date.endDate) {
+                newErrors.endDate = 'The end date & time field is required.';
+            }
+            else if (new Date(date.endDate) < new Date(date.startDate)) {
+                newErrors.endDate = 'End date cannot be before start date.';
             }
         }
         if (Object.keys(newErrors).length > 0) {
@@ -1327,14 +1391,22 @@ function Rate(props) {
             editRate();
             setLoadingButton(false);
         } catch (error) {
-            console.error('Error occurs', error);
-            setToastContent('Error occurred while saving data');
+            const errors = error.response?.data?.errors || {};
+            const service_code = errors.service_code?.[0];
+            console.log(errors)
+            if (service_code) {
+
+                setToastContent(service_code);
+            } else {
+                setToastContent('Error occurred while saving data');
+            }
             setShowToast(true);
         }
         finally {
             setLoadingButton(false);
         }
     };
+
     const [textFields, setTextFields] = useState({
         fullProductTitle: '',
         collectionId: '',
@@ -1350,37 +1422,37 @@ function Rate(props) {
                 productType: field === 'productType' ? value : '',
                 productVendor: field === 'productVendor' ? value : '',
             };
-    
+
             return {
                 ...prevFields,
                 ...updatedFields,
             };
         });
     };
-    
+
     const fetchProducts = async (cursor, direction) => {
         try {
-          setLoadingTable(true)
+            setLoadingTable(true)
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
             });
             const token = await getSessionToken(app);
-    
+
             const queryArray = Object.values(textFields).filter(value => value.trim() !== '');
             const queryString = queryArray.join(' ');
-    
+
             const payload = {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
-                query: queryString 
+                query: queryString
             };
-        
+
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
             });
-    
+
             const productData = response.data;
             setProducts(productData.products);
             setPageInfo({
@@ -1397,7 +1469,7 @@ function Rate(props) {
             console.error('Error fetching product data:', error);
         }
     };
-    
+
     const handleNextPage = () => {
         if (pageInfo.hasNextPage) {
             fetchProducts(pageInfo.endCursor, 'next');
@@ -1467,12 +1539,12 @@ function Rate(props) {
         });
     };
 
-    const selectedCount = rate_based_on_surcharge.productData.length
+    const selectedCount = rate_based_on_surcharge.productData?.length
     const filteredProducts = showAllProducts
-        ? products.filter(product => product.title.toLowerCase().includes)
-        : products.filter(product => rate_based_on_surcharge.productData.some(item => item.id === product.id));
+        ? products?.filter(product => product.title.toLowerCase().includes)
+        : products?.filter(product => rate_based_on_surcharge.productData?.some(item => item.id === product.id));
 
-    const rowMarkup = filteredProducts.map(({ id, title, image, price }, index) => {
+    const rowMarkup = filteredProducts?.map(({ id, title, image, price }, index) => {
         const isChecked = Array.isArray(rate_based_on_surcharge.productData) && rate_based_on_surcharge.productData.some(item => item.id === id);
         const productValue = Array.isArray(rate_based_on_surcharge.productData) ? rate_based_on_surcharge.productData.find(item => item.id === id)?.value || '' : '';
 
@@ -1524,9 +1596,9 @@ function Rate(props) {
 
     const filteredProduct = showAllProduct
         ? products
-        : products.filter(product => exclude_Rate.productsData.some(selectedProduct => selectedProduct.id === product.id));
-    const selectedCount1 = exclude_Rate.productsData.length
-    const productData1 = filteredProduct.map(({ id, title, image, price }, index) => {
+        : products?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
+    const selectedCount1 = exclude_Rate.productsData?.length
+    const productData1 = filteredProduct?.map(({ id, title, image, price }, index) => {
         return (
             <IndexTable.Row
                 id={id}
@@ -1670,25 +1742,25 @@ function Rate(props) {
             primaryAction={<Button variant="primary" onClick={saveRate} loading={loadingButton}>Save</Button>}
             secondaryActions={<Button onClick={() => BacktoZone(zone_id)}>Back</Button>}
         >
+        {/* <Demo/> */}
             <Divider borderColor="border" />
-            <div style={{ marginTop: '2%', marginBottom: '2%' }}>
+            <div style={{ marginTop: '3%', marginBottom: '3%' }}>
                 <Layout>
                     <Layout.Section variant="oneThird">
-                        <div style={{ paddingTop: '10%' }}>
-                            <Text variant="headingLg" as="h5">
-                                Rate details
-                            </Text>
-                            <div style={{ marginTop: "4%" }}>
-                                <List>
-                                    <List.Item>
-                                        Specify which rates should apply in this zone
-                                    </List.Item>
-                                    {/* <List.Item>
+                        <Text variant="headingMd" as="h6">
+                            Rate details
+                        </Text>
+                        <div style={{ marginTop: "4%" }}>
+                            <List>
+                                <List.Item>
+                                    Specify which rates should apply in this zone
+                                </List.Item>
+                                {/* <List.Item>
                                        <a href='https://www.youtube.com/embed/43ER3QBDFow' style={{color:"#ff8930"}}>Watch Video Guide</a> 
                                     </List.Item> */}
-                                </List>
-                            </div>
+                            </List>
                         </div>
+
                     </Layout.Section>
                     <Layout.Section>
                         <LegacyCard sectioned>
@@ -1749,20 +1821,18 @@ function Rate(props) {
             </div>
 
             <Divider borderColor="border" />
-            <div style={{ marginTop: '2%', marginBottom: '2%' }}>
+            <div style={{ marginTop: '3%', marginBottom: '3%' }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '10%' }}>
-                            <Text variant="headingLg" as="h5">
-                                Conditions
-                            </Text>
-                            <div style={{ marginTop: "4%" }}>
-                                <List>
-                                    <List.Item>
-                                        New Condition Scenario
-                                    </List.Item>
-                                </List>
-                            </div>
+                        <Text variant="headingMd" as="h6">
+                            Conditions
+                        </Text>
+                        <div style={{ marginTop: "4%" }}>
+                            <List>
+                                <List.Item>
+                                    New Condition Scenario
+                                </List.Item>
+                            </List>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -2082,26 +2152,24 @@ function Rate(props) {
             </div>
 
             <Divider borderColor="border" />
-            <div style={{ marginTop: "2%", marginBottom: "2%", }}>
+            <div style={{ marginTop: "3%", marginBottom: "3%", }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '7%' }}>
-                            <Text variant="headingLg" as="h5">
-                                Set State/ZipCode
-                            </Text>
-                            <div style={{ marginTop: '4%' }}>
-                                <List>
-                                    <List.Item>
-                                        No need to add All ZipCode if you select states.
-                                    </List.Item>
-                                    <List.Item>
-                                        If you want to exclude the specific Zipcode from that state then you can use exclude ZipCode on Allow Zipcode settings.
-                                    </List.Item>
-                                    <List.Item>
-                                        To format zipcodes/pincodes correctly and remove unnecessary blank space,  <a href="https://sbz.cirkleinc.com/zipcode-formatter.php" target="_blank" style={{ textDecoration: "none", color: "#1e87f0" }}>Click here.</a>
-                                    </List.Item>
-                                </List>
-                            </div>
+                        <Text variant="headingMd" as="h6">
+                            Set State/ZipCode
+                        </Text>
+                        <div style={{ marginTop: '4%' }}>
+                            <List>
+                                <List.Item>
+                                    No need to add All ZipCode if you select states.
+                                </List.Item>
+                                <List.Item>
+                                    If you want to exclude the specific Zipcode from that state then you can use exclude ZipCode on Allow Zipcode settings.
+                                </List.Item>
+                                <List.Item>
+                                    To format zipcodes/pincodes correctly and remove unnecessary blank space,  <a href="https://sbz.cirkleinc.com/zipcode-formatter.php" target="_blank" style={{ textDecoration: "none", color: "#1e87f0" }}>Click here.</a>
+                                </List.Item>
+                            </List>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -2173,6 +2241,7 @@ function Rate(props) {
                                         autoComplete="off"
                                         error={errors.zipcodeValue}
                                     />
+
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%" }}>
                                         <RadioButton
                                             label="Include ZipCodes"
@@ -2197,24 +2266,23 @@ function Rate(props) {
             </div>
 
             <Divider borderColor="border" />
-            <div style={{ marginTop: "2%", marginBottom: "2%", }}>
+            <div style={{ marginTop: "3%", marginBottom: "3%", }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '3%' }}>
-                            <Text variant="headingLg" as="h5">
-                                Rate Based On/Surcharge
-                            </Text>
-                            <div style={{ marginTop: "4%" }}>
-                                <List type='bullet'>
-                                    <List.Item>
-                                        Specify rate calculation based on Order Weight, Order Quantity with surcharge value.
-                                    </List.Item>
-                                    <List.Item>
-                                        Surcharge calculation will add on Base Price which is available on top of the page.
-                                    </List.Item>
-                                </List>
-                            </div>
+                        <Text variant="headingMd" as="h6">
+                            Rate Based On/Surcharge
+                        </Text>
+                        <div style={{ marginTop: "4%" }}>
+                            <List type='bullet'>
+                                <List.Item>
+                                    Specify rate calculation based on Order Weight, Order Quantity with surcharge value.
+                                </List.Item>
+                                <List.Item>
+                                    Surcharge calculation will add on Base Price which is available on top of the page.
+                                </List.Item>
+                            </List>
                         </div>
+
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
@@ -2281,7 +2349,7 @@ function Rate(props) {
                                         By Product Surcharge
                                     </Text>
 
-                                    <div style={{ display: 'flex',  marginTop: "1%" }}>
+                                    <div style={{ display: 'flex', marginTop: "1%" }}>
                                         <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
                                             <RadioButton
                                                 label="Product"
@@ -2782,20 +2850,18 @@ function Rate(props) {
             </div>
 
             <Divider borderColor="border" />
-            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+            <div style={{ marginTop: "3%", marginBottom: "3%" }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '%' }}>
-                            <Text variant="headingLg" as="h5">
-                                Rate Tier
-                            </Text>
-                            <div style={{ marginTop: '4%' }}>
-                                <List type='bullet'>
-                                    <List.Item>Set different Base Rate Price according to order weight, total or qty.</List.Item>
-                                    <List.Item>Order price will count without applying the discount code.</List.Item>
-                                    <List.Item>When a tier is not found then the system will select the Base Rate which is set on top of the page.</List.Item>
-                                </List>
-                            </div>
+                        <Text variant="headingMd" as="h6">
+                            Rate Tier
+                        </Text>
+                        <div style={{ marginTop: '4%' }}>
+                            <List type='bullet'>
+                                <List.Item>Set different Base Rate Price according to order weight, total or qty.</List.Item>
+                                <List.Item>Order price will count without applying the discount code.</List.Item>
+                                <List.Item>When a tier is not found then the system will select the Base Rate which is set on top of the page.</List.Item>
+                            </List>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -2823,6 +2889,7 @@ function Rate(props) {
                                                         <TextField
                                                             label={`Minimum ${selectedTierType === 'order_weight' ? 'Weight' : selectedTierType === 'order_quantity' ? 'Quantity' : selectedTierType === 'order_distance' ? 'Distance' : 'Price'}`}
                                                             value={tier.minWeight}
+                                                            type='number'
                                                             onChange={(value) => handleInputChange(index, 'minWeight', value)}
                                                             autoComplete="off"
                                                             prefix={shop_currency}
@@ -2832,6 +2899,7 @@ function Rate(props) {
                                                         <TextField
                                                             label={`Maximum ${selectedTierType === 'order_weight' ? 'Weight' : selectedTierType === 'order_quantity' ? 'Quantity' : selectedTierType === 'order_distance' ? 'Distance' : 'Price'}`}
                                                             value={tier.maxWeight}
+                                                            type='number'
                                                             onChange={(value) => handleInputChange(index, 'maxWeight', value)}
                                                             autoComplete="off"
                                                             prefix={shop_currency}
@@ -2840,6 +2908,7 @@ function Rate(props) {
                                                         />
                                                         <TextField
                                                             label='Base Price'
+                                                            type='number'
                                                             value={tier.basePrice}
                                                             onChange={(value) => handleInputChange(index, 'basePrice', value)}
                                                             autoComplete="off"
@@ -2907,23 +2976,21 @@ function Rate(props) {
             </div>
 
             <Divider borderColor="border" />
-            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+            <div style={{ marginTop: "3%", marginBottom: "3%" }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '5%', }}>
-                            <Text variant="headingLg" as="h5">
-                                Exclude rate for products
-                            </Text>
-                            <div style={{ marginTop: "4%" }}>
-                                <List type="bullet">
-                                    <List.Item>
-                                        If this rate does not set with Set Rate Based On Cart as "Product" then this rate can be exclude for selected products.
-                                    </List.Item>
-                                    <List.Item>
-                                        If any of these products are in the cart, then this rate will not be available at checkout.
-                                    </List.Item>
-                                </List>
-                            </div>
+                        <Text variant="headingMd" as="h6">
+                            Exclude rate for products
+                        </Text>
+                        <div style={{ marginTop: "4%" }}>
+                            <List type="bullet">
+                                <List.Item>
+                                    If this rate does not set with Set Rate Based On Cart as "Product" then this rate can be exclude for selected products.
+                                </List.Item>
+                                <List.Item>
+                                    If any of these products are in the cart, then this rate will not be available at checkout.
+                                </List.Item>
+                            </List>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -3100,20 +3167,18 @@ function Rate(props) {
             </div>
 
             <Divider borderColor="border" />
-            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+            <div style={{ marginTop: "3%", marginBottom: "3%" }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '5%' }}>
-                            <Text variant="headingLg" as="h5">
-                                Rate Modifiers
-                            </Text>
-                            <div style={{ marginTop: "4%" }}>
-                                <List>
-                                    <List.Item>
-                                        Set different Base Rate Price according to order weight, total price or qty.
-                                    </List.Item>
-                                </List>
-                            </div>
+                        <Text variant="headingMd" as="h6">
+                            Rate Modifiers
+                        </Text>
+                        <div style={{ marginTop: "4%" }}>
+                            <List>
+                                <List.Item>
+                                    Set different Base Rate Price according to order weight, total price or qty.
+                                </List.Item>
+                            </List>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -3696,7 +3761,7 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'adjustment')}
                                                                     autoComplete="off"
                                                                     placeholder="00"
-                                                                    error={errors[`adjustment${modifier.id}`]}
+                                                                    error={errors[`adjustment${index}`]}
                                                                 />
                                                             </div>
                                                         </div>
@@ -3718,6 +3783,7 @@ function Rate(props) {
                                                                     autoComplete="off"
                                                                     placeholder="00"
                                                                     error={errors[`adjustment${index}`]}
+
                                                                 />
                                                             </FormLayout>
                                                         </div>
@@ -3737,22 +3803,19 @@ function Rate(props) {
             </div>
 
             <Divider borderColor="border" />
-            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+            <div style={{ marginTop: "3%", marginBottom: "3%" }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '5%' }}>
-                            <Text variant="headingLg" as="h5">
-                                Merge rate
-                            </Text>
-                            <div style={{ marginTop: "4%" }}>
-                                <List>
-                                    <List.Item>
-                                        We recommend using the same Shipping Tag for all related Shipping rates when merge shipping rates.
-                                    </List.Item>
-                                </List>
-                            </div>
-                        </div>
-                    </Grid.Cell>
+                        <Text variant="headingMd" as="h6">
+                            Merge rate
+                        </Text>
+                        <div style={{ marginTop: "4%" }}>
+                            <List>
+                                <List.Item>
+                                    We recommend using the same Shipping Tag for all related Shipping rates when merge shipping rates.
+                                </List.Item>
+                            </List>
+                        </div>                    </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
                             <TextField
@@ -3768,21 +3831,21 @@ function Rate(props) {
             </div>
 
             <Divider borderColor="border" />
-            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+            <div style={{ marginTop: "3%", marginBottom: "3%" }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '5%' }}>
-                            <Text variant="headingLg" as="h5">
-                                Origin Locations
-                            </Text>
-                            <div style={{ marginTop: "4%" }}>
-                                <List>
-                                    <List.Item>
-                                        Rate applies on selected locations
-                                    </List.Item>
-                                </List>
-                            </div>
+
+                        <Text variant="headingMd" as="h6">
+                            Origin Locations
+                        </Text>
+                        <div style={{ marginTop: "4%" }}>
+                            <List>
+                                <List.Item>
+                                    Rate applies on selected locations
+                                </List.Item>
+                            </List>
                         </div>
+
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
@@ -3831,20 +3894,19 @@ function Rate(props) {
             </div>
 
             <Divider borderColor="border" />
-            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+            <div style={{ marginTop: "3%", marginBottom: "3%" }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '5%' }}>
-                            <Text variant="headingLg" as="h5">
-                                Schedule Rate
-                            </Text>
-                            <div style={{ marginTop: "4%" }}>
-                                <List>
-                                    <List.Item>
-                                        This rate is only available on a specific date & time
-                                    </List.Item>
-                                </List>
-                            </div>
+
+                        <Text variant="headingMd" as="h6">
+                            Schedule Rate
+                        </Text>
+                        <div style={{ marginTop: "4%" }}>
+                            <List>
+                                <List.Item>
+                                    This rate is only available on a specific date & time
+                                </List.Item>
+                            </List>
                         </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -3876,12 +3938,14 @@ function Rate(props) {
                                             value={date.startDate}
                                             onChange={(value) => handleDateChange('startDate', value)}
                                             type="datetime-local"
+                                            error={errors.startDate}
                                         />
                                         <TextField
                                             label="End Date"
                                             value={date.endDate}
                                             onChange={(value) => handleDateChange('endDate', value)}
                                             type="datetime-local"
+                                            error={errors.endDate}
                                         />
                                     </FormLayout.Group>
                                     {date.error && <p message={date.error} fieldID="endDate" >{date.error}</p>}
@@ -3893,22 +3957,19 @@ function Rate(props) {
             </div>
 
             <Divider borderColor="border" />
-            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+            <div style={{ marginTop: "3%", marginBottom: "3%" }}>
                 <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '5%' }}>
-                            <Text variant="headingLg" as="h5">
-                                Send another rate
-                            </Text>
-                            <div style={{ marginTop: "4%" }}>
-                                <List>
-                                    <List.Item>
-                                        By selecting the Send Another Rate option it will allow to set another additional rate.
-                                    </List.Item>
-                                </List>
-                            </div>
-                        </div>
-                    </Grid.Cell>
+                        <Text variant="headingMd" as="h6">
+                            Send another rate
+                        </Text>
+                        <div style={{ marginTop: "4%" }}>
+                            <List>
+                                <List.Item>
+                                    By selecting the Send Another Rate option it will allow to set another additional rate.
+                                </List.Item>
+                            </List>
+                        </div>                    </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                         <LegacyCard sectioned>
                             <div style={{ alignItems: 'center' }}>

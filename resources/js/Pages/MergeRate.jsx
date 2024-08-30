@@ -142,16 +142,11 @@ function MergeRate(props) {
         plural: 'Mix Merge Rates',
     };
 
-    const { selectedResources, allResourcesSelected, handleSelectionChange } =
-        useIndexResourceState(mixMergeRate);
-
-
     const rowMarkup = mixMergeRate.map(
         ({ id, rate_name, service_code, description,tags_to_combine }, index) => (
             <IndexTable.Row
                 id={id}
                 key={id}
-                selected={selectedResources.includes(id)}
                 position={index}
             >
                 <IndexTable.Cell>
@@ -248,10 +243,6 @@ function MergeRate(props) {
                                 <IndexTable
                                     resourceName={resourceName}
                                     itemCount={mixMergeRate.length}
-                                    selectedItemsCount={
-                                        allResourcesSelected ? 'All' : selectedResources.length
-                                    }
-                                    onSelectionChange={handleSelectionChange}
                                     headings={[
                                         { title: 'Rate Name' },
                                         { title: 'Service Code' },
@@ -266,6 +257,7 @@ function MergeRate(props) {
                                         onNext: handleNextPage,
                                         onPrevious: handlePreviousPage,
                                     }}
+                                    selectable={false}
                                 >
                                     {rowMarkup}
                                 </IndexTable>
@@ -294,7 +286,7 @@ function MergeRate(props) {
             >
                 <Modal.Section>
                     <TextContainer>
-                        <p >Are you sure you want to delete the rate <strong style={{ fontWeight: "bolder" }}>" {rateName} "</strong> ?</p>
+                        <p >Are You Sure Delete <strong style={{ fontWeight: "bolder" }}>" {rateName} "</strong> ?</p>
                     </TextContainer>
                 </Modal.Section>
             </Modal>

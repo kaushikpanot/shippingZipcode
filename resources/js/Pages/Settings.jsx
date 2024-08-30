@@ -15,26 +15,10 @@ const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 
 const Settings = (props) => {
-  const  navigate = useNavigate()
+  const navigate = useNavigate()
+  const [loadingButton, setLoadingButton] = useState(false);
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(true);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
   const [settings, setSettings] = useState({
     status: 0,
     shippingRate: 'All',
@@ -88,6 +72,7 @@ const Settings = (props) => {
   const handleSaveSettings = async () => {
     const token = await getSessionToken(app);
     try {
+      setLoadingButton(true);
       const response = await axios.post(`${apiCommonURL}/api/settings`, settings, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -97,6 +82,9 @@ const Settings = (props) => {
     } catch (error) {
       console.error('Error saving settings:', error);
     }
+    finally {
+      setLoadingButton(false);
+  }
   };
 
 
@@ -215,15 +203,15 @@ const Settings = (props) => {
     <Page
 
       title="Settings"
-      primaryAction={<Button onClick={handleSaveSettings} variant='primary'>Save</Button>}
+      primaryAction={<Button onClick={handleSaveSettings} variant='primary' loading={loadingButton}>Save</Button>}
     >
       {toastMarkup}
       <Divider borderColor="border" />
-      <div style={{ marginTop: '2%' }}>
+      <div style={{ marginTop: '2%', marginBottom: '2%' }}>
         <Grid>
           <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
             <div style={{ marginLeft: '%' }}>
-              <Text variant="headingLg" as="h5">Setting</Text>
+              <Text variant="headingMd" as="h6">Setting</Text>
             </div>
             <div style={{ marginTop: '4%' }}>
               <List>
@@ -262,13 +250,14 @@ const Settings = (props) => {
           </Grid.Cell>
         </Grid>
       </div>
-      <br />
+      
+
       <Divider borderColor="border" />
       <div style={{ marginTop: '2%', marginBottom: '2%' }}>
         <Grid>
           <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
             <div style={{ marginTop: "5%" }}>
-              <Text variant="headingLg" as="h5">Display Shipping Rate</Text>
+            <Text variant="headingMd" as="h6">Display Shipping Rate</Text>
             </div>
           </Grid.Cell>
           <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
@@ -299,12 +288,13 @@ const Settings = (props) => {
           </Grid.Cell>
         </Grid>
       </div>
+
       <Divider borderColor="border" />
       <div style={{ marginTop: '2%', marginBottom: "3%" }}>
         <Grid>
           <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
             <div style={{ marginTop: '5%' }}>
-              <Text variant="headingLg" as="h5">Mix/Merge Rate Setting</Text>
+            <Text variant="headingMd" as="h6">Mix/Merge Rate Setting</Text>
             </div>
             <div style={{ marginTop: '4%' }}>
               <List>

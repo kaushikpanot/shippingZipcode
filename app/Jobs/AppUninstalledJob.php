@@ -60,7 +60,7 @@ class AppUninstalledJob implements ShouldQueue
             Log::info('Decoded Webhook Data:', ['data' => $data_json]);
 
             // $to = $data_json['email'];
-            $to = "kaushik.panot@meetanshi.com";
+            $to = "bhushan.trivedi@meetanshi.com";
             $name = $data_json['shop_owner'];
             $shopDomain = $data_json['domain'];
 
@@ -81,7 +81,7 @@ class AppUninstalledJob implements ShouldQueue
 
             // $this->markAsProcessed($shopDomain);
 
-            // Mail::to($to)->send(new UninstallEmail($name, $shopDomain));
+            Mail::to($to)->send(new UninstallEmail($name, $shopDomain));
             // Mail::to("krishna.patel@meetanshi.com")->send(new UninstallSupportEmail($name, $shopDomain));
 
             Log::info('User password successfully!');

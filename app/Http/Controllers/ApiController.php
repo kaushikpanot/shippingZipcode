@@ -32,7 +32,6 @@ class ApiController extends Controller
         try {
             // Retrieve the Shopify session
             $shop = $request->attributes->get('shopifySession');
-            // $shop = "krishnalaravel-test.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -51,18 +50,67 @@ class ApiController extends Controller
                 ], 404);
             }
 
-            $countriesArray = CountryState::getCountries();
+            $apiVersion = config('services.shopify.api_version');
 
-            // Initialize an empty array to hold the formatted data
+            $query = <<<'GRAPHQL'
+                query AllMarkets($after: String) {
+                    markets(first: 250, after: $after) {
+                        edges {
+                            node {
+                                ...MarketSummary
+                            }
+                        }
+                    }
+                    }
+
+                    fragment MarketSummary on Market {
+                    id
+                    name
+                    handle
+                    active: enabled
+                    primary
+                    regions(first: 250) {
+                        edges {
+                        node {
+                            id
+                            name
+                            ... on MarketRegionCountry {
+                            code
+
+                            }
+                        }
+                        }
+                    }
+                    __typename
+                }
+                GRAPHQL;
+
+            $customHeaders = [
+                'X-Shopify-Access-Token' => $token,
+            ];
+
+            $graphqlEndpoint = "https://{$shop}/admin/api/{$apiVersion}/graphql.json";
+
+            $response = Http::withHeaders($customHeaders)->post($graphqlEndpoint, ['query' => $query]);
+
+            $countriesArray = $response->json();
+
             $countries = [];
 
             // Iterate over the associative array and format it into an array of objects
-            foreach ($countriesArray as $isoCode => $name) {
-                $countries[] = (object) [
-                    'code' => $isoCode,
-                    'name' => $name,
-                    'nameCode' => $name . " " . "(" . $isoCode . ")"
-                ];
+            foreach ($countriesArray['data']['markets']['edges'] as $market) {
+                if($market['node']['active']){
+                    foreach ($market['node']['regions']['edges'] as $region) {
+                        $country = $region['node'];
+                        if (isset($country['code']) && isset($country['name'])) {
+                            $countries[] = [
+                                'code' => $country['code'],
+                                'name' => $country['name'],
+                                'nameCode' => $country['name'] . " " . "(" . $country['code'] . ")"
+                            ];
+                        }
+                    }
+                }
             }
 
             return response()->json(['status' => true, 'message' => 'countries list retrieved successfully.', 'countries' => $countries]);
@@ -70,7 +118,7 @@ class ApiController extends Controller
             // Handle request-specific exceptions
             Log::error('HTTP request error', ['exception' => $e->getMessage()]);
             return response()->json(['status' => false, 'message' => 'An unexpected error occurred:']);
-        } catch (Throwable $th) {
+        } catch (\Throwable $th) {
             Log::error('Unexpected error', ['exception' => $th->getMessage()]);
             return response()->json(['status' => false, 'message' => 'An unexpected error occurred:']);
         }

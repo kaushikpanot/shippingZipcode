@@ -487,6 +487,7 @@ function Zone(props) {
 
     return (
         <div>
+            <div style={{ position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#F1F1F1" }}>
             <Page
                 title={zone_id ? 'Edit Zone' : 'Add Zone'}
                 primaryAction={<Button variant="primary" onClick={saveZone} loading={loadingButton}>Save</Button>}
@@ -496,8 +497,9 @@ function Zone(props) {
                     <Divider borderColor="border" />
                 </div>
             </Page>
-            <div style={{ height: "95vh", overflowY: "scroll", paddingLeft: "7%", paddingRight: "7%" }}>
-                <div style={{ marginTop: '2%', marginBottom: "2%" }}>
+            </div>
+            <Page >
+                <div style={{ marginBottom: "2%" }}>
                     <Grid>
                         <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                             <div style={{ paddingTop: '10%' }}>
@@ -557,9 +559,9 @@ function Zone(props) {
                 </div>
 
                 {zone_id && (
-                    <div style={{marginBottom:"7%"}}>
+                    <div >
                         <Divider borderColor="border" />
-                        <div style={{ marginTop: "2%", marginBottom: "5%" }}>
+                        <div style={{ marginTop: "2%",  }}>
                             <Card>
                                 <BlockStack gap="200">
                                     <InlineGrid columns="1fr auto">
@@ -650,7 +652,7 @@ function Zone(props) {
                     </Modal.Section>
                 </Modal>
                 {toastMarkup}
-            </div>
+            </Page>
         </div>
     );
 }

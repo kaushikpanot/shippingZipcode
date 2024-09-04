@@ -115,7 +115,7 @@ function Rate(props) {
     const [showAllProduct, setShowAllProduct] = useState(false);
     const [loadingTable, setLoadingTable] = useState(false)
     const [value, setValue] = useState('');
-    const [shop_weight_unit, setshop_weight_unit] = useState()
+    const [shop_weight_unit, setshop_weight_unit] = useState('')
     const [shop_currency, setShop_currency] = useState()
     const [pageInfo, setPageInfo] = useState({
         startCursor: null,
@@ -465,7 +465,7 @@ function Rate(props) {
 
                 }));
             }
-            console.log(response.data.rate.zipcode.isInclude, 'dsad')
+          
             if (response.data.rate.zipcode.state) {
                 const fetchedSelectedOptions = response.data.rate.zipcode.state.map(state => state.code);
                 setSelectedOptions(fetchedSelectedOptions);
@@ -542,6 +542,7 @@ function Rate(props) {
                     rate_price: surchargeData.rate_price || '',
                     cart_total_percentage: surchargeData.cart_total_percentage || '',
                     // productData: surchargeData.productData || '',
+               
                 });
 
             }
@@ -651,38 +652,7 @@ function Rate(props) {
         setValue('');
     }, [products]);
 
-    const getstate = async () => {
-        try {
-            const token = await getSessionToken(app);
-            const response = await axios.get(`${apiCommonURL}/api/rate/${zone_id}/create`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            const allStates = response.data.states;
-            setshop_weight_unit(response.data.rate.shop_weight_unit);
-            setShop_currency(response.data.rate.shop_currency);
-            const formattedOptions = [];
-            for (const country in allStates) {
-                if (allStates.hasOwnProperty(country)) {
-                    const countryData = allStates[country];
-                    const stateOptions = countryData.map(state => ({
-                        value: state.code,
-                        label: state.nameCode
-                    }));
-                    formattedOptions.push({
-                        title: country,
-                        options: stateOptions
-                    });
-                }
-            }
-            setOptions(formattedOptions);
-            setOriginalOptions(formattedOptions);
-            setState(formattedOptions.map(section => section.options).flat());
-        } catch (error) {
-            console.error("Error fetching shop location:", error);
-        }
-    };
+  
 
     const updateText = useCallback(
         (value) => {
@@ -1066,6 +1036,58 @@ function Rate(props) {
         navigate(`/Zone/${zone_id}`);
     };
 
+    
+    const [rate_based_on_surcharge, Setrate_based_on_surcharge] = useState({
+        charge_per_wight: 0.00,
+        unit_for: 0.00,
+        min_charge_price: 0.00,
+        max_charge_price: 0.00,
+        cart_total_percentage: '',
+        descriptions: '',
+        rate_price: '',
+        productData: [],
+        base_weight_unit: ''
+    })
+    
+
+    const getstate = async () => {
+        try {
+            const token = await getSessionToken(app);
+            const response = await axios.get(`${apiCommonURL}/api/rate/${zone_id}/create`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const allStates = response.data.states;
+            setshop_weight_unit(response.data.rate.shop_weight_unit);
+            const fetchedWeightUnit = response.data.rate.shop_weight_unit;
+            Setrate_based_on_surcharge(prevState => ({
+                ...prevState,
+                base_weight_unit: fetchedWeightUnit || 'sd'
+            }));
+           
+            setShop_currency(response.data.rate.shop_currency);
+            const formattedOptions = [];
+            for (const country in allStates) {
+                if (allStates.hasOwnProperty(country)) {
+                    const countryData = allStates[country];
+                    const stateOptions = countryData.map(state => ({
+                        value: state.code,
+                        label: state.nameCode
+                    }));
+                    formattedOptions.push({
+                        title: country,
+                        options: stateOptions
+                    });
+                }
+            }
+            setOptions(formattedOptions);
+            setOriginalOptions(formattedOptions);
+            setState(formattedOptions.map(section => section.options).flat());
+        } catch (error) {
+            console.error("Error fetching shop location:", error);
+        }
+    };
     useEffect(() => {
         app = createApp({
             apiKey: SHOPIFY_API_KEY,
@@ -1079,18 +1101,8 @@ function Rate(props) {
         fetchProducts()
     }, []);
 
-    const [rate_based_on_surcharge, Setrate_based_on_surcharge] = useState({
-        charge_per_wight: 0.00,
-        unit_for: 0.00,
-        min_charge_price: 0.00,
-        max_charge_price: 0.00,
-        cart_total_percentage: '',
-        descriptions: '',
-        rate_price: '',
-        productData: [],
-        shop_weight_unit: shop_weight_unit
-    })
-    console.log(rate_based_on_surcharge.charge_per_wight)
+  
+
     const [send_another_rate, setsend_another_rate] = useState({
         send_another_rate: checkedState.checked3,
         another_rate_name: '',
@@ -1114,6 +1126,7 @@ function Rate(props) {
     })
 
     useEffect(() => {
+       
         setsend_another_rate(prevState => ({
             ...prevState,
             send_another_rate: checkedState.checked3,
@@ -1248,7 +1261,8 @@ function Rate(props) {
                 product_title: rate_based_on_surcharge?.product_title || '',
                 collecion_id: rate_based_on_surcharge?.collecion_id || '',
                 product_type: rate_based_on_surcharge?.product_type || '',
-                product_vendor: rate_based_on_surcharge?.product_vendor || ''
+                product_vendor: rate_based_on_surcharge?.product_vendor || '',
+                base_weight_unit: rate_based_on_surcharge?.base_weight_unit || 'asd' 
             },
             rate_tier: {
                 ...prevFormData.rate_tier,
@@ -1506,40 +1520,40 @@ function Rate(props) {
     }, [formData.id, zone_id, navigate]);
 
     const handleProductChange = (productId, checked, text = '') => {
-        Setrate_based_on_surcharge((prevState) => {
-            let updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
+        // Setrate_based_on_surcharge((prevState) => {
+        //     let updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
 
-            if (checked) {
-                const product = products.find(product => product.id == productId);
-                if (product) {
-                    const existingProductIndex = updatedProductData.findIndex(item => item.id == productId);
+        //     if (checked) {
+        //         const product = products.find(product => product.id == productId);
+        //         if (product) {
+        //             const existingProductIndex = updatedProductData.findIndex(item => item.id == productId);
 
-                    if (existingProductIndex !== -1) {
-                        updatedProductData[existingProductIndex] = {
-                            ...updatedProductData[existingProductIndex],
-                            value: text
-                        };
-                    } else {
-                        updatedProductData = [
-                            ...updatedProductData,
-                            {
-                                id: product.id,
-                                title: product.title,
-                                price: product.price,
-                                value: text
-                            }
-                        ];
-                    }
-                }
-            } else {
-                updatedProductData = updatedProductData.filter(item => item.id !== productId);
-            }
+        //             if (existingProductIndex !== -1) {
+        //                 updatedProductData[existingProductIndex] = {
+        //                     ...updatedProductData[existingProductIndex],
+        //                     value: text
+        //                 };
+        //             } else {
+        //                 updatedProductData = [
+        //                     ...updatedProductData,
+        //                     {
+        //                         id: product.id,
+        //                         title: product.title,
+        //                         price: product.price,
+        //                         value: text
+        //                     }
+        //                 ];
+        //             }
+        //         }
+        //     } else {
+        //         updatedProductData = updatedProductData.filter(item => item.id !== productId);
+        //     }
 
-            return {
-                ...prevState,
-                productData: updatedProductData,
-            };
-        });
+        //     return {
+        //         ...prevState,
+        //         productData: updatedProductData,
+        //     };
+        // });
     };
 
     const selectedCount = rate_based_on_surcharge.productData?.length || 0
@@ -1752,7 +1766,7 @@ function Rate(props) {
             </div>
 
             <Page >
-                <div style={{ marginTop: '3%', marginBottom: '3%' }}>
+                <div style={{ marginBottom: '3%' }}>
                     <Layout>
                         <Layout.Section variant="oneThird">
                             <Text variant="headingMd" as="h6">
@@ -3963,7 +3977,7 @@ function Rate(props) {
                 </div>
 
                 <Divider borderColor="border" />
-                <div style={{ marginTop: "3%", marginBottom: "7%" }}>
+                <div style={{ marginTop: "3%", }}>
                     <Grid>
                         <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                             <Text variant="headingMd" as="h6">

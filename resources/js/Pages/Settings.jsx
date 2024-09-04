@@ -201,6 +201,7 @@ const Settings = (props) => {
   };
   return (
     <div>
+      <div style={{ position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#F1F1F1" }}>
       <Page
 
         title="Settings"
@@ -208,11 +209,12 @@ const Settings = (props) => {
       >
         <Divider borderColor="border" />
       </Page>
+      </div>
       {toastMarkup}
       
 
-      <div style={{ height: "95vh",overflowY: "scroll", paddingLeft:"7%" , paddingRight:"7%"}}>
-        <div style={{ marginTop: '2%', marginBottom: '2%' }}>
+      <Page>
+        <div style={{ marginBottom: '2%' }}>
           <Grid>
             <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
               <div style={{ marginLeft: '%' }}>
@@ -295,7 +297,7 @@ const Settings = (props) => {
         </div>
 
         <Divider borderColor="border" />
-        <div style={{ marginTop: '2%', marginBottom: "7%" }}>
+        <div style={{ marginTop: '2%' }}>
           <Grid>
             <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
               <div style={{ marginTop: '5%' }}>
@@ -385,7 +387,7 @@ const Settings = (props) => {
             </Grid.Cell>
           </Grid>
         </div>
-      </div>
+      </Page>
     </div>
   );
 };

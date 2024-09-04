@@ -99,7 +99,7 @@ class ApiController extends Controller
 
             // Iterate over the associative array and format it into an array of objects
             foreach ($countriesArray['data']['markets']['edges'] as $market) {
-                if($market['node']['active']){
+                if ($market['node']['active']) {
                     foreach ($market['node']['regions']['edges'] as $region) {
                         $country = $region['node'];
                         if (isset($country['code']) && isset($country['name'])) {
@@ -1039,7 +1039,95 @@ class ApiController extends Controller
         return $variantMetafields;
     }
 
-    public function handleCallback(Request $request, $customer_id=null)
+    private function calculateSurcharge($basePrice, $amount, $unitFor, $chargePerWeight, $minChargePrice, $maxChargePrice, $baseUnit)
+    {
+        // Convert units to grams
+        if (!is_null($baseUnit)) {
+            $unitConversion = [
+                'kg' => 1000,
+                'lb' => 453.59237,
+                'oz' => 28.35,
+                // default is grams if no match
+                'g'  => 1
+            ];
+
+            $newUnitFor = isset($unitConversion[$baseUnit]) ? $unitFor * $unitConversion[$baseUnit] : $unitFor;
+        } else {
+            $newUnitFor = $unitFor;
+        }
+
+
+        $totalSurcharge = $basePrice + ($amount / $newUnitFor * $chargePerWeight);
+
+        if ($totalSurcharge < $minChargePrice) {
+            $totalSurcharge = $minChargePrice;
+        }
+
+        if ($maxChargePrice != 0 && $totalSurcharge > $maxChargePrice) {
+            $totalSurcharge = $maxChargePrice;
+        }
+
+        Log::info('Filtered conditions:', [
+            'basePrice' => $basePrice,
+            'amount' => $amount,
+            'unitFor' => $unitFor,
+            'newUnitFor' => $newUnitFor,
+            'chargePerWeight' => $chargePerWeight,
+            'minChargePrice' => $minChargePrice,
+            'maxChargePrice' => $maxChargePrice,
+            'totalSurcharge' => $totalSurcharge,
+            'baseUnit' => $baseUnit,
+        ]);
+
+        return $totalSurcharge;
+    }
+
+    private function calculateSurchargeAlt($basePrice, $amount, $unitFor, $chargePerWeight, $minChargePrice, $maxChargePrice, $baseUnit = null)
+    {
+        // Convert units to grams if a base unit is provided
+        $newUnitFor = $unitFor;
+        if (!is_null($baseUnit)) {
+            $unitConversion = [
+                'kg' => 1000,
+                'lb' => 453.59237,
+                'oz' => 28.35,
+                'g'  => 1 // Default is grams
+            ];
+
+            $newUnitFor *= $unitConversion[$baseUnit] ?? 1;
+        }
+
+        $calculation = 0;
+        if ($amount > $newUnitFor) {
+            $total = $amount - $newUnitFor;
+            $calculation = !is_null($baseUnit) ? $total / ($unitConversion[$baseUnit] ?? 1) : $total;
+        }
+
+        $totalSurcharge = $basePrice + ($calculation * $chargePerWeight);
+
+        // Ensure the surcharge is within the specified min and max limits
+        $totalSurcharge = max($totalSurcharge, $minChargePrice);
+        if ($maxChargePrice > 0) {
+            $totalSurcharge = min($totalSurcharge, $maxChargePrice);
+        }
+
+        Log::info('Filtered conditions:', [
+            'basePrice' => $basePrice,
+            'amount' => $amount,
+            'unitFor' => $unitFor,
+            'newUnitFor' => $newUnitFor,
+            'chargePerWeight' => $chargePerWeight,
+            'minChargePrice' => $minChargePrice,
+            'maxChargePrice' => $maxChargePrice,
+            'totalSurcharge' => $totalSurcharge,
+            'baseUnit' => $baseUnit,
+        ]);
+
+        return $totalSurcharge;
+    }
+
+
+    public function handleCallback(Request $request, $customer_id = null)
     {
         $input = $request->input();
 
@@ -1642,79 +1730,30 @@ class ApiController extends Controller
 
                 $minChargePrice = isset($surcharge['min_charge_price']) ? $surcharge['min_charge_price'] : 0;
                 $maxChargePrice = isset($surcharge['max_charge_price']) ? $surcharge['max_charge_price'] : 0;
-
-                function calculateSurcharge($basePrice, $amount, $unitFor, $chargePerWeight, $minChargePrice, $maxChargePrice)
-                {
-                    $totalSurcharge = $basePrice + ($amount / $unitFor * $chargePerWeight);
-
-                    if ($totalSurcharge < $minChargePrice) {
-                        $totalSurcharge = $minChargePrice;
-                    }
-
-                    if ($maxChargePrice != 0 && $totalSurcharge > $maxChargePrice) {
-                        $totalSurcharge = $maxChargePrice;
-                    }
-
-                    Log::info('Filtered conditions:', [
-                        'basePrice' => $basePrice,
-                        'amount' => $amount,
-                        'unitFor' => $unitFor,
-                        'chargePerWeight' => $chargePerWeight,
-                        'minChargePrice' => $minChargePrice,
-                        'maxChargePrice' => $maxChargePrice,
-                        'totalSurcharge' => $totalSurcharge,
-                    ]);
-
-                    return $totalSurcharge;
-                }
-
-                function calculateSurchargeAlt($basePrice, $amount, $unitFor, $chargePerWeight, $minChargePrice, $maxChargePrice)
-                {
-                    $totalSurcharge = $basePrice + ($amount - $unitFor * $chargePerWeight);
-
-                    if ($totalSurcharge < $minChargePrice) {
-                        $totalSurcharge = $minChargePrice;
-                    }
-
-                    if ($maxChargePrice != 0 && $totalSurcharge > $maxChargePrice) {
-                        $totalSurcharge = $maxChargePrice;
-                    }
-
-                    Log::info('Filtered conditions:', [
-                        'basePrice' => $basePrice,
-                        'amount' => $amount,
-                        'unitFor' => $unitFor,
-                        'chargePerWeight' => $chargePerWeight,
-                        'minChargePrice' => $minChargePrice,
-                        'maxChargePrice' => $maxChargePrice,
-                        'totalSurcharge' => $totalSurcharge,
-                    ]);
-
-                    return $totalSurcharge;
-                }
+                $surcharge['shop_weight_unit'] = "kg";
 
                 switch ($surcharge['cart_and_product_surcharge']) {
                     case 'weight':
                         if ($surcharge['selectedByAmount'] == 'unit') {
-                            $rate->base_price = calculateSurcharge($rate->base_price, $totalWeight, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice);
+                            $rate->base_price = $this->calculateSurcharge($rate->base_price, $totalWeight, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice, $surcharge['shop_weight_unit']);
                         } else {
-                            $rate->base_price = calculateSurchargeAlt($rate->base_price, $totalWeight, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice);
+                            $rate->base_price = $this->calculateSurchargeAlt($rate->base_price, $totalWeight, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice, $surcharge['shop_weight_unit']);
                         }
                         break;
 
                     case 'Qty':
                         if ($surcharge['selectedByAmount'] == 'unit') {
-                            $rate->base_price = calculateSurcharge($rate->base_price, $totalQuantity, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice);
+                            $rate->base_price = $this->calculateSurcharge($rate->base_price, $totalQuantity, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice, null);
                         } else {
-                            $rate->base_price = calculateSurchargeAlt($rate->base_price, $totalQuantity, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice);
+                            $rate->base_price = $this->calculateSurchargeAlt($rate->base_price, $totalQuantity, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice, null);
                         }
                         break;
 
                     case 'Distance':
                         if ($surcharge['selectedByAmount'] == 'unit') {
-                            $rate->base_price = calculateSurcharge($rate->base_price, $distance, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice);
+                            $rate->base_price = $this->calculateSurcharge($rate->base_price, $distance, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice, null);
                         } else {
-                            $rate->base_price = calculateSurchargeAlt($rate->base_price, $distance, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice);
+                            $rate->base_price = $this->calculateSurchargeAlt($rate->base_price, $distance, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice, null);
                         }
                         break;
 
@@ -1744,10 +1783,11 @@ class ApiController extends Controller
                         $lastFilteredData = collect($filteredDataWithQuantity)->last();
 
                         Log::info('lastFilteredData:', ['lastFilteredData' => $lastFilteredData]);
+
                         if ($surcharge['selectedMultiplyLine'] == 'Yes' && !empty($lastFilteredData)) {
-                            $rate->base_price = ($rate->base_price + $lastFilteredData['rate_price']) * $lastFilteredData['quantity'];
+                            $rate->base_price = $rate->base_price + ($lastFilteredData['value'] * $lastFilteredData['quantity']);
                         } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
-                            $rate->base_price = $rate->base_price + $lastFilteredData['rate_price'] + (($lastFilteredData['product_price'] % $surcharge['cart_total_percentage'] / 100) * $lastFilteredData['quantity']);
+                            $rate->base_price = $rate->base_price + $lastFilteredData['value'] + (($lastFilteredData['price'] % $surcharge['cart_total_percentage'] / 100) * $lastFilteredData['quantity']);
                             if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
                                 $rate->base_price = $minChargePrice;
                             } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
@@ -2282,18 +2322,19 @@ class ApiController extends Controller
             // dd($rate->name);
             if (strpos($rate->description, "#") !== false) {
                 $deliveryDay = str_replace('#', '', $rate->description);
+                $descriptionNew = Carbon::now()->addDay($deliveryDay)->format('l, d M');
             } else {
-                $deliveryDay = 0;
+                $descriptionNew = $rate->description;
             }
 
             $response['rates'][] = [
                 'service_name' => $rate->name,
                 'service_code' => $rate->service_code,
                 'total_price' => $rate->base_price * 100, // Convert to cents if needed
-                'description' => Carbon::now()->addDay($deliveryDay)->format('l, d M'),
+                'description' => $descriptionNew,
                 'currency' => $rate->zone->currency,
-                'min_delivery_date' => Carbon::now()->addDay($deliveryDay)->toIso8601String(),
-                'max_delivery_date' => Carbon::now()->addDay($deliveryDay)->toIso8601String(),
+                // 'min_delivery_date' => Carbon::now()->addDay($deliveryDay)->toIso8601String(),
+                // 'max_delivery_date' => Carbon::now()->addDay($deliveryDay)->toIso8601String(),
             ];
 
             if (@$rate->send_another_rate['send_another_rate']) {
@@ -2321,8 +2362,8 @@ class ApiController extends Controller
                     "total_price" => $finalTotalPrice * 100,
                     "description" => $rate->send_another_rate['another_rate_description'],
                     "currency" => $rate->zone->currency,
-                    'min_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
-                    'max_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
+                    // 'min_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
+                    // 'max_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
                 ];
             }
         }

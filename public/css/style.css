@@ -19,3 +19,10 @@ p{
 .zonetext> .Polaris-Labelled__LabelWrapper> .Polaris-Label> .Polaris-Label__Text> .Polaris-Text--root{
   font-weight: bold;
 }
+
+
+/* Global styles (in your CSS file or a <style> tag) */
+/* body, html {
+  overflow: hidden;
+  height: 100%;
+} */

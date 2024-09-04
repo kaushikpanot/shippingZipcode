@@ -129,7 +129,7 @@ function Rate(props) {
     const handleDateChange = (key, value) => {
         setDate(prevDates => {
             const updatedDates = { ...prevDates, [key]: value };
-    
+
             if (key === 'endDate' && new Date(value) < new Date(updatedDates.startDate)) {
                 setErrors(prevErrors => ({
                     ...prevErrors,
@@ -144,10 +144,10 @@ function Rate(props) {
                 setErrors(prevErrors => ({
                     ...prevErrors,
                     endDate: '',
-                    startDate:''
+                    startDate: ''
                 }));
             }
-    
+
             return updatedDates;
         });
     };
@@ -461,9 +461,11 @@ function Rate(props) {
                     ...prevState,
                     selectedZipCondition: response.data.rate.zipcode.zipcodeSelection,
                     selectedStateCondition: response.data.rate.zipcode.stateSelection,
-                    selectedZipCode: response.data.rate.zipcode.isInclude,
+                    selectedZipCode: response.data.rate.zipcode.isInclude || 'Include',
+
                 }));
             }
+            console.log(response.data.rate.zipcode.isInclude, 'dsad')
             if (response.data.rate.zipcode.state) {
                 const fetchedSelectedOptions = response.data.rate.zipcode.state.map(state => state.code);
                 setSelectedOptions(fetchedSelectedOptions);
@@ -533,10 +535,10 @@ function Rate(props) {
                 const surchargeData = response.data.rate.rate_based_on_surcharge || {};
                 Setrate_based_on_surcharge({
                     ...surchargeData,
-                    charge_per_wight: surchargeData.charge_per_wight || '',
-                    unit_for: surchargeData.unit_for || '',
-                    min_charge_price: surchargeData.min_charge_price || '',
-                    max_charge_price: surchargeData.max_charge_price || '',
+                    charge_per_wight: surchargeData.charge_per_wight || 0.00,
+                    unit_for: surchargeData.unit_for || 0.00,
+                    min_charge_price: surchargeData.min_charge_price || 0.00,
+                    max_charge_price: surchargeData.max_charge_price || 0.00,
                     rate_price: surchargeData.rate_price || '',
                     cart_total_percentage: surchargeData.cart_total_percentage || '',
                     // productData: surchargeData.productData || '',
@@ -1078,16 +1080,17 @@ function Rate(props) {
     }, []);
 
     const [rate_based_on_surcharge, Setrate_based_on_surcharge] = useState({
-        charge_per_wight: '',
-        unit_for: '',
-        min_charge_price: '',
-        max_charge_price: '',
+        charge_per_wight: 0.00,
+        unit_for: 0.00,
+        min_charge_price: 0.00,
+        max_charge_price: 0.00,
         cart_total_percentage: '',
         descriptions: '',
         rate_price: '',
-        productData: []
+        productData: [],
+        shop_weight_unit: shop_weight_unit
     })
-
+    console.log(rate_based_on_surcharge.charge_per_wight)
     const [send_another_rate, setsend_another_rate] = useState({
         send_another_rate: checkedState.checked3,
         another_rate_name: '',
@@ -1539,7 +1542,7 @@ function Rate(props) {
         });
     };
 
-    const selectedCount = rate_based_on_surcharge.productData?.length
+    const selectedCount = rate_based_on_surcharge.productData?.length || 0
     const filteredProducts = showAllProducts
         ? products?.filter(product => product.title.toLowerCase().includes)
         : products?.filter(product => rate_based_on_surcharge.productData?.some(item => item.id === product.id));
@@ -1737,2467 +1740,2470 @@ function Rate(props) {
         );
     }
     return (
-        <Page
-            title={id ? 'Edit Rate' : 'Add Rate'}
-            primaryAction={<Button variant="primary" onClick={saveRate} loading={loadingButton}>Save</Button>}
-            secondaryActions={<Button onClick={() => BacktoZone(zone_id)}>Back</Button>}
-        >
-        {/* <Demo/> */}
-            <Divider borderColor="border" />
-            <div style={{ marginTop: '3%', marginBottom: '3%' }}>
-                <Layout>
-                    <Layout.Section variant="oneThird">
-                        <Text variant="headingMd" as="h6">
-                            Rate details
-                        </Text>
-                        <div style={{ marginTop: "4%" }}>
-                            <List>
-                                <List.Item>
-                                    Specify which rates should apply in this zone
-                                </List.Item>
-                                {/* <List.Item>
-                                       <a href='https://www.youtube.com/embed/43ER3QBDFow' style={{color:"#ff8930"}}>Watch Video Guide</a> 
-                                    </List.Item> */}
-                            </List>
-                        </div>
-
-                    </Layout.Section>
-                    <Layout.Section>
-                        <LegacyCard sectioned>
-                            <div style={{ marginBottom: "2%" }}>
-                                <Select
-                                    label="Rate status"
-                                    options={statusOptions}
-                                    onChange={handleStatusChange}
-                                    value={formData.status === 1 ? 'Enabled' : 'Disabled'}
-                                />
-                            </div>
-                            <Divider borderColor="border" />
-                            <div style={{ marginTop: '2%' }} className='zonetext'>
-                                <TextField
-                                    label="Rate Name"
-                                    placeholder="Rate Name"
-                                    autoComplete="off"
-                                    value={formData.name}
-                                    onChange={handleRateFormChange('name')}
-                                    error={errors.name}
-                                />
-                            </div>
-                            <div style={{ marginTop: '2%' }} className='zonetext'>
-                                <TextField
-                                    label="Base price"
-                                    placeholder="0.00"
-                                    autoComplete="off"
-                                    prefix={shop_currency}
-                                    value={formData.base_price}
-                                    onChange={handleRateFormChange('base_price')}
-                                    error={errors.base_price}
-                                />
-                            </div>
-                            <div style={{ marginTop: '2%', marginBottom: '2%' }} className='zonetext'>
-                                <TextField
-                                    label="Service code"
-                                    placeholder="Service code"
-                                    autoComplete="off"
-                                    value={formData.service_code}
-                                    onChange={handleRateFormChange('service_code')}
-                                    helpText="The service code should not be the same as the other rates."
-                                    error={errors.service_code}
-                                />
-                            </div>
-                            <div style={{ marginTop: '2%' }} className='zonetext'>
-                                <TextField
-                                    label="Description"
-                                    placeholder="Enter Description"
-                                    autoComplete="off"
-                                    value={formData.description}
-                                    onChange={handleRateFormChange('description')}
-                                    error={errors.description}
-                                />
-                            </div>
-                        </LegacyCard>
-                    </Layout.Section>
-                </Layout>
+        <div className='page'>
+            <div style={{ position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#F1F1F1" }}>
+                <Page
+                    title={id ? 'Edit Rate' : 'Add Rate'}
+                    primaryAction={<Button variant="primary" onClick={saveRate} loading={loadingButton}>Save</Button>}
+                    secondaryActions={<Button onClick={() => BacktoZone(zone_id)}>Back</Button>}
+                >
+                    <Divider borderColor="border" />
+                </Page>
             </div>
 
-            <Divider borderColor="border" />
-            <div style={{ marginTop: '3%', marginBottom: '3%' }}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <Text variant="headingMd" as="h6">
-                            Conditions
-                        </Text>
-                        <div style={{ marginTop: "4%" }}>
-                            <List>
-                                <List.Item>
-                                    New Condition Scenario
-                                </List.Item>
-                            </List>
-                        </div>
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-                        <LegacyCard sectioned>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: "2%", }}>
-                                <Text variant="headingXs" as="h6">
-                                    Condition match
-                                </Text>
-                                <RadioButton
-                                    label="Not Any Condition"
-                                    checked={checkstate.selectedCondition === 0}
-                                    id="notAny"
-                                    name="conditionMatch"
-                                    onChange={() => handlecheckedChange('selectedCondition', 0)}
-                                />
-                                <RadioButton
-                                    label="All"
-                                    checked={checkstate.selectedCondition === 1}
-                                    id="AllCondition"
-                                    name="conditionMatch"
-                                    onChange={() => handlecheckedChange('selectedCondition', 1)}
-                                />
-                                <RadioButton
-                                    label="Any"
-                                    checked={checkstate.selectedCondition === 2}
-                                    id="Any"
-                                    name="conditionMatch"
-                                    onChange={() => handlecheckedChange('selectedCondition', 2)}
-                                />
-                                <RadioButton
-                                    label="NOT All"
-                                    checked={checkstate.selectedCondition === 3}
-                                    id="notAll"
-                                    name="conditionMatch"
-                                    onChange={() => handlecheckedChange('selectedCondition', 3)}
-                                />
+            <Page >
+                <div style={{ marginTop: '3%', marginBottom: '3%' }}>
+                    <Layout>
+                        <Layout.Section variant="oneThird">
+                            <Text variant="headingMd" as="h6">
+                                Rate details
+                            </Text>
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        Specify which rates should apply in this zone
+                                    </List.Item>
+                                    {/* <List.Item>
+                                       <a href='https://www.youtube.com/embed/43ER3QBDFow' style={{color:"#ff8930"}}>Watch Video Guide</a> 
+                                    </List.Item> */}
+                                </List>
                             </div>
-                            {checkstate.selectedCondition !== 0 && (
-                                <div>
-                                    <Divider borderColor="border" />
-                                    <div>
-                                        {items.map((item, index) => (
-                                            <div key={item.id}>
 
-                                                <Grid>
-                                                    <Grid.Cell columnSpan={{ xs: 2, sm: 3, md: 3, lg: 2, xl: 2 }}>
-                                                        <div style={{ paddingTop: '20%', textAlign: 'center', }}>
-                                                            <Text variant="headingXs" as="h6">
-                                                                {getCategory(item.name)}
-                                                            </Text>
-                                                        </div>
-                                                    </Grid.Cell>
-                                                    <Grid.Cell columnSpan={{ xs: 10, sm: 9, md: 9, lg: 10, xl: 10 }}>
-                                                        <div>
-                                                            <div className='conditions' style={{
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '2%',
-                                                                marginTop: "2%",
-                                                                marginBottom: "2%"
-                                                            }}>
-                                                                <Select
-                                                                    options={validations}
-                                                                    onChange={(newValue) => handleSelectChange(index, newValue, false)}
-                                                                    value={item.name}
-                                                                />
-                                                                {item.name !== 'day' && item.name !== 'localcode' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'time' && item.name !== 'name2' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'address' && item.name !== 'address' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'tag2' && item.name !== 'dayIs' && item.name !== 'type2' && item.name !== 'timeIn' && item.name !== 'dayOfWeek' && item.name !== 'company' && item.name !== 'phone' && item.name !== 'email' && (
+                        </Layout.Section>
+                        <Layout.Section>
+                            <LegacyCard sectioned>
+                                <div style={{ marginBottom: "2%" }}>
+                                    <Select
+                                        label="Rate status"
+                                        options={statusOptions}
+                                        onChange={handleStatusChange}
+                                        value={formData.status === 1 ? 'Enabled' : 'Disabled'}
+                                    />
+                                </div>
+                                <Divider borderColor="border" />
+                                <div style={{ marginTop: '2%' }} className='zonetext'>
+                                    <TextField
+                                        label="Rate Name"
+                                        placeholder="Rate Name"
+                                        autoComplete="off"
+                                        value={formData.name}
+                                        onChange={handleRateFormChange('name')}
+                                        error={errors.name}
+                                    />
+                                </div>
+                                <div style={{ marginTop: '2%' }} className='zonetext'>
+                                    <TextField
+                                        label="Base price"
+                                        placeholder="0.00"
+                                        autoComplete="off"
+                                        prefix={shop_currency}
+                                        value={formData.base_price}
+                                        onChange={handleRateFormChange('base_price')}
+                                        error={errors.base_price}
+                                    />
+                                </div>
+                                <div style={{ marginTop: '2%', marginBottom: '2%' }} className='zonetext'>
+                                    <TextField
+                                        label="Service code"
+                                        placeholder="Service code"
+                                        autoComplete="off"
+                                        value={formData.service_code}
+                                        onChange={handleRateFormChange('service_code')}
+                                        helpText="The service code should not be the same as the other rates."
+                                        error={errors.service_code}
+                                    />
+                                </div>
+                                <div style={{ marginTop: '2%' }} className='zonetext'>
+                                    <TextField
+                                        label="Description"
+                                        placeholder="Enter Description"
+                                        autoComplete="off"
+                                        value={formData.description}
+                                        onChange={handleRateFormChange('description')}
+                                        error={errors.description}
+                                    />
+                                </div>
+                            </LegacyCard>
+                        </Layout.Section>
+                    </Layout>
+                </div>
+
+                <Divider borderColor="border" />
+                <div style={{ marginTop: '3%', marginBottom: '3%' }}>
+                    <Grid>
+                        <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                            <Text variant="headingMd" as="h6">
+                                Conditions
+                            </Text>
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        New Condition Scenario
+                                    </List.Item>
+                                </List>
+                            </div>
+                        </Grid.Cell>
+                        <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                            <LegacyCard sectioned>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: "2%", }}>
+                                    <Text variant="headingXs" as="h6">
+                                        Condition match
+                                    </Text>
+                                    <RadioButton
+                                        label="Not Any Condition"
+                                        checked={checkstate.selectedCondition === 0}
+                                        id="notAny"
+                                        name="conditionMatch"
+                                        onChange={() => handlecheckedChange('selectedCondition', 0)}
+                                    />
+                                    <RadioButton
+                                        label="All"
+                                        checked={checkstate.selectedCondition === 1}
+                                        id="AllCondition"
+                                        name="conditionMatch"
+                                        onChange={() => handlecheckedChange('selectedCondition', 1)}
+                                    />
+                                    <RadioButton
+                                        label="Any"
+                                        checked={checkstate.selectedCondition === 2}
+                                        id="Any"
+                                        name="conditionMatch"
+                                        onChange={() => handlecheckedChange('selectedCondition', 2)}
+                                    />
+                                    <RadioButton
+                                        label="NOT All"
+                                        checked={checkstate.selectedCondition === 3}
+                                        id="notAll"
+                                        name="conditionMatch"
+                                        onChange={() => handlecheckedChange('selectedCondition', 3)}
+                                    />
+                                </div>
+                                {checkstate.selectedCondition !== 0 && (
+                                    <div>
+                                        <Divider borderColor="border" />
+                                        <div>
+                                            {items.map((item, index) => (
+                                                <div key={item.id}>
+
+                                                    <Grid>
+                                                        <Grid.Cell columnSpan={{ xs: 2, sm: 3, md: 3, lg: 2, xl: 2 }}>
+                                                            <div style={{ paddingTop: '20%', textAlign: 'center', }}>
+                                                                <Text variant="headingXs" as="h6">
+                                                                    {getCategory(item.name)}
+                                                                </Text>
+                                                            </div>
+                                                        </Grid.Cell>
+                                                        <Grid.Cell columnSpan={{ xs: 10, sm: 9, md: 9, lg: 10, xl: 10 }}>
+                                                            <div>
+                                                                <div className='conditions' style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '2%',
+                                                                    marginTop: "2%",
+                                                                    marginBottom: "2%"
+                                                                }}>
                                                                     <Select
-                                                                        options={option}
-                                                                        onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                                        value={item.condition}
+                                                                        options={validations}
+                                                                        onChange={(newValue) => handleSelectChange(index, newValue, false)}
+                                                                        value={item.name}
                                                                     />
-                                                                )}
-                                                                {(item.name === 'day' || item.name === 'localcode' || item.name === 'provinceCode' || item.name === 'dayOfWeek' || item.name === 'dayIs' || item.name === 'type2') && (
-                                                                    <Select
-                                                                        options={day}
-                                                                        onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                                        value={item.condition}
-                                                                    />
-                                                                )}
-                                                                {(item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties' || item.name === 'name2' || item.name === 'email' || item.name === 'phone' || item.name === 'company' || item.name === 'addrss1' || item.name === 'address2' || item.name === 'city' || item.name === 'tag2') && (
-                                                                    <Select
-                                                                        options={name}
-                                                                        onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                                        value={item.condition}
-                                                                    />
-                                                                )}
-                                                                {item.name === 'time' && (
-                                                                    <Select
-                                                                        options={timeIs}
-                                                                        onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                                        value={item.condition}
-                                                                    />
-                                                                )}
-                                                                {(item.name === 'address' || item.name === 'timeIn') && (
-                                                                    <Select
-                                                                        options={address}
-                                                                        onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                                        value={item.condition}
-                                                                    />
-                                                                )}
-                                                                {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && (
-                                                                    <TextField
-                                                                        value={item.value}
-                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
-                                                                        autoComplete="off"
-                                                                        suffix={item.unit ? item.unit : ''}
-                                                                        error={errors[`value${index}`]}
-                                                                    />
-                                                                )}
-                                                                {item.condition === 'between' && (
-                                                                    <div>
-                                                                        {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'name2' && item.name !== 'email' && item.name !== 'phone' && item.name !== 'company' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'Customer' && item.name !== 'localcode' && (
-                                                                            <TextField
+                                                                    {item.name !== 'day' && item.name !== 'localcode' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'time' && item.name !== 'name2' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'address' && item.name !== 'address' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'tag2' && item.name !== 'dayIs' && item.name !== 'type2' && item.name !== 'timeIn' && item.name !== 'dayOfWeek' && item.name !== 'company' && item.name !== 'phone' && item.name !== 'email' && (
+                                                                        <Select
+                                                                            options={option}
+                                                                            onChange={(newValue) => handleSelectChange(index, newValue, true)}
+                                                                            value={item.condition}
+                                                                        />
+                                                                    )}
+                                                                    {(item.name === 'day' || item.name === 'localcode' || item.name === 'provinceCode' || item.name === 'dayOfWeek' || item.name === 'dayIs' || item.name === 'type2') && (
+                                                                        <Select
+                                                                            options={day}
+                                                                            onChange={(newValue) => handleSelectChange(index, newValue, true)}
+                                                                            value={item.condition}
+                                                                        />
+                                                                    )}
+                                                                    {(item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties' || item.name === 'name2' || item.name === 'email' || item.name === 'phone' || item.name === 'company' || item.name === 'addrss1' || item.name === 'address2' || item.name === 'city' || item.name === 'tag2') && (
+                                                                        <Select
+                                                                            options={name}
+                                                                            onChange={(newValue) => handleSelectChange(index, newValue, true)}
+                                                                            value={item.condition}
+                                                                        />
+                                                                    )}
+                                                                    {item.name === 'time' && (
+                                                                        <Select
+                                                                            options={timeIs}
+                                                                            onChange={(newValue) => handleSelectChange(index, newValue, true)}
+                                                                            value={item.condition}
+                                                                        />
+                                                                    )}
+                                                                    {(item.name === 'address' || item.name === 'timeIn') && (
+                                                                        <Select
+                                                                            options={address}
+                                                                            onChange={(newValue) => handleSelectChange(index, newValue, true)}
+                                                                            value={item.condition}
+                                                                        />
+                                                                    )}
+                                                                    {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && (
+                                                                        <TextField
+                                                                            value={item.value}
+                                                                            onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
+                                                                            autoComplete="off"
+                                                                            suffix={item.unit ? item.unit : ''}
+                                                                            error={errors[`value${index}`]}
+                                                                        />
+                                                                    )}
+                                                                    {item.condition === 'between' && (
+                                                                        <div>
+                                                                            {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'name2' && item.name !== 'email' && item.name !== 'phone' && item.name !== 'company' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'Customer' && item.name !== 'localcode' && (
+                                                                                <TextField
+                                                                                    value={item.value2}
+                                                                                    onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
+                                                                                    autoComplete="off"
+                                                                                    suffix={item.unit ? item.unit : ''}
+                                                                                />
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                    {item.name === 'dayIs' && (
+                                                                        <TextField
+                                                                            value={item.value}
+                                                                            onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
+                                                                            autoComplete="off"
+                                                                            placeholder='Delivery X days from today is'
+                                                                            error={errors[`value${index}`]}
+                                                                        />
+                                                                    )}
+                                                                    {item.name === 'time' && (
+                                                                        <div style={{
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '10%',
+                                                                            marginRight: "3%"
+                                                                        }}>
+                                                                            <Select
+                                                                                key={index}
+                                                                                options={time}
+                                                                                onChange={handleConditionsChange(index, 'value')}
+                                                                                value={item.value}
+                                                                            />
+                                                                            <Select
+                                                                                options={time}
+                                                                                key={index}
+                                                                                onChange={handleConditionsChange(index, 'value2')}
                                                                                 value={item.value2}
-                                                                                onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
-                                                                                autoComplete="off"
-                                                                                suffix={item.unit ? item.unit : ''}
                                                                             />
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                                {item.name === 'dayIs' && (
-                                                                    <TextField
-                                                                        value={item.value}
-                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
-                                                                        autoComplete="off"
-                                                                        placeholder='Delivery X days from today is'
-                                                                        error={errors[`value${index}`]}
-                                                                    />
-                                                                )}
-                                                                {item.name === 'time' && (
-                                                                    <div style={{
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        gap: '10%',
-                                                                        marginRight: "3%"
-                                                                    }}>
-                                                                        <Select
-                                                                            key={index}
-                                                                            options={time}
-                                                                            onChange={handleConditionsChange(index, 'value')}
-                                                                            value={item.value}
-                                                                        />
-                                                                        <Select
-                                                                            options={time}
-                                                                            key={index}
-                                                                            onChange={handleConditionsChange(index, 'value2')}
-                                                                            value={item.value2}
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                                {(item.name === 'day' || item.name === 'dayOfWeek') && (
-                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                                                        <Checkbox
-                                                                            label="Sunday"
-                                                                            checked={dayOfWeekSelection[index].Sunday}
-                                                                            onChange={() => handleDayCheckboxChange('Sunday', index)}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Monday"
-                                                                            checked={dayOfWeekSelection[index].Monday}
-                                                                            onChange={() => handleDayCheckboxChange('Monday', index)}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Tuesday"
-                                                                            checked={dayOfWeekSelection[index].Tuesday}
-                                                                            onChange={() => handleDayCheckboxChange('Tuesday', index)}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Wednesday"
-                                                                            checked={dayOfWeekSelection[index].Wednesday}
-                                                                            onChange={() => handleDayCheckboxChange('Wednesday', index)}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Thursday"
-                                                                            checked={dayOfWeekSelection[index].Thursday}
-                                                                            onChange={() => handleDayCheckboxChange('Thursday', index)}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Friday"
-                                                                            checked={dayOfWeekSelection[index].Friday}
-                                                                            onChange={() => handleDayCheckboxChange('Friday', index)}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Saturday"
-                                                                            checked={dayOfWeekSelection[index].Saturday}
-                                                                            onChange={() => handleDayCheckboxChange('Saturday', index)}
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                                {item.name === 'date' && (
-                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                                                        <TextField
-                                                                            value={item.value}
-                                                                            onChange={(value) => handleItemDateChange(index, 'value', value)}
-                                                                            type="date"
-                                                                            error={errors[`value${index}`]}
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                                {item.name === 'timeIn' && (
-                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                                                        <TextField
-                                                                            value={item.value}
-                                                                            onChange={(value) => handleItemDateChange(index, 'value', value)}
-                                                                            type="time"
-                                                                            error={errors[`value${index}`]}
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                                {item.name === 'type2' && (
-                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                                                        <Checkbox
-                                                                            label="Local Delivery"
-                                                                            checked={deliveryType[index].local}
-                                                                            onChange={() => handleCheckboxChange('local', index)}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Store Pickup"
-                                                                            checked={deliveryType[index].Store}
-                                                                            onChange={() => handleCheckboxChange('Store', index)}
-                                                                        />
-                                                                        <Checkbox
-                                                                            label="Shipping"
-                                                                            checked={deliveryType[index].Shipping}
-                                                                            onChange={() => handleCheckboxChange('Shipping', index)}
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                                {items.length > 1 && (
-                                                                    <Button
-                                                                        icon={DeleteIcon}
-                                                                        variant='primary'
-                                                                        tone="critical"
-                                                                        accessibilityLabel="Delete item"
-                                                                        onClick={() => handleDeleteItem(index)}
-                                                                    />
-                                                                )}
-                                                            </div>
-                                                            <div style={{
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '3%',
-                                                                marginBottom: "2%",
-                                                            }}>
-                                                                {item.name === 'lineitem' && (
-                                                                    <>
-                                                                        <Select
-                                                                            options={lineItem}
-                                                                            onChange={handleConditionsChange(index, 'lineItem')}
-                                                                            value={item.lineItem}
-                                                                        />
-                                                                        {item.lineItem === 'anyTag' && (
+                                                                        </div>
+                                                                    )}
+                                                                    {(item.name === 'day' || item.name === 'dayOfWeek') && (
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                                            <Checkbox
+                                                                                label="Sunday"
+                                                                                checked={dayOfWeekSelection[index].Sunday}
+                                                                                onChange={() => handleDayCheckboxChange('Sunday', index)}
+                                                                            />
+                                                                            <Checkbox
+                                                                                label="Monday"
+                                                                                checked={dayOfWeekSelection[index].Monday}
+                                                                                onChange={() => handleDayCheckboxChange('Monday', index)}
+                                                                            />
+                                                                            <Checkbox
+                                                                                label="Tuesday"
+                                                                                checked={dayOfWeekSelection[index].Tuesday}
+                                                                                onChange={() => handleDayCheckboxChange('Tuesday', index)}
+                                                                            />
+                                                                            <Checkbox
+                                                                                label="Wednesday"
+                                                                                checked={dayOfWeekSelection[index].Wednesday}
+                                                                                onChange={() => handleDayCheckboxChange('Wednesday', index)}
+                                                                            />
+                                                                            <Checkbox
+                                                                                label="Thursday"
+                                                                                checked={dayOfWeekSelection[index].Thursday}
+                                                                                onChange={() => handleDayCheckboxChange('Thursday', index)}
+                                                                            />
+                                                                            <Checkbox
+                                                                                label="Friday"
+                                                                                checked={dayOfWeekSelection[index].Friday}
+                                                                                onChange={() => handleDayCheckboxChange('Friday', index)}
+                                                                            />
+                                                                            <Checkbox
+                                                                                label="Saturday"
+                                                                                checked={dayOfWeekSelection[index].Saturday}
+                                                                                onChange={() => handleDayCheckboxChange('Saturday', index)}
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                    {item.name === 'date' && (
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                                                             <TextField
-                                                                                value={item.tag}
-                                                                                onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}
-                                                                                placeholder='tag1,tag2,tag3'
+                                                                                value={item.value}
+                                                                                onChange={(value) => handleItemDateChange(index, 'value', value)}
+                                                                                type="date"
+                                                                                error={errors[`value${index}`]}
                                                                             />
-                                                                        )}
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                            {(item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2') && (
+                                                                        </div>
+                                                                    )}
+                                                                    {item.name === 'timeIn' && (
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                                            <TextField
+                                                                                value={item.value}
+                                                                                onChange={(value) => handleItemDateChange(index, 'value', value)}
+                                                                                type="time"
+                                                                                error={errors[`value${index}`]}
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                    {item.name === 'type2' && (
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                                            <Checkbox
+                                                                                label="Local Delivery"
+                                                                                checked={deliveryType[index].local}
+                                                                                onChange={() => handleCheckboxChange('local', index)}
+                                                                            />
+                                                                            <Checkbox
+                                                                                label="Store Pickup"
+                                                                                checked={deliveryType[index].Store}
+                                                                                onChange={() => handleCheckboxChange('Store', index)}
+                                                                            />
+                                                                            <Checkbox
+                                                                                label="Shipping"
+                                                                                checked={deliveryType[index].Shipping}
+                                                                                onChange={() => handleCheckboxChange('Shipping', index)}
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                    {items.length > 1 && (
+                                                                        <Button
+                                                                            icon={DeleteIcon}
+                                                                            variant='primary'
+                                                                            tone="critical"
+                                                                            accessibilityLabel="Delete item"
+                                                                            onClick={() => handleDeleteItem(index)}
+                                                                        />
+                                                                    )}
+                                                                </div>
                                                                 <div style={{
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     gap: '3%',
                                                                     marginBottom: "2%",
                                                                 }}>
-                                                                    <Select
-                                                                        key={index}
-                                                                        options={per_product}
-                                                                        onChange={handleConditionsChange(index, 'per_product')}
-                                                                        value={item.per_product}
-                                                                    />
-                                                                    {(item.per_product === 'anyTag' || item.per_product === 'allTag') && (
-                                                                        <TextField
-                                                                            value={item.tag}
-                                                                            onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}
-                                                                            placeholder='tag1,tag2,tag3'
-                                                                        />
+                                                                    {item.name === 'lineitem' && (
+                                                                        <>
+                                                                            <Select
+                                                                                options={lineItem}
+                                                                                onChange={handleConditionsChange(index, 'lineItem')}
+                                                                                value={item.lineItem}
+                                                                            />
+                                                                            {item.lineItem === 'anyTag' && (
+                                                                                <TextField
+                                                                                    value={item.tag}
+                                                                                    onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}
+                                                                                    placeholder='tag1,tag2,tag3'
+                                                                                />
+                                                                            )}
+                                                                        </>
                                                                     )}
                                                                 </div>
-                                                            )}
-                                                            {(item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties') && (
-                                                                <div style={{ marginBottom: "2%", width: "80%" }}>
-                                                                    <Select
-                                                                        key={index}
-                                                                        options={per_product2}
-                                                                        onChange={handleConditionsChange(index, 'per_product')}
-                                                                        value={item.per_product}
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </Grid.Cell>
-                                                </Grid>
-                                                <Divider borderColor="border" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div style={{ marginTop: "2%" }}>
-                                        <Button
-                                            icon={PlusIcon}
-                                            variant='primary'
-                                            onClick={handleAddItem}
-                                        >
-                                            Add Conditions
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-                        </LegacyCard>
-                    </Grid.Cell>
-                </Grid>
-            </div>
-
-            <Divider borderColor="border" />
-            <div style={{ marginTop: "3%", marginBottom: "3%", }}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <Text variant="headingMd" as="h6">
-                            Set State/ZipCode
-                        </Text>
-                        <div style={{ marginTop: '4%' }}>
-                            <List>
-                                <List.Item>
-                                    No need to add All ZipCode if you select states.
-                                </List.Item>
-                                <List.Item>
-                                    If you want to exclude the specific Zipcode from that state then you can use exclude ZipCode on Allow Zipcode settings.
-                                </List.Item>
-                                <List.Item>
-                                    To format zipcodes/pincodes correctly and remove unnecessary blank space,  <a href="https://sbz.cirkleinc.com/zipcode-formatter.php" target="_blank" style={{ textDecoration: "none", color: "#1e87f0" }}>Click here.</a>
-                                </List.Item>
-                            </List>
-                        </div>
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-                        <LegacyCard sectioned>
-                            <div>
-                                {state.length > 0 && (
-                                    <>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '2%', paddingTop: '2%' }}>
-                                            <Text variant="headingXs" as="h6">
-                                                State Selection
-                                            </Text>
-                                            <RadioButton
-                                                label="Custom"
-                                                checked={checkstate.selectedStateCondition === 'Custom'}
-                                                id="Custom"
-                                                name="stateSelection"
-                                                onChange={() => handlecheckedChange('selectedStateCondition', 'Custom')}
-                                            />
-                                            <RadioButton
-                                                label="All"
-                                                checked={checkstate.selectedStateCondition === 'All'}
-                                                id="All"
-                                                name="stateSelection"
-                                                onChange={() => handlecheckedChange('selectedStateCondition', 'All')}
-                                            />
-                                        </div>
-                                        {checkstate.selectedStateCondition !== 'All' && (
-                                            <div style={{ marginTop: '2%', marginBottom: '2%' }}>
-                                                <Autocomplete
-                                                    allowMultiple
-                                                    options={options}
-                                                    selected={selectedOptions}
-                                                    textField={textField}
-                                                    onSelect={setSelectedOptions}
-                                                    listTitle="Suggested Countries"
-                                                />
-                                            </div>
-                                        )}
-                                        <Divider borderColor="border" />
-                                    </>
-                                )}
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%", }}>
-                                <Text variant="headingXs" as="h6">
-                                    ZipCode
-                                </Text>
-                                <RadioButton
-                                    label="Custom"
-                                    checked={checkstate.selectedZipCondition === 'Custom'}
-                                    id="customeZip"
-                                    name="zipcodeSelection"
-                                    onChange={() => handlecheckedChange('selectedZipCondition', 'Custom')}
-                                />
-                                <RadioButton
-                                    label="All"
-                                    checked={checkstate.selectedZipCondition === 'All'}
-                                    id="AllZip"
-                                    name="zipcodeSelection"
-                                    onChange={() => handlecheckedChange('selectedZipCondition', 'All')}
-                                />
-                            </div>
-                            {checkstate.selectedZipCondition !== 'All' && (
-                                <div style={{ marginTop: "2%" }}>
-                                    <TextField
-                                        placeholder='364001,364002,364003'
-                                        value={zipcodeValue}
-                                        onChange={(newValue) => handleChange(newValue)}
-                                        multiline={4}
-                                        autoComplete="off"
-                                        error={errors.zipcodeValue}
-                                    />
-
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%" }}>
-                                        <RadioButton
-                                            label="Include ZipCodes"
-                                            checked={checkstate.selectedZipCode === 'Include'}
-                                            id="Include"
-                                            name="isInclude"
-                                            onChange={() => handlecheckedChange('selectedZipCode', 'Include')}
-                                        />
-                                        <RadioButton
-                                            label="Exclude ZipCodes"
-                                            checked={checkstate.selectedZipCode === 'exclude'}
-                                            id="exclude"
-                                            name="isexcludea"
-                                            onChange={() => handlecheckedChange('selectedZipCode', 'exclude')}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </LegacyCard>
-                    </Grid.Cell>
-                </Grid>
-            </div>
-
-            <Divider borderColor="border" />
-            <div style={{ marginTop: "3%", marginBottom: "3%", }}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <Text variant="headingMd" as="h6">
-                            Rate Based On/Surcharge
-                        </Text>
-                        <div style={{ marginTop: "4%" }}>
-                            <List type='bullet'>
-                                <List.Item>
-                                    Specify rate calculation based on Order Weight, Order Quantity with surcharge value.
-                                </List.Item>
-                                <List.Item>
-                                    Surcharge calculation will add on Base Price which is available on top of the page.
-                                </List.Item>
-                            </List>
-                        </div>
-
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-                        <LegacyCard sectioned>
-                            <Checkbox
-                                label="Based On Cart"
-                                checked={checkedState.checked1}
-                                onChange={() => handleCheckChange('checked1')}
-                            />
-                            {checkedState.checked1 && (
-                                <div style={{ marginTop: "2%" }}>
-                                    <Divider borderColor="border" />
-                                    <div style={{ marginBottom: "2%" }}></div>
-                                    <Text variant="headingSm" as="h6">
-                                        By Cart Surcharge
-                                    </Text>
-                                    <div style={{ display: 'flex', marginTop: "1%" }}>
-                                        <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
-                                            <RadioButton
-                                                label="Item Weight"
-                                                checked={checkstate.selectedByCart === 'weight'}
-                                                id="weight"
-                                                name="weight"
-                                                onChange={() => handlecheckedChange('selectedByCart', 'weight')}
-                                            />
-                                        </div>
-                                        <div style={{ flex: 1, width: "50%" }}>
-                                            <RadioButton
-                                                label="Item Qty"
-                                                checked={checkstate.selectedByCart === 'Qty'}
-                                                id="Qty"
-                                                name="Qty"
-                                                onChange={() => handlecheckedChange('selectedByCart', 'Qty')}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', }}>
-                                        <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
-                                            <RadioButton
-                                                label="Cart Total Percentage"
-                                                checked={checkstate.selectedByCart === 'Percentage'}
-                                                id="Percentage"
-                                                name="Percentage"
-                                                onChange={() => handlecheckedChange('selectedByCart', 'Percentage')}
-                                            />
-                                        </div>
-                                        <div style={{ flex: 1, width: "50%" }}>
-                                            <RadioButton
-                                                label="Based On Distance"
-                                                checked={checkstate.selectedByCart === 'Distance'}
-                                                id="Distance"
-                                                name="Distance"
-                                                onChange={() => handlecheckedChange('selectedByCart', 'Distance')}
-                                            />
-                                        </div>
-                                    </div>
-                                    {checkstate.selectedByCart === 'Distance' && (
-                                        <div>
-                                            <p style={{ color: 'gray', fontSize: "13px" }}> Note: Please make sure Origin and Destination country must be same to use distance base shipping rate.</p>
-                                        </div>
-                                    )}
-                                    <div style={{ marginBottom: "3%" }}></div>
-                                    <Text variant="headingSm" as="h6">
-                                        By Product Surcharge
-                                    </Text>
-
-                                    <div style={{ display: 'flex', marginTop: "1%" }}>
-                                        <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
-                                            <RadioButton
-                                                label="Product"
-                                                checked={checkstate.selectedByCart === 'Product'}
-                                                id="Product"
-                                                name="Product"
-                                                onChange={() => handlecheckedChange('selectedByCart', 'Product')}
-                                            />
-                                        </div>
-                                        <div style={{ flex: 1, width: "50%" }}>
-                                            <RadioButton
-                                                label="Vendor"
-                                                checked={checkstate.selectedByCart === 'Vendor'}
-                                                id="Vendor"
-                                                name="Vendor"
-                                                onChange={() => handlecheckedChange('selectedByCart', 'Vendor')}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', }}>
-                                        <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
-                                            <RadioButton
-                                                label="Variant"
-                                                checked={checkstate.selectedByCart === 'Variant'}
-                                                id="Variant"
-                                                name="Variant"
-                                                onChange={() => handlecheckedChange('selectedByCart', 'Variant')}
-                                            />
-                                        </div>
-                                        <div style={{ flex: 1, width: "50%" }}>
-                                            <RadioButton
-                                                label="Product Tag"
-                                                checked={checkstate.selectedByCart === 'Tag'}
-                                                id="Tag"
-                                                name="Tag"
-                                                onChange={() => handlecheckedChange('selectedByCart', 'Tag')}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', }}>
-                                        <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
-                                            <RadioButton
-                                                label="Product Type"
-                                                checked={checkstate.selectedByCart === 'Type'}
-                                                id="Type"
-                                                name="Type"
-                                                onChange={() => handlecheckedChange('selectedByCart', 'Type')}
-                                            />
-                                        </div>
-                                        <div style={{ flex: 1, width: "50%" }}>
-                                            <RadioButton
-                                                label="Product SKU"
-                                                checked={checkstate.selectedByCart === 'SKU'}
-                                                id="SKU"
-                                                name="SKU"
-                                                onChange={() => handlecheckedChange('selectedByCart', 'SKU')}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', }}>
-                                        <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
-                                            <RadioButton
-                                                label="Product Collection Id"
-                                                checked={checkstate.selectedByCart === 'Collection'}
-                                                id="Collection"
-                                                name="Collection"
-                                                onChange={() => handlecheckedChange('selectedByCart', 'Collection')}
-                                            />
-                                        </div>
-                                        <div style={{ flex: 1, width: "50%" }}>
-                                            <RadioButton
-                                                label="Variant Metafields"
-                                                checked={checkstate.selectedByCart === 'Metafields'}
-                                                id="Metafields"
-                                                name="Metafields"
-                                                onChange={() => handlecheckedChange('selectedByCart', 'Metafields')}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div style={{ marginBottom: "2%" }}></div>
-                                    <Divider borderColor="border-inverse" />
-                                    <div style={{ marginTop: "3%" }}></div>
-                                    {(checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') && (
-                                        <div>
-                                            <FormLayout>
-                                                <FormLayout.Group>
-                                                    <TextField
-                                                        type="text"
-                                                        label={
-                                                            checkstate.selectedByCart === 'weight' ? "Charge Per Weight" :
-                                                                checkstate.selectedByCart === 'Qty' ? "Charge Per Qty" :
-                                                                    "Charge Per Distance"
-                                                        }
-                                                        autoComplete="off"
-                                                        prefix={shop_currency}
-                                                        placeholder='0.00'
-                                                        value={rate_based_on_surcharge.charge_per_wight}
-                                                        onChange={handleRateFormChange('charge_per_wight')}
-                                                        error={errors.charge_per_wight}
-                                                    />
-                                                    <TextField
-                                                        type="number"
-                                                        label={
-                                                            checkstate.selectedByCart === 'weight' ? "Unit For Weight" :
-                                                                checkstate.selectedByCart === 'Qty' ? "Unit For Qty" :
-                                                                    "Unit For Distance"
-                                                        }
-                                                        autoComplete="off"
-                                                        prefix={
-                                                            checkstate.selectedByCart === 'weight' ? "kg" :
-                                                                checkstate.selectedByCart === 'Qty' ? "Qty" :
-                                                                    "km"
-                                                        }
-                                                        placeholder={
-                                                            checkstate.selectedByCart === 'weight' ? "5.00" :
-                                                                checkstate.selectedByCart === 'Qty' ? "0" :
-                                                                    "0"
-                                                        }
-                                                        value={rate_based_on_surcharge.unit_for}
-                                                        onChange={handleRateFormChange('unit_for')}
-                                                        error={errors.unit_for}
-                                                    />
-                                                </FormLayout.Group>
-                                            </FormLayout>
-                                            <div style={{ marginTop: "4%" }}></div>
-                                            <Text variant="headingSm" as="h6">
-                                                By Product Surcharge:
-                                            </Text>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10%', paddingTop: '1%', marginBottom: "4%" }}>
-                                                <RadioButton
-                                                    label="Divided by each unit"
-                                                    checked={checkstate.selectedByAmount === 'unit'}
-                                                    id="unit"
-                                                    name="unit"
-                                                    onChange={() => handlecheckedChange('selectedByAmount', 'unit')}
-                                                />
-                                                <RadioButton
-                                                    label="Surcharge add by every more then unit"
-                                                    checked={checkstate.selectedByAmount === 'units'}
-                                                    id="units"
-                                                    name="units"
-                                                    onChange={() => handlecheckedChange('selectedByAmount', 'units')}
-                                                />
-                                            </div>
-                                            <FormLayout>
-                                                <FormLayout.Group>
-                                                    <TextField
-                                                        type="text"
-                                                        label="Minimum Charge Price"
-                                                        autoComplete="off"
-                                                        prefix={shop_currency}
-                                                        placeholder='0'
-                                                        value={rate_based_on_surcharge.min_charge_price}
-                                                        onChange={handleRateFormChange('min_charge_price')}
-                                                    />
-                                                    <TextField
-                                                        type="number"
-                                                        label="Maximum Charge Price"
-                                                        autoComplete="off"
-                                                        prefix={shop_currency}
-                                                        placeholder='0'
-                                                        value={rate_based_on_surcharge.max_charge_price}
-                                                        onChange={handleRateFormChange('max_charge_price')}
-                                                    />
-                                                </FormLayout.Group>
-                                            </FormLayout>
-                                        </div>
-                                    )}
-                                    {checkstate.selectedByCart === 'Percentage' && (
-                                        <div >
-                                            <FormLayout>
-                                                <TextField
-                                                    type="text"
-                                                    label="Cart Total Percentage"
-                                                    autoComplete="off"
-                                                    prefix="%"
-                                                    placeholder='0.00'
-                                                    value={rate_based_on_surcharge.cart_total_percentage}
-                                                    onChange={handleRateFormChange('cart_total_percentage')}
-                                                    error={errors.cart_total_percentage}
-                                                />
-                                                <FormLayout.Group>
-                                                    <TextField
-                                                        type="text"
-                                                        label="Minimum Charge Price"
-                                                        autoComplete="off"
-                                                        prefix={shop_currency}
-                                                        placeholder='0'
-                                                        value={rate_based_on_surcharge.min_charge_price}
-                                                        onChange={handleRateFormChange('min_charge_price')}
-                                                    />
-                                                    <TextField
-                                                        type="number"
-                                                        label="Maximum Charge Price"
-                                                        autoComplete="off"
-                                                        prefix={shop_currency}
-                                                        placeholder='0'
-                                                        value={rate_based_on_surcharge.max_charge_price}
-                                                        onChange={handleRateFormChange('max_charge_price')}
-                                                    />
-                                                </FormLayout.Group>
-                                            </FormLayout>
-                                        </div>
-                                    )}
-                                    {checkstate.selectedByCart === 'Variant' && (
-                                        <div>
-                                            <Text variant="headingMd" as="h6">
-                                                You can select variant for this rate after save
-                                            </Text>
-                                            <div style={{ marginTop: "3%", marginBottom: "5%" }}>
-                                                <Button variant="primary" >Click Here</Button>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {checkstate.selectedByCart === 'Product' && (
-                                        <div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5%' }}>
-                                                <Text variant="headingSm" as="h6">
-                                                    Multiply line item QTY price:
-                                                </Text>
-                                                <RadioButton
-                                                    label="Yes"
-                                                    checked={checkstate.selectedMultiplyLine === 'Yes'}
-                                                    id="Yes"
-                                                    name="Yes"
-                                                    onChange={() => handlecheckedChange('selectedMultiplyLine', 'Yes')}
-                                                />
-                                                <RadioButton
-                                                    label="No"
-                                                    checked={checkstate.selectedMultiplyLine === 'no'}
-                                                    id="no"
-                                                    name="SKU"
-                                                    onChange={() => handlecheckedChange('selectedMultiplyLine', 'no')}
-                                                />
-                                                <RadioButton
-                                                    label="Percentage"
-                                                    checked={checkstate.selectedMultiplyLine === 'per'}
-                                                    id="pr"
-                                                    name="pr"
-                                                    onChange={() => handlecheckedChange('selectedMultiplyLine', 'per')}
-                                                />
-                                            </div>
-                                            {checkstate.selectedMultiplyLine !== 'no' && (
-                                                <div style={{ marginTop: "4%" }}>
-                                                    <Divider borderColor="border" />
-                                                    {checkstate.selectedMultiplyLine === 'per' && (
-                                                        <div style={{ marginTop: "2%" }}>
-                                                            <TextField
-                                                                type="text"
-                                                                label="Cart Total Percentage"
-                                                                autoComplete="off"
-                                                                placeholder='0.00'
-                                                                prefix='%'
-                                                                value={rate_based_on_surcharge.cart_total_percentage}
-                                                                onChange={handleRateFormChange('cart_total_percentage')}
-                                                            />
-                                                            <div style={{ marginTop: "2%", marginBottom: "3%" }}>
-                                                                <FormLayout>
-                                                                    <FormLayout.Group>
-                                                                        <TextField
-                                                                            type="text"
-                                                                            label="Minimum Charge Price"
-                                                                            autoComplete="off"
-                                                                            placeholder='0'
-                                                                            value={rate_based_on_surcharge.min_charge_price}
-                                                                            onChange={handleRateFormChange('min_charge_price')}
+                                                                {(item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2') && (
+                                                                    <div style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '3%',
+                                                                        marginBottom: "2%",
+                                                                    }}>
+                                                                        <Select
+                                                                            key={index}
+                                                                            options={per_product}
+                                                                            onChange={handleConditionsChange(index, 'per_product')}
+                                                                            value={item.per_product}
                                                                         />
-                                                                        <TextField
-                                                                            type="text"
-                                                                            label="Maximum Charge Price"
-                                                                            autoComplete="off"
-                                                                            placeholder='0'
-                                                                            value={rate_based_on_surcharge.max_charge_price}
-                                                                            onChange={handleRateFormChange('max_charge_price')}
-                                                                        />
-                                                                    </FormLayout.Group>
-                                                                </FormLayout>
-                                                            </div>
-                                                            <Divider borderColor="border" />
-                                                        </div>
-                                                    )}
-                                                    <div style={{ marginTop: "2%" }}>
-                                                        <FormLayout>
-                                                            <FormLayout.Group>
-                                                                <TextField
-                                                                    type="text"
-                                                                    label="Full Product Title"
-                                                                    autoComplete="off"
-                                                                    placeholder='Enter Full Product Title'
-                                                                    value={textFields.fullProductTitle}
-                                                                    onChange={handleTextFieldChange('fullProductTitle')}
-                                                                />
-                                                                <TextField
-                                                                    type="text"
-                                                                    label="Enter Collection ID"
-                                                                    autoComplete="off"
-                                                                    placeholder='Enter Collection ID'
-                                                                    value={textFields.collectionId}
-                                                                    onChange={handleTextFieldChange('collectionId')}
-                                                                />
-                                                            </FormLayout.Group>
-                                                        </FormLayout>
-                                                    </div>
-                                                    <div style={{ marginTop: "2%" }}>
-                                                        <FormLayout>
-                                                            <FormLayout.Group>
-                                                                <TextField
-                                                                    type="text"
-                                                                    label="Full Product Type"
-                                                                    autoComplete="off"
-                                                                    placeholder='Enter Full Product Type'
-                                                                    value={textFields.productType}
-                                                                    onChange={handleTextFieldChange('productType')}
-                                                                />
-                                                                <TextField
-                                                                    type="text"
-                                                                    label="Full Product Vendor"
-                                                                    autoComplete="off"
-                                                                    placeholder='Enter Full Product Vendor'
-                                                                    value={textFields.productVendor}
-                                                                    onChange={handleTextFieldChange('productVendor')}
-                                                                />
-                                                            </FormLayout.Group>
-                                                        </FormLayout>
-                                                    </div>
-                                                    <p style={{ marginTop: "2%" }}>Note: Please enter the exact term for product title, collection id, product type, and product vendor that needs to be searched.
-                                                    </p>
-                                                    <div style={{ marginTop: "2%", width: '20%' }} >
-                                                        <Button variant="primary" onClick={handleSearchClick} >Search Product</Button></div>
-                                                    <div style={{ marginTop: "4%" }}>
-                                                        {filteredProducts.length > 0 && (
-                                                            <div>
-                                                                <div>
-                                                                    <TextField
-                                                                        placeholder='search'
-                                                                        onChange={handlesearchChange}
-                                                                        value={value}
-                                                                        type="text"
-                                                                        prefix={<Icon source={SearchIcon} color="inkLighter" />}
-                                                                        autoComplete="off"
-                                                                        clearButton
-                                                                        onClearButtonClick={handleClearButtonClick}
-                                                                    />
-                                                                </div>
-                                                                <div style={{ marginTop: "4%" }}>
-                                                                    <IndexTable
-                                                                        resourceName={resourceName}
-                                                                        itemCount={products.length}
-
-                                                                        headings={[
-                                                                            { title: ` ${selectedCount} Selected` },
-                                                                            { title: 'Image' },
-                                                                            { title: 'Title' },
-                                                                            { title: 'Price' },
-                                                                            { title: 'Rate Price' },
-                                                                        ]}
-                                                                        selectable={false}
-                                                                        pagination={{
-                                                                            hasNext: pageInfo.hasNextPage,
-                                                                            onNext: handleNextPage,
-                                                                            hasPrevious: pageInfo.hasPreviousPage,
-                                                                            onPrevious: handlePreviousPage,
-                                                                        }}
-                                                                    >
-                                                                        {loadingTable ? (
-                                                                            <IndexTable.Row>
-                                                                                <IndexTable.Cell colSpan={5}>
-                                                                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-                                                                                        <Spinner accessibilityLabel="Loading products" size="small" />
-                                                                                    </div>
-                                                                                </IndexTable.Cell>
-                                                                            </IndexTable.Row>
-                                                                        ) : (
-                                                                            rowMarkup
+                                                                        {(item.per_product === 'anyTag' || item.per_product === 'allTag') && (
+                                                                            <TextField
+                                                                                value={item.tag}
+                                                                                onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}
+                                                                                placeholder='tag1,tag2,tag3'
+                                                                            />
                                                                         )}
-
-                                                                    </IndexTable>
-                                                                </div>
+                                                                    </div>
+                                                                )}
+                                                                {(item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties') && (
+                                                                    <div style={{ marginBottom: "2%", width: "80%" }}>
+                                                                        <Select
+                                                                            key={index}
+                                                                            options={per_product2}
+                                                                            onChange={handleConditionsChange(index, 'per_product')}
+                                                                            value={item.per_product}
+                                                                        />
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    {(checkstate.selectedByCart === 'Vendor' || checkstate.selectedByCart === 'Tag' || checkstate.selectedByCart === 'Type' || checkstate.selectedByCart === 'SKU' || checkstate.selectedByCart === 'Collection' || checkstate.selectedByCart === 'Metafields') && (
-                                        <div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5%' }}>
-                                                <Text variant="headingSm" as="h6">
-                                                    Multiply line item QTY price:
-                                                </Text>
-                                                <RadioButton
-                                                    label="Yes"
-                                                    checked={checkstate.selectedMultiplyLine === 'Yes'}
-                                                    id="Yes"
-                                                    name="Yes"
-                                                    onChange={() => handlecheckedChange('selectedMultiplyLine', 'Yes')}
-                                                />
-                                                <RadioButton
-                                                    label="No"
-                                                    checked={checkstate.selectedMultiplyLine === 'no'}
-                                                    id="no"
-                                                    name="SKU"
-                                                    onChange={() => handlecheckedChange('selectedMultiplyLine', 'no')}
-                                                />
-                                                <RadioButton
-                                                    label="Percentage"
-                                                    checked={checkstate.selectedMultiplyLine === 'per'}
-                                                    id="pr"
-                                                    name="pr"
-                                                    onChange={() => handlecheckedChange('selectedMultiplyLine', 'per')}
-                                                />
-                                            </div>
-                                            {checkstate.selectedMultiplyLine !== 'no' && (
-                                                <div style={{ marginTop: "4%" }}>
+                                                        </Grid.Cell>
+                                                    </Grid>
                                                     <Divider borderColor="border" />
-                                                    {checkstate.selectedMultiplyLine === 'per' && (
-                                                        <div style={{ marginTop: "2%" }}>
-                                                            <TextField
-                                                                type="text"
-                                                                label="Cart Total Percentage"
-                                                                autoComplete="off"
-                                                                placeholder='0.00'
-                                                                prefix='%'
-                                                                value={rate_based_on_surcharge.cart_total_percentage}
-                                                                onChange={handleRateFormChange('cart_total_percentage')}
-                                                            />
-                                                            <div style={{ marginTop: "2%", marginBottom: "3%" }}>
-                                                                <FormLayout>
-                                                                    <FormLayout.Group>
-                                                                        <TextField
-                                                                            type="text"
-                                                                            label="Minimum Charge Price"
-                                                                            autoComplete="off"
-                                                                            placeholder='0'
-                                                                            value={rate_based_on_surcharge.min_charge_price}
-                                                                            onChange={handleRateFormChange('min_charge_price')}
-                                                                        />
-                                                                        <TextField
-                                                                            type="text"
-                                                                            label="Maximum Charge Price"
-                                                                            autoComplete="off"
-                                                                            placeholder='0'
-                                                                            value={rate_based_on_surcharge.max_charge_price}
-                                                                            onChange={handleRateFormChange('max_charge_price')}
-                                                                        />
-                                                                    </FormLayout.Group>
-                                                                </FormLayout>
-                                                            </div>
-                                                            <Divider borderColor="border" />
-                                                        </div>
-                                                    )}
-                                                    <div style={{ marginTop: "2%" }}>
-                                                        <TextField
-                                                            type="text"
-                                                            label={
-                                                                checkstate.selectedByCart === 'Vendor' ? "Vendor Name " :
-                                                                    checkstate.selectedByCart === 'Tag' ? "Product Tag" :
-                                                                        checkstate.selectedByCart === 'Type' ? "Product Type" :
-                                                                            checkstate.selectedByCart === 'SKU' ? 'Product SKU' :
-                                                                                checkstate.selectedByCart === 'Collection' ? 'Product Collection ID' :
-                                                                                    "Variant Metafields"
-                                                            }
-
-                                                            autoComplete="off"
-                                                            placeholder=
-                                                            {
-                                                                `Enter multiple ${checkstate.selectedByCart === 'Vendor' ? 'Vendor Names' : checkstate.selectedByCart === 'Tag' ? 'Product Tags' :
-                                                                    checkstate.selectedByCart === 'Type' ? 'Product Type' : checkstate.selectedByCart === 'SKU' ? 'Product SKU' :
-                                                                        checkstate.selectedByCart === 'Collection' ? 'Product Collection ID' : 'Variant Metafields'
-                                                                }, separated by commas(,).`
-                                                            }
-                                                            multiline={4}
-                                                            monospaced
-                                                            helpText={
-                                                                `Note: Please enter the exact term of multiple ${checkstate.selectedByCart === 'Vendor' ? 'Vendor Names' : checkstate.selectedByCart === 'Tag' ? 'Product Tags' :
-                                                                    checkstate.selectedByCart === 'Type' ? 'Product Type' : checkstate.selectedByCart === 'SKU' ? 'Product SKU' :
-                                                                        checkstate.selectedByCart === 'Collection' ? 'Product Collection Id' : 'Variant Metafields'
-                                                                } with comma separator(,).`
-                                                            }
-
-                                                            value={rate_based_on_surcharge.descriptions}
-                                                            onChange={handleRateFormChange('descriptions')}
-                                                        />
-                                                    </div>
                                                 </div>
-                                            )}
+                                            ))}
                                         </div>
-                                    )}
-                                </div>
-                            )}
-                        </LegacyCard>
-                    </Grid.Cell>
-                </Grid>
-            </div>
-
-            <Divider borderColor="border" />
-            <div style={{ marginTop: "3%", marginBottom: "3%" }}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <Text variant="headingMd" as="h6">
-                            Rate Tier
-                        </Text>
-                        <div style={{ marginTop: '4%' }}>
-                            <List type='bullet'>
-                                <List.Item>Set different Base Rate Price according to order weight, total or qty.</List.Item>
-                                <List.Item>Order price will count without applying the discount code.</List.Item>
-                                <List.Item>When a tier is not found then the system will select the Base Rate which is set on top of the page.</List.Item>
-                            </List>
-                        </div>
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-                        <LegacyCard sectioned>
-                            <div>
-                                <Select
-                                    options={tierOptions}
-                                    onChange={handleTierSelectChange}
-                                    value={selectedTierType}
-                                    helpText="Note: Please make sure Origin and Destination country must be same to use distance base shipping rate."
-                                />
-                                {selectedTierType !== 'selected' && (
-                                    <div>
-                                        <div style={{ marginTop: '2%' }}><Divider borderColor="border" />
-                                        </div>
-                                        {tiers.map((tier, index) => (
-                                            <div style={{ marginTop: '2%' }} key={index}>
-                                                <div style={{ marginBottom: "1%", marginLeft: "85%" }}>
-                                                    <p style={{ color: "#ef5350", fontWeight: "bold", cursor: "pointer" }} onClick={() => removeTier(index)}>
-                                                        Remove Tier
-                                                    </p>
-                                                </div>
-                                                <FormLayout>
-                                                    <FormLayout.Group condensed>
-                                                        <TextField
-                                                            label={`Minimum ${selectedTierType === 'order_weight' ? 'Weight' : selectedTierType === 'order_quantity' ? 'Quantity' : selectedTierType === 'order_distance' ? 'Distance' : 'Price'}`}
-                                                            value={tier.minWeight}
-                                                            type='number'
-                                                            onChange={(value) => handleInputChange(index, 'minWeight', value)}
-                                                            autoComplete="off"
-                                                            prefix={shop_currency}
-                                                            placeholder="0.00"
-                                                            error={errors[`minWeight${index}`]}
-                                                        />
-                                                        <TextField
-                                                            label={`Maximum ${selectedTierType === 'order_weight' ? 'Weight' : selectedTierType === 'order_quantity' ? 'Quantity' : selectedTierType === 'order_distance' ? 'Distance' : 'Price'}`}
-                                                            value={tier.maxWeight}
-                                                            type='number'
-                                                            onChange={(value) => handleInputChange(index, 'maxWeight', value)}
-                                                            autoComplete="off"
-                                                            prefix={shop_currency}
-                                                            placeholder="0.00"
-                                                            error={errors[`maxWeight${index}`]}
-                                                        />
-                                                        <TextField
-                                                            label='Base Price'
-                                                            type='number'
-                                                            value={tier.basePrice}
-                                                            onChange={(value) => handleInputChange(index, 'basePrice', value)}
-                                                            autoComplete="off"
-                                                            prefix={shop_currency}
-                                                            placeholder="0.00"
-                                                            error={errors[`basePrice${index}`]}
-                                                        />
-                                                    </FormLayout.Group>
-                                                </FormLayout>
-                                                {selectedTierType === 'order_price' && (
-                                                    <div style={{ marginTop: '3%' }}>
-                                                        <FormLayout>
-                                                            <FormLayout.Group condensed>
-                                                                <div style={{ display: 'flex', alignItems: 'center' }}>
-                                                                    <TextField
-                                                                        label='Per Item'
-                                                                        value={tier.perItem}
-                                                                        onChange={(value) => handleInputChange(index, 'perItem', value)}
-                                                                        autoComplete="off"
-                                                                        prefix={shop_currency}
-                                                                        placeholder="0.00"
-                                                                    />
-                                                                    <div style={{ padding: '20px 3px 0 3px', fontSize: '18px' }}>+</div>
-                                                                    <TextField
-                                                                        label='Percent Charge'
-                                                                        value={tier.percentCharge}
-                                                                        onChange={(value) => handleInputChange(index, 'percentCharge', value)}
-                                                                        autoComplete="off"
-                                                                        prefix="%"
-                                                                        placeholder="0.00"
-                                                                    />
-                                                                    <div style={{ padding: '20px 3px 0 3px', fontSize: '18px' }}>+</div>
-                                                                    <TextField
-                                                                        label={`Per ${shop_weight_unit}`}
-                                                                        value={tier.perkg}
-                                                                        onChange={(value) => handleInputChange(index, 'perkg', value)}
-                                                                        autoComplete="off"
-                                                                        prefix={shop_currency}
-                                                                        placeholder="0.00"
-                                                                    />
-                                                                </div>
-                                                            </FormLayout.Group>
-                                                        </FormLayout>
-                                                    </div>
-                                                )}
-                                                <div style={{ marginTop: "3%" }}> <Divider borderColor="border" /></div>
-                                            </div>
-                                        ))}
-                                        <div style={{ marginTop: '2%' }}>
+                                        <div style={{ marginTop: "2%" }}>
                                             <Button
                                                 icon={PlusIcon}
-                                                onClick={addTier}
                                                 variant='primary'
+                                                onClick={handleAddItem}
                                             >
-                                                Add Tier
+                                                Add Conditions
                                             </Button>
                                         </div>
                                     </div>
                                 )}
+                            </LegacyCard>
+                        </Grid.Cell>
+                    </Grid>
+                </div>
 
+                <Divider borderColor="border" />
+                <div style={{ marginTop: "3%", marginBottom: "3%", }}>
+                    <Grid>
+                        <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                            <Text variant="headingMd" as="h6">
+                                Set State/ZipCode
+                            </Text>
+                            <div style={{ marginTop: '4%' }}>
+                                <List>
+                                    <List.Item>
+                                        No need to add All ZipCode if you select states.
+                                    </List.Item>
+                                    <List.Item>
+                                        If you want to exclude the specific Zipcode from that state then you can use exclude ZipCode on Allow Zipcode settings.
+                                    </List.Item>
+                                    <List.Item>
+                                        To format zipcodes/pincodes correctly and remove unnecessary blank space,  <a href="https://sbz.cirkleinc.com/zipcode-formatter.php" target="_blank" style={{ textDecoration: "none", color: "#1e87f0" }}>Click here.</a>
+                                    </List.Item>
+                                </List>
                             </div>
-                        </LegacyCard>
-                    </Grid.Cell>
-                </Grid>
-            </div>
-
-            <Divider borderColor="border" />
-            <div style={{ marginTop: "3%", marginBottom: "3%" }}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <Text variant="headingMd" as="h6">
-                            Exclude rate for products
-                        </Text>
-                        <div style={{ marginTop: "4%" }}>
-                            <List type="bullet">
-                                <List.Item>
-                                    If this rate does not set with Set Rate Based On Cart as "Product" then this rate can be exclude for selected products.
-                                </List.Item>
-                                <List.Item>
-                                    If any of these products are in the cart, then this rate will not be available at checkout.
-                                </List.Item>
-                            </List>
-                        </div>
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-                        <LegacyCard sectioned>
-                            <Select
-                                label='Set Exclude Products'
-                                options={rateOptions}
-                                onChange={handleRateSelectChange}
-                                value={selectedRate}
-                            />
-                            {selectedRate === 'custome_selection' && (
-                                <div >
-                                    <div style={{ marginTop: "3%" }}></div>
-                                    <Divider borderColor="border" />
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: '2%', marginBottom: "2%" }}>
-                                        <RadioButton
-                                            label="Remove rate"
-                                            checked={checkstate.exclude_products_radio === 0}
-                                            id="remove_rate"
-                                            name="remove_rate"
-                                            onChange={() => handlecheckedChange('exclude_products_radio', 0)}
-                                        />
-                                        <RadioButton
-                                            label="Reduce only product price, weight and quantity"
-                                            checked={checkstate.exclude_products_radio === 1}
-                                            id="reduce_rate"
-                                            name="reduce_rate"
-                                            onChange={() => handlecheckedChange('exclude_products_radio', 1)}
-                                        />
-                                    </div>
-                                    <Divider borderColor="border" />
-                                    <div style={{ marginTop: "2%" }}>
-                                        <FormLayout>
-                                            <FormLayout.Group>
-                                                <TextField
-                                                    type="text"
-                                                    label="Full Product Title"
-                                                    autoComplete="off"
-                                                    placeholder='Enter Full Product Title'
-                                                    value={textFields.fullProductTitle}
-                                                    onChange={handleTextFieldChange('fullProductTitle')}
-                                                />
-                                                <TextField
-                                                    type="text"
-                                                    label="Enter Collection ID"
-                                                    autoComplete="off"
-                                                    placeholder='Enter Collection ID'
-                                                    value={exclude_Rate.collection_id}
-                                                    onChange={handleRateFormChange('collection_id')}
-                                                />
-                                            </FormLayout.Group>
-                                        </FormLayout>
-                                    </div>
-                                    <div style={{ marginTop: "2%" }}>
-                                        <FormLayout>
-                                            <FormLayout.Group>
-                                                <TextField
-                                                    type="text"
-                                                    label="Full Product Type"
-                                                    autoComplete="off"
-                                                    placeholder='Enter Full Product Type'
-                                                    value={exclude_Rate.product_type}
-                                                    onChange={handleRateFormChange('product_type')}
-                                                    helpText=''
-                                                />
-                                                <TextField
-                                                    type="text"
-                                                    label="Full Product Vendor"
-                                                    autoComplete="off"
-                                                    placeholder='Enter Full Product Vendor'
-                                                    value={exclude_Rate.product_vendor}
-                                                    onChange={handleRateFormChange('product_vendor')}
-                                                />
-                                            </FormLayout.Group>
-                                        </FormLayout>
-                                    </div>
-                                    <p style={{ marginTop: "1%" }}>Note: Please enter the exact term for product title, collection id, product type, and product vendor that needs to be searched.
-                                    </p>
-                                    <div style={{ marginTop: "2%", width: '20%' }}>
-                                        <Button variant="primary" onClick={handleClick}>Search Product</Button></div>
-                                    <div style={{ marginTop: "4%" }}>
-                                        <div>
-                                            <div>
-                                                <TextField
-                                                    placeholder='search'
-                                                    onChange={handlesearchChange}
-                                                    value={value}
-                                                    type="text"
-                                                    prefix={<Icon source={SearchIcon} color="inkLighter" />}
-                                                    autoComplete="off"
-                                                    clearButton
-                                                    onClearButtonClick={handleClearButtonClick}
-                                                />
-                                            </div>
-                                            <div style={{ marginTop: "4%" }}>
-                                                <IndexTable
-                                                    resourceName={resourceName}
-                                                    itemCount={products.length}
-
-                                                    headings={[
-                                                        { title: ` ${selectedCount1} Selected` },
-                                                        { title: 'Image' },
-                                                        { title: 'Title' },
-                                                        { title: 'Price' },
-
-                                                    ]}
-                                                    selectable={false}
-                                                    pagination={{
-                                                        hasNext: pageInfo.hasNextPage,
-                                                        onNext: handleNextPage,
-                                                        hasPrevious: pageInfo.hasPreviousPage,
-                                                        onPrevious: handlePreviousPage,
-                                                    }}
-                                                >
-                                                    {loadingTable ? (
-                                                        <IndexTable.Row>
-                                                            <IndexTable.Cell colSpan={5}>
-                                                                <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-                                                                    <Spinner accessibilityLabel="Loading products" size="small" />
-                                                                </div>
-                                                            </IndexTable.Cell>
-                                                        </IndexTable.Row>
-                                                    ) : (
-                                                        productData1
-                                                    )}
-
-                                                </IndexTable>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {(selectedRate === 'product_vendor' || selectedRate === 'product_sku' || selectedRate === 'product_type' || selectedRate === 'product_properties' || selectedRate === 'product_tag') && (
+                        </Grid.Cell>
+                        <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                            <LegacyCard sectioned>
                                 <div>
-                                    <div style={{ marginTop: "3%" }}></div>
-                                    <Divider borderColor="border" />
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: '2%', marginBottom: "2%" }}>
-                                        <RadioButton
-                                            label="Remove rate"
-                                            checked={checkstate.exclude_products_radio === 0}
-                                            id="remove_rate"
-                                            name="remove_rate"
-                                            onChange={() => handlecheckedChange('exclude_products_radio', 0)}
-                                        />
-                                        <RadioButton
-                                            label="Reduce only product price, weight and quantity"
-                                            checked={checkstate.exclude_products_radio === 1}
-                                            id="reduce_rate"
-                                            name="reduce_rate"
-                                            onChange={() => handlecheckedChange('exclude_products_radio', 1)}
-                                        />
-                                    </div>
-                                    <div>
+                                    {state.length > 0 && (
+                                        <>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '2%', paddingTop: '2%' }}>
+                                                <Text variant="headingXs" as="h6">
+                                                    State Selection
+                                                </Text>
+                                                <RadioButton
+                                                    label="Custom"
+                                                    checked={checkstate.selectedStateCondition === 'Custom'}
+                                                    id="Custom"
+                                                    name="stateSelection"
+                                                    onChange={() => handlecheckedChange('selectedStateCondition', 'Custom')}
+                                                />
+                                                <RadioButton
+                                                    label="All"
+                                                    checked={checkstate.selectedStateCondition === 'All'}
+                                                    id="All"
+                                                    name="stateSelection"
+                                                    onChange={() => handlecheckedChange('selectedStateCondition', 'All')}
+                                                />
+                                            </div>
+                                            {checkstate.selectedStateCondition !== 'All' && (
+                                                <div style={{ marginTop: '2%', marginBottom: '2%' }}>
+                                                    <Autocomplete
+                                                        allowMultiple
+                                                        options={options}
+                                                        selected={selectedOptions}
+                                                        textField={textField}
+                                                        onSelect={setSelectedOptions}
+                                                        listTitle="Suggested Countries"
+                                                    />
+                                                </div>
+                                            )}
+                                            <Divider borderColor="border" />
+                                        </>
+                                    )}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%", }}>
+                                    <Text variant="headingXs" as="h6">
+                                        ZipCode
+                                    </Text>
+                                    <RadioButton
+                                        label="Custom"
+                                        checked={checkstate.selectedZipCondition === 'Custom'}
+                                        id="customeZip"
+                                        name="zipcodeSelection"
+                                        onChange={() => handlecheckedChange('selectedZipCondition', 'Custom')}
+                                    />
+                                    <RadioButton
+                                        label="All"
+                                        checked={checkstate.selectedZipCondition === 'All'}
+                                        id="AllZip"
+                                        name="zipcodeSelection"
+                                        onChange={() => handlecheckedChange('selectedZipCondition', 'All')}
+                                    />
+                                </div>
+                                {checkstate.selectedZipCondition !== 'All' && (
+                                    <div style={{ marginTop: "2%" }}>
                                         <TextField
-                                            placeholder='test1,test2'
+                                            placeholder='364001,364002,364003'
+                                            value={zipcodeValue}
+                                            onChange={(newValue) => handleChange(newValue)}
                                             multiline={4}
                                             autoComplete="off"
-                                            value={exclude_Rate.exclude_products_textbox}
-                                            onChange={handleRateFormChange('exclude_products_textbox')}
-                                            helpText={
-                                                `Note: Please enter the exact term of multiple ${selectedRate === 'product_vendor' ? 'Vendor ' : selectedRate === 'product_sku' ? 'Product SKU' :
-                                                    selectedRate === 'product_type' ? 'Product Type' : selectedRate === 'product_tag' ? 'Product Tag' : 'Product Properties'
-                                                } with comma separator(,).`
-                                            }
-                                            error={errors.exclude_products_textbox}
+                                            error={errors.zipcodeValue}
                                         />
-                                    </div>
-                                </div>
-                            )}
-                        </LegacyCard>
-                    </Grid.Cell>
-                </Grid>
-            </div>
 
-            <Divider borderColor="border" />
-            <div style={{ marginTop: "3%", marginBottom: "3%" }}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <Text variant="headingMd" as="h6">
-                            Rate Modifiers
-                        </Text>
-                        <div style={{ marginTop: "4%" }}>
-                            <List>
-                                <List.Item>
-                                    Set different Base Rate Price according to order weight, total price or qty.
-                                </List.Item>
-                            </List>
-                        </div>
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-                        <div style={{ alignItems: "center" }}>
-                            <LegacyCard sectioned>
-                                {rateModifiers.map((modifier, index) => (
-                                    <div style={{ marginBottom: "3%" }} key={`modifyKey-${modifier.id}-${index}`}>
-                                        <Box id={`modify-${modifier.id}`} borderColor="border" borderWidth="025" borderRadius="200">
-                                            <div style={{ padding: '10px' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <Button
-                                                        onClick={handleToggle(modifier.id)}
-                                                        ariaExpanded={open[modifier.id]}
-                                                        ariaControls={`collapsible-${modifier.id}`}
-                                                        icon={SelectIcon}
-                                                    />
-                                                    <p style={{ color: '#ef5350', fontWeight: 'bold', cursor: 'pointer' }}
-                                                        onClick={() => handleRemoveRateModifier(modifier.id)}
-                                                    >
-                                                        Remove Rate Modifier
-                                                    </p>
-                                                </div>
-                                                <Collapsible
-                                                    open={open[modifier.id]}
-                                                    id={`collapsible-${modifier.id}`}
-                                                    transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
-                                                    expandOnPrint
-                                                >
-                                                    <div style={{ marginTop: "3%" }}></div>
-                                                    <Divider borderColor="border" />
-                                                    <div style={{ marginTop: "2%" }}>
-                                                        <FormLayout>
-                                                            <FormLayout.Group>
-                                                                <TextField
-                                                                    type="text"
-                                                                    label="Rate Modifier Name"
-                                                                    value={modifier.name}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'name')}
-                                                                    autoComplete="off"
-                                                                    placeholder="Rate Modifier Name"
-                                                                    error={errors[`name${index}`]}
-                                                                />
-                                                                <TextField
-                                                                    type="text"
-                                                                    label="Title"
-                                                                    value={modifier.title}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'title')}
-                                                                    autoComplete="off"
-                                                                    placeholder="Rate Modifier Title -Optional"
-                                                                    helpText="Text that will be appended to the rate description"
-                                                                />
-                                                            </FormLayout.Group>
-                                                        </FormLayout>
-                                                    </div>
-                                                    <div style={{ marginTop: '2%' }}>
-                                                        <Divider borderColor="border" />
-                                                    </div>
-                                                    <div
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '5%',
-                                                            marginTop: '3%',
-                                                        }}
-                                                    >
-                                                        <Text variant="headingXs" as="h6">
-                                                            Type:
-                                                        </Text>
-                                                        <RadioButton
-                                                            label="None"
-                                                            checked={modifier.type === 'None'}
-                                                            id={`None-${modifier.id}`}
-                                                            name={`type-${modifier.id}`}
-                                                            onChange={() => handleRateModifierChange(modifier.id, 'type')('None')}
-                                                        />
-                                                        <RadioButton
-                                                            label="AND"
-                                                            checked={modifier.type === 'AND'}
-                                                            id={`AND-${modifier.id}`}
-                                                            name={`type-${modifier.id}`}
-                                                            onChange={() => handleRateModifierChange(modifier.id, 'type')('AND')}
-                                                        />
-                                                        <RadioButton
-                                                            label="OR"
-                                                            checked={modifier.type === 'OR'}
-                                                            id={`OR-${modifier.id}`}
-                                                            name={`type-${modifier.id}`}
-                                                            onChange={() => handleRateModifierChange(modifier.id, 'type')('OR')}
-                                                        />
-                                                    </div>
-                                                    <div style={{ marginTop: '2%' }}></div>
-                                                    <FormLayout>
-                                                        <FormLayout.Group>
-                                                            <Select
-                                                                label="Apply this rate modifier when"
-                                                                options={rateModifiersOptions}
-                                                                value={modifier.rateModifier}
-                                                                onChange={handleRateModifierChange(modifier.id, 'rateModifier')}
-                                                            />
-                                                            {(modifier.rateModifier === 'dayOfOrder' || modifier.rateModifier === 'provinceCode' || modifier.rateModifier === 'zipcode' || modifier.rateModifier === 'collectionsIds' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'day' || modifier.rateModifier === 'date' || modifier.rateModifier === 'type' || modifier.rateModifier === 'ids') && (
-                                                                <Select
-                                                                    label="Select Operator"
-                                                                    options={day}
-                                                                    value={modifier.rateOperator}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
-                                                                />
-                                                            )}
-                                                            {(modifier.rateModifier === 'price' || modifier.rateModifier === 'time' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'calculateRate') && (
-                                                                <Select
-                                                                    label="Select Operator"
-                                                                    options={rateTimeOptions}
-                                                                    value={modifier.rateOperator}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
-                                                                />
-                                                            )}
-                                                            {modifier.rateModifier === 'quantity' && (
-                                                                <Select
-                                                                    label="Select Operator"
-                                                                    options={rateQuantityOptions}
-                                                                    value={modifier.rateOperator}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
-                                                                />
-                                                            )}
-                                                            {modifier.rateModifier === 'available' && (
-                                                                <Select
-                                                                    label="Select Operator"
-                                                                    options={rateAvailableOptions}
-                                                                    value={modifier.rateOperator}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
-                                                                />
-                                                            )}
-                                                            {modifier.rateModifier === 'availableQuan' && (
-                                                                <Select
-                                                                    label="Select Operator"
-                                                                    options={rateAvailableQuantity}
-                                                                    value={modifier.rateOperator}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
-                                                                />
-                                                            )}
-                                                            {(modifier.rateModifier === 'title' || modifier.rateModifier === 'address') && (
-                                                                <Select
-                                                                    label="Select Operator"
-                                                                    options={address}
-                                                                    value={modifier.rateOperator}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
-                                                                />
-                                                            )}
-                                                            {(modifier.rateModifier === 'tag' || modifier.rateModifier === 'thirdParty' || modifier.rateModifier === 'name' || modifier.rateModifier === 'city' || modifier.rateModifier === 'tag2' || modifier.rateModifier === 'vendor' || modifier.rateModifier === 'properties' || modifier.rateModifier === 'type2') && (
-                                                                <Select
-                                                                    label="Select Operator"
-                                                                    options={rateTag}
-                                                                    value={modifier.rateOperator}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
-                                                                />
-                                                            )}
-                                                            {modifier.rateModifier === 'sku' && (
-                                                                <Select
-                                                                    label="Select Operator"
-                                                                    options={ratesku}
-                                                                    value={modifier.rateOperator}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
-                                                                />
-                                                            )}
-                                                        </FormLayout.Group>
-                                                    </FormLayout>
-                                                    <div style={{ marginTop: '5%', marginBottom: '3%' }}>
-                                                        {(modifier.rateModifier === 'dayOfOrder' || modifier.rateModifier === 'day') && (
-                                                            <Select
-                                                                options={rateDayOptions}
-                                                                value={modifier.rateDay}
-                                                                onChange={handleRateModifierChange(modifier.id, 'rateDay')}
-                                                            />
-                                                        )}
-                                                        {modifier.rateModifier === 'time' && (
-                                                            <Select
-                                                                options={time}
-                                                                value={modifier.rateDay}
-                                                                onChange={handleRateModifierChange(modifier.id, 'rateDay')}
-                                                            />
-                                                        )}
-                                                        {modifier.rateModifier === 'date' && (
-                                                            <TextField
-                                                                value={modifier.rateDay}
-                                                                onChange={handleRateModifierChange(modifier.id, 'rateDay')}
-                                                                type="date"
-                                                            />
-                                                        )}
-                                                        {modifier.rateModifier === 'ids' && (
-                                                            <TextField
-                                                                type='text'
-                                                                value={modifier.productData
-                                                                    ? modifier.productData.map(product => product.id).join(',')
-                                                                    : ''}
-                                                                onChange={handleRateModifierChange(modifier.id, 'productData')}
-                                                                multiline={4}
-                                                                onFocus={() => handleFocus(modifier.id)}
-                                                                helpText='Add product IDs with comma(,) separator'
-                                                            />
-                                                        )}
-                                                        {(modifier.rateModifier === 'price' || modifier.rateModifier === 'calculateRate' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
-                                                            <TextField
-                                                                type="number"
-                                                                value={modifier.rateDay}
-                                                                onChange={handleRateModifierChange(modifier.id, 'rateDay')}
-                                                                autoComplete="off"
-                                                                placeholder={
-                                                                    modifier.rateModifier === 'price' ? "Price" :
-                                                                        modifier.rateModifier === 'weight' ? "Weight" :
-                                                                            modifier.rateModifier === 'quantity' ? "Quantity" :
-                                                                                modifier.rateModifier === 'distance' ? "Distance" :
-                                                                                    modifier.rateModifier === 'dayFromToday' ? "Order Delivery X day from today is" :
-                                                                                        modifier.rateModifier === 'timefromCurrent' ? "Order Delivery X hours from current is" :
-                                                                                            modifier.rateModifier === 'estimatedDay' ? "Estimated Delivery day" :
-                                                                                                modifier.rateModifier === 'availableQuan' ? "Quantity" :
-                                                                                                    modifier.rateModifier === 'calculateRate' ? "Calculate Rate Price" :
-                                                                                                        "Local Code"
-                                                                }
-                                                            />
-                                                        )}
-                                                        {modifier.rateModifier === 'type' && (
-                                                            <Select
-                                                                options={type}
-                                                                value={modifier.rateDay}
-                                                                onChange={handleRateModifierChange(modifier.id, 'rateDay')}
-                                                            />
-                                                        )}
-                                                        {modifier.rateModifier === 'available' && (
-                                                            <Select
-                                                                options={firstAvailableDay}
-                                                                value={modifier.rateDay}
-                                                                onChange={handleRateModifierChange(modifier.id, 'rateDay')}
-                                                            />
-                                                        )}
-                                                        {(modifier.rateModifier === 'title' || modifier.rateModifier === 'thirdParty' || modifier.rateModifier === 'tag2' || modifier.rateModifier === 'address' || modifier.rateModifier === 'provinceCode' || modifier.rateModifier === 'city' || modifier.rateModifier === 'tag' || modifier.rateModifier === 'sku' || modifier.rateModifier === 'type2' || modifier.rateModifier === 'properties' || modifier.rateModifier === 'vendor' || modifier.rateModifier === 'collectionsIds' || modifier.rateModifier === 'zipcode' || modifier.rateModifier === 'name') && (
-                                                            <TextField
-                                                                type="text"
-                                                                value={modifier.rateDay}
-                                                                onChange={handleRateModifierChange(modifier.id, 'rateDay')}
-                                                                autoComplete="off"
-                                                                multiline={4}
-                                                                placeholder={
-                                                                    modifier.rateModifier === 'title' ? "Title" :
-                                                                        modifier.rateModifier === 'tag' ? "Tag1,Tag2" :
-                                                                            modifier.rateModifier === 'sku' ? "sku1,sku2" :
-                                                                                modifier.rateModifier === 'type2' ? "type1,type2" :
-                                                                                    modifier.rateModifier === 'properties' ? "key:value,key:value" :
-                                                                                        modifier.rateModifier === 'vendor' ? "vendor1,vendor2" :
-                                                                                            modifier.rateModifier === 'name' ? "Enter Name" :
-                                                                                                modifier.rateModifier === 'city' ? "Enter city" :
-                                                                                                    modifier.rateModifier === 'provinceCode' ? "Enter Province Code" :
-                                                                                                        modifier.rateModifier === 'address' ? "Enter Address" :
-                                                                                                            modifier.rateModifier === 'tag' ? "Enter Tag" :
-                                                                                                                modifier.rateModifier === 'zipcode' ? "364001,364002,364003" :
-                                                                                                                    modifier.rateModifier === 'thirdParty' ? "services1,services2" :
-                                                                                                                        "6557955412548511244"
-                                                                }
-                                                                helpText={
-                                                                    modifier.rateModifier === 'title' ? "contains exact match product title with comma(,) seprator" :
-                                                                        modifier.rateModifier === 'tag' ? "add exact product tag with comma(,) separator" :
-                                                                            modifier.rateModifier === 'sku' ? "add exact product sku with comma(,) separator" :
-                                                                                modifier.rateModifier === 'type2' ? "add exact product type with comma(,) separator" :
-                                                                                    modifier.rateModifier === 'properties' ? "Add produt property like key:value" :
-                                                                                        modifier.rateModifier === 'vendor' ? "add exactvendor name with comma(,) separator" :
-                                                                                            modifier.rateModifier === 'zipcode' ? "exact match zip codes with comma(,) separator" :
-                                                                                                modifier.rateModifier === 'name' ? "contains match customer name with comma(,) separator" :
-                                                                                                    modifier.rateModifier === 'city' ? "contains match customer city with comma(,) separator" :
-                                                                                                        modifier.rateModifier === 'provinceCode' ? "Customer province code with comma(,) separator" :
-                                                                                                            modifier.rateModifier === 'address' ? "contains match customer address with comma(,) separator" :
-                                                                                                                modifier.rateModifier === 'tag2' ? "contains match customer address with comma(,) separator" :
-                                                                                                                    modifier.rateModifier === 'thirdParty' ? "add exact third party services with comma(,) separator" :
-                                                                                                                        "add collection ids with comma(,) separator"}
-                                                            />
-                                                        )}
-                                                    </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: "2%" }}>
+                                            <RadioButton
+                                                label="Include ZipCodes"
+                                                checked={checkstate.selectedZipCode === 'Include'}
+                                                id="Include"
+                                                name="isInclude"
+                                                onChange={() => handlecheckedChange('selectedZipCode', 'Include')}
+                                            />
+                                            <RadioButton
+                                                label="Exclude ZipCodes"
+                                                checked={checkstate.selectedZipCode === 'Exclude'}
+                                                id="Exclude"
+                                                name="isInclude"
+                                                onChange={() => handlecheckedChange('selectedZipCode', 'Exclude')}
+                                            />
 
 
-
-                                                    {(modifier.type === 'AND' || modifier.type === 'OR') && (
-                                                        <div style={{ marginTop: '5%' }}>
-                                                            <div style={{ float: 'left', width: '45%', marginTop: "0.5%" }}><hr /></div>
-                                                            <div style={{ float: 'right', width: '45%', marginTop: "0.5%" }}><hr /></div>
-                                                            <p style={{ textAlign: "center" }}>{modifier.type} </p>
-                                                            <div style={{ marginTop: '4%' }}></div>
-                                                            <FormLayout>
-                                                                <FormLayout.Group>
-                                                                    <Select
-                                                                        label="Apply this rate modifier when"
-                                                                        options={rateModifiersOptions}
-                                                                        value={modifier.rateModifier2}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateModifier2')}
-                                                                    />
-                                                                    {(modifier.rateModifier2 === 'dayOfOrder' || modifier.rateModifier2 === 'provinceCode' || modifier.rateModifier2 === 'zipcode' || modifier.rateModifier2 === 'collectionsIds' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'day' || modifier.rateModifier2 === 'date' || modifier.rateModifier2 === 'type' || modifier.rateModifier2 === 'ids') && (
-                                                                        <Select
-                                                                            label="Select Operator"
-                                                                            options={day}
-                                                                            value={modifier.rateOperator2}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
-                                                                        />
-                                                                    )}
-                                                                    {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'time' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'calculateRate') && (
-                                                                        <Select
-                                                                            label="Select Operator"
-                                                                            options={rateTimeOptions}
-                                                                            value={modifier.rateOperator2}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
-                                                                        />
-                                                                    )}
-                                                                    {modifier.rateModifier2 === 'quantity' && (
-                                                                        <Select
-                                                                            label="Select Operator"
-                                                                            options={rateQuantityOptions}
-                                                                            value={modifier.rateOperator2}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
-                                                                        />
-                                                                    )}
-                                                                    {modifier.rateModifier2 === 'available' && (
-                                                                        <Select
-                                                                            label="Select Operator"
-                                                                            options={rateAvailableOptions}
-                                                                            value={modifier.rateOperator2}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
-                                                                        />
-                                                                    )}
-                                                                    {modifier.rateModifier2 === 'availableQuan' && (
-                                                                        <Select
-                                                                            label="Select Operator"
-                                                                            options={rateAvailableQuantity}
-                                                                            value={modifier.rateOperator2}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
-                                                                        />
-                                                                    )}
-                                                                    {(modifier.rateModifier2 === 'title' || modifier.rateModifier2 === 'address') && (
-                                                                        <Select
-                                                                            label="Select Operator"
-                                                                            options={address}
-                                                                            value={modifier.rateOperator2}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
-                                                                        />
-                                                                    )}
-                                                                    {(modifier.rateModifier2 === 'tag' || modifier.rateModifier2 === 'thirdParty' || modifier.rateModifier2 === 'name' || modifier.rateModifier2 === 'city' || modifier.rateModifier2 === 'tag2' || modifier.rateModifier2 === 'vendor' || modifier.rateModifier2 === 'properties' || modifier.rateModifier2 === 'type2') && (
-                                                                        <Select
-                                                                            label="Select Operator"
-                                                                            options={rateTag}
-                                                                            value={modifier.rateOperator2}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
-                                                                        />
-                                                                    )}
-                                                                    {modifier.rateModifier2 === 'sku' && (
-                                                                        <Select
-                                                                            label="Select Operator"
-                                                                            options={ratesku}
-                                                                            value={modifier.rateOperator2}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
-                                                                        />
-                                                                    )}
-                                                                </FormLayout.Group>
-                                                            </FormLayout>
-                                                            <div style={{ marginTop: '5%', marginBottom: '3%' }}>
-                                                                {(modifier.rateModifier2 === 'dayOfOrder' || modifier.rateModifier2 === 'day') && (
-                                                                    <Select
-                                                                        options={rateDayOptions}
-                                                                        value={modifier.rateDay2}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
-                                                                    />
-                                                                )}
-                                                                {modifier.rateModifier2 === 'time' && (
-                                                                    <Select
-                                                                        options={time}
-                                                                        value={modifier.rateDay2}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
-                                                                    />
-                                                                )}
-                                                                {modifier.rateModifier2 === 'date' && (
-                                                                    <TextField
-                                                                        value={modifier.rateDay2}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
-                                                                        type="date"
-                                                                    />
-                                                                )}
-                                                                {modifier.rateModifier2 === 'ids' && (
-                                                                    <TextField
-                                                                        type='text'
-                                                                        value={modifier.productData ? String(modifier.productData) : ''}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'productData')}
-                                                                        multiline={4}
-                                                                        onFocus={handleFocus}
-                                                                        helpText='add product ids with comma(,) separator'
-                                                                    />
-
-                                                                )}
-                                                                {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (
-                                                                    <TextField
-                                                                        type="number"
-                                                                        value={modifier.rateDay2}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
-                                                                        autoComplete="off"
-                                                                        placeholder={
-                                                                            modifier.rateModifier2 === 'price' ? "Price" :
-                                                                                modifier.rateModifier2 === 'weight' ? "Weight" :
-                                                                                    modifier.rateModifier2 === 'quantity' ? "Quantity" :
-                                                                                        modifier.rateModifier2 === 'distance' ? "Distance" :
-                                                                                            modifier.rateModifier2 === 'dayFromToday' ? "Order Delivery X day from today is" :
-                                                                                                modifier.rateModifier2 === 'timefromCurrent' ? "Order Delivery X hours from current is" :
-                                                                                                    modifier.rateModifier2 === 'estimatedDay' ? "Estimated Delivery day" :
-                                                                                                        modifier.rateModifier2 === 'availableQuan' ? "Quantity" :
-                                                                                                            modifier.rateModifier2 === 'calculateRate' ? "Calculate Rate Price" :
-                                                                                                                "Local Code"
-                                                                        }
-                                                                    />
-                                                                )}
-                                                                {modifier.rateModifier2 === 'type' && (
-                                                                    <Select
-                                                                        options={type}
-                                                                        value={modifier.rateDay2}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
-                                                                    />
-                                                                )}
-                                                                {modifier.rateModifier2 === 'available' && (
-                                                                    <Select
-                                                                        options={firstAvailableDay}
-                                                                        value={modifier.rateDay2}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
-                                                                    />
-                                                                )}
-                                                                {(modifier.rateModifier2 === 'title' || modifier.rateModifier2 === 'thirdParty' || modifier.rateModifier2 === 'tag2' || modifier.rateModifier2 === 'address' || modifier.rateModifier2 === 'provinceCode' || modifier.rateModifier2 === 'city' || modifier.rateModifier2 === 'tag' || modifier.rateModifier2 === 'sku' || modifier.rateModifier2 === 'type2' || modifier.rateModifier2 === 'properties' || modifier.rateModifier2 === 'vendor' || modifier.rateModifier2 === 'collectionsIds' || modifier.rateModifier2 === 'zipcode' || modifier.rateModifier2 === 'name') && (
-                                                                    <TextField
-                                                                        type="text"
-                                                                        value={modifier.rateDay2}
-                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
-                                                                        autoComplete="off"
-                                                                        multiline={4}
-                                                                        placeholder={
-                                                                            modifier.rateModifier2 === 'title' ? "Title" :
-                                                                                modifier.rateModifier2 === 'tag' ? "Tag1,Tag2" :
-                                                                                    modifier.rateModifier2 === 'sku' ? "sku1,sku2" :
-                                                                                        modifier.rateModifier2 === 'type2' ? "type1,type2" :
-                                                                                            modifier.rateModifier2 === 'properties' ? "key:value,key:value" :
-                                                                                                modifier.rateModifier2 === 'vendor' ? "vendor1,vendor2" :
-                                                                                                    modifier.rateModifier2 === 'name' ? "Enter Name" :
-                                                                                                        modifier.rateModifier2 === 'city' ? "Enter city" :
-                                                                                                            modifier.rateModifier2 === 'provinceCode' ? "Enter Province Code" :
-                                                                                                                modifier.rateModifier2 === 'address' ? "Enter Address" :
-                                                                                                                    modifier.rateModifier2 === 'tag' ? "Enter Tag" :
-                                                                                                                        modifier.rateModifier2 === 'zipcode' ? "364001,364002,364003" :
-                                                                                                                            modifier.rateModifier2 === 'thirdParty' ? "services1,services2" :
-                                                                                                                                "6557955412548511244"
-                                                                        }
-                                                                        helpText={
-                                                                            modifier.rateModifier2 === 'title' ? "contains exact match product title with comma(,) seprator" :
-                                                                                modifier.rateModifier2 === 'tag' ? "add exact product tag with comma(,) separator" :
-                                                                                    modifier.rateModifier2 === 'sku' ? "add exact product sku with comma(,) separator" :
-                                                                                        modifier.rateModifier2 === 'type2' ? "add exact product type with comma(,) separator" :
-                                                                                            modifier.rateModifier2 === 'properties' ? "Add produt property like key:value" :
-                                                                                                modifier.rateModifier2 === 'vendor' ? "add exactvendor name with comma(,) separator" :
-                                                                                                    modifier.rateModifier2 === 'zipcode' ? "exact match zip codes with comma(,) separator" :
-                                                                                                        modifier.rateModifier2 === 'name' ? "contains match customer name with comma(,) separator" :
-                                                                                                            modifier.rateModifier2 === 'city' ? "contains match customer city with comma(,) separator" :
-                                                                                                                modifier.rateModifier2 === 'provinceCode' ? "Customer province code with comma(,) separator" :
-                                                                                                                    modifier.rateModifier2 === 'address' ? "contains match customer address with comma(,) separator" :
-                                                                                                                        modifier.rateModifier2 === 'tag2' ? "contains match customer address with comma(,) separator" :
-                                                                                                                            modifier.rateModifier2 === 'thirdParty' ? "add exact third party services with comma(,) separator" :
-                                                                                                                                "add collection ids with comma(,) separator"}
-                                                                    />
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    <Divider borderColor="border" />
-                                                    <div
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '5%',
-                                                            marginTop: '3%',
-                                                            marginBottom: '3%',
-                                                        }}
-                                                    >
-                                                        <Text variant="headingXs" as="h6">
-                                                            Behaviour:
-                                                        </Text>
-                                                        <RadioButton
-                                                            label="Stack"
-                                                            checked={modifier.behaviour === 'Stack'}
-                                                            id={`Stack-${modifier.id}`}
-                                                            name={`behaviour-${modifier.id}`}
-                                                            onChange={() => handleRateModifierChange(modifier.id, 'behaviour')('Stack')}
-                                                        />
-                                                        <RadioButton
-                                                            label="Terminate"
-                                                            checked={modifier.behaviour === 'Terminate'}
-                                                            id={`Terminate-${modifier.id}`}
-                                                            name={`behaviour-${modifier.id}`}
-                                                            onChange={() => handleRateModifierChange(modifier.id, 'behaviour')('Terminate')}
-                                                        />
-                                                    </div>
-                                                    <Divider borderColor="border" />
-                                                    <div
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '2%',
-                                                            marginTop: '3%',
-                                                            marginBottom: '3%',
-                                                        }}
-                                                    >
-                                                        <Text variant="headingXs" as="h6">
-                                                            Modifier Type:
-                                                        </Text>
-                                                        <RadioButton
-                                                            label="Fixed"
-                                                            checked={modifier.modifierType === 'Fixed'}
-                                                            id={`Fixed-${modifier.id}`}
-                                                            name={`modifierType-${modifier.id}`}
-                                                            onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('Fixed')}
-                                                        />
-                                                        <RadioButton
-                                                            label="Percentage"
-                                                            checked={modifier.modifierType === 'Percentage'}
-                                                            id={`Percentage-${modifier.id}`}
-                                                            name={`modifierType-${modifier.id}`}
-                                                            onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('Percentage')}
-                                                        />
-                                                        <RadioButton
-                                                            label="Static"
-                                                            checked={modifier.modifierType === 'Static'}
-                                                            id={`Static-${modifier.id}`}
-                                                            name={`modifierType-${modifier.id}`}
-                                                            onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('Static')}
-                                                        />
-                                                        <RadioButton
-                                                            label="Remove Rate"
-                                                            checked={modifier.modifierType === 'RemoveRate'}
-                                                            id={`RemoveRate-${modifier.id}`}
-                                                            name={`modifierType-${modifier.id}`}
-                                                            onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('RemoveRate')}
-                                                        />
-                                                        <RadioButton
-                                                            label="Show Only"
-                                                            checked={modifier.modifierType === 'ShowOnly'}
-                                                            id={`ShowOnly-${modifier.id}`}
-                                                            name={`modifierType-${modifier.id}`}
-                                                            onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('ShowOnly')}
-                                                        />
-                                                    </div>
-                                                    {modifier.modifierType !== 'Static' && modifier.modifierType !== 'RemoveRate' && modifier.modifierType !== 'ShowOnly' && (
-                                                        <div>
-                                                            <Divider borderColor="border" />
-                                                            <div style={{
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                marginTop: '2%',
-                                                                marginBottom: '2%',
-                                                                justifyContent: "space-between"
-                                                            }}>
-                                                                <Text variant="headingXs" as="h6">
-                                                                    Effect :
-                                                                </Text>
-                                                                <RadioButton
-                                                                    label="Increase"
-                                                                    checked={modifier.effect === 'Increase'}
-                                                                    id={`Increase-${modifier.id}`}
-                                                                    name={`effect-${modifier.id}`}
-                                                                    onChange={() =>
-                                                                        handleRateModifierChange(modifier.id, 'effect')('Increase')
-                                                                    }
-                                                                />
-                                                                <RadioButton
-                                                                    label="Decrease"
-                                                                    checked={modifier.effect === 'Decrease'}
-                                                                    id={`Decrease-${modifier.id}`}
-                                                                    name={`effect-${modifier.id}`}
-                                                                    onChange={() =>
-                                                                        handleRateModifierChange(modifier.id, 'effect')('Decrease')
-                                                                    }
-                                                                />
-                                                                <TextField
-                                                                    type="text"
-                                                                    label="Adjustment"
-                                                                    value={modifier.adjustment}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'adjustment')}
-                                                                    autoComplete="off"
-                                                                    placeholder="00"
-                                                                    error={errors[`adjustment${index}`]}
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {modifier.modifierType === 'Static' && (
-                                                        <div style={{
-                                                            marginTop: '2%',
-                                                            marginBottom: '2%',
-                                                        }}>
-                                                            <div style={{ marginBottom: "2%" }}>
-                                                                <Divider borderColor="border" />
-                                                            </div>
-                                                            <FormLayout>
-                                                                <TextField
-                                                                    type="text"
-                                                                    label="Adjustment"
-                                                                    value={modifier.adjustment}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'adjustment')}
-                                                                    autoComplete="off"
-                                                                    placeholder="00"
-                                                                    error={errors[`adjustment${index}`]}
-
-                                                                />
-                                                            </FormLayout>
-                                                        </div>
-                                                    )}
-                                                </Collapsible>
-                                            </div>
-                                        </Box>
-                                    </div>
-                                ))}
-                                <div style={{ marginTop: "3%" }}>
-                                    <Button variant='primary' icon={PlusIcon} onClick={handleAddRateModifier}>Add Rate Modifier</Button>
-                                </div>
-                            </LegacyCard>
-                        </div>
-                    </Grid.Cell>
-                </Grid>
-            </div>
-
-            <Divider borderColor="border" />
-            <div style={{ marginTop: "3%", marginBottom: "3%" }}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <Text variant="headingMd" as="h6">
-                            Merge rate
-                        </Text>
-                        <div style={{ marginTop: "4%" }}>
-                            <List>
-                                <List.Item>
-                                    We recommend using the same Shipping Tag for all related Shipping rates when merge shipping rates.
-                                </List.Item>
-                            </List>
-                        </div>                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-                        <LegacyCard sectioned>
-                            <TextField
-                                label="Merge rate tag"
-                                value={formData.merge_rate_tag || ''}
-                                onChange={handleRateFormChange('merge_rate_tag')}
-                                autoComplete="off"
-                                placeholder='tag1,tag2,tag3'
-                            />
-                        </LegacyCard>
-                    </Grid.Cell>
-                </Grid>
-            </div>
-
-            <Divider borderColor="border" />
-            <div style={{ marginTop: "3%", marginBottom: "3%" }}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-
-                        <Text variant="headingMd" as="h6">
-                            Origin Locations
-                        </Text>
-                        <div style={{ marginTop: "4%" }}>
-                            <List>
-                                <List.Item>
-                                    Rate applies on selected locations
-                                </List.Item>
-                            </List>
-                        </div>
-
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-                        <LegacyCard sectioned>
-                            <Text variant="headingSm" as="h6">
-                                Ship From Locations
-                            </Text>
-                            <div style={{ alignItems: 'center', paddingTop: '2%' }}>
-                                <Checkbox
-                                    label="Select All Location"
-                                    checked={checkedState.checked2}
-                                    onChange={() => handleCheckChange('checked2')}
-                                />
-                                {!checkedState.checked2 && (
-                                    <div style={{ marginTop: "1%" }}>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-                                            {locations.map(location => {
-                                                return (
-                                                    <div key={location.id} style={{ width: '50%', height: '5%', padding: '5px' }}>
-                                                        <LegacyCard>
-                                                            <div style={{ display: 'flex', alignItems: 'center', padding: '10px' }}>
-                                                                <Checkbox
-                                                                    checked={!!checkedlocation[location.name]?.checked}
-                                                                    onChange={() => handleLocationChange(location)}
-                                                                />
-                                                                <div style={{ marginLeft: '5%' }}>
-                                                                    <h2>{location.name}</h2>
-                                                                    <p>{location.address1 || '-'}</p>
-                                                                </div>
-                                                            </div>
-                                                        </LegacyCard>
-                                                    </div>
-                                                );
-                                            })}
-                                            {locations.length === 0 && (
-                                                <Card>
-                                                    <p>No locations found</p>
-                                                </Card>
-                                            )}
                                         </div>
                                     </div>
                                 )}
-                            </div>
-                        </LegacyCard>
-                    </Grid.Cell>
-                </Grid>
-            </div>
+                            </LegacyCard>
+                        </Grid.Cell>
+                    </Grid>
+                </div>
 
-            <Divider borderColor="border" />
-            <div style={{ marginTop: "3%", marginBottom: "3%" }}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-
-                        <Text variant="headingMd" as="h6">
-                            Schedule Rate
-                        </Text>
-                        <div style={{ marginTop: "4%" }}>
-                            <List>
-                                <List.Item>
-                                    This rate is only available on a specific date & time
-                                </List.Item>
-                            </List>
-                        </div>
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-                        <LegacyCard sectioned>
-                            <Text variant="headingSm" as="h6">
-                                Do you want to apply schedule rate?
+                <Divider borderColor="border" />
+                <div style={{ marginTop: "3%", marginBottom: "3%", }}>
+                    <Grid>
+                        <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                            <Text variant="headingMd" as="h6">
+                                Rate Based On/Surcharge
                             </Text>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '15%', paddingTop: '2%' }}>
-                                <RadioButton
-                                    label="Yes"
-                                    checked={checkstate.selectedByschedule === 1}
-                                    id="Yess"
-                                    name="Yess"
-                                    onChange={() => handlecheckedChange('selectedByschedule', 1)}
-                                />
-                                <RadioButton
-                                    label="No"
-                                    checked={checkstate.selectedByschedule === 0}
-                                    id="No"
-                                    name="No"
-                                    onChange={() => handlecheckedChange('selectedByschedule', 0)}
-                                />
+                            <div style={{ marginTop: "4%" }}>
+                                <List type='bullet'>
+                                    <List.Item>
+                                        Specify rate calculation based on Order Weight, Order Quantity with surcharge value.
+                                    </List.Item>
+                                    <List.Item>
+                                        Surcharge calculation will add on Base Price which is available on top of the page.
+                                    </List.Item>
+                                </List>
                             </div>
-                            {checkstate.selectedByschedule === 1 && (
-                                <FormLayout>
-                                    <FormLayout.Group>
-                                        <TextField
-                                            label="Start Date"
-                                            value={date.startDate}
-                                            onChange={(value) => handleDateChange('startDate', value)}
-                                            type="datetime-local"
-                                            error={errors.startDate}
-                                        />
-                                        <TextField
-                                            label="End Date"
-                                            value={date.endDate}
-                                            onChange={(value) => handleDateChange('endDate', value)}
-                                            type="datetime-local"
-                                            error={errors.endDate}
-                                        />
-                                    </FormLayout.Group>
-                                    {date.error && <p message={date.error} fieldID="endDate" >{date.error}</p>}
-                                </FormLayout>
-                            )}
-                        </LegacyCard>
-                    </Grid.Cell>
-                </Grid>
-            </div>
 
-            <Divider borderColor="border" />
-            <div style={{ marginTop: "3%", marginBottom: "3%" }}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <Text variant="headingMd" as="h6">
-                            Send another rate
-                        </Text>
-                        <div style={{ marginTop: "4%" }}>
-                            <List>
-                                <List.Item>
-                                    By selecting the Send Another Rate option it will allow to set another additional rate.
-                                </List.Item>
-                            </List>
-                        </div>                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-                        <LegacyCard sectioned>
-                            <div style={{ alignItems: 'center' }}>
+                        </Grid.Cell>
+                        <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                            <LegacyCard sectioned>
                                 <Checkbox
-                                    label="Send Another Rate"
-                                    checked={checkedState.checked3}
-                                    onChange={() => handleCheckChange('checked3')}
+                                    label="Based On Cart"
+                                    checked={checkedState.checked1}
+                                    onChange={() => handleCheckChange('checked1')}
                                 />
-                                {checkedState.checked3 && (
-                                    <div style={{ marginTop: "3%" }}>
-                                        <FormLayout>
-                                            <FormLayout.Group>
-                                                <TextField
-                                                    type="text"
-                                                    label="Another Rate Name"
-                                                    value={send_another_rate.another_rate_name}
-                                                    onChange={handleRateFormChange('another_rate_name')}
-                                                    autoComplete="off"
-                                                    required
-                                                    placeholder='Enter Rate Name'
-                                                    error={errors.another_rate_name}
+                                {checkedState.checked1 && (
+                                    <div style={{ marginTop: "2%" }}>
+                                        <Divider borderColor="border" />
+                                        <div style={{ marginBottom: "2%" }}></div>
+                                        <Text variant="headingSm" as="h6">
+                                            By Cart Surcharge
+                                        </Text>
+                                        <div style={{ display: 'flex', marginTop: "1%" }}>
+                                            <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
+                                                <RadioButton
+                                                    label="Item Weight"
+                                                    checked={checkstate.selectedByCart === 'weight'}
+                                                    id="weight"
+                                                    name="weight"
+                                                    onChange={() => handlecheckedChange('selectedByCart', 'weight')}
                                                 />
-                                                <TextField
-                                                    type="text"
-                                                    label="Another Rate Description"
-                                                    value={send_another_rate.another_rate_description}
-                                                    onChange={handleRateFormChange('another_rate_description')}
-                                                    autoComplete="off"
-                                                    required
-                                                    placeholder='Enter Desription'
+                                            </div>
+                                            <div style={{ flex: 1, width: "50%" }}>
+                                                <RadioButton
+                                                    label="Item Qty"
+                                                    checked={checkstate.selectedByCart === 'Qty'}
+                                                    id="Qty"
+                                                    name="Qty"
+                                                    onChange={() => handlecheckedChange('selectedByCart', 'Qty')}
+                                                />
+                                            </div>
+                                        </div>
 
+                                        <div style={{ display: 'flex', }}>
+                                            <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
+                                                <RadioButton
+                                                    label="Cart Total Percentage"
+                                                    checked={checkstate.selectedByCart === 'Percentage'}
+                                                    id="Percentage"
+                                                    name="Percentage"
+                                                    onChange={() => handlecheckedChange('selectedByCart', 'Percentage')}
                                                 />
-                                            </FormLayout.Group>
-                                        </FormLayout>
-                                        <div style={{ marginTop: '3%' }}>
-                                            <Divider borderColor="border" />
+                                            </div>
+                                            <div style={{ flex: 1, width: "50%" }}>
+                                                <RadioButton
+                                                    label="Based On Distance"
+                                                    checked={checkstate.selectedByCart === 'Distance'}
+                                                    id="Distance"
+                                                    name="Distance"
+                                                    onChange={() => handlecheckedChange('selectedByCart', 'Distance')}
+                                                />
+                                            </div>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8%', marginTop: '3%', }}>
-                                            <Text variant="headingSm" as="h6">
-                                                Update Price Type :
-                                            </Text>
-                                            <RadioButton
-                                                label="Fixed"
-                                                checked={checkstate.selectedByUpdatePriceType === 0}
-                                                id="Fixe"
-                                                name="Fixe"
-                                                onChange={() => handlecheckedChange('selectedByUpdatePriceType', 0)}
-                                            />
-                                            <RadioButton
-                                                label="Percentage"
-                                                checked={checkstate.selectedByUpdatePriceType === 1}
-                                                id="Pr"
-                                                name="Pr"
-                                                onChange={() => handlecheckedChange('selectedByUpdatePriceType', 1)}
-                                            />
-                                            <RadioButton
-                                                label="Static"
-                                                checked={checkstate.selectedByUpdatePriceType === 2}
-                                                id="Statics"
-                                                name="Static"
-                                                onChange={() => handlecheckedChange('selectedByUpdatePriceType', 2)}
-                                            />
+                                        {checkstate.selectedByCart === 'Distance' && (
+                                            <div>
+                                                <p style={{ color: 'gray', fontSize: "13px" }}> Note: Please make sure Origin and Destination country must be same to use distance base shipping rate.</p>
+                                            </div>
+                                        )}
+                                        <div style={{ marginBottom: "3%" }}></div>
+                                        <Text variant="headingSm" as="h6">
+                                            By Product Surcharge
+                                        </Text>
+
+                                        <div style={{ display: 'flex', marginTop: "1%" }}>
+                                            <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
+                                                <RadioButton
+                                                    label="Product"
+                                                    checked={checkstate.selectedByCart === 'Product'}
+                                                    id="Product"
+                                                    name="Product"
+                                                    onChange={() => handlecheckedChange('selectedByCart', 'Product')}
+                                                />
+                                            </div>
+                                            <div style={{ flex: 1, width: "50%" }}>
+                                                <RadioButton
+                                                    label="Vendor"
+                                                    checked={checkstate.selectedByCart === 'Vendor'}
+                                                    id="Vendor"
+                                                    name="Vendor"
+                                                    onChange={() => handlecheckedChange('selectedByCart', 'Vendor')}
+                                                />
+                                            </div>
                                         </div>
-                                        <div style={{ marginTop: '3%' }}>
-                                            <Divider borderColor="border" />
+
+                                        <div style={{ display: 'flex', }}>
+                                            <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
+                                                <RadioButton
+                                                    label="Variant"
+                                                    checked={checkstate.selectedByCart === 'Variant'}
+                                                    id="Variant"
+                                                    name="Variant"
+                                                    onChange={() => handlecheckedChange('selectedByCart', 'Variant')}
+                                                />
+                                            </div>
+                                            <div style={{ flex: 1, width: "50%" }}>
+                                                <RadioButton
+                                                    label="Product Tag"
+                                                    checked={checkstate.selectedByCart === 'Tag'}
+                                                    id="Tag"
+                                                    name="Tag"
+                                                    onChange={() => handlecheckedChange('selectedByCart', 'Tag')}
+                                                />
+                                            </div>
                                         </div>
-                                        {checkstate.selectedByUpdatePriceType !== 2 && (
-                                            <div style={{ marginTop: '3%' }}>
+
+                                        <div style={{ display: 'flex', }}>
+                                            <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
+                                                <RadioButton
+                                                    label="Product Type"
+                                                    checked={checkstate.selectedByCart === 'Type'}
+                                                    id="Type"
+                                                    name="Type"
+                                                    onChange={() => handlecheckedChange('selectedByCart', 'Type')}
+                                                />
+                                            </div>
+                                            <div style={{ flex: 1, width: "50%" }}>
+                                                <RadioButton
+                                                    label="Product SKU"
+                                                    checked={checkstate.selectedByCart === 'SKU'}
+                                                    id="SKU"
+                                                    name="SKU"
+                                                    onChange={() => handlecheckedChange('selectedByCart', 'SKU')}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', }}>
+                                            <div style={{ width: '50%', textAlign: 'left', paddingRight: '10px' }}>
+                                                <RadioButton
+                                                    label="Product Collection Id"
+                                                    checked={checkstate.selectedByCart === 'Collection'}
+                                                    id="Collection"
+                                                    name="Collection"
+                                                    onChange={() => handlecheckedChange('selectedByCart', 'Collection')}
+                                                />
+                                            </div>
+                                            <div style={{ flex: 1, width: "50%" }}>
+                                                <RadioButton
+                                                    label="Variant Metafields"
+                                                    checked={checkstate.selectedByCart === 'Metafields'}
+                                                    id="Metafields"
+                                                    name="Metafields"
+                                                    onChange={() => handlecheckedChange('selectedByCart', 'Metafields')}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div style={{ marginBottom: "2%" }}></div>
+                                        <Divider borderColor="border-inverse" />
+                                        <div style={{ marginTop: "3%" }}></div>
+                                        {(checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') && (
+                                            <div>
                                                 <FormLayout>
                                                     <FormLayout.Group>
-                                                        <div>
-                                                            <Text variant="headingSm" as="h6">
-                                                                Update Price Type :
-                                                            </Text>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8%', paddingTop: '2%', marginBottom: "4%" }}>
-                                                                <RadioButton
-                                                                    label="Increase"
-                                                                    checked={checkstate.selectedByUpdatePriceEffect === 0}
-                                                                    id="increase"
-                                                                    name="increase"
-                                                                    onChange={() => handlecheckedChange('selectedByUpdatePriceEffect', 0)}
-                                                                />
-                                                                <RadioButton
-                                                                    label="Decrease"
-                                                                    checked={checkstate.selectedByUpdatePriceEffect === 1}
-                                                                    id="decrease"
-                                                                    name="decrease"
-                                                                    onChange={() => handlecheckedChange('selectedByUpdatePriceEffect', 1)}
-                                                                />
-                                                            </div>
-                                                        </div>
+                                                        <TextField
+                                                            type="number"
+                                                            label={
+                                                                checkstate.selectedByCart === 'weight' ? "Charge Per Weight" :
+                                                                    checkstate.selectedByCart === 'Qty' ? "Charge Per Qty" :
+                                                                        "Charge Per Distance"
+                                                            }
+                                                            autoComplete="off"
+                                                            prefix={shop_currency}
+
+                                                            value={rate_based_on_surcharge.charge_per_wight}
+                                                            onChange={handleRateFormChange('charge_per_wight')}
+                                                            error={errors.charge_per_wight}
+                                                        />
+                                                        <TextField
+                                                            type="number"
+                                                            label={
+                                                                checkstate.selectedByCart === 'weight' ? "Unit For Weight" :
+                                                                    checkstate.selectedByCart === 'Qty' ? "Unit For Qty" :
+                                                                        "Unit For Distance"
+                                                            }
+                                                            autoComplete="off"
+                                                            prefix={
+                                                                checkstate.selectedByCart === 'weight' ? "kg" :
+                                                                    checkstate.selectedByCart === 'Qty' ? "Qty" :
+                                                                        "km"
+                                                            }
+
+                                                            value={rate_based_on_surcharge.unit_for}
+                                                            onChange={handleRateFormChange('unit_for')}
+                                                            error={errors.unit_for}
+                                                        />
+                                                    </FormLayout.Group>
+                                                </FormLayout>
+                                                <div style={{ marginTop: "4%" }}></div>
+                                                <Text variant="headingSm" as="h6">
+                                                    By Product Surcharge:
+                                                </Text>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10%', paddingTop: '1%', marginBottom: "4%" }}>
+                                                    <RadioButton
+                                                        label="Divided by each unit"
+                                                        checked={checkstate.selectedByAmount === 'unit'}
+                                                        id="unit"
+                                                        name="unit"
+                                                        onChange={() => handlecheckedChange('selectedByAmount', 'unit')}
+                                                    />
+                                                    <RadioButton
+                                                        label="Surcharge add by every more then unit"
+                                                        checked={checkstate.selectedByAmount === 'units'}
+                                                        id="units"
+                                                        name="units"
+                                                        onChange={() => handlecheckedChange('selectedByAmount', 'units')}
+                                                    />
+                                                </div>
+                                                <FormLayout>
+                                                    <FormLayout.Group>
                                                         <TextField
                                                             type="text"
-                                                            label="Adjustment Price"
-                                                            value={send_another_rate.adjustment_price}
-                                                            onChange={handleRateFormChange('adjustment_price')}
+                                                            label="Minimum Charge Price"
                                                             autoComplete="off"
-                                                            error={errors.adjustment_price}
-                                                            placeholder='00'
+                                                            prefix={shop_currency}
+                                                            placeholder='0'
+                                                            value={rate_based_on_surcharge.min_charge_price}
+                                                            onChange={handleRateFormChange('min_charge_price')}
+                                                        />
+                                                        <TextField
+                                                            type="number"
+                                                            label="Maximum Charge Price"
+                                                            autoComplete="off"
+                                                            prefix={shop_currency}
+                                                            placeholder='0'
+                                                            value={rate_based_on_surcharge.max_charge_price}
+                                                            onChange={handleRateFormChange('max_charge_price')}
                                                         />
                                                     </FormLayout.Group>
                                                 </FormLayout>
                                             </div>
                                         )}
-                                        {checkstate.selectedByUpdatePriceType === 2 && (
-                                            <div>
-                                                <TextField
-                                                    type="text"
-                                                    label="Adjustment Price"
-                                                    value={send_another_rate.adjustment_price}
-                                                    onChange={handleRateFormChange('adjustment_price')}
-                                                    autoComplete="off"
-                                                    error={errors.adjustment_price}
-                                                    placeholder='0'
-                                                />
+                                        {checkstate.selectedByCart === 'Percentage' && (
+                                            <div >
+                                                <FormLayout>
+                                                    <TextField
+                                                        type="text"
+                                                        label="Cart Total Percentage"
+                                                        autoComplete="off"
+                                                        prefix="%"
+                                                        placeholder='0.00'
+                                                        value={rate_based_on_surcharge.cart_total_percentage}
+                                                        onChange={handleRateFormChange('cart_total_percentage')}
+                                                        error={errors.cart_total_percentage}
+                                                    />
+                                                    <FormLayout.Group>
+                                                        <TextField
+                                                            type="text"
+                                                            label="Minimum Charge Price"
+                                                            autoComplete="off"
+                                                            prefix={shop_currency}
+                                                            placeholder='0'
+                                                            value={rate_based_on_surcharge.min_charge_price}
+                                                            onChange={handleRateFormChange('min_charge_price')}
+                                                        />
+                                                        <TextField
+                                                            type="number"
+                                                            label="Maximum Charge Price"
+                                                            autoComplete="off"
+                                                            prefix={shop_currency}
+                                                            placeholder='0'
+                                                            value={rate_based_on_surcharge.max_charge_price}
+                                                            onChange={handleRateFormChange('max_charge_price')}
+                                                        />
+                                                    </FormLayout.Group>
+                                                </FormLayout>
                                             </div>
                                         )}
-                                        <div style={{ marginTop: '3%' }}>
-                                            <Divider borderColor="border" />
+                                        {checkstate.selectedByCart === 'Variant' && (
+                                            <div>
+                                                <Text variant="headingMd" as="h6">
+                                                    You can select variant for this rate after save
+                                                </Text>
+                                                <div style={{ marginTop: "3%", marginBottom: "5%" }}>
+                                                    <Button variant="primary" >Click Here</Button>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {checkstate.selectedByCart === 'Product' && (
+                                            <div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '5%' }}>
+                                                    <Text variant="headingSm" as="h6">
+                                                        Multiply line item QTY price:
+                                                    </Text>
+                                                    <RadioButton
+                                                        label="Yes"
+                                                        checked={checkstate.selectedMultiplyLine === 'Yes'}
+                                                        id="Yes"
+                                                        name="Yes"
+                                                        onChange={() => handlecheckedChange('selectedMultiplyLine', 'Yes')}
+                                                    />
+                                                    <RadioButton
+                                                        label="No"
+                                                        checked={checkstate.selectedMultiplyLine === 'no'}
+                                                        id="no"
+                                                        name="SKU"
+                                                        onChange={() => handlecheckedChange('selectedMultiplyLine', 'no')}
+                                                    />
+                                                    <RadioButton
+                                                        label="Percentage"
+                                                        checked={checkstate.selectedMultiplyLine === 'per'}
+                                                        id="pr"
+                                                        name="pr"
+                                                        onChange={() => handlecheckedChange('selectedMultiplyLine', 'per')}
+                                                    />
+                                                </div>
+                                                {checkstate.selectedMultiplyLine !== 'no' && (
+                                                    <div style={{ marginTop: "4%" }}>
+                                                        <Divider borderColor="border" />
+                                                        {checkstate.selectedMultiplyLine === 'per' && (
+                                                            <div style={{ marginTop: "2%" }}>
+                                                                <TextField
+                                                                    type="text"
+                                                                    label="Cart Total Percentage"
+                                                                    autoComplete="off"
+                                                                    placeholder='0.00'
+                                                                    prefix='%'
+                                                                    value={rate_based_on_surcharge.cart_total_percentage}
+                                                                    onChange={handleRateFormChange('cart_total_percentage')}
+                                                                />
+                                                                <div style={{ marginTop: "2%", marginBottom: "3%" }}>
+                                                                    <FormLayout>
+                                                                        <FormLayout.Group>
+                                                                            <TextField
+                                                                                type="text"
+                                                                                label="Minimum Charge Price"
+                                                                                autoComplete="off"
+                                                                                placeholder='0'
+                                                                                value={rate_based_on_surcharge.min_charge_price}
+                                                                                onChange={handleRateFormChange('min_charge_price')}
+                                                                            />
+                                                                            <TextField
+                                                                                type="text"
+                                                                                label="Maximum Charge Price"
+                                                                                autoComplete="off"
+                                                                                placeholder='0'
+                                                                                value={rate_based_on_surcharge.max_charge_price}
+                                                                                onChange={handleRateFormChange('max_charge_price')}
+                                                                            />
+                                                                        </FormLayout.Group>
+                                                                    </FormLayout>
+                                                                </div>
+                                                                <Divider borderColor="border" />
+                                                            </div>
+                                                        )}
+                                                        <div style={{ marginTop: "2%" }}>
+                                                            <FormLayout>
+                                                                <FormLayout.Group>
+                                                                    <TextField
+                                                                        type="text"
+                                                                        label="Full Product Title"
+                                                                        autoComplete="off"
+                                                                        placeholder='Enter Full Product Title'
+                                                                        value={textFields.fullProductTitle}
+                                                                        onChange={handleTextFieldChange('fullProductTitle')}
+                                                                    />
+                                                                    <TextField
+                                                                        type="text"
+                                                                        label="Enter Collection ID"
+                                                                        autoComplete="off"
+                                                                        placeholder='Enter Collection ID'
+                                                                        value={textFields.collectionId}
+                                                                        onChange={handleTextFieldChange('collectionId')}
+                                                                    />
+                                                                </FormLayout.Group>
+                                                            </FormLayout>
+                                                        </div>
+                                                        <div style={{ marginTop: "2%" }}>
+                                                            <FormLayout>
+                                                                <FormLayout.Group>
+                                                                    <TextField
+                                                                        type="text"
+                                                                        label="Full Product Type"
+                                                                        autoComplete="off"
+                                                                        placeholder='Enter Full Product Type'
+                                                                        value={textFields.productType}
+                                                                        onChange={handleTextFieldChange('productType')}
+                                                                    />
+                                                                    <TextField
+                                                                        type="text"
+                                                                        label="Full Product Vendor"
+                                                                        autoComplete="off"
+                                                                        placeholder='Enter Full Product Vendor'
+                                                                        value={textFields.productVendor}
+                                                                        onChange={handleTextFieldChange('productVendor')}
+                                                                    />
+                                                                </FormLayout.Group>
+                                                            </FormLayout>
+                                                        </div>
+                                                        <p style={{ marginTop: "2%" }}>Note: Please enter the exact term for product title, collection id, product type, and product vendor that needs to be searched.
+                                                        </p>
+                                                        <div style={{ marginTop: "2%", width: '20%' }} >
+                                                            <Button variant="primary" onClick={handleSearchClick} >Search Product</Button></div>
+                                                        <div style={{ marginTop: "4%" }}>
+                                                            {filteredProducts.length > 0 && (
+                                                                <div>
+                                                                    <div>
+                                                                        <TextField
+                                                                            placeholder='search'
+                                                                            onChange={handlesearchChange}
+                                                                            value={value}
+                                                                            type="text"
+                                                                            prefix={<Icon source={SearchIcon} color="inkLighter" />}
+                                                                            autoComplete="off"
+                                                                            clearButton
+                                                                            onClearButtonClick={handleClearButtonClick}
+                                                                        />
+                                                                    </div>
+                                                                    <div style={{ marginTop: "4%" }}>
+                                                                        <IndexTable
+                                                                            resourceName={resourceName}
+                                                                            itemCount={products.length}
+
+                                                                            headings={[
+                                                                                { title: ` ${selectedCount} Selected` },
+                                                                                { title: 'Image' },
+                                                                                { title: 'Title' },
+                                                                                { title: 'Price' },
+                                                                                { title: 'Rate Price' },
+                                                                            ]}
+                                                                            selectable={false}
+                                                                            pagination={{
+                                                                                hasNext: pageInfo.hasNextPage,
+                                                                                onNext: handleNextPage,
+                                                                                hasPrevious: pageInfo.hasPreviousPage,
+                                                                                onPrevious: handlePreviousPage,
+                                                                            }}
+                                                                        >
+                                                                            {loadingTable ? (
+                                                                                <IndexTable.Row>
+                                                                                    <IndexTable.Cell colSpan={5}>
+                                                                                        <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                                                                            <Spinner accessibilityLabel="Loading products" size="small" />
+                                                                                        </div>
+                                                                                    </IndexTable.Cell>
+                                                                                </IndexTable.Row>
+                                                                            ) : (
+                                                                                rowMarkup
+                                                                            )}
+
+                                                                        </IndexTable>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                        {(checkstate.selectedByCart === 'Vendor' || checkstate.selectedByCart === 'Tag' || checkstate.selectedByCart === 'Type' || checkstate.selectedByCart === 'SKU' || checkstate.selectedByCart === 'Collection' || checkstate.selectedByCart === 'Metafields') && (
+                                            <div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '5%' }}>
+                                                    <Text variant="headingSm" as="h6">
+                                                        Multiply line item QTY price:
+                                                    </Text>
+                                                    <RadioButton
+                                                        label="Yes"
+                                                        checked={checkstate.selectedMultiplyLine === 'Yes'}
+                                                        id="Yes"
+                                                        name="Yes"
+                                                        onChange={() => handlecheckedChange('selectedMultiplyLine', 'Yes')}
+                                                    />
+                                                    <RadioButton
+                                                        label="No"
+                                                        checked={checkstate.selectedMultiplyLine === 'no'}
+                                                        id="no"
+                                                        name="SKU"
+                                                        onChange={() => handlecheckedChange('selectedMultiplyLine', 'no')}
+                                                    />
+                                                    <RadioButton
+                                                        label="Percentage"
+                                                        checked={checkstate.selectedMultiplyLine === 'per'}
+                                                        id="pr"
+                                                        name="pr"
+                                                        onChange={() => handlecheckedChange('selectedMultiplyLine', 'per')}
+                                                    />
+                                                </div>
+                                                {checkstate.selectedMultiplyLine !== 'no' && (
+                                                    <div style={{ marginTop: "4%" }}>
+                                                        <Divider borderColor="border" />
+                                                        {checkstate.selectedMultiplyLine === 'per' && (
+                                                            <div style={{ marginTop: "2%" }}>
+                                                                <TextField
+                                                                    type="text"
+                                                                    label="Cart Total Percentage"
+                                                                    autoComplete="off"
+                                                                    placeholder='0.00'
+                                                                    prefix='%'
+                                                                    value={rate_based_on_surcharge.cart_total_percentage}
+                                                                    onChange={handleRateFormChange('cart_total_percentage')}
+                                                                />
+                                                                <div style={{ marginTop: "2%", marginBottom: "3%" }}>
+                                                                    <FormLayout>
+                                                                        <FormLayout.Group>
+                                                                            <TextField
+                                                                                type="text"
+                                                                                label="Minimum Charge Price"
+                                                                                autoComplete="off"
+                                                                                placeholder='0'
+                                                                                value={rate_based_on_surcharge.min_charge_price}
+                                                                                onChange={handleRateFormChange('min_charge_price')}
+                                                                            />
+                                                                            <TextField
+                                                                                type="text"
+                                                                                label="Maximum Charge Price"
+                                                                                autoComplete="off"
+                                                                                placeholder='0'
+                                                                                value={rate_based_on_surcharge.max_charge_price}
+                                                                                onChange={handleRateFormChange('max_charge_price')}
+                                                                            />
+                                                                        </FormLayout.Group>
+                                                                    </FormLayout>
+                                                                </div>
+                                                                <Divider borderColor="border" />
+                                                            </div>
+                                                        )}
+                                                        <div style={{ marginTop: "2%" }}>
+                                                            <TextField
+                                                                type="text"
+                                                                label={
+                                                                    checkstate.selectedByCart === 'Vendor' ? "Vendor Name " :
+                                                                        checkstate.selectedByCart === 'Tag' ? "Product Tag" :
+                                                                            checkstate.selectedByCart === 'Type' ? "Product Type" :
+                                                                                checkstate.selectedByCart === 'SKU' ? 'Product SKU' :
+                                                                                    checkstate.selectedByCart === 'Collection' ? 'Product Collection ID' :
+                                                                                        "Variant Metafields"
+                                                                }
+
+                                                                autoComplete="off"
+                                                                placeholder=
+                                                                {
+                                                                    `Enter multiple ${checkstate.selectedByCart === 'Vendor' ? 'Vendor Names' : checkstate.selectedByCart === 'Tag' ? 'Product Tags' :
+                                                                        checkstate.selectedByCart === 'Type' ? 'Product Type' : checkstate.selectedByCart === 'SKU' ? 'Product SKU' :
+                                                                            checkstate.selectedByCart === 'Collection' ? 'Product Collection ID' : 'Variant Metafields'
+                                                                    }, separated by commas(,).`
+                                                                }
+                                                                multiline={4}
+                                                                monospaced
+                                                                helpText={
+                                                                    `Note: Please enter the exact term of multiple ${checkstate.selectedByCart === 'Vendor' ? 'Vendor Names' : checkstate.selectedByCart === 'Tag' ? 'Product Tags' :
+                                                                        checkstate.selectedByCart === 'Type' ? 'Product Type' : checkstate.selectedByCart === 'SKU' ? 'Product SKU' :
+                                                                            checkstate.selectedByCart === 'Collection' ? 'Product Collection Id' : 'Variant Metafields'
+                                                                    } with comma separator(,).`
+                                                                }
+
+                                                                value={rate_based_on_surcharge.descriptions}
+                                                                onChange={handleRateFormChange('descriptions')}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </LegacyCard>
+                        </Grid.Cell>
+                    </Grid>
+                </div>
+
+                <Divider borderColor="border" />
+                <div style={{ marginTop: "3%", marginBottom: "3%" }}>
+                    <Grid>
+                        <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                            <Text variant="headingMd" as="h6">
+                                Rate Tier
+                            </Text>
+                            <div style={{ marginTop: '4%' }}>
+                                <List type='bullet'>
+                                    <List.Item>Set different Base Rate Price according to order weight, total or qty.</List.Item>
+                                    <List.Item>Order price will count without applying the discount code.</List.Item>
+                                    <List.Item>When a tier is not found then the system will select the Base Rate which is set on top of the page.</List.Item>
+                                </List>
+                            </div>
+                        </Grid.Cell>
+                        <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                            <LegacyCard sectioned>
+                                <div>
+                                    <Select
+                                        options={tierOptions}
+                                        onChange={handleTierSelectChange}
+                                        value={selectedTierType}
+                                        helpText="Note: Please make sure Origin and Destination country must be same to use distance base shipping rate."
+                                    />
+                                    {selectedTierType !== 'selected' && (
+                                        <div>
+                                            <div style={{ marginTop: '2%' }}><Divider borderColor="border" />
+                                            </div>
+                                            {tiers.map((tier, index) => (
+                                                <div style={{ marginTop: '2%' }} key={index}>
+                                                    <div style={{ marginBottom: "1%", marginLeft: "85%" }}>
+                                                        <p style={{ color: "#ef5350", fontWeight: "bold", cursor: "pointer" }} onClick={() => removeTier(index)}>
+                                                            Remove Tier
+                                                        </p>
+                                                    </div>
+                                                    <FormLayout>
+                                                        <FormLayout.Group condensed>
+                                                            <TextField
+                                                                label={`Minimum ${selectedTierType === 'order_weight' ? 'Weight' : selectedTierType === 'order_quantity' ? 'Quantity' : selectedTierType === 'order_distance' ? 'Distance' : 'Price'}`}
+                                                                value={tier.minWeight}
+                                                                type='number'
+                                                                onChange={(value) => handleInputChange(index, 'minWeight', value)}
+                                                                autoComplete="off"
+                                                                prefix={shop_currency}
+                                                                placeholder="0.00"
+                                                                error={errors[`minWeight${index}`]}
+                                                            />
+                                                            <TextField
+                                                                label={`Maximum ${selectedTierType === 'order_weight' ? 'Weight' : selectedTierType === 'order_quantity' ? 'Quantity' : selectedTierType === 'order_distance' ? 'Distance' : 'Price'}`}
+                                                                value={tier.maxWeight}
+                                                                type='number'
+                                                                onChange={(value) => handleInputChange(index, 'maxWeight', value)}
+                                                                autoComplete="off"
+                                                                prefix={shop_currency}
+                                                                placeholder="0.00"
+                                                                error={errors[`maxWeight${index}`]}
+                                                            />
+                                                            <TextField
+                                                                label='Base Price'
+                                                                type='number'
+                                                                value={tier.basePrice}
+                                                                onChange={(value) => handleInputChange(index, 'basePrice', value)}
+                                                                autoComplete="off"
+                                                                prefix={shop_currency}
+                                                                placeholder="0.00"
+                                                                error={errors[`basePrice${index}`]}
+                                                            />
+                                                        </FormLayout.Group>
+                                                    </FormLayout>
+                                                    {selectedTierType === 'order_price' && (
+                                                        <div style={{ marginTop: '3%' }}>
+                                                            <FormLayout>
+                                                                <FormLayout.Group condensed>
+                                                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                                        <TextField
+                                                                            label='Per Item'
+                                                                            value={tier.perItem}
+                                                                            onChange={(value) => handleInputChange(index, 'perItem', value)}
+                                                                            autoComplete="off"
+                                                                            prefix={shop_currency}
+                                                                            placeholder="0.00"
+                                                                        />
+                                                                        <div style={{ padding: '20px 3px 0 3px', fontSize: '18px' }}>+</div>
+                                                                        <TextField
+                                                                            label='Percent Charge'
+                                                                            value={tier.percentCharge}
+                                                                            onChange={(value) => handleInputChange(index, 'percentCharge', value)}
+                                                                            autoComplete="off"
+                                                                            prefix="%"
+                                                                            placeholder="0.00"
+                                                                        />
+                                                                        <div style={{ padding: '20px 3px 0 3px', fontSize: '18px' }}>+</div>
+                                                                        <TextField
+                                                                            label={`Per ${shop_weight_unit}`}
+                                                                            value={tier.perkg}
+                                                                            onChange={(value) => handleInputChange(index, 'perkg', value)}
+                                                                            autoComplete="off"
+                                                                            prefix={shop_currency}
+                                                                            placeholder="0.00"
+                                                                        />
+                                                                    </div>
+                                                                </FormLayout.Group>
+                                                            </FormLayout>
+                                                        </div>
+                                                    )}
+                                                    <div style={{ marginTop: "3%" }}> <Divider borderColor="border" /></div>
+                                                </div>
+                                            ))}
+                                            <div style={{ marginTop: '2%' }}>
+                                                <Button
+                                                    icon={PlusIcon}
+                                                    onClick={addTier}
+                                                    variant='primary'
+                                                >
+                                                    Add Tier
+                                                </Button>
+                                            </div>
                                         </div>
-                                        <div style={{ marginTop: '3%' }}>
+                                    )}
+
+                                </div>
+                            </LegacyCard>
+                        </Grid.Cell>
+                    </Grid>
+                </div>
+
+                <Divider borderColor="border" />
+                <div style={{ marginTop: "3%", marginBottom: "3%" }}>
+                    <Grid>
+                        <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                            <Text variant="headingMd" as="h6">
+                                Exclude rate for products
+                            </Text>
+                            <div style={{ marginTop: "4%" }}>
+                                <List type="bullet">
+                                    <List.Item>
+                                        If this rate does not set with Set Rate Based On Cart as "Product" then this rate can be exclude for selected products.
+                                    </List.Item>
+                                    <List.Item>
+                                        If any of these products are in the cart, then this rate will not be available at checkout.
+                                    </List.Item>
+                                </List>
+                            </div>
+                        </Grid.Cell>
+                        <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                            <LegacyCard sectioned>
+                                <Select
+                                    label='Set Exclude Products'
+                                    options={rateOptions}
+                                    onChange={handleRateSelectChange}
+                                    value={selectedRate}
+                                />
+                                {selectedRate === 'custome_selection' && (
+                                    <div >
+                                        <div style={{ marginTop: "3%" }}></div>
+                                        <Divider borderColor="border" />
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: '2%', marginBottom: "2%" }}>
+                                            <RadioButton
+                                                label="Remove rate"
+                                                checked={checkstate.exclude_products_radio === 0}
+                                                id="remove_rate"
+                                                name="remove_rate"
+                                                onChange={() => handlecheckedChange('exclude_products_radio', 0)}
+                                            />
+                                            <RadioButton
+                                                label="Reduce only product price, weight and quantity"
+                                                checked={checkstate.exclude_products_radio === 1}
+                                                id="reduce_rate"
+                                                name="reduce_rate"
+                                                onChange={() => handlecheckedChange('exclude_products_radio', 1)}
+                                            />
+                                        </div>
+                                        <Divider borderColor="border" />
+                                        <div style={{ marginTop: "2%" }}>
                                             <FormLayout>
                                                 <FormLayout.Group>
                                                     <TextField
                                                         type="text"
-                                                        label="Service Code"
-                                                        value={send_another_rate.another_service_code}
-                                                        onChange={handleRateFormChange('another_service_code')}
+                                                        label="Full Product Title"
                                                         autoComplete="off"
-                                                        placeholder='Enter Service Code'
+                                                        placeholder='Enter Full Product Title'
+                                                        value={textFields.fullProductTitle}
+                                                        onChange={handleTextFieldChange('fullProductTitle')}
                                                     />
                                                     <TextField
                                                         type="text"
-                                                        label="Another merge rate tag"
-                                                        value={send_another_rate.another_merge_rate_tag}
-                                                        onChange={handleRateFormChange('another_merge_rate_tag')}
+                                                        label="Enter Collection ID"
                                                         autoComplete="off"
-                                                        placeholder='tag1,tag2,tag3'
+                                                        placeholder='Enter Collection ID'
+                                                        value={exclude_Rate.collection_id}
+                                                        onChange={handleRateFormChange('collection_id')}
                                                     />
                                                 </FormLayout.Group>
                                             </FormLayout>
                                         </div>
+                                        <div style={{ marginTop: "2%" }}>
+                                            <FormLayout>
+                                                <FormLayout.Group>
+                                                    <TextField
+                                                        type="text"
+                                                        label="Full Product Type"
+                                                        autoComplete="off"
+                                                        placeholder='Enter Full Product Type'
+                                                        value={exclude_Rate.product_type}
+                                                        onChange={handleRateFormChange('product_type')}
+                                                        helpText=''
+                                                    />
+                                                    <TextField
+                                                        type="text"
+                                                        label="Full Product Vendor"
+                                                        autoComplete="off"
+                                                        placeholder='Enter Full Product Vendor'
+                                                        value={exclude_Rate.product_vendor}
+                                                        onChange={handleRateFormChange('product_vendor')}
+                                                    />
+                                                </FormLayout.Group>
+                                            </FormLayout>
+                                        </div>
+                                        <p style={{ marginTop: "1%" }}>Note: Please enter the exact term for product title, collection id, product type, and product vendor that needs to be searched.
+                                        </p>
+                                        <div style={{ marginTop: "2%", width: '20%' }}>
+                                            <Button variant="primary" onClick={handleClick}>Search Product</Button></div>
+                                        <div style={{ marginTop: "4%" }}>
+                                            <div>
+                                                <div>
+                                                    <TextField
+                                                        placeholder='search'
+                                                        onChange={handlesearchChange}
+                                                        value={value}
+                                                        type="text"
+                                                        prefix={<Icon source={SearchIcon} color="inkLighter" />}
+                                                        autoComplete="off"
+                                                        clearButton
+                                                        onClearButtonClick={handleClearButtonClick}
+                                                    />
+                                                </div>
+                                                <div style={{ marginTop: "4%" }}>
+                                                    <IndexTable
+                                                        resourceName={resourceName}
+                                                        itemCount={products.length}
+
+                                                        headings={[
+                                                            { title: ` ${selectedCount1} Selected` },
+                                                            { title: 'Image' },
+                                                            { title: 'Title' },
+                                                            { title: 'Price' },
+
+                                                        ]}
+                                                        selectable={false}
+                                                        pagination={{
+                                                            hasNext: pageInfo.hasNextPage,
+                                                            onNext: handleNextPage,
+                                                            hasPrevious: pageInfo.hasPreviousPage,
+                                                            onPrevious: handlePreviousPage,
+                                                        }}
+                                                    >
+                                                        {loadingTable ? (
+                                                            <IndexTable.Row>
+                                                                <IndexTable.Cell colSpan={5}>
+                                                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                                                        <Spinner accessibilityLabel="Loading products" size="small" />
+                                                                    </div>
+                                                                </IndexTable.Cell>
+                                                            </IndexTable.Row>
+                                                        ) : (
+                                                            productData1
+                                                        )}
+
+                                                    </IndexTable>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
-                            </div>
-                        </LegacyCard>
-                    </Grid.Cell>
-                </Grid>
-            </div>
 
-            {showToast && (
-                <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
-            )}
-            {errorToast && (
-                <Toast content={toastContent} error duration={toastDuration} onDismiss={() => setErroToast(false)} />
-            )}
-            {toastActive && (
-                <Toast content={toastMessage} error onDismiss={toggleToastActive} />
-            )}
-            {isModalOpen && (
-                <Modal
-                    open={isModalOpen}
-                    onClose={handleModalClose}
-                    title="My Shopify Modal"
-                    primaryAction={{
-                        content: 'Add',
-                        onAction: handleModalClose,
-                        disabled: selectedProductIds.length === 0,
-                    }}
-                    secondaryActions={[
-                        {
-                            content: 'Cancel',
-                            onAction: handleModalClose,
-                        },
-                    ]}
-                >
-                    <Modal.Section>
-                        <div style={{ position: 'relative' }}>
-                            <div style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
-                                <TextField
-                                    placeholder='search'
-                                    onChange={handlesearchChange}
-                                    value={value}
-                                    type="text"
-                                    prefix={<Icon source={SearchIcon} color="inkLighter" />}
-                                    autoComplete="off"
-                                    clearButton
-                                    onClearButtonClick={handleClearButtonClick}
-                                />
+                                {(selectedRate === 'product_vendor' || selectedRate === 'product_sku' || selectedRate === 'product_type' || selectedRate === 'product_properties' || selectedRate === 'product_tag') && (
+                                    <div>
+                                        <div style={{ marginTop: "3%" }}></div>
+                                        <Divider borderColor="border" />
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: '2%', marginBottom: "2%" }}>
+                                            <RadioButton
+                                                label="Remove rate"
+                                                checked={checkstate.exclude_products_radio === 0}
+                                                id="remove_rate"
+                                                name="remove_rate"
+                                                onChange={() => handlecheckedChange('exclude_products_radio', 0)}
+                                            />
+                                            <RadioButton
+                                                label="Reduce only product price, weight and quantity"
+                                                checked={checkstate.exclude_products_radio === 1}
+                                                id="reduce_rate"
+                                                name="reduce_rate"
+                                                onChange={() => handlecheckedChange('exclude_products_radio', 1)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <TextField
+                                                placeholder='test1,test2'
+                                                multiline={4}
+                                                autoComplete="off"
+                                                value={exclude_Rate.exclude_products_textbox}
+                                                onChange={handleRateFormChange('exclude_products_textbox')}
+                                                helpText={
+                                                    `Note: Please enter the exact term of multiple ${selectedRate === 'product_vendor' ? 'Vendor ' : selectedRate === 'product_sku' ? 'Product SKU' :
+                                                        selectedRate === 'product_type' ? 'Product Type' : selectedRate === 'product_tag' ? 'Product Tag' : 'Product Properties'
+                                                    } with comma separator(,).`
+                                                }
+                                                error={errors.exclude_products_textbox}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </LegacyCard>
+                        </Grid.Cell>
+                    </Grid>
+                </div>
+
+                <Divider borderColor="border" />
+                <div style={{ marginTop: "3%", marginBottom: "3%" }}>
+                    <Grid>
+                        <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                            <Text variant="headingMd" as="h6">
+                                Rate Modifiers
+                            </Text>
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        Set different Base Rate Price according to order weight, total price or qty.
+                                    </List.Item>
+                                </List>
                             </div>
-                            <div style={{ marginTop: '4%', height: '400px', overflowY: 'scroll' }}>
-                                <IndexTable
-                                    resourceName={resourceName}
-                                    itemCount={products.length}
-                                    headings={[
-                                        { title: ` ${selectedCount2} Selected` },
-                                        { title: 'Image' },
-                                        { title: 'Title' },
-                                        { title: 'Price' },
-                                    ]}
-                                    selectable={false}
-                                    pagination={{
-                                        hasNext: pageInfo.hasNextPage,
-                                        onNext: handleNextPage,
-                                        hasPrevious: pageInfo.hasPreviousPage,
-                                        onPrevious: handlePreviousPage,
-                                    }}
-                                >
-                                    {loadingTable ? (
-                                        <IndexTable.Row>
-                                            <IndexTable.Cell colSpan={5}>
-                                                <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-                                                    <Spinner accessibilityLabel="Loading products" size="small" />
+                        </Grid.Cell>
+                        <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                            <div style={{ alignItems: "center" }}>
+                                <LegacyCard sectioned>
+                                    {rateModifiers.map((modifier, index) => (
+                                        <div style={{ marginBottom: "3%" }} key={`modifyKey-${modifier.id}-${index}`}>
+                                            <Box id={`modify-${modifier.id}`} borderColor="border" borderWidth="025" borderRadius="200">
+                                                <div style={{ padding: '10px' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                        <Button
+                                                            onClick={handleToggle(modifier.id)}
+                                                            ariaExpanded={open[modifier.id]}
+                                                            ariaControls={`collapsible-${modifier.id}`}
+                                                            icon={SelectIcon}
+                                                        />
+                                                        <p style={{ color: '#ef5350', fontWeight: 'bold', cursor: 'pointer' }}
+                                                            onClick={() => handleRemoveRateModifier(modifier.id)}
+                                                        >
+                                                            Remove Rate Modifier
+                                                        </p>
+                                                    </div>
+                                                    <Collapsible
+                                                        open={open[modifier.id]}
+                                                        id={`collapsible-${modifier.id}`}
+                                                        transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
+                                                        expandOnPrint
+                                                    >
+                                                        <div style={{ marginTop: "3%" }}></div>
+                                                        <Divider borderColor="border" />
+                                                        <div style={{ marginTop: "2%" }}>
+                                                            <FormLayout>
+                                                                <FormLayout.Group>
+                                                                    <TextField
+                                                                        type="text"
+                                                                        label="Rate Modifier Name"
+                                                                        value={modifier.name}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'name')}
+                                                                        autoComplete="off"
+                                                                        placeholder="Rate Modifier Name"
+                                                                        error={errors[`name${index}`]}
+                                                                    />
+                                                                    <TextField
+                                                                        type="text"
+                                                                        label="Title"
+                                                                        value={modifier.title}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'title')}
+                                                                        autoComplete="off"
+                                                                        placeholder="Rate Modifier Title -Optional"
+                                                                        helpText="Text that will be appended to the rate description"
+                                                                    />
+                                                                </FormLayout.Group>
+                                                            </FormLayout>
+                                                        </div>
+                                                        <div style={{ marginTop: '2%' }}>
+                                                            <Divider borderColor="border" />
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '5%',
+                                                                marginTop: '3%',
+                                                            }}
+                                                        >
+                                                            <Text variant="headingXs" as="h6">
+                                                                Type:
+                                                            </Text>
+                                                            <RadioButton
+                                                                label="None"
+                                                                checked={modifier.type === 'None'}
+                                                                id={`None-${modifier.id}`}
+                                                                name={`type-${modifier.id}`}
+                                                                onChange={() => handleRateModifierChange(modifier.id, 'type')('None')}
+                                                            />
+                                                            <RadioButton
+                                                                label="AND"
+                                                                checked={modifier.type === 'AND'}
+                                                                id={`AND-${modifier.id}`}
+                                                                name={`type-${modifier.id}`}
+                                                                onChange={() => handleRateModifierChange(modifier.id, 'type')('AND')}
+                                                            />
+                                                            <RadioButton
+                                                                label="OR"
+                                                                checked={modifier.type === 'OR'}
+                                                                id={`OR-${modifier.id}`}
+                                                                name={`type-${modifier.id}`}
+                                                                onChange={() => handleRateModifierChange(modifier.id, 'type')('OR')}
+                                                            />
+                                                        </div>
+                                                        <div style={{ marginTop: '2%' }}></div>
+                                                        <FormLayout>
+                                                            <FormLayout.Group>
+                                                                <Select
+                                                                    label="Apply this rate modifier when"
+                                                                    options={rateModifiersOptions}
+                                                                    value={modifier.rateModifier}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'rateModifier')}
+                                                                />
+                                                                {(modifier.rateModifier === 'dayOfOrder' || modifier.rateModifier === 'provinceCode' || modifier.rateModifier === 'zipcode' || modifier.rateModifier === 'collectionsIds' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'day' || modifier.rateModifier === 'date' || modifier.rateModifier === 'type' || modifier.rateModifier === 'ids') && (
+                                                                    <Select
+                                                                        label="Select Operator"
+                                                                        options={day}
+                                                                        value={modifier.rateOperator}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                    />
+                                                                )}
+                                                                {(modifier.rateModifier === 'price' || modifier.rateModifier === 'time' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'calculateRate') && (
+                                                                    <Select
+                                                                        label="Select Operator"
+                                                                        options={rateTimeOptions}
+                                                                        value={modifier.rateOperator}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                    />
+                                                                )}
+                                                                {modifier.rateModifier === 'quantity' && (
+                                                                    <Select
+                                                                        label="Select Operator"
+                                                                        options={rateQuantityOptions}
+                                                                        value={modifier.rateOperator}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                    />
+                                                                )}
+                                                                {modifier.rateModifier === 'available' && (
+                                                                    <Select
+                                                                        label="Select Operator"
+                                                                        options={rateAvailableOptions}
+                                                                        value={modifier.rateOperator}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                    />
+                                                                )}
+                                                                {modifier.rateModifier === 'availableQuan' && (
+                                                                    <Select
+                                                                        label="Select Operator"
+                                                                        options={rateAvailableQuantity}
+                                                                        value={modifier.rateOperator}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                    />
+                                                                )}
+                                                                {(modifier.rateModifier === 'title' || modifier.rateModifier === 'address') && (
+                                                                    <Select
+                                                                        label="Select Operator"
+                                                                        options={address}
+                                                                        value={modifier.rateOperator}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                    />
+                                                                )}
+                                                                {(modifier.rateModifier === 'tag' || modifier.rateModifier === 'thirdParty' || modifier.rateModifier === 'name' || modifier.rateModifier === 'city' || modifier.rateModifier === 'tag2' || modifier.rateModifier === 'vendor' || modifier.rateModifier === 'properties' || modifier.rateModifier === 'type2') && (
+                                                                    <Select
+                                                                        label="Select Operator"
+                                                                        options={rateTag}
+                                                                        value={modifier.rateOperator}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                    />
+                                                                )}
+                                                                {modifier.rateModifier === 'sku' && (
+                                                                    <Select
+                                                                        label="Select Operator"
+                                                                        options={ratesku}
+                                                                        value={modifier.rateOperator}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
+                                                                    />
+                                                                )}
+                                                            </FormLayout.Group>
+                                                        </FormLayout>
+                                                        <div style={{ marginTop: '5%', marginBottom: '3%' }}>
+                                                            {(modifier.rateModifier === 'dayOfOrder' || modifier.rateModifier === 'day') && (
+                                                                <Select
+                                                                    options={rateDayOptions}
+                                                                    value={modifier.rateDay}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                />
+                                                            )}
+                                                            {modifier.rateModifier === 'time' && (
+                                                                <Select
+                                                                    options={time}
+                                                                    value={modifier.rateDay}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                />
+                                                            )}
+                                                            {modifier.rateModifier === 'date' && (
+                                                                <TextField
+                                                                    value={modifier.rateDay}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                    type="date"
+                                                                />
+                                                            )}
+                                                            {modifier.rateModifier === 'ids' && (
+                                                                <TextField
+                                                                    type='text'
+                                                                    value={modifier.productData
+                                                                        ? modifier.productData.map(product => product.id).join(',')
+                                                                        : ''}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'productData')}
+                                                                    multiline={4}
+                                                                    onFocus={() => handleFocus(modifier.id)}
+                                                                    helpText='Add product IDs with comma(,) separator'
+                                                                />
+                                                            )}
+                                                            {(modifier.rateModifier === 'price' || modifier.rateModifier === 'calculateRate' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
+                                                                <TextField
+                                                                    type="number"
+                                                                    value={modifier.rateDay}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                    autoComplete="off"
+                                                                    placeholder={
+                                                                        modifier.rateModifier === 'price' ? "Price" :
+                                                                            modifier.rateModifier === 'weight' ? "Weight" :
+                                                                                modifier.rateModifier === 'quantity' ? "Quantity" :
+                                                                                    modifier.rateModifier === 'distance' ? "Distance" :
+                                                                                        modifier.rateModifier === 'dayFromToday' ? "Order Delivery X day from today is" :
+                                                                                            modifier.rateModifier === 'timefromCurrent' ? "Order Delivery X hours from current is" :
+                                                                                                modifier.rateModifier === 'estimatedDay' ? "Estimated Delivery day" :
+                                                                                                    modifier.rateModifier === 'availableQuan' ? "Quantity" :
+                                                                                                        modifier.rateModifier === 'calculateRate' ? "Calculate Rate Price" :
+                                                                                                            "Local Code"
+                                                                    }
+                                                                />
+                                                            )}
+                                                            {modifier.rateModifier === 'type' && (
+                                                                <Select
+                                                                    options={type}
+                                                                    value={modifier.rateDay}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                />
+                                                            )}
+                                                            {modifier.rateModifier === 'available' && (
+                                                                <Select
+                                                                    options={firstAvailableDay}
+                                                                    value={modifier.rateDay}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                />
+                                                            )}
+                                                            {(modifier.rateModifier === 'title' || modifier.rateModifier === 'thirdParty' || modifier.rateModifier === 'tag2' || modifier.rateModifier === 'address' || modifier.rateModifier === 'provinceCode' || modifier.rateModifier === 'city' || modifier.rateModifier === 'tag' || modifier.rateModifier === 'sku' || modifier.rateModifier === 'type2' || modifier.rateModifier === 'properties' || modifier.rateModifier === 'vendor' || modifier.rateModifier === 'collectionsIds' || modifier.rateModifier === 'zipcode' || modifier.rateModifier === 'name') && (
+                                                                <TextField
+                                                                    type="text"
+                                                                    value={modifier.rateDay}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                    autoComplete="off"
+                                                                    multiline={4}
+                                                                    placeholder={
+                                                                        modifier.rateModifier === 'title' ? "Title" :
+                                                                            modifier.rateModifier === 'tag' ? "Tag1,Tag2" :
+                                                                                modifier.rateModifier === 'sku' ? "sku1,sku2" :
+                                                                                    modifier.rateModifier === 'type2' ? "type1,type2" :
+                                                                                        modifier.rateModifier === 'properties' ? "key:value,key:value" :
+                                                                                            modifier.rateModifier === 'vendor' ? "vendor1,vendor2" :
+                                                                                                modifier.rateModifier === 'name' ? "Enter Name" :
+                                                                                                    modifier.rateModifier === 'city' ? "Enter city" :
+                                                                                                        modifier.rateModifier === 'provinceCode' ? "Enter Province Code" :
+                                                                                                            modifier.rateModifier === 'address' ? "Enter Address" :
+                                                                                                                modifier.rateModifier === 'tag' ? "Enter Tag" :
+                                                                                                                    modifier.rateModifier === 'zipcode' ? "364001,364002,364003" :
+                                                                                                                        modifier.rateModifier === 'thirdParty' ? "services1,services2" :
+                                                                                                                            "6557955412548511244"
+                                                                    }
+                                                                    helpText={
+                                                                        modifier.rateModifier === 'title' ? "contains exact match product title with comma(,) seprator" :
+                                                                            modifier.rateModifier === 'tag' ? "add exact product tag with comma(,) separator" :
+                                                                                modifier.rateModifier === 'sku' ? "add exact product sku with comma(,) separator" :
+                                                                                    modifier.rateModifier === 'type2' ? "add exact product type with comma(,) separator" :
+                                                                                        modifier.rateModifier === 'properties' ? "Add produt property like key:value" :
+                                                                                            modifier.rateModifier === 'vendor' ? "add exactvendor name with comma(,) separator" :
+                                                                                                modifier.rateModifier === 'zipcode' ? "exact match zip codes with comma(,) separator" :
+                                                                                                    modifier.rateModifier === 'name' ? "contains match customer name with comma(,) separator" :
+                                                                                                        modifier.rateModifier === 'city' ? "contains match customer city with comma(,) separator" :
+                                                                                                            modifier.rateModifier === 'provinceCode' ? "Customer province code with comma(,) separator" :
+                                                                                                                modifier.rateModifier === 'address' ? "contains match customer address with comma(,) separator" :
+                                                                                                                    modifier.rateModifier === 'tag2' ? "contains match customer address with comma(,) separator" :
+                                                                                                                        modifier.rateModifier === 'thirdParty' ? "add exact third party services with comma(,) separator" :
+                                                                                                                            "add collection ids with comma(,) separator"}
+                                                                />
+                                                            )}
+                                                        </div>
+
+
+
+                                                        {(modifier.type === 'AND' || modifier.type === 'OR') && (
+                                                            <div style={{ marginTop: '5%' }}>
+                                                                <div style={{ float: 'left', width: '45%', marginTop: "0.5%" }}><hr /></div>
+                                                                <div style={{ float: 'right', width: '45%', marginTop: "0.5%" }}><hr /></div>
+                                                                <p style={{ textAlign: "center" }}>{modifier.type} </p>
+                                                                <div style={{ marginTop: '4%' }}></div>
+                                                                <FormLayout>
+                                                                    <FormLayout.Group>
+                                                                        <Select
+                                                                            label="Apply this rate modifier when"
+                                                                            options={rateModifiersOptions}
+                                                                            value={modifier.rateModifier2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateModifier2')}
+                                                                        />
+                                                                        {(modifier.rateModifier2 === 'dayOfOrder' || modifier.rateModifier2 === 'provinceCode' || modifier.rateModifier2 === 'zipcode' || modifier.rateModifier2 === 'collectionsIds' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'day' || modifier.rateModifier2 === 'date' || modifier.rateModifier2 === 'type' || modifier.rateModifier2 === 'ids') && (
+                                                                            <Select
+                                                                                label="Select Operator"
+                                                                                options={day}
+                                                                                value={modifier.rateOperator2}
+                                                                                onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
+                                                                            />
+                                                                        )}
+                                                                        {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'time' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'calculateRate') && (
+                                                                            <Select
+                                                                                label="Select Operator"
+                                                                                options={rateTimeOptions}
+                                                                                value={modifier.rateOperator2}
+                                                                                onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
+                                                                            />
+                                                                        )}
+                                                                        {modifier.rateModifier2 === 'quantity' && (
+                                                                            <Select
+                                                                                label="Select Operator"
+                                                                                options={rateQuantityOptions}
+                                                                                value={modifier.rateOperator2}
+                                                                                onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
+                                                                            />
+                                                                        )}
+                                                                        {modifier.rateModifier2 === 'available' && (
+                                                                            <Select
+                                                                                label="Select Operator"
+                                                                                options={rateAvailableOptions}
+                                                                                value={modifier.rateOperator2}
+                                                                                onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
+                                                                            />
+                                                                        )}
+                                                                        {modifier.rateModifier2 === 'availableQuan' && (
+                                                                            <Select
+                                                                                label="Select Operator"
+                                                                                options={rateAvailableQuantity}
+                                                                                value={modifier.rateOperator2}
+                                                                                onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
+                                                                            />
+                                                                        )}
+                                                                        {(modifier.rateModifier2 === 'title' || modifier.rateModifier2 === 'address') && (
+                                                                            <Select
+                                                                                label="Select Operator"
+                                                                                options={address}
+                                                                                value={modifier.rateOperator2}
+                                                                                onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
+                                                                            />
+                                                                        )}
+                                                                        {(modifier.rateModifier2 === 'tag' || modifier.rateModifier2 === 'thirdParty' || modifier.rateModifier2 === 'name' || modifier.rateModifier2 === 'city' || modifier.rateModifier2 === 'tag2' || modifier.rateModifier2 === 'vendor' || modifier.rateModifier2 === 'properties' || modifier.rateModifier2 === 'type2') && (
+                                                                            <Select
+                                                                                label="Select Operator"
+                                                                                options={rateTag}
+                                                                                value={modifier.rateOperator2}
+                                                                                onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
+                                                                            />
+                                                                        )}
+                                                                        {modifier.rateModifier2 === 'sku' && (
+                                                                            <Select
+                                                                                label="Select Operator"
+                                                                                options={ratesku}
+                                                                                value={modifier.rateOperator2}
+                                                                                onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
+                                                                            />
+                                                                        )}
+                                                                    </FormLayout.Group>
+                                                                </FormLayout>
+                                                                <div style={{ marginTop: '5%', marginBottom: '3%' }}>
+                                                                    {(modifier.rateModifier2 === 'dayOfOrder' || modifier.rateModifier2 === 'day') && (
+                                                                        <Select
+                                                                            options={rateDayOptions}
+                                                                            value={modifier.rateDay2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
+                                                                        />
+                                                                    )}
+                                                                    {modifier.rateModifier2 === 'time' && (
+                                                                        <Select
+                                                                            options={time}
+                                                                            value={modifier.rateDay2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
+                                                                        />
+                                                                    )}
+                                                                    {modifier.rateModifier2 === 'date' && (
+                                                                        <TextField
+                                                                            value={modifier.rateDay2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
+                                                                            type="date"
+                                                                        />
+                                                                    )}
+                                                                    {modifier.rateModifier2 === 'ids' && (
+                                                                        <TextField
+                                                                            type='text'
+                                                                            value={modifier.productData ? String(modifier.productData) : ''}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'productData')}
+                                                                            multiline={4}
+                                                                            onFocus={handleFocus}
+                                                                            helpText='add product ids with comma(,) separator'
+                                                                        />
+
+                                                                    )}
+                                                                    {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (
+                                                                        <TextField
+                                                                            type="number"
+                                                                            value={modifier.rateDay2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
+                                                                            autoComplete="off"
+                                                                            placeholder={
+                                                                                modifier.rateModifier2 === 'price' ? "Price" :
+                                                                                    modifier.rateModifier2 === 'weight' ? "Weight" :
+                                                                                        modifier.rateModifier2 === 'quantity' ? "Quantity" :
+                                                                                            modifier.rateModifier2 === 'distance' ? "Distance" :
+                                                                                                modifier.rateModifier2 === 'dayFromToday' ? "Order Delivery X day from today is" :
+                                                                                                    modifier.rateModifier2 === 'timefromCurrent' ? "Order Delivery X hours from current is" :
+                                                                                                        modifier.rateModifier2 === 'estimatedDay' ? "Estimated Delivery day" :
+                                                                                                            modifier.rateModifier2 === 'availableQuan' ? "Quantity" :
+                                                                                                                modifier.rateModifier2 === 'calculateRate' ? "Calculate Rate Price" :
+                                                                                                                    "Local Code"
+                                                                            }
+                                                                        />
+                                                                    )}
+                                                                    {modifier.rateModifier2 === 'type' && (
+                                                                        <Select
+                                                                            options={type}
+                                                                            value={modifier.rateDay2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
+                                                                        />
+                                                                    )}
+                                                                    {modifier.rateModifier2 === 'available' && (
+                                                                        <Select
+                                                                            options={firstAvailableDay}
+                                                                            value={modifier.rateDay2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
+                                                                        />
+                                                                    )}
+                                                                    {(modifier.rateModifier2 === 'title' || modifier.rateModifier2 === 'thirdParty' || modifier.rateModifier2 === 'tag2' || modifier.rateModifier2 === 'address' || modifier.rateModifier2 === 'provinceCode' || modifier.rateModifier2 === 'city' || modifier.rateModifier2 === 'tag' || modifier.rateModifier2 === 'sku' || modifier.rateModifier2 === 'type2' || modifier.rateModifier2 === 'properties' || modifier.rateModifier2 === 'vendor' || modifier.rateModifier2 === 'collectionsIds' || modifier.rateModifier2 === 'zipcode' || modifier.rateModifier2 === 'name') && (
+                                                                        <TextField
+                                                                            type="text"
+                                                                            value={modifier.rateDay2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
+                                                                            autoComplete="off"
+                                                                            multiline={4}
+                                                                            placeholder={
+                                                                                modifier.rateModifier2 === 'title' ? "Title" :
+                                                                                    modifier.rateModifier2 === 'tag' ? "Tag1,Tag2" :
+                                                                                        modifier.rateModifier2 === 'sku' ? "sku1,sku2" :
+                                                                                            modifier.rateModifier2 === 'type2' ? "type1,type2" :
+                                                                                                modifier.rateModifier2 === 'properties' ? "key:value,key:value" :
+                                                                                                    modifier.rateModifier2 === 'vendor' ? "vendor1,vendor2" :
+                                                                                                        modifier.rateModifier2 === 'name' ? "Enter Name" :
+                                                                                                            modifier.rateModifier2 === 'city' ? "Enter city" :
+                                                                                                                modifier.rateModifier2 === 'provinceCode' ? "Enter Province Code" :
+                                                                                                                    modifier.rateModifier2 === 'address' ? "Enter Address" :
+                                                                                                                        modifier.rateModifier2 === 'tag' ? "Enter Tag" :
+                                                                                                                            modifier.rateModifier2 === 'zipcode' ? "364001,364002,364003" :
+                                                                                                                                modifier.rateModifier2 === 'thirdParty' ? "services1,services2" :
+                                                                                                                                    "6557955412548511244"
+                                                                            }
+                                                                            helpText={
+                                                                                modifier.rateModifier2 === 'title' ? "contains exact match product title with comma(,) seprator" :
+                                                                                    modifier.rateModifier2 === 'tag' ? "add exact product tag with comma(,) separator" :
+                                                                                        modifier.rateModifier2 === 'sku' ? "add exact product sku with comma(,) separator" :
+                                                                                            modifier.rateModifier2 === 'type2' ? "add exact product type with comma(,) separator" :
+                                                                                                modifier.rateModifier2 === 'properties' ? "Add produt property like key:value" :
+                                                                                                    modifier.rateModifier2 === 'vendor' ? "add exactvendor name with comma(,) separator" :
+                                                                                                        modifier.rateModifier2 === 'zipcode' ? "exact match zip codes with comma(,) separator" :
+                                                                                                            modifier.rateModifier2 === 'name' ? "contains match customer name with comma(,) separator" :
+                                                                                                                modifier.rateModifier2 === 'city' ? "contains match customer city with comma(,) separator" :
+                                                                                                                    modifier.rateModifier2 === 'provinceCode' ? "Customer province code with comma(,) separator" :
+                                                                                                                        modifier.rateModifier2 === 'address' ? "contains match customer address with comma(,) separator" :
+                                                                                                                            modifier.rateModifier2 === 'tag2' ? "contains match customer address with comma(,) separator" :
+                                                                                                                                modifier.rateModifier2 === 'thirdParty' ? "add exact third party services with comma(,) separator" :
+                                                                                                                                    "add collection ids with comma(,) separator"}
+                                                                        />
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        <Divider borderColor="border" />
+                                                        <div
+                                                            style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '5%',
+                                                                marginTop: '3%',
+                                                                marginBottom: '3%',
+                                                            }}
+                                                        >
+                                                            <Text variant="headingXs" as="h6">
+                                                                Behaviour:
+                                                            </Text>
+                                                            <RadioButton
+                                                                label="Stack"
+                                                                checked={modifier.behaviour === 'Stack'}
+                                                                id={`Stack-${modifier.id}`}
+                                                                name={`behaviour-${modifier.id}`}
+                                                                onChange={() => handleRateModifierChange(modifier.id, 'behaviour')('Stack')}
+                                                            />
+                                                            <RadioButton
+                                                                label="Terminate"
+                                                                checked={modifier.behaviour === 'Terminate'}
+                                                                id={`Terminate-${modifier.id}`}
+                                                                name={`behaviour-${modifier.id}`}
+                                                                onChange={() => handleRateModifierChange(modifier.id, 'behaviour')('Terminate')}
+                                                            />
+                                                        </div>
+                                                        <Divider borderColor="border" />
+                                                        <div
+                                                            style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '2%',
+                                                                marginTop: '3%',
+                                                                marginBottom: '3%',
+                                                            }}
+                                                        >
+                                                            <Text variant="headingXs" as="h6">
+                                                                Modifier Type:
+                                                            </Text>
+                                                            <RadioButton
+                                                                label="Fixed"
+                                                                checked={modifier.modifierType === 'Fixed'}
+                                                                id={`Fixed-${modifier.id}`}
+                                                                name={`modifierType-${modifier.id}`}
+                                                                onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('Fixed')}
+                                                            />
+                                                            <RadioButton
+                                                                label="Percentage"
+                                                                checked={modifier.modifierType === 'Percentage'}
+                                                                id={`Percentage-${modifier.id}`}
+                                                                name={`modifierType-${modifier.id}`}
+                                                                onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('Percentage')}
+                                                            />
+                                                            <RadioButton
+                                                                label="Static"
+                                                                checked={modifier.modifierType === 'Static'}
+                                                                id={`Static-${modifier.id}`}
+                                                                name={`modifierType-${modifier.id}`}
+                                                                onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('Static')}
+                                                            />
+                                                            <RadioButton
+                                                                label="Remove Rate"
+                                                                checked={modifier.modifierType === 'RemoveRate'}
+                                                                id={`RemoveRate-${modifier.id}`}
+                                                                name={`modifierType-${modifier.id}`}
+                                                                onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('RemoveRate')}
+                                                            />
+                                                            <RadioButton
+                                                                label="Show Only"
+                                                                checked={modifier.modifierType === 'ShowOnly'}
+                                                                id={`ShowOnly-${modifier.id}`}
+                                                                name={`modifierType-${modifier.id}`}
+                                                                onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('ShowOnly')}
+                                                            />
+                                                        </div>
+                                                        {modifier.modifierType !== 'Static' && modifier.modifierType !== 'RemoveRate' && modifier.modifierType !== 'ShowOnly' && (
+                                                            <div>
+                                                                <Divider borderColor="border" />
+                                                                <div style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    marginTop: '2%',
+                                                                    marginBottom: '2%',
+                                                                    justifyContent: "space-between"
+                                                                }}>
+                                                                    <Text variant="headingXs" as="h6">
+                                                                        Effect :
+                                                                    </Text>
+                                                                    <RadioButton
+                                                                        label="Increase"
+                                                                        checked={modifier.effect === 'Increase'}
+                                                                        id={`Increase-${modifier.id}`}
+                                                                        name={`effect-${modifier.id}`}
+                                                                        onChange={() =>
+                                                                            handleRateModifierChange(modifier.id, 'effect')('Increase')
+                                                                        }
+                                                                    />
+                                                                    <RadioButton
+                                                                        label="Decrease"
+                                                                        checked={modifier.effect === 'Decrease'}
+                                                                        id={`Decrease-${modifier.id}`}
+                                                                        name={`effect-${modifier.id}`}
+                                                                        onChange={() =>
+                                                                            handleRateModifierChange(modifier.id, 'effect')('Decrease')
+                                                                        }
+                                                                    />
+                                                                    <TextField
+                                                                        type="text"
+                                                                        label="Adjustment"
+                                                                        value={modifier.adjustment}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'adjustment')}
+                                                                        autoComplete="off"
+                                                                        placeholder="00"
+                                                                        error={errors[`adjustment${index}`]}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {modifier.modifierType === 'Static' && (
+                                                            <div style={{
+                                                                marginTop: '2%',
+                                                                marginBottom: '2%',
+                                                            }}>
+                                                                <div style={{ marginBottom: "2%" }}>
+                                                                    <Divider borderColor="border" />
+                                                                </div>
+                                                                <FormLayout>
+                                                                    <TextField
+                                                                        type="text"
+                                                                        label="Adjustment"
+                                                                        value={modifier.adjustment}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'adjustment')}
+                                                                        autoComplete="off"
+                                                                        placeholder="00"
+                                                                        error={errors[`adjustment${index}`]}
+
+                                                                    />
+                                                                </FormLayout>
+                                                            </div>
+                                                        )}
+                                                    </Collapsible>
                                                 </div>
-                                            </IndexTable.Cell>
-                                        </IndexTable.Row>
-                                    ) : (
-                                        productData2
-                                    )}
-                                </IndexTable>
+                                            </Box>
+                                        </div>
+                                    ))}
+                                    <div style={{ marginTop: "3%" }}>
+                                        <Button variant='primary' icon={PlusIcon} onClick={handleAddRateModifier}>Add Rate Modifier</Button>
+                                    </div>
+                                </LegacyCard>
                             </div>
-                        </div>
-                    </Modal.Section>
-                </Modal>
+                        </Grid.Cell>
+                    </Grid>
+                </div>
 
-            )}
+                <Divider borderColor="border" />
+                <div style={{ marginTop: "3%", marginBottom: "3%" }}>
+                    <Grid>
+                        <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                            <Text variant="headingMd" as="h6">
+                                Merge rate
+                            </Text>
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        We recommend using the same Shipping Tag for all related Shipping rates when merge shipping rates.
+                                    </List.Item>
+                                </List>
+                            </div>                    </Grid.Cell>
+                        <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                            <LegacyCard sectioned>
+                                <TextField
+                                    label="Merge rate tag"
+                                    value={formData.merge_rate_tag || ''}
+                                    onChange={handleRateFormChange('merge_rate_tag')}
+                                    autoComplete="off"
+                                    placeholder='tag1,tag2,tag3'
+                                />
+                            </LegacyCard>
+                        </Grid.Cell>
+                    </Grid>
+                </div>
 
-        </Page>
+                <Divider borderColor="border" />
+                <div style={{ marginTop: "3%", marginBottom: "3%" }}>
+                    <Grid>
+                        <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+
+                            <Text variant="headingMd" as="h6">
+                                Origin Locations
+                            </Text>
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        Rate applies on selected locations
+                                    </List.Item>
+                                </List>
+                            </div>
+
+                        </Grid.Cell>
+                        <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                            <LegacyCard sectioned>
+                                <Text variant="headingSm" as="h6">
+                                    Ship From Locations
+                                </Text>
+                                <div style={{ alignItems: 'center', paddingTop: '2%' }}>
+                                    <Checkbox
+                                        label="Select All Location"
+                                        checked={checkedState.checked2}
+                                        onChange={() => handleCheckChange('checked2')}
+                                    />
+                                    {!checkedState.checked2 && (
+                                        <div style={{ marginTop: "1%" }}>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                                                {locations.map(location => {
+                                                    return (
+                                                        <div key={location.id} style={{ width: '50%', height: '5%', padding: '5px' }}>
+                                                            <LegacyCard>
+                                                                <div style={{ display: 'flex', alignItems: 'center', padding: '10px' }}>
+                                                                    <Checkbox
+                                                                        checked={!!checkedlocation[location.name]?.checked}
+                                                                        onChange={() => handleLocationChange(location)}
+                                                                    />
+                                                                    <div style={{ marginLeft: '5%' }}>
+                                                                        <h2>{location.name}</h2>
+                                                                        <p>{location.address1 || '-'}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </LegacyCard>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {locations.length === 0 && (
+                                                    <Card>
+                                                        <p>No locations found</p>
+                                                    </Card>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </LegacyCard>
+                        </Grid.Cell>
+                    </Grid>
+                </div>
+
+                <Divider borderColor="border" />
+                <div style={{ marginTop: "3%", marginBottom: "3%" }}>
+                    <Grid>
+                        <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+
+                            <Text variant="headingMd" as="h6">
+                                Schedule Rate
+                            </Text>
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        This rate is only available on a specific date & time
+                                    </List.Item>
+                                </List>
+                            </div>
+                        </Grid.Cell>
+                        <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                            <LegacyCard sectioned>
+                                <Text variant="headingSm" as="h6">
+                                    Do you want to apply schedule rate?
+                                </Text>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '15%', paddingTop: '2%' }}>
+                                    <RadioButton
+                                        label="Yes"
+                                        checked={checkstate.selectedByschedule === 1}
+                                        id="Yess"
+                                        name="Yess"
+                                        onChange={() => handlecheckedChange('selectedByschedule', 1)}
+                                    />
+                                    <RadioButton
+                                        label="No"
+                                        checked={checkstate.selectedByschedule === 0}
+                                        id="No"
+                                        name="No"
+                                        onChange={() => handlecheckedChange('selectedByschedule', 0)}
+                                    />
+                                </div>
+                                {checkstate.selectedByschedule === 1 && (
+                                    <FormLayout>
+                                        <FormLayout.Group>
+                                            <TextField
+                                                label="Start Date"
+                                                value={date.startDate}
+                                                onChange={(value) => handleDateChange('startDate', value)}
+                                                type="datetime-local"
+                                                error={errors.startDate}
+                                            />
+                                            <TextField
+                                                label="End Date"
+                                                value={date.endDate}
+                                                onChange={(value) => handleDateChange('endDate', value)}
+                                                type="datetime-local"
+                                                error={errors.endDate}
+                                            />
+                                        </FormLayout.Group>
+                                        {date.error && <p message={date.error} fieldID="endDate" >{date.error}</p>}
+                                    </FormLayout>
+                                )}
+                            </LegacyCard>
+                        </Grid.Cell>
+                    </Grid>
+                </div>
+
+                <Divider borderColor="border" />
+                <div style={{ marginTop: "3%", marginBottom: "7%" }}>
+                    <Grid>
+                        <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                            <Text variant="headingMd" as="h6">
+                                Send another rate
+                            </Text>
+                            <div style={{ marginTop: "4%" }}>
+                                <List>
+                                    <List.Item>
+                                        By selecting the Send Another Rate option it will allow to set another additional rate.
+                                    </List.Item>
+                                </List>
+                            </div>                    </Grid.Cell>
+                        <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                            <LegacyCard sectioned>
+                                <div style={{ alignItems: 'center' }}>
+                                    <Checkbox
+                                        label="Send Another Rate"
+                                        checked={checkedState.checked3}
+                                        onChange={() => handleCheckChange('checked3')}
+                                    />
+                                    {checkedState.checked3 && (
+                                        <div style={{ marginTop: "3%" }}>
+                                            <FormLayout>
+                                                <FormLayout.Group>
+                                                    <TextField
+                                                        type="text"
+                                                        label="Another Rate Name"
+                                                        value={send_another_rate.another_rate_name}
+                                                        onChange={handleRateFormChange('another_rate_name')}
+                                                        autoComplete="off"
+                                                        required
+                                                        placeholder='Enter Rate Name'
+                                                        error={errors.another_rate_name}
+                                                    />
+                                                    <TextField
+                                                        type="text"
+                                                        label="Another Rate Description"
+                                                        value={send_another_rate.another_rate_description}
+                                                        onChange={handleRateFormChange('another_rate_description')}
+                                                        autoComplete="off"
+                                                        required
+                                                        placeholder='Enter Desription'
+
+                                                    />
+                                                </FormLayout.Group>
+                                            </FormLayout>
+                                            <div style={{ marginTop: '3%' }}>
+                                                <Divider borderColor="border" />
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8%', marginTop: '3%', }}>
+                                                <Text variant="headingSm" as="h6">
+                                                    Update Price Type :
+                                                </Text>
+                                                <RadioButton
+                                                    label="Fixed"
+                                                    checked={checkstate.selectedByUpdatePriceType === 0}
+                                                    id="Fixe"
+                                                    name="Fixe"
+                                                    onChange={() => handlecheckedChange('selectedByUpdatePriceType', 0)}
+                                                />
+                                                <RadioButton
+                                                    label="Percentage"
+                                                    checked={checkstate.selectedByUpdatePriceType === 1}
+                                                    id="Pr"
+                                                    name="Pr"
+                                                    onChange={() => handlecheckedChange('selectedByUpdatePriceType', 1)}
+                                                />
+                                                <RadioButton
+                                                    label="Static"
+                                                    checked={checkstate.selectedByUpdatePriceType === 2}
+                                                    id="Statics"
+                                                    name="Static"
+                                                    onChange={() => handlecheckedChange('selectedByUpdatePriceType', 2)}
+                                                />
+                                            </div>
+                                            <div style={{ marginTop: '3%' }}>
+                                                <Divider borderColor="border" />
+                                            </div>
+                                            {checkstate.selectedByUpdatePriceType !== 2 && (
+                                                <div style={{ marginTop: '3%' }}>
+                                                    <FormLayout>
+                                                        <FormLayout.Group>
+                                                            <div>
+                                                                <Text variant="headingSm" as="h6">
+                                                                    Update Price Type :
+                                                                </Text>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8%', paddingTop: '2%', marginBottom: "4%" }}>
+                                                                    <RadioButton
+                                                                        label="Increase"
+                                                                        checked={checkstate.selectedByUpdatePriceEffect === 0}
+                                                                        id="increase"
+                                                                        name="increase"
+                                                                        onChange={() => handlecheckedChange('selectedByUpdatePriceEffect', 0)}
+                                                                    />
+                                                                    <RadioButton
+                                                                        label="Decrease"
+                                                                        checked={checkstate.selectedByUpdatePriceEffect === 1}
+                                                                        id="decrease"
+                                                                        name="decrease"
+                                                                        onChange={() => handlecheckedChange('selectedByUpdatePriceEffect', 1)}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <TextField
+                                                                type="text"
+                                                                label="Adjustment Price"
+                                                                value={send_another_rate.adjustment_price}
+                                                                onChange={handleRateFormChange('adjustment_price')}
+                                                                autoComplete="off"
+                                                                error={errors.adjustment_price}
+                                                                placeholder='00'
+                                                            />
+                                                        </FormLayout.Group>
+                                                    </FormLayout>
+                                                </div>
+                                            )}
+                                            {checkstate.selectedByUpdatePriceType === 2 && (
+                                                <div>
+                                                    <TextField
+                                                        type="text"
+                                                        label="Adjustment Price"
+                                                        value={send_another_rate.adjustment_price}
+                                                        onChange={handleRateFormChange('adjustment_price')}
+                                                        autoComplete="off"
+                                                        error={errors.adjustment_price}
+                                                        placeholder='0'
+                                                    />
+                                                </div>
+                                            )}
+                                            <div style={{ marginTop: '3%' }}>
+                                                <Divider borderColor="border" />
+                                            </div>
+                                            <div style={{ marginTop: '3%' }}>
+                                                <FormLayout>
+                                                    <FormLayout.Group>
+                                                        <TextField
+                                                            type="text"
+                                                            label="Service Code"
+                                                            value={send_another_rate.another_service_code}
+                                                            onChange={handleRateFormChange('another_service_code')}
+                                                            autoComplete="off"
+                                                            placeholder='Enter Service Code'
+                                                        />
+                                                        <TextField
+                                                            type="text"
+                                                            label="Another merge rate tag"
+                                                            value={send_another_rate.another_merge_rate_tag}
+                                                            onChange={handleRateFormChange('another_merge_rate_tag')}
+                                                            autoComplete="off"
+                                                            placeholder='tag1,tag2,tag3'
+                                                        />
+                                                    </FormLayout.Group>
+                                                </FormLayout>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </LegacyCard>
+                        </Grid.Cell>
+                    </Grid>
+                </div>
+
+                {showToast && (
+                    <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
+                )}
+                {errorToast && (
+                    <Toast content={toastContent} error duration={toastDuration} onDismiss={() => setErroToast(false)} />
+                )}
+                {toastActive && (
+                    <Toast content={toastMessage} error onDismiss={toggleToastActive} />
+                )}
+                {isModalOpen && (
+                    <Modal
+                        open={isModalOpen}
+                        onClose={handleModalClose}
+                        title="My Shopify Modal"
+                        primaryAction={{
+                            content: 'Add',
+                            onAction: handleModalClose,
+                            disabled: selectedProductIds.length === 0,
+                        }}
+                        secondaryActions={[
+                            {
+                                content: 'Cancel',
+                                onAction: handleModalClose,
+                            },
+                        ]}
+                    >
+                        <Modal.Section>
+                            <div style={{ position: 'relative' }}>
+                                <div style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
+                                    <TextField
+                                        placeholder='search'
+                                        onChange={handlesearchChange}
+                                        value={value}
+                                        type="text"
+                                        prefix={<Icon source={SearchIcon} color="inkLighter" />}
+                                        autoComplete="off"
+                                        clearButton
+                                        onClearButtonClick={handleClearButtonClick}
+                                    />
+                                </div>
+                                <div style={{ marginTop: '4%', height: '400px', overflowY: 'scroll' }}>
+                                    <IndexTable
+                                        resourceName={resourceName}
+                                        itemCount={products.length}
+                                        headings={[
+                                            { title: ` ${selectedCount2} Selected` },
+                                            { title: 'Image' },
+                                            { title: 'Title' },
+                                            { title: 'Price' },
+                                        ]}
+                                        selectable={false}
+                                        pagination={{
+                                            hasNext: pageInfo.hasNextPage,
+                                            onNext: handleNextPage,
+                                            hasPrevious: pageInfo.hasPreviousPage,
+                                            onPrevious: handlePreviousPage,
+                                        }}
+                                    >
+                                        {loadingTable ? (
+                                            <IndexTable.Row>
+                                                <IndexTable.Cell colSpan={5}>
+                                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                                        <Spinner accessibilityLabel="Loading products" size="small" />
+                                                    </div>
+                                                </IndexTable.Cell>
+                                            </IndexTable.Row>
+                                        ) : (
+                                            productData2
+                                        )}
+                                    </IndexTable>
+                                </div>
+                            </div>
+                        </Modal.Section>
+                    </Modal>
+
+                )}
+            </Page>
+        </div>
     )
 }
 

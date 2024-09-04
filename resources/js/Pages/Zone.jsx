@@ -28,7 +28,7 @@ import {
     LegacyStack,
     Icon,
     List,
-    Tooltip 
+    Tooltip
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
@@ -199,7 +199,7 @@ function Zone(props) {
                 label: state.nameCode,
                 value: state.code
             }));
-           console.log(response.data)
+            console.log(response.data)
             setCountry(stateList);
             setAllCountries(stateList);
         } catch (error) {
@@ -332,7 +332,7 @@ function Zone(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
-            
+
             const selectedCountries = selectedOptions.map(option => {
                 const selectedCountry = country.find(country => country.value === option);
                 return {
@@ -392,7 +392,7 @@ function Zone(props) {
             <IndexTable.Row
                 id={id}
                 key={id}
-        
+
                 position={index}
             >
                 <IndexTable.Cell>
@@ -409,7 +409,7 @@ function Zone(props) {
                 <IndexTable.Cell>{description}</IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
-                    {/* <Tooltip active content="Edit Rate"> */}
+                        {/* <Tooltip active content="Edit Rate"> */}
                         <Button icon={EditIcon} variant="tertiary" onClick={() => handleEditRate(id)} />
                         {/* </Tooltip> */}
                         <Button icon={DeleteIcon} variant="tertiary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedZoneId(id); toggleModal(); }} />
@@ -486,166 +486,172 @@ function Zone(props) {
     }
 
     return (
-        <Page
-            title={zone_id ? 'Edit Zone' : 'Add Zone'}
-            primaryAction={<Button variant="primary" onClick={saveZone} loading={loadingButton}>Save</Button>}
-            secondaryActions={<Button onClick={navigateHome}>Back</Button>}
-        >
-            <Divider borderColor="border" />
-            <div style={{ marginTop: '2%', marginBottom: "2%" }}>
-                <Grid>
-                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-                        <div style={{ paddingTop: '10%' }}>
-                        <Text variant="headingMd" as="h6">
-                                Zone Details
-                            </Text>
-                            <div style={{ marginTop: "4%" }}>
-                                <List>
-                                    <List.Item>
-                                        Enable and disable zone without deleting it. Select countries
-                                        where you want to ship for this zone.
-                                    </List.Item>
-                                </List>
-                            </div>
-                        </div>
-                    </Grid.Cell>
-                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-                        <LegacyCard sectioned>
-                            <div className='choice'>
-                                <Select
-                                    label="Zone status"
-                                    options={statusOptions}
-                                    onChange={handleStatusChange}
-                                    value={formData.status === 1 ? 'Enabled' : 'Disabled'}
-                                />
-                            </div>
-                            <div style={{ marginTop: "2%" }} className='zonetext'>
-                                <TextField
-                                    type="text"
-                                    label="Name"
-                                    placeholder="Name"
-                                    value={formData.name}
-                                    onChange={handleZoneDataChange('name')}
-                                    error={errors.name}
-                                />                            </div>
-                            <div style={{ marginTop: "2%" }} className='zonetext'>
-                                <Autocomplete
-                                    allowMultiple
-                                    options={country}
-                                    selected={selectedOptions}
-                                    textField={textField}
-                                    onSelect={setSelectedOptions}
-                                    listTitle="Suggested Countries"
-                                />
-                            </div>
-                            <div style={{ marginTop: "2%", marginBottom: "2%" }} className='zonetext'>
-                                <Select
-                                    label=" Select Currency"
-                                    options={currencys}
-                                    onChange={handleZoneDataChange('currency')}
-                                    value={formData.currency}
-                                />
-                            </div>
-                        </LegacyCard>
-                    </Grid.Cell>
-                </Grid>
-            </div>
-
-            {zone_id && (
-                <div>
-                    <Divider borderColor="border" />
-                    <div style={{ marginTop: "2%", marginBottom: "5%" }}>
-                        <Card>
-                            <BlockStack gap="200">
-                                <InlineGrid columns="1fr auto">
-                                    <Text as="h2" variant="headingSm">
-                                        Rates
-                                    </Text>
-                                    <Button
-                                        onClick={() => handleRateAdd(zone_id)}
-                                        accessibilityLabel="Add zone"
-                                        variant='primary'
-                                        icon={PlusIcon}
-                                    >
-                                        Add Rate
-                                    </Button>
-                                </InlineGrid>
-                                <Text as="p" variant="bodyMd">
-                                    Specify shipping rates for this particular zone.
-                                </Text>
-                            </BlockStack>
-                            <div style={{ marginTop: "2.5%" }}>
-                                <TextField
-                                    type="text"
-                                    value={textFieldValue}
-                                    placeholder="Search by name..."
-                                    onChange={handleTextFieldChange}
-                                    prefix={<Icon source={SearchIcon} />}
-                                    autoComplete="off"
-                                />
-                            </div>
-                            <div style={{ marginTop: "2.5%" }}>
-                                {/* {loadingDelete ? <Spinner accessibilityLabel="Loading" size="large" /> : null} */}
-                                <IndexTable
-                                    resourceName={resourceName}
-                                    itemCount={rate.length}
-                                    emptyState={emptyStateMarkup}
-
-                                    // selectedItemsCount={
-                                    //     allResourcesSelected ? 'All' : selectedResources.length
-                                    // }
-                                    // onSelectionChange={handleSelectionChange}
-                                    headings={[
-                                        { title: 'Rate Name' },
-                                        { title: 'Service Code' },
-                                        { title: 'Base Rate Price' },
-                                        { title: 'Description' },
-                                        { title: 'Actions' },
-
-                                    ]}
-                                    paginated
-                                    pagination={{
-                                        hasPrevious: currentPage > 1,
-                                        hasNext: currentPage < totalPages,
-                                        onNext: handleNextPage,
-                                        onPrevious: handlePreviousPage,
-                                    }}
-                                    selectable={false}
-                                >
-                                    {rowMarkup}
-                                </IndexTable>
-                            </div>
-                        </Card>
-                    </div>
-                </div>
-            )}
-            {showToast && (
-                <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
-            )}
-            <Modal
-                open={active}
-                onClose={toggleModal}
-                title="Delete Rate"
-                primaryAction={{
-                    content: 'Delete',
-                    destructive: true,
-                    onAction: handleDelete,
-                }}
-                secondaryActions={[
-                    {
-                        content: 'Cancel',
-                        onAction: toggleModal,
-                    },
-                ]}
+        <div>
+            <Page
+                title={zone_id ? 'Edit Zone' : 'Add Zone'}
+                primaryAction={<Button variant="primary" onClick={saveZone} loading={loadingButton}>Save</Button>}
+                secondaryActions={<Button onClick={navigateHome}>Back</Button>}
             >
-                <Modal.Section>
-                    <TextContainer>
-                        <p>Are you sure you want to delete this Rate?</p>
-                    </TextContainer>
-                </Modal.Section>
-            </Modal>
-            {toastMarkup}
-        </Page>
+                <div >
+                    <Divider borderColor="border" />
+                </div>
+            </Page>
+            <div style={{ height: "95vh", overflowY: "scroll", paddingLeft: "7%", paddingRight: "7%" }}>
+                <div style={{ marginTop: '2%', marginBottom: "2%" }}>
+                    <Grid>
+                        <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                            <div style={{ paddingTop: '10%' }}>
+                                <Text variant="headingMd" as="h6">
+                                    Zone Details
+                                </Text>
+                                <div style={{ marginTop: "4%" }}>
+                                    <List>
+                                        <List.Item>
+                                            Enable and disable zone without deleting it. Select countries
+                                            where you want to ship for this zone.
+                                        </List.Item>
+                                    </List>
+                                </div>
+                            </div>
+                        </Grid.Cell>
+                        <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                            <LegacyCard sectioned>
+                                <div className='choice'>
+                                    <Select
+                                        label="Zone status"
+                                        options={statusOptions}
+                                        onChange={handleStatusChange}
+                                        value={formData.status === 1 ? 'Enabled' : 'Disabled'}
+                                    />
+                                </div>
+                                <div style={{ marginTop: "2%" }} className='zonetext'>
+                                    <TextField
+                                        type="text"
+                                        label="Name"
+                                        placeholder="Name"
+                                        value={formData.name}
+                                        onChange={handleZoneDataChange('name')}
+                                        error={errors.name}
+                                    />                            </div>
+                                <div style={{ marginTop: "2%" }} className='zonetext'>
+                                    <Autocomplete
+                                        allowMultiple
+                                        options={country}
+                                        selected={selectedOptions}
+                                        textField={textField}
+                                        onSelect={setSelectedOptions}
+                                        listTitle="Suggested Countries"
+                                    />
+                                </div>
+                                <div style={{ marginTop: "2%", marginBottom: "2%" }} className='zonetext'>
+                                    <Select
+                                        label=" Select Currency"
+                                        options={currencys}
+                                        onChange={handleZoneDataChange('currency')}
+                                        value={formData.currency}
+                                    />
+                                </div>
+                            </LegacyCard>
+                        </Grid.Cell>
+                    </Grid>
+                </div>
+
+                {zone_id && (
+                    <div style={{marginBottom:"7%"}}>
+                        <Divider borderColor="border" />
+                        <div style={{ marginTop: "2%", marginBottom: "5%" }}>
+                            <Card>
+                                <BlockStack gap="200">
+                                    <InlineGrid columns="1fr auto">
+                                        <Text as="h2" variant="headingSm">
+                                            Rates
+                                        </Text>
+                                        <Button
+                                            onClick={() => handleRateAdd(zone_id)}
+                                            accessibilityLabel="Add zone"
+                                            variant='primary'
+                                            icon={PlusIcon}
+                                        >
+                                            Add Rate
+                                        </Button>
+                                    </InlineGrid>
+                                    <Text as="p" variant="bodyMd">
+                                        Specify shipping rates for this particular zone.
+                                    </Text>
+                                </BlockStack>
+                                <div style={{ marginTop: "2.5%" }}>
+                                    <TextField
+                                        type="text"
+                                        value={textFieldValue}
+                                        placeholder="Search by name..."
+                                        onChange={handleTextFieldChange}
+                                        prefix={<Icon source={SearchIcon} />}
+                                        autoComplete="off"
+                                    />
+                                </div>
+                                <div style={{ marginTop: "2.5%" }}>
+                                    {/* {loadingDelete ? <Spinner accessibilityLabel="Loading" size="large" /> : null} */}
+                                    <IndexTable
+                                        resourceName={resourceName}
+                                        itemCount={rate.length}
+                                        emptyState={emptyStateMarkup}
+
+                                        // selectedItemsCount={
+                                        //     allResourcesSelected ? 'All' : selectedResources.length
+                                        // }
+                                        // onSelectionChange={handleSelectionChange}
+                                        headings={[
+                                            { title: 'Rate Name' },
+                                            { title: 'Service Code' },
+                                            { title: 'Base Rate Price' },
+                                            { title: 'Description' },
+                                            { title: 'Actions' },
+
+                                        ]}
+                                        paginated
+                                        pagination={{
+                                            hasPrevious: currentPage > 1,
+                                            hasNext: currentPage < totalPages,
+                                            onNext: handleNextPage,
+                                            onPrevious: handlePreviousPage,
+                                        }}
+                                        selectable={false}
+                                    >
+                                        {rowMarkup}
+                                    </IndexTable>
+                                </div>
+                            </Card>
+                        </div>
+                    </div>
+                )}
+                {showToast && (
+                    <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
+                )}
+                <Modal
+                    open={active}
+                    onClose={toggleModal}
+                    title="Delete Rate"
+                    primaryAction={{
+                        content: 'Delete',
+                        destructive: true,
+                        onAction: handleDelete,
+                    }}
+                    secondaryActions={[
+                        {
+                            content: 'Cancel',
+                            onAction: toggleModal,
+                        },
+                    ]}
+                >
+                    <Modal.Section>
+                        <TextContainer>
+                            <p>Are you sure you want to delete this Rate?</p>
+                        </TextContainer>
+                    </Modal.Section>
+                </Modal>
+                {toastMarkup}
+            </div>
+        </div>
     );
 }
 export default Zone;

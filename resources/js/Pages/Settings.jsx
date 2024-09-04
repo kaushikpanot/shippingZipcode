@@ -84,7 +84,7 @@ const Settings = (props) => {
     }
     finally {
       setLoadingButton(false);
-  }
+    }
   };
 
 
@@ -200,187 +200,193 @@ const Settings = (props) => {
     navigate('/mixMergeRate');
   };
   return (
-    <Page
+    <div>
+      <Page
 
-      title="Settings"
-      primaryAction={<Button onClick={handleSaveSettings} variant='primary' loading={loadingButton}>Save</Button>}
-    >
+        title="Settings"
+        primaryAction={<Button onClick={handleSaveSettings} variant='primary' loading={loadingButton}>Save</Button>}
+      >
+        <Divider borderColor="border" />
+      </Page>
       {toastMarkup}
-      <Divider borderColor="border" />
-      <div style={{ marginTop: '2%', marginBottom: '2%' }}>
-        <Grid>
-          <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-            <div style={{ marginLeft: '%' }}>
-              <Text variant="headingMd" as="h6">Setting</Text>
-            </div>
-            <div style={{ marginTop: '4%' }}>
-              <List>
-                <List.Item>
-
-                  You can enable or disable the app without deleting the App
-                </List.Item>
-                <List.Item>
-                  To see the shipping rate when test mode is on, use the first name Cirkle during checkout.
-
-                </List.Item>
-              </List>
-            </div>
-
-
-          </Grid.Cell>
-          <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-            <LegacyCard title="" sectioned>
-              <RadioButton
-                label="Enable"
-                helpText="Enable Shipping Rates by ZipCode APP"
-                checked={settings.status === 1}
-                id="enabled"
-                name="status"
-                onChange={() => handleInputChange('status')(1)}
-              />
-              <RadioButton
-                label="Disable"
-                helpText="Disable Shipping Rates by ZipCode APP"
-                id="disabled"
-                name="status"
-                checked={settings.status === 0}
-                onChange={() => handleInputChange('status')(0)}
-              />
-            </LegacyCard>
-          </Grid.Cell>
-        </Grid>
-      </div>
       
 
-      <Divider borderColor="border" />
-      <div style={{ marginTop: '2%', marginBottom: '2%' }}>
-        <Grid>
-          <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-            <div style={{ marginTop: "5%" }}>
-            <Text variant="headingMd" as="h6">Display Shipping Rate</Text>
-            </div>
-          </Grid.Cell>
-          <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-            <LegacyCard sectioned>
-              <Select
-                label="Display Shipping Rate"
-                options={[
-                  { label: 'All', value: 'All' },
-                  { label: 'Only Higher', value: 'Only Higher' },
-                  { label: 'Only Lower', value: 'Only Lower' },
-                ]}
-                onChange={handleInputChange('shippingRate')}
-                value={settings.shippingRate}
-              /><br />
-              <Select
-                label="Rate Modifier Title Settings"
-                options={[
-                  { label: 'Append Description', value: 'Append Description' },
-                  { label: 'Replace Description', value: 'Replace Description' },
-                  { label: 'Append Title', value: 'Append Title' },
-                  { label: 'Replace Title', value: 'Replace Title' },
-                  { label: 'Replace Title and Description', value: 'Replace Title and Description' },
-                ]}
-                onChange={handleInputChange('rateModifierTitle')}
-                value={settings.rateModifierTitle}
-              />
-            </LegacyCard>
-          </Grid.Cell>
-        </Grid>
-      </div>
-
-      <Divider borderColor="border" />
-      <div style={{ marginTop: '2%', marginBottom: "3%" }}>
-        <Grid>
-          <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
-            <div style={{ marginTop: '5%' }}>
-            <Text variant="headingMd" as="h6">Mix/Merge Rate Setting</Text>
-            </div>
-            <div style={{ marginTop: '4%' }}>
-              <List>
-                <List.Item>
-                  When product rate set combine it with all product rates & additive with normal rate.
-                </List.Item>
-              </List>
-            </div>
-          </Grid.Cell>
-          <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-            <LegacyCard sectioned>
-              <div style={{ marginBottom: "2%", marginLeft: "83%" }}>
-                <Button variant='primary' onClick={handleAddMixMergeRate}  >Merge Rates</Button>
+      <div style={{ height: "95vh",overflowY: "scroll", paddingLeft:"7%" , paddingRight:"7%"}}>
+        <div style={{ marginTop: '2%', marginBottom: '2%' }}>
+          <Grid>
+            <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+              <div style={{ marginLeft: '%' }}>
+                <Text variant="headingMd" as="h6">Setting</Text>
               </div>
-              <Banner tone="warning">
-                <p>
-                  If the first option of mix/merge rate setting is Yes (Automatic), the merge rate will not work.
-                </p>
-              </Banner>
-              <div style={{ marginTop: "3%" }}>
-                <Text variant="headingXs" as="h6">
-                  Do you want to combine all product/tag/SKU/type/vendor shipping rates into one rate?
-                </Text>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20%', marginTop: "2%" }}>
-                  <RadioButton
-                    label="Yes (Automatic)"
-                    checked={settings.mix_merge_rate === 0}
-                    id="yes"
-                    name="mix_merge_rate"
-                    onChange={() => handleCheckedChange('mix_merge_rate', 0)}
-                  />
-                  <RadioButton
-                    label="No (Manually - Using merge rate)"
-                    checked={settings.mix_merge_rate === 1}
-                    id="No"
-                    name="mix_merge_rate"
-                    onChange={() => handleCheckedChange('mix_merge_rate', 1)}
-                  />
+              <div style={{ marginTop: '4%' }}>
+                <List>
+                  <List.Item>
+
+                    You can enable or disable the app without deleting the App
+                  </List.Item>
+                  <List.Item>
+                    To see the shipping rate when test mode is on, use the first name Cirkle during checkout.
+
+                  </List.Item>
+                </List>
+              </div>
+
+
+            </Grid.Cell>
+            <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+              <LegacyCard title="" sectioned>
+                <RadioButton
+                  label="Enable"
+                  helpText="Enable Shipping Rates by ZipCode APP"
+                  checked={settings.status === 1}
+                  id="enabled"
+                  name="status"
+                  onChange={() => handleInputChange('status')(1)}
+                />
+                <RadioButton
+                  label="Disable"
+                  helpText="Disable Shipping Rates by ZipCode APP"
+                  id="disabled"
+                  name="status"
+                  checked={settings.status === 0}
+                  onChange={() => handleInputChange('status')(0)}
+                />
+              </LegacyCard>
+            </Grid.Cell>
+          </Grid>
+        </div>
+
+
+        <Divider borderColor="border" />
+        <div style={{ marginTop: '2%', marginBottom: '2%' }}>
+          <Grid>
+            <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+              <div style={{ marginTop: "5%" }}>
+                <Text variant="headingMd" as="h6">Display Shipping Rate</Text>
+              </div>
+            </Grid.Cell>
+            <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+              <LegacyCard sectioned>
+                <Select
+                  label="Display Shipping Rate"
+                  options={[
+                    { label: 'All', value: 'All' },
+                    { label: 'Only Higher', value: 'Only Higher' },
+                    { label: 'Only Lower', value: 'Only Lower' },
+                  ]}
+                  onChange={handleInputChange('shippingRate')}
+                  value={settings.shippingRate}
+                /><br />
+                <Select
+                  label="Rate Modifier Title Settings"
+                  options={[
+                    { label: 'Append Description', value: 'Append Description' },
+                    { label: 'Replace Description', value: 'Replace Description' },
+                    { label: 'Append Title', value: 'Append Title' },
+                    { label: 'Replace Title', value: 'Replace Title' },
+                    { label: 'Replace Title and Description', value: 'Replace Title and Description' },
+                  ]}
+                  onChange={handleInputChange('rateModifierTitle')}
+                  value={settings.rateModifierTitle}
+                />
+              </LegacyCard>
+            </Grid.Cell>
+          </Grid>
+        </div>
+
+        <Divider borderColor="border" />
+        <div style={{ marginTop: '2%', marginBottom: "7%" }}>
+          <Grid>
+            <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+              <div style={{ marginTop: '5%' }}>
+                <Text variant="headingMd" as="h6">Mix/Merge Rate Setting</Text>
+              </div>
+              <div style={{ marginTop: '4%' }}>
+                <List>
+                  <List.Item>
+                    When product rate set combine it with all product rates & additive with normal rate.
+                  </List.Item>
+                </List>
+              </div>
+            </Grid.Cell>
+            <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+              <LegacyCard sectioned>
+                <div style={{ marginBottom: "2%", marginLeft: "83%" }}>
+                  <Button variant='primary' onClick={handleAddMixMergeRate}  >Merge Rates</Button>
                 </div>
-                {settings.mix_merge_rate !== 1 && (
-                  <div style={{ marginTop: '3%' }}>
-                    <p>
-                      Applicable only if you set shipping rates based on product. If the cart contains some products with rate and some items without rate then a default rate like weight-based will come along with product-based rate.
-                    </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20%', marginTop: "2%" }}>
-                      <RadioButton
-                        label="Yes"
-                        checked={settings.mix_merge_rate_1 === 0}
-                        id="yesMix"
-                        name="mix_merge_rate_1"
-                        onChange={() => handleCheckedChange('mix_merge_rate_1', 0)}
-                      />
-                      <RadioButton
-                        label="No"
-                        checked={settings.mix_merge_rate_1 === 1}
-                        id="NoMix"
-                        name="mix_merge_rate_1"
-                        onChange={() => handleCheckedChange('mix_merge_rate_1', 1)}
-                      />
-                    </div>
-                    {settings.mix_merge_rate_1 !== 1 && (
-                      <div style={{ marginTop: "3%" }}>
-                        <FormLayout>
-                          <TextField
-                            label="Additional Description of Mix Rate"
-                            value={settings.additional_description_of_mix_rate}
-                            onChange={handleInputChange('additional_description_of_mix_rate')}
-
-                          />
-                          <TextField
-                            label="Maximum Price of Auto Product Base Mix Rate"
-                            value={settings.max_price_of_auto_product_base_mix_rate}
-                            onChange={handleInputChange('max_price_of_auto_product_base_mix_rate')}
-                            type="number"
-                          />
-                        </FormLayout>
-                      </div>
-                    )}
+                <Banner tone="warning">
+                  <p>
+                    If the first option of mix/merge rate setting is Yes (Automatic), the merge rate will not work.
+                  </p>
+                </Banner>
+                <div style={{ marginTop: "3%" }}>
+                  <Text variant="headingXs" as="h6">
+                    Do you want to combine all product/tag/SKU/type/vendor shipping rates into one rate?
+                  </Text>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20%', marginTop: "2%" }}>
+                    <RadioButton
+                      label="Yes (Automatic)"
+                      checked={settings.mix_merge_rate === 0}
+                      id="yes"
+                      name="mix_merge_rate"
+                      onChange={() => handleCheckedChange('mix_merge_rate', 0)}
+                    />
+                    <RadioButton
+                      label="No (Manually - Using merge rate)"
+                      checked={settings.mix_merge_rate === 1}
+                      id="No"
+                      name="mix_merge_rate"
+                      onChange={() => handleCheckedChange('mix_merge_rate', 1)}
+                    />
                   </div>
-                )}
-              </div>
-            </LegacyCard>
-          </Grid.Cell>
-        </Grid>
+                  {settings.mix_merge_rate !== 1 && (
+                    <div style={{ marginTop: '3%' }}>
+                      <p>
+                        Applicable only if you set shipping rates based on product. If the cart contains some products with rate and some items without rate then a default rate like weight-based will come along with product-based rate.
+                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '20%', marginTop: "2%" }}>
+                        <RadioButton
+                          label="Yes"
+                          checked={settings.mix_merge_rate_1 === 0}
+                          id="yesMix"
+                          name="mix_merge_rate_1"
+                          onChange={() => handleCheckedChange('mix_merge_rate_1', 0)}
+                        />
+                        <RadioButton
+                          label="No"
+                          checked={settings.mix_merge_rate_1 === 1}
+                          id="NoMix"
+                          name="mix_merge_rate_1"
+                          onChange={() => handleCheckedChange('mix_merge_rate_1', 1)}
+                        />
+                      </div>
+                      {settings.mix_merge_rate_1 !== 1 && (
+                        <div style={{ marginTop: "3%" }}>
+                          <FormLayout>
+                            <TextField
+                              label="Additional Description of Mix Rate"
+                              value={settings.additional_description_of_mix_rate}
+                              onChange={handleInputChange('additional_description_of_mix_rate')}
+
+                            />
+                            <TextField
+                              label="Maximum Price of Auto Product Base Mix Rate"
+                              value={settings.max_price_of_auto_product_base_mix_rate}
+                              onChange={handleInputChange('max_price_of_auto_product_base_mix_rate')}
+                              type="number"
+                            />
+                          </FormLayout>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </LegacyCard>
+            </Grid.Cell>
+          </Grid>
+        </div>
       </div>
-    </Page>
+    </div>
   );
 };
 

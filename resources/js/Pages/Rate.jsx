@@ -1038,18 +1038,17 @@ function Rate(props) {
 
     
     const [rate_based_on_surcharge, Setrate_based_on_surcharge] = useState({
-        charge_per_wight: '',
-        unit_for: '0.00',
-        min_charge_price: '0.00',
-        max_charge_price: '0.00',
-        cart_total_percentage: '0',
+        charge_per_wight: 0,
+        unit_for:0,
+        min_charge_price: 0,
+        max_charge_price: 0,
+        cart_total_percentage: 0,
         descriptions: '',
-        rate_price: '0',
+        rate_price: 0,
         productData: [],
         base_weight_unit: ''
     })
     
-
     const getstate = async () => {
         try {
             const token = await getSessionToken(app);

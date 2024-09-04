@@ -1038,13 +1038,13 @@ function Rate(props) {
 
     
     const [rate_based_on_surcharge, Setrate_based_on_surcharge] = useState({
-        charge_per_wight: 0.00,
-        unit_for: 0.00,
-        min_charge_price: 0.00,
-        max_charge_price: 0.00,
-        cart_total_percentage: '',
+        charge_per_wight: '',
+        unit_for: '0.00',
+        min_charge_price: '0.00',
+        max_charge_price: '0.00',
+        cart_total_percentage: '0',
         descriptions: '',
-        rate_price: '',
+        rate_price: '0',
         productData: [],
         base_weight_unit: ''
     })
@@ -1185,7 +1185,7 @@ function Rate(props) {
             based_on_cart: checkedState.checked1,
             selectedByAmount: checkstate.selectedByAmount,
             selectedMultiplyLine: checkstate.selectedMultiplyLine,
-            rate_based_on_surcharge,
+           
         },
         rate_modifiers: rateModifiers,
         exclude_rate_for_products: exclude_Rate,

@@ -2023,12 +2023,21 @@ class ApiController extends Controller
                     if ($excludeProducts['set_exclude_products'] == 'product_vendor') {
                         $excludeProducts['set_exclude_products'] = 'vendor';
                     } else if ($excludeProducts['set_exclude_products'] == 'custome_selection') {
-                        $excludeProducts['exclude_products_textbox'] = isset($excludeProducts['productData']) ? $excludeProducts['productData'] : "0";
+                        if(isset($excludeProducts['productsData'])){
+                            $collection = collect($excludeProducts['productsData']);
+
+                            $productIds = $collection->pluck('id')->implode(',');
+                        }
+                        $excludeProducts['exclude_products_textbox'] = isset($productIds) ? $productIds : "0";
                         $excludeProducts['set_exclude_products'] = 'id';
                     }
 
                     $excludeType = $excludeProducts['set_exclude_products'];
                     $excludeText = explode(',', $excludeProducts['exclude_products_textbox']);
+
+                    Log::info('Filtered conditions:', [
+                        'productData' => $excludeText
+                    ]);
 
                     foreach ($items as $item) {
                         $productData = ($excludeType != 'product_sku') ?

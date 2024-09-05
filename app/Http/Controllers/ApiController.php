@@ -964,7 +964,7 @@ class ApiController extends Controller
         return !empty(array_intersect($array1, $array2));
     }
 
-    private function getCustomerByPhone($userData, $phone, $field, $customer_id)
+    private function getCustomerByPhone($field, $customer_id)
     {
         if (empty($customer_id)) {
             return null;
@@ -1124,6 +1124,20 @@ class ApiController extends Controller
         ]);
 
         return $totalSurcharge;
+    }
+
+    private function convertWeightUnit($baseUnit = 'kg', $unitPrice){
+        $newUnitFor = 0;
+        $unitConversion = [
+            'kg' => 1000,
+            'lb' => 453.59237,
+            'oz' => 28.35,
+            'g'  => 1 // Default is grams
+        ];
+
+        $newUnitFor *= $unitConversion[$baseUnit] ?? 1;
+
+        return $unitPrice / ($unitConversion[$baseUnit] ?? 1) ?? 0;
     }
 
 
@@ -1302,9 +1316,9 @@ class ApiController extends Controller
                                 'address2' => 'address3',
                                 'city' => 'city',
                                 'provinceCode' => 'province',
-                                'tag2' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags', $customer_id),
-                                'previousCount' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'orders_count', $customer_id),
-                                'previousSpent' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'total_spent', $customer_id),
+                                'tag2' => fn($item) => $this->getCustomerByPhone('tags', $customer_id),
+                                'previousCount' => fn($item) => $this->getCustomerByPhone('orders_count', $customer_id),
+                                'previousSpent' => fn($item) => $this->getCustomerByPhone('total_spent', $customer_id),
                             ];
 
                             if (array_key_exists($condition['name'], $fieldMap)) {
@@ -1463,9 +1477,9 @@ class ApiController extends Controller
                                 'address2' => 'address3',
                                 'city' => 'city',
                                 'provinceCode' => 'province',
-                                'tag2' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags', $customer_id),
-                                'previousCount' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'orders_count', $customer_id),
-                                'previousSpent' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'total_spent', $customer_id),
+                                'tag2' => fn($item) => $this->getCustomerByPhone('tags', $customer_id),
+                                'previousCount' => fn($item) => $this->getCustomerByPhone('orders_count', $customer_id),
+                                'previousSpent' => fn($item) => $this->getCustomerByPhone('total_spent', $customer_id),
                             ];
 
                             if (array_key_exists($condition['name'], $fieldMap)) {
@@ -1626,9 +1640,9 @@ class ApiController extends Controller
                                 'address2' => 'address3',
                                 'city' => 'city',
                                 'provinceCode' => 'province',
-                                'tag2' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags', $customer_id),
-                                'previousCount' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'orders_count', $customer_id),
-                                'previousSpent' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'total_spent', $customer_id),
+                                'tag2' => fn($item) => $this->getCustomerByPhone('tags', $customer_id),
+                                'previousCount' => fn($item) => $this->getCustomerByPhone('orders_count', $customer_id),
+                                'previousSpent' => fn($item) => $this->getCustomerByPhone('total_spent', $customer_id),
                             ];
 
                             if (array_key_exists($condition['name'], $fieldMap)) {
@@ -1730,14 +1744,13 @@ class ApiController extends Controller
 
                 $minChargePrice = isset($surcharge['min_charge_price']) ? $surcharge['min_charge_price'] : 0;
                 $maxChargePrice = isset($surcharge['max_charge_price']) ? $surcharge['max_charge_price'] : 0;
-                $surcharge['shop_weight_unit'] = "kg";
 
                 switch ($surcharge['cart_and_product_surcharge']) {
                     case 'weight':
                         if ($surcharge['selectedByAmount'] == 'unit') {
-                            $rate->base_price = $this->calculateSurcharge($rate->base_price, $totalWeight, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice, $surcharge['shop_weight_unit']);
+                            $rate->base_price = $this->calculateSurcharge($rate->base_price, $totalWeight, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice, $surcharge['base_weight_unit']);
                         } else {
-                            $rate->base_price = $this->calculateSurchargeAlt($rate->base_price, $totalWeight, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice, $surcharge['shop_weight_unit']);
+                            $rate->base_price = $this->calculateSurchargeAlt($rate->base_price, $totalWeight, $surcharge['unit_for'], $surcharge['charge_per_weight'], $minChargePrice, $maxChargePrice, $surcharge['base_weight_unit']);
                         }
                         break;
 
@@ -1965,10 +1978,18 @@ class ApiController extends Controller
 
                         $perItem = isset($tier['perItem']) ? $totalQuantity * $tier['perItem'] : 0;
                         $percentCharge = isset($tier['percentCharge']) ? $totalPrice * $tier['percentCharge'] / 100 : 0;
-                        $perkg = isset($tier['perkg']) ? $totalWeight * $tier['perkg'] : 0;
+                        $perkg = isset($tier['perkg']) ? $this->convertWeightUnit('kg', $totalWeight) * $tier['perkg'] : 0;
 
                         if ($checkRateTier) {
                             $rate->base_price = $tier['basePrice'] + $perItem + $percentCharge + $perkg;
+                            // Log::info("checkRateTier", [
+                            //     "basePrice"=>$tier['basePrice'],
+                            //     "perItem"=>$perItem,
+                            //     "percentCharge"=>$percentCharge,
+                            //     "perkg"=>$perkg,
+                            //     "base_price"=>$rate->base_price,
+                            //     "totalPrice"=>$totalPrice,
+                            // ]);
                         }
                     }
                 } else {
@@ -2044,7 +2065,7 @@ class ApiController extends Controller
                     'estimatedDay' => fn() => null,
                     'timefromCurrent' => fn() => null,
                     'available' => fn() => null,
-                    'tag2' => fn($item) => $this->getCustomerByPhone($userData, $destinationData['phone'], 'tags', $customer_id),
+                    'tag2' => fn($item) => $this->getCustomerByPhone('tags', $customer_id),
                 ];
 
                 $perProductArr = [

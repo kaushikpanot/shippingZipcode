@@ -3024,7 +3024,7 @@ function Rate(props) {
                                     <div >
                                         <div style={{ marginTop: "3%" }}></div>
                                         <Divider borderColor="border" />
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: '2%', marginBottom: "2%" }}>
+                                        {/* <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: '2%', marginBottom: "2%" }}>
                                             <RadioButton
                                                 label="Remove rate"
                                                 checked={checkstate.exclude_products_radio === 0}
@@ -3039,8 +3039,8 @@ function Rate(props) {
                                                 name="reduce_rate"
                                                 onChange={() => handlecheckedChange('exclude_products_radio', 1)}
                                             />
-                                        </div>
-                                        <Divider borderColor="border" />
+                                        </div> */}
+                                        
                                         <div style={{ marginTop: "2%" }}>
                                             <FormLayout>
                                                 <FormLayout.Group>
@@ -3145,9 +3145,10 @@ function Rate(props) {
 
                                 {(selectedRate === 'product_vendor' || selectedRate === 'product_sku' || selectedRate === 'product_type' || selectedRate === 'product_properties' || selectedRate === 'product_tag') && (
                                     <div>
-                                        <div style={{ marginTop: "3%" }}></div>
+                                        <div style={{ marginTop: "2%", marginBottom:"2%" }}>
                                         <Divider borderColor="border" />
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: '2%', marginBottom: "2%" }}>
+                                        </div>
+                                        {/* <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: '2%', marginBottom: "2%" }}>
                                             <RadioButton
                                                 label="Remove rate"
                                                 checked={checkstate.exclude_products_radio === 0}
@@ -3162,7 +3163,7 @@ function Rate(props) {
                                                 name="reduce_rate"
                                                 onChange={() => handlecheckedChange('exclude_products_radio', 1)}
                                             />
-                                        </div>
+                                        </div> */}
                                         <div>
                                             <TextField
                                                 placeholder='test1,test2'

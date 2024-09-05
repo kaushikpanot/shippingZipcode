@@ -1135,6 +1135,9 @@ function Rate(props) {
         SetExclude_Rate(prevState => ({
             ...prevState,
             set_exclude_products: selectedRate,
+            exclude_products_radio: checkstate.exclude_products_radio,
+
+
         }));
         const updated_location = locations
             .filter(location => checkedlocation[location.name]?.checked)

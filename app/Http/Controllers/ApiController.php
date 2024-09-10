@@ -981,64 +981,6 @@ class ApiController extends Controller
         }
     }
 
-    private function fetchShopifyVariantMetafields($shopName, $apiVersion, $productId, $accessToken)
-    {
-        $query = <<<GRAPHQL
-            {
-                product(id: "gid://shopify/Product/{$productId}") {
-                    variants(first: 10) {
-                        edges {
-                            node {
-                                id
-                                metafields(first: 10) {
-                                    edges {
-                                        node {
-                                            id
-                                            namespace
-                                            key
-                                            value
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            GRAPHQL;
-
-        $graphqlEndpoint = "https://{$shopName}/admin/api/{$apiVersion}/graphql.json";
-        $graphqlResponse = Http::withHeaders([
-            'X-Shopify-Access-Token' => $accessToken,
-            'Content-Type' => 'application/json',
-        ])->post($graphqlEndpoint, [
-            'query' => $query,
-        ]);
-
-        if ($graphqlResponse->failed()) {
-            throw new \Exception('Failed to fetch variant metafields from Shopify');
-        }
-
-        $data = $graphqlResponse->json();
-        $variants = $data['data']['product']['variants']['edges'] ?? [];
-
-        // Extract metafields for each variant
-        $variantMetafields = [];
-        foreach ($variants as $variant) {
-            $metafields = $variant['node']['metafields']['edges'] ?? [];
-            $variantMetafields[$variant['node']['id']] = array_map(function ($edge) {
-                return [
-                    'id' => $edge['node']['id'],
-                    'namespace' => $edge['node']['namespace'],
-                    'key' => $edge['node']['key'],
-                    'value' => $edge['node']['value'],
-                ];
-            }, $metafields);
-        }
-
-        return $variantMetafields;
-    }
-
     private function calculateSurcharge($basePrice, $amount, $unitFor, $chargePerWeight, $minChargePrice, $maxChargePrice, $baseUnit)
     {
         // Convert units to grams

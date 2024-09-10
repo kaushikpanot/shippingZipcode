@@ -96,7 +96,6 @@ const Settings = (props) => {
       <Page
         title='Settings'
         primaryAction={<Button variant="primary" onClick={handleSaveSettings}>Save</Button>}
-      // secondaryActions={<Button onClick={navigateHome}>Back</Button>}
       >
         <Divider borderColor="border" />
         <Grid>

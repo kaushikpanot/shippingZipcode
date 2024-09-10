@@ -1079,6 +1079,9 @@ class ApiController extends Controller
 
         $newUnitFor *= $unitConversion[$baseUnit] ?? 1;
 
+        Log::info("newUnitFor", ["newUnitFor"=> $unitConversion[$baseUnit]]);
+        Log::info("newUnitFor", ["unitPrice"=> $unitPrice]);
+
         return $unitPrice / ($unitConversion[$baseUnit] ?? 1) ?? 0;
     }
 
@@ -1105,12 +1108,12 @@ class ApiController extends Controller
             return $carry + ($item['grams'] * $item['quantity']);
         }, 0);
 
-        $totalPrice = array_reduce($items, function ($carry, $item) {
+        $totalPrice1 = array_reduce($items, function ($carry, $item) {
             $itemTotal = ($item['price'] * $item['quantity']) / 100;
             return $carry + $itemTotal;
         }, 0);
 
-        $totalPriceFormatted = number_format($totalPrice, 2);
+        $totalPrice = round($totalPrice1, 2);
 
         $latitudeFrom = $input['rate']['origin']['latitude'];
         $longitudeFrom = $input['rate']['origin']['longitude'];
@@ -1158,7 +1161,6 @@ class ApiController extends Controller
                     $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id) {
 
                         if ($condition['label'] == 'Cart_Order') {
-
                             $currentTime = Carbon::now()->format('H');
                             $currentDay = Carbon::now()->format('l');
                             $comparativeValue = null;
@@ -1167,9 +1169,8 @@ class ApiController extends Controller
                                 case 'quantity':
                                     $comparativeValue = $totalQuantity;
                                     break;
-
                                 case 'weight':
-                                    $comparativeValue = $totalWeight;
+                                    $comparativeValue = $this->convertWeightUnit($condition['unit'], $totalWeight);
                                     break;
 
                                 case 'localcode':

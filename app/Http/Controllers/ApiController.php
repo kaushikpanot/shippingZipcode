@@ -1170,7 +1170,7 @@ class ApiController extends Controller
                                     $comparativeValue = $totalQuantity;
                                     break;
                                 case 'weight':
-                                    $comparativeValue = $this->convertWeightUnit($condition['unit'], $totalWeight);
+                                    $comparativeValue = round($this->convertWeightUnit($condition['unit'], $totalWeight), 2);
                                     break;
 
                                 case 'localcode':
@@ -1331,7 +1331,7 @@ class ApiController extends Controller
                                     break;
 
                                 case 'weight':
-                                    $comparativeValue = $totalWeight;
+                                    $comparativeValue = round($this->convertWeightUnit($condition['unit'], $totalWeight), 2);
                                     break;
 
                                 case 'localcode':
@@ -1494,7 +1494,7 @@ class ApiController extends Controller
                                     break;
 
                                 case 'weight':
-                                    $comparativeValue = $totalWeight;
+                                    $comparativeValue = round($this->convertWeightUnit($condition['unit'], $totalWeight), 2);
                                     break;
 
                                 case 'localcode':

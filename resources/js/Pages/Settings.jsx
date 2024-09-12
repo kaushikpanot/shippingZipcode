@@ -222,12 +222,10 @@ const Settings = (props) => {
               <div style={{ marginTop: '4%' }}>
                 <List>
                   <List.Item>
-
-                    You can enable or disable the app without deleting the App
+                  You can enable or disable the app without deleting the App
                   </List.Item>
                   <List.Item>
-                    To see the shipping rate when test mode is on, use the first name Cirkle during checkout.
-
+                  To see the shipping rate when test mode is on, use the first name Cirkle during checkout.
                   </List.Item>
                 </List>
               </div>
@@ -324,7 +322,7 @@ const Settings = (props) => {
                   <Text variant="headingXs" as="h6">
                     Do you want to combine all product/tag/SKU/type/vendor shipping rates into one rate?
                   </Text>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '20%', marginTop: "2%" }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: "2%" }}>
                     <RadioButton
                       label="Yes (Automatic)"
                       checked={settings.mix_merge_rate === 0}
@@ -345,7 +343,7 @@ const Settings = (props) => {
                       <p>
                         Applicable only if you set shipping rates based on product. If the cart contains some products with rate and some items without rate then a default rate like weight-based will come along with product-based rate.
                       </p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '20%', marginTop: "2%" }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: "2%" }}>
                         <RadioButton
                           label="Yes"
                           checked={settings.mix_merge_rate_1 === 0}
@@ -366,6 +364,7 @@ const Settings = (props) => {
                           <FormLayout>
                             <TextField
                               label="Additional Description of Mix Rate"
+                              placeholder='Included with product base rate'
                               value={settings.additional_description_of_mix_rate}
                               onChange={handleInputChange('additional_description_of_mix_rate')}
 
@@ -375,6 +374,7 @@ const Settings = (props) => {
                               value={settings.max_price_of_auto_product_base_mix_rate}
                               onChange={handleInputChange('max_price_of_auto_product_base_mix_rate')}
                               type="number"
+                              placeholder='0.00'
                             />
                           </FormLayout>
                         </div>

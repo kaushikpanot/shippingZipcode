@@ -220,7 +220,7 @@ function MergeRate(props) {
                                         variant='primary'
                                         icon={PlusIcon}
                                     >
-                                        Merge Rate
+                                        Add     Merge Rate
                                     </Button>
                                 </InlineGrid>
                                 <div style={{ marginTop: "1%", fontWeight: "bold" }}>

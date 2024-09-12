@@ -7,6 +7,9 @@ import { BrowserRouter } from 'react-router-dom';
 import { Frame } from '@shopify/polaris';
 import { getSessionToken } from "@shopify/app-bridge-utils";
 import Main from './Pages/Main';
+import { NavMenu } from '@shopify/app-bridge-react';
+
+
 
 export default function Index(props) {
 
@@ -14,6 +17,13 @@ export default function Index(props) {
         <BrowserRouter>
             <AppProvider i18n={translations}>
                 <Frame>
+                    <NavMenu>
+                        <a href="/" rel="home">
+                        </a>
+                        <a href="/Home">Shipping Zone & Rates</a>
+                        {/* <a href="/logs">Logs</a>
+                        <a href="/settings">Settings</a> */}
+                    </NavMenu>
                     <Main {...props} />
                 </Frame>
             </AppProvider>

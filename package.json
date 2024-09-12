@@ -12,7 +12,7 @@
         "vite": "^4.0.0"
     },
     "dependencies": {
-        "@shopify/app-bridge-react": "^3.2.5",
+        "@shopify/app-bridge-react": "^4.1.5",
         "@shopify/app-bridge-utils": "^3.5.1",
         "@shopify/polaris": "^13.5.0",
         "@vitejs/plugin-react": "^4.3.1",

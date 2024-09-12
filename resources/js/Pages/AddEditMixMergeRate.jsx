@@ -38,8 +38,8 @@ function AddEditMixMergeRate(props) {
   ) : null;
 
   const condition = [
-    { label: 'All rates must have at least one tag', value: 0 },
-    { label: 'Any rates found with tag', value: 1 },
+    { label: 'ALL rates must have at least one tag', value: 0 },
+    { label: 'ANY rates found with tag', value: 1 },
   ];
 
   const price_calculation_type = [
@@ -59,7 +59,7 @@ function AddEditMixMergeRate(props) {
     price_calculation_type: 0,
     tags_to_combine: "",
     tags_to_exclude: "",
-    min_shipping_rate: 0,
+    min_shipping_rate: 0 ,
     mix_shipping_rate: 0
   });
   const handleZoneDataChange = (field) => (value) => {
@@ -162,6 +162,7 @@ function AddEditMixMergeRate(props) {
         host: props.host,
       });
       const token = await getSessionToken(app);
+      console.log(token)
 
       const response = await axios.post(`${apiCommonURL}/api/mixMergeRate`, formData, {
         headers: {
@@ -240,9 +241,9 @@ function AddEditMixMergeRate(props) {
             secondaryActions={<Button onClick={navigateHome} >Back</Button>}>
 
             <Divider borderColor="border" />
-            <div style={{ marginTop: "2%", marginBottom: "3%" }}>
+            <div style={{  marginBottom: "3%" }}>
 
-              <div style={{ marginTop: "5%" }}>
+              <div style={{ marginTop: "3%" }}>
                 <p style={{ fontSize: "15px", marginBottom: "2%", fontWeight: "600" }}>
                   Title and Description
                 </p>
@@ -264,7 +265,7 @@ function AddEditMixMergeRate(props) {
                   </div>
                   <Divider borderColor="border" />
 
-                  <div style={{ marginTop: "2 %" }} className='zonetext'>
+                  <div style={{ marginTop: "2%" }} className='zonetext'>
                     <TextField
                       type="text"
                       label="Rate Name"
@@ -332,7 +333,7 @@ function AddEditMixMergeRate(props) {
                       label="Merge Rate Tags To Combine"
                       value={formData.tags_to_combine}
                       onChange={handleZoneDataChange('tags_to_combine')}
-                      placeholder='Example:merge1,merge2,merge3'
+                      placeholder='Example: merge1,merge2,merge3'
                       error={errors.tags_to_combine}
                     // helpText='Enter multiple shipping rate tags by comma(,) separated.'
                     />
@@ -343,7 +344,7 @@ function AddEditMixMergeRate(props) {
                       label="Tags To Exclude from Rate Calculation (Optional)"
                       value={formData.tags_to_exclude}
                       onChange={handleZoneDataChange('tags_to_exclude')}
-                      placeholder='Example:merge2'
+                      placeholder='Example: merge2'
                     // helpText='Enter multiple shipping rate tags by comma(,) separated.'
                     />
                   </div>

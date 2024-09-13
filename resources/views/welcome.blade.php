@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="utf-8">
+    <meta name="shopify-api-key" content="6e4e4b23ee06ed588d187fe909ca7f0f" >
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ \Osiset\ShopifyApp\Util::getShopifyConfig('app_name') }}</title>
@@ -35,6 +36,8 @@
             }
         }
     </style>
+
+<script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
     @viteReactRefresh
     @vite(['resources/css/app.css'])
 </head>
@@ -64,7 +67,7 @@
             loader.style.display = "none"; // Hide the loader
         });
     </script>
-    @vite(['resources/js/app.jsx']);
+    @vite(['resources/js/app.jsx'])
 </body>
 
 </html>

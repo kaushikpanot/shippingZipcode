@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Provider } from '@shopify/app-bridge-react';
+import { AppProvider } from '@shopify/polaris';
 import createApp from '@shopify/app-bridge';
 import { getSessionToken } from "@shopify/app-bridge-utils";
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -26,8 +26,8 @@ export default function Main(props)  {
     };
    
     return (
-        <Provider config={config} router={router} >
+        <AppProvider config={config} router={router} >
             <Routes {...props} />
-        </Provider>
+        </AppProvider>
     );
 }

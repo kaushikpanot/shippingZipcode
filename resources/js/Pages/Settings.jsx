@@ -201,16 +201,15 @@ const Settings = (props) => {
   return (
     <div>
       <div style={{ position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#F1F1F1" }}>
-      <Page
-
-        title="Settings"
-        primaryAction={<Button onClick={handleSaveSettings} variant='primary' loading={loadingButton}>Save</Button>}
-      >
-        <Divider borderColor="border" />
-      </Page>
+        <Page
+          title="Settings"
+          primaryAction={<Button onClick={handleSaveSettings} variant='primary' loading={loadingButton}>Save</Button>}
+        >
+          <Divider borderColor="border" />
+        </Page>
       </div>
       {toastMarkup}
-      
+
 
       <Page>
         <div style={{ marginBottom: '2%' }}>
@@ -222,11 +221,11 @@ const Settings = (props) => {
               <div style={{ marginTop: '4%' }}>
                 <List>
                   <List.Item>
-                  You can enable or disable the app without deleting the App
+                    You can enable or disable the app without deleting the App
                   </List.Item>
-                  <List.Item>
+                  {/* <List.Item>
                   To see the shipping rate when test mode is on, use the first name Cirkle during checkout.
-                  </List.Item>
+                  </List.Item> */}
                 </List>
               </div>
 

@@ -28,5 +28,5 @@ export default function Index(props) {
                 </Frame>
             </AppProvider>
         </BrowserRouter>
-    );
+    )
 }

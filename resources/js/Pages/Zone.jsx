@@ -281,7 +281,7 @@ function Zone(props) {
     const textField = (
         <Autocomplete.TextField
             onChange={updateText}
-            label="Select Countries"
+            label="Country"
             value={inputValue}
             placeholder="Search countries"
             verticalContent={verticalContentMarkup}
@@ -529,8 +529,8 @@ function Zone(props) {
                                 <div style={{ marginTop: "2%" }} className='zonetext'>
                                     <TextField
                                         type="text"
-                                        label="Name"
-                                        placeholder="Name"
+                                        label="Zone Name"
+                                        placeholder="West Zone"
                                         value={formData.name}
                                         onChange={handleZoneDataChange('name')}
                                         error={errors.name}
@@ -547,7 +547,7 @@ function Zone(props) {
                                 </div>
                                 <div style={{ marginTop: "2%", marginBottom: "2%" }} className='zonetext'>
                                     <Select
-                                        label=" Select Currency"
+                                        label="Currency Format"
                                         options={currencys}
                                         onChange={handleZoneDataChange('currency')}
                                         value={formData.currency}

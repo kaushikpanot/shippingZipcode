@@ -30,6 +30,7 @@ function AddEditMixMergeRate(props) {
   const toastDuration = 3000;
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(false)
+  const [loadingButton, setLoadingButton] = useState(false);
 
   const toggleActive = useCallback(() => setActive((active) => !active), []);
 
@@ -59,7 +60,7 @@ function AddEditMixMergeRate(props) {
     price_calculation_type: 0,
     tags_to_combine: "",
     tags_to_exclude: "",
-    min_shipping_rate: 0 ,
+    min_shipping_rate: 0,
     mix_shipping_rate: 0
   });
   const handleZoneDataChange = (field) => (value) => {
@@ -133,6 +134,7 @@ function AddEditMixMergeRate(props) {
       console.error('Error occurs', error);
     }
   }
+
   useEffect(() => {
     if (id) {
       editMergeRate();
@@ -161,6 +163,7 @@ function AddEditMixMergeRate(props) {
         apiKey: SHOPIFY_API_KEY,
         host: props.host,
       });
+      setLoadingButton(true);
       const token = await getSessionToken(app);
       console.log(token)
 
@@ -173,12 +176,15 @@ function AddEditMixMergeRate(props) {
         ...prevFormData,
         id: response.data.id,
       }))
-      setToastContent("Merge rate Add successfully..");
+      setToastContent("Merge rate saved successfully..");
       setShowToast(true);
     } catch (error) {
       console.error('Error occurs', error);
       setToastContent("Error occurred while saving data");
       setShowToast(true);
+    }
+    finally{
+      setLoadingButton(false);
     }
   }
   if (loading) {
@@ -201,7 +207,7 @@ function AddEditMixMergeRate(props) {
               </div>
             </div>
             <LegacyCard sectioned>
-              <div style={{  marginBottom: "3%"  }}>
+              <div style={{ marginBottom: "3%" }}>
                 <LegacyCard sectioned>
                   <SkeletonBodyText lines={2} />
                 </LegacyCard>
@@ -234,144 +240,149 @@ function AddEditMixMergeRate(props) {
     <div>
       <Grid>
         <Grid.Cell columnSpan={{ xs: 2, sm: 3, md: 3, lg: 2, xl: 2 }}></Grid.Cell>
+
         <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-          <Page
-            title={id ? 'Edit Merge Rate' : 'Add Merge Rate'}
-            primaryAction={<Button variant="primary" onClick={saevMergeRate} >Save</Button>}
-            secondaryActions={<Button onClick={navigateHome} >Back</Button>}>
-
+          <div style={{ position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#F1F1F1" }}>
+            <Page
+              title={id ? 'Edit Merge Rate' : 'Add Merge Rate'}
+              primaryAction={<Button variant="primary" onClick={saevMergeRate}   loading={loadingButton}>Save</Button>}
+              secondaryActions={<Button onClick={navigateHome} >Back</Button>}>
+            </Page>
             <Divider borderColor="border" />
-            <div style={{  marginBottom: "3%" }}>
+          </div>
 
-              <div style={{ marginTop: "3%" }}>
-                <p style={{ fontSize: "15px", marginBottom: "2%", fontWeight: "600" }}>
-                  Title and Description
-                </p>
+          <div style={{ marginBottom: "3%" }}>
 
-                <List type="bullet">
-                  <List.Item>When merge rate execute, default rate title and description will be replaced with this new title and description.</List.Item>
-                </List>
-              </div>
+            <div style={{ marginTop: "3%" }}>
+              <p style={{ fontSize: "15px", marginBottom: "2%", fontWeight: "600" }}>
+                Title and Description
+              </p>
 
-              <div style={{ marginTop: "5%" }}>
-                <LegacyCard sectioned>
-                  <div className='choice' style={{ marginBottom: "3%" }}>
-                    <Select
-                      label="Merge Rate status"
-                      options={statusOptions}
-                      onChange={handleStatusChange}
-                      value={formData.status === 1 ? 'Enabled' : 'Disabled'}
-                    />
-                  </div>
-                  <Divider borderColor="border" />
-
-                  <div style={{ marginTop: "2%" }} className='zonetext'>
-                    <TextField
-                      type="text"
-                      label="Rate Name"
-                      value={formData.rate_name}
-                      onChange={handleZoneDataChange('rate_name')}
-                      error={errors.rate_name}
-                    />
-                  </div>
-                  <div style={{ marginTop: "2%" }} className='zonetext'>
-                    <TextField
-                      type="text"
-                      label="Service Code (Optional)"
-                      value={formData.service_code}
-                      onChange={handleZoneDataChange('service_code')}
-                    />
-                  </div>
-                  <div style={{ marginTop: "2%" }} className='zonetext'>
-                    <TextField
-                      type="text"
-                      label="Description (Optional)"
-                      value={formData.description}
-                      onChange={handleZoneDataChange('description')}
-                      helpText='You can use #number of days if you want to display the expected delivery like expected shipping is on #3, so it will add 3 days on the current date of the Shopify server and display like "Expected shipping is on 16 Mar".'
-                    />
-                  </div>
-                </LegacyCard>
-              </div>
-
+              <List type="bullet">
+                <List.Item>When merge rate execute, default rate title and description will be replaced with this new title and description.</List.Item>
+              </List>
             </div>
 
-            <Divider borderColor="border" />
-            <div style={{ marginTop: "2%", marginBottom: "4%" }}>
+            <div style={{ marginTop: "5%" }}>
+              <LegacyCard sectioned>
+                <div className='choice' style={{ marginBottom: "3%" }}>
+                  <Select
+                    label="Merge Rate status"
+                    options={statusOptions}
+                    onChange={handleStatusChange}
+                    value={formData.status === 1 ? 'Enabled' : 'Disabled'}
+                  />
+                </div>
+                <Divider borderColor="border" />
 
-              <div style={{ marginTop: "5%" }}>
-                <p style={{ fontSize: "15px", marginBottom: "2%", fontWeight: "600" }}>
-                  Merge Rate Condition
-                </p>
-
-                <List type="bullet">
-                  <List.Item>From here, you can merge rates according on your needs.</List.Item>
-                </List>
-              </div>
-
-              <div style={{ marginTop: "5%" }}>
-                <LegacyCard sectioned>
-                  <div className='choice' style={{ marginBottom: "3%" }}>
-                    <Select
-                      label="Merge rate Condition"
-                      options={condition}
-                      value={formData.condition}
-                      onChange={(value) => handleSelectChange('condition', parseInt(value))}
-                    />
-                  </div>
-                  <div style={{ marginTop: "2 %" }} className='zonetext'>
-                    <Select
-                      label="Merge Rate Price Calculation Type"
-                      options={price_calculation_type}
-                      value={formData.price_calculation_type}
-                      onChange={(value) => handleSelectChange('price_calculation_type', parseInt(value))}
-                    />
-                  </div>
-                  <div style={{ marginTop: "3.5%" }} className='zonetext'>
-                    <TextField
-                      type="text"
-                      label="Merge Rate Tags To Combine"
-                      value={formData.tags_to_combine}
-                      onChange={handleZoneDataChange('tags_to_combine')}
-                      placeholder='Example: merge1,merge2,merge3'
-                      error={errors.tags_to_combine}
-                    // helpText='Enter multiple shipping rate tags by comma(,) separated.'
-                    />
-                  </div>
-                  <div style={{ marginTop: "3.5%" }} className='zonetext'>
-                    <TextField
-                      type="text"
-                      label="Tags To Exclude from Rate Calculation (Optional)"
-                      value={formData.tags_to_exclude}
-                      onChange={handleZoneDataChange('tags_to_exclude')}
-                      placeholder='Example: merge2'
-                    // helpText='Enter multiple shipping rate tags by comma(,) separated.'
-                    />
-                  </div>
-                  <div style={{ marginTop: '3.5%' }}>
-                    <FormLayout.Group>
-                      <TextField
-                        type="number"
-                        label="Minimum Shipping Rate (Optional)"
-                        value={formData.min_shipping_rate}
-                        onChange={handleZoneDataChange('min_shipping_rate')}
-                      // helpText='Minimum shipping rate would be used when calculated rate is less than minimum rate'
-                      />
-                      <TextField
-                        type="number"
-                        label="Maximum Shipping Rate (Optional)"
-                        value={formData.mix_shipping_rate}
-                        onChange={handleZoneDataChange('mix_shipping_rate')}
-                      // helpText='Maximum shipping rate would be used when calculated rate is greater than maximum rate'
-                      />
-                    </FormLayout.Group>
-                  </div>
-                </LegacyCard>
-              </div>
-
+                <div style={{ marginTop: "2%" }} className='zonetext'>
+                  <TextField
+                    type="text"
+                    label="Rate Name"
+                    value={formData.rate_name}
+                    onChange={handleZoneDataChange('rate_name')}
+                    error={errors.rate_name}
+                  />
+                </div>
+                <div style={{ marginTop: "2%" }} className='zonetext'>
+                  <TextField
+                    type="text"
+                    label="Service Code (Optional)"
+                    value={formData.service_code}
+                    onChange={handleZoneDataChange('service_code')}
+                  />
+                </div>
+                <div style={{ marginTop: "2%" }} className='zonetext'>
+                  <TextField
+                    type="text"
+                    label="Description (Optional)"
+                    value={formData.description}
+                    onChange={handleZoneDataChange('description')}
+                    helpText='You can use #number of days if you want to display the expected delivery like expected shipping is on #3, so it will add 3 days on the current date of the Shopify server and display like "Expected shipping is on 16 Mar".'
+                  />
+                </div>
+              </LegacyCard>
             </div>
-          </Page>
+
+          </div>
+
+          <Divider borderColor="border" />
+          <div style={{ marginTop: "2%", marginBottom:"2%"}}>
+
+            <div style={{ marginTop: "5%" }}>
+              <p style={{ fontSize: "15px", marginBottom: "2%", fontWeight: "600" }}>
+                Merge Rate Condition
+              </p>
+
+              <List type="bullet">
+                <List.Item>From here, you can merge rates according on your needs.</List.Item>
+              </List>
+            </div>
+
+            <div style={{ marginTop: "5%" }}>
+              <LegacyCard sectioned>
+                <div className='choice' style={{ marginBottom: "3%" }}>
+                  <Select
+                    label="Merge rate Condition"
+                    options={condition}
+                    value={formData.condition}
+                    onChange={(value) => handleSelectChange('condition', parseInt(value))}
+                  />
+                </div>
+                <div style={{ marginTop: "2 %" }} className='zonetext'>
+                  <Select
+                    label="Merge Rate Price Calculation Type"
+                    options={price_calculation_type}
+                    value={formData.price_calculation_type}
+                    onChange={(value) => handleSelectChange('price_calculation_type', parseInt(value))}
+                  />
+                </div>
+                <div style={{ marginTop: "3.5%" }} className='zonetext'>
+                  <TextField
+                    type="text"
+                    label="Merge Rate Tags To Combine"
+                    value={formData.tags_to_combine}
+                    onChange={handleZoneDataChange('tags_to_combine')}
+                    placeholder='Example: merge1,merge2,merge3'
+                    error={errors.tags_to_combine}
+                  // helpText='Enter multiple shipping rate tags by comma(,) separated.'
+                  />
+                </div>
+                <div style={{ marginTop: "3.5%" }} className='zonetext'>
+                  <TextField
+                    type="text"
+                    label="Tags To Exclude from Rate Calculation (Optional)"
+                    value={formData.tags_to_exclude}
+                    onChange={handleZoneDataChange('tags_to_exclude')}
+                    placeholder='Example: merge2'
+                  // helpText='Enter multiple shipping rate tags by comma(,) separated.'
+                  />
+                </div>
+                <div style={{ marginTop: '3.5%' }}>
+                  <FormLayout.Group>
+                    <TextField
+                      type="number"
+                      label="Minimum Shipping Rate (Optional)"
+                      value={formData.min_shipping_rate}
+                      onChange={handleZoneDataChange('min_shipping_rate')}
+                    // helpText='Minimum shipping rate would be used when calculated rate is less than minimum rate'
+                    />
+                    <TextField
+                      type="number"
+                      label="Maximum Shipping Rate (Optional)"
+                      value={formData.mix_shipping_rate}
+                      onChange={handleZoneDataChange('mix_shipping_rate')}
+                    // helpText='Maximum shipping rate would be used when calculated rate is greater than maximum rate'
+                    />
+                  </FormLayout.Group>
+                </div>
+              </LegacyCard>
+            </div>
+
+          </div>
+
         </Grid.Cell>
+
         <Grid.Cell columnSpan={{ xs: 2, sm: 3, md: 3, lg: 2, xl: 2 }}></Grid.Cell>
 
       </Grid>
@@ -380,6 +391,7 @@ function AddEditMixMergeRate(props) {
       )}
       {toastMarkup}
     </div>
+
 
   )
 }

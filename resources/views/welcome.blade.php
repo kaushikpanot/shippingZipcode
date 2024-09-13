@@ -67,7 +67,7 @@
             loader.style.display = "none"; // Hide the loader
         });
     </script>
-    @vite(['resources/js/app.jsx']);
+    @vite(['resources/js/app.jsx'])
 </body>
 
 </html>

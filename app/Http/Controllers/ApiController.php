@@ -21,9 +21,7 @@ use Throwable;
 use CountryState;
 use Currency\Util\CurrencySymbolUtil;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\Rule;
-use Kyon147\LaraShopify\Facades\Shopify;
 
 class ApiController extends Controller
 {
@@ -245,373 +243,6 @@ class ApiController extends Controller
             return response()->json(['status' => false, 'message' => 'An unexpected error occurred:']);
         }
     }
-
-    // private function checkCondition($condition, $totalQuantity)
-    // {
-    //     if (isset($condition['condition'])) {
-    //         $result = false;
-
-    //         switch ($condition['condition']) {
-    //             case 'equal':
-    //                 $result = $totalQuantity == $condition['value'];
-    //                 break;
-    //             case 'notequal':
-    //                 $result = $totalQuantity != $condition['value'];
-    //                 break;
-    //             case 'gthenoequal':
-    //                 $result = $totalQuantity >= $condition['value'];
-    //                 break;
-    //             case 'lthenoequal':
-    //                 $result = $totalQuantity <= $condition['value'];
-    //                 break;
-    //             case 'between':
-    //                 $result = $totalQuantity >= $condition['value'] && $totalQuantity <= $condition['value2'];
-    //                 break;
-    //             case 'contains':
-    //                 $result = strpos($totalQuantity, $condition['value']) !== false;
-    //                 break;
-    //             case 'notcontains':
-    //                 $result = strpos($totalQuantity, $condition['value']) === false;
-    //                 break;
-    //             case 'startwith':
-    //                 $result = strpos($totalQuantity, $condition['value']) === 0;
-    //                 break;
-    //             case 'notstartwith':
-    //                 $result = strpos($totalQuantity, $condition['value']) !== 0;
-    //                 break;
-    //         }
-
-    //         Log::info('Query logs:', [
-    //             'totalQuantity' => $totalQuantity,
-    //             'condition' => $condition['condition'],
-    //             'condition_value' => $condition['value'],
-    //             'condition_value2' => $condition['value2'] ?? null,
-    //             'result' => $result
-    //         ]);
-
-    //         return $result;
-    //     }
-
-    //     return false; // Return false if condition is not properly set
-    // }
-
-    // private function checkCondition($condition, $totalQuantity)
-    // {
-    //     if (!isset($condition['condition'], $condition['value'])) {
-    //         Log::warning('Invalid condition format', [
-    //             'condition' => $condition,
-    //             'totalQuantity' => $totalQuantity,
-    //         ]);
-    //         return false;
-    //     }
-
-    //     $conditionType = $condition['condition'];
-    //     $value = $condition['value'];
-    //     $value2 = $condition['value2'] ?? null;
-
-    //     // Convert comma-separated string to array if needed
-    //     if (is_string($value) && strpos($value, ',') !== false) {
-    //         $value = explode(',', $value);
-    //     }
-
-    //     if (is_numeric($totalQuantity)) {
-    //         $totalQuantity = $totalQuantity;
-    //     }
-
-    //     $result = false;
-
-    //     switch ($conditionType) {
-    //         case 'equal':
-    //             if (is_array($value)) {
-    //                 $result = in_array($totalQuantity, $value);
-    //             } else {
-    //                 $result = $totalQuantity == $value;
-    //             }
-    //             break;
-    //         case 'notequal':
-    //             if (is_array($value)) {
-    //                 $result = !in_array($totalQuantity, $value);
-    //             } else {
-    //                 $result = $totalQuantity != $value;
-    //             }
-    //             break;
-    //         case 'gthenoequal':
-    //             $result = $totalQuantity >= $value;
-    //             break;
-    //         case 'lthenoequal':
-    //             $result = $totalQuantity <= $value;
-    //             break;
-    //         case 'between':
-    //             if ($value2 !== null) {
-    //                 $result = $totalQuantity >= $value && $totalQuantity <= $value2;
-    //             } else {
-    //                 Log::warning('Missing value2 for "between" condition', [
-    //                     'totalQuantity' => $totalQuantity,
-    //                     'condition' => $conditionType,
-    //                     'value' => $value,
-    //                     'value2' => $value2
-    //                 ]);
-    //             }
-    //             break;
-    //         case 'contains':
-    //             if (is_array($value)) {
-    //                 foreach ($value as $val) {
-    //                     if (strpos((string)$totalQuantity, $val) !== false) {
-    //                         $result = true;
-    //                         break;
-    //                     }
-    //                 }
-    //             } else {
-    //                 $result = strpos((string)$totalQuantity, $value) !== false;
-    //             }
-    //             break;
-    //         case 'notcontains':
-    //             $result = true;
-    //             if (is_array($value)) {
-    //                 foreach ($value as $val) {
-    //                     if (strpos((string)$totalQuantity, $val) !== false) {
-    //                         $result = false;
-    //                         break;
-    //                     }
-    //                 }
-    //             } else {
-    //                 $result = strpos((string)$totalQuantity, $value) === false;
-    //             }
-    //             break;
-    //         case 'startwith':
-    //             if (is_array($value)) {
-    //                 foreach ($value as $val) {
-    //                     if (strpos((string)$totalQuantity, $val) === 0) {
-    //                         $result = true;
-    //                         break;
-    //                     }
-    //                 }
-    //             } else {
-    //                 $result = strpos((string)$totalQuantity, $value) === 0;
-    //             }
-    //             break;
-    //         case 'notstartwith':
-    //             $result = true;
-    //             if (is_array($value)) {
-    //                 foreach ($value as $val) {
-    //                     if (strpos((string)$totalQuantity, $val) === 0) {
-    //                         $result = false;
-    //                         break;
-    //                     }
-    //                 }
-    //             } else {
-    //                 $result = strpos((string)$totalQuantity, $value) !== 0;
-    //             }
-    //             break;
-    //         default:
-    //             Log::warning('Unknown condition type', [
-    //                 'condition' => $conditionType,
-    //                 'totalQuantity' => $totalQuantity,
-    //             ]);
-    //             break;
-    //     }
-
-    //     Log::info('Condition check result', [
-    //         'totalQuantity' => $totalQuantity,
-    //         'condition' => $conditionType,
-    //         'condition_value' => $value,
-    //         'condition_value2' => $value2,
-    //         'result' => $result
-    //     ]);
-
-    //     return $result;
-    // }
-
-    // private function checkCondition($condition, $totalQuantity)
-    // {
-    //     if (!isset($condition['condition'], $condition['value'])) {
-    //         Log::warning('Invalid condition format', [
-    //             'condition' => $condition,
-    //             'totalQuantity' => $totalQuantity,
-    //         ]);
-    //         return false;
-    //     }
-
-    //     $conditionType = $condition['condition'];
-    //     $value = $condition['value'];
-    //     $value2 = $condition['value2'] ?? null;
-
-    //     // Convert comma-separated string to array if needed
-    //     if (is_string($value) && strpos($value, ',') !== false) {
-    //         $value = array_map('trim', explode(',', $value));
-    //     }
-
-    //     if (is_string($totalQuantity) && strpos($totalQuantity, ',') !== false) {
-    //         $totalQuantity = array_map('trim', explode(',', $totalQuantity));
-    //     }
-
-    //     $result = false;
-
-    //     switch ($conditionType) {
-    //         case 'equal':
-    //             if (is_array($value)) {
-    //                 $result = array_intersect((array)$totalQuantity, $value) == $value;
-    //             } elseif(is_array($value)) {
-    //                 $result = in_array($totalQuantity, $value);
-    //             } else {
-    //                 $result = (is_array($totalQuantity) ? in_array($value, $totalQuantity) : $totalQuantity == $value);
-    //             }
-    //             break;
-    //         case 'notequal':
-    //             if (is_array($value)) {
-    //                 $result = !array_intersect((array)$totalQuantity, $value);
-    //             } else {
-    //                 $result = (is_array($totalQuantity) ? !in_array($value, $totalQuantity) : $totalQuantity != $value);
-    //             }
-    //             break;
-    //         case 'gthenoequal':
-    //             $result = $totalQuantity >= $value;
-    //             break;
-    //         case 'lthenoequal':
-    //             $result = $totalQuantity <= $value;
-    //             break;
-    //         case 'between':
-    //             if ($value2 !== null) {
-    //                 $result = $totalQuantity >= $value && $totalQuantity <= $value2;
-    //             } else {
-    //                 Log::warning('Missing value2 for "between" condition', [
-    //                     'totalQuantity' => $totalQuantity,
-    //                     'condition' => $conditionType,
-    //                     'value' => $value,
-    //                     'value2' => $value2,
-    //                 ]);
-    //             }
-    //             break;
-    //         case 'contains':
-    //             if (is_array($value)) {
-    //                 foreach ($value as $val) {
-    //                     foreach ((array)$totalQuantity as $qty) {
-    //                         if (strpos((string)$qty, $val) !== false) {
-    //                             $result = true;
-    //                             break 2;
-    //                         }
-    //                     }
-    //                 }
-    //             } else {
-    //                 foreach ((array)$totalQuantity as $qty) {
-    //                     if (strpos((string)$qty, $value) !== false) {
-    //                         $result = true;
-    //                         break;
-    //                     }
-    //                 }
-    //             }
-    //             break;
-    //         case 'notcontains':
-    //             $result = true;
-    //             if (is_array($value)) {
-    //                 foreach ($value as $val) {
-    //                     foreach ((array)$totalQuantity as $qty) {
-    //                         if (strpos((string)$qty, $val) !== false) {
-    //                             $result = false;
-    //                             break 2;
-    //                         }
-    //                     }
-    //                 }
-    //             } else {
-    //                 foreach ((array)$totalQuantity as $qty) {
-    //                     if (strpos((string)$qty, $value) !== false) {
-    //                         $result = false;
-    //                         break;
-    //                     }
-    //                 }
-    //             }
-    //             break;
-    //         case 'startwith':
-    //             if (is_array($value)) {
-    //                 foreach ($value as $val) {
-    //                     foreach ((array)$totalQuantity as $qty) {
-    //                         if (strpos((string)$qty, $val) === 0) {
-    //                             $result = true;
-    //                             break 2;
-    //                         }
-    //                     }
-    //                 }
-    //             } else {
-    //                 foreach ((array)$totalQuantity as $qty) {
-    //                     if (strpos((string)$qty, $value) === 0) {
-    //                         $result = true;
-    //                         break;
-    //                     }
-    //                 }
-    //             }
-    //             break;
-    //         case 'notstartwith':
-    //             $result = true;
-    //             if (is_array($value)) {
-    //                 foreach ($value as $val) {
-    //                     foreach ((array)$totalQuantity as $qty) {
-    //                         if (strpos((string)$qty, $val) === 0) {
-    //                             $result = false;
-    //                             break 2;
-    //                         }
-    //                     }
-    //                 }
-    //             } else {
-    //                 foreach ((array)$totalQuantity as $qty) {
-    //                     if (strpos((string)$qty, $value) === 0) {
-    //                         $result = false;
-    //                         break;
-    //                     }
-    //                 }
-    //             }
-    //             break;
-    //         case 'modular0':
-    //             if ($value == 0) {
-    //                 Log::warning('Division by zero for "modular0" condition', [
-    //                     'totalQuantity' => $totalQuantity,
-    //                     'condition' => $conditionType,
-    //                     'value' => $value,
-    //                 ]);
-    //             } else {
-    //                 $result = true;
-    //                 foreach ((array)$totalQuantity as $qty) {
-    //                     if ($qty % $value !== 0) {
-    //                         $result = false;
-    //                         break;
-    //                     }
-    //                 }
-    //             }
-    //             break;
-    //         case 'modularnot0':
-    //             if ($value == 0) {
-    //                 Log::warning('Division by zero for "modularnot0" condition', [
-    //                     'totalQuantity' => $totalQuantity,
-    //                     'condition' => $conditionType,
-    //                     'value' => $value,
-    //                 ]);
-    //             } else {
-    //                 foreach ((array)$totalQuantity as $qty) {
-    //                     if ($qty % $value === 0) {
-    //                         $result = false;
-    //                         break 2;
-    //                     }
-    //                 }
-    //                 $result = true;
-    //             }
-    //             break;
-    //         default:
-    //             Log::warning('Unknown condition type', [
-    //                 'condition' => $conditionType,
-    //                 'totalQuantity' => $totalQuantity,
-    //             ]);
-    //             break;
-    //     }
-
-    //     Log::info('Condition check result', [
-    //         'totalQuantity' => $totalQuantity,
-    //         'condition' => $conditionType,
-    //         'condition_value' => $value,
-    //         'condition_value2' => $value2,
-    //         'result' => $result,
-    //     ]);
-
-    //     return $result;
-    // }
 
     private function checkCondition($condition, $totalQuantity)
     {
@@ -1068,7 +699,8 @@ class ApiController extends Controller
         return $totalSurcharge;
     }
 
-    private function convertWeightUnit($baseUnit = 'kg', $unitPrice){
+    private function convertWeightUnit($baseUnit = 'kg', $unitPrice)
+    {
         $newUnitFor = 0;
         $unitConversion = [
             'kg' => 1000,
@@ -1079,6 +711,9 @@ class ApiController extends Controller
 
         $newUnitFor *= $unitConversion[$baseUnit] ?? 1;
 
+        Log::info("newUnitFor", ["newUnitFor" => $baseUnit]);
+        Log::info("newUnitFor", ["unitPrice" => $unitPrice]);
+
         return $unitPrice / ($unitConversion[$baseUnit] ?? 1) ?? 0;
     }
 
@@ -1088,6 +723,7 @@ class ApiController extends Controller
         $input = $request->input();
 
         Log::info('header logs:', ['customerData' => $customer_id]);
+        // Log::info('header logs:', ['customerData' => $request->input()]);
 
         $shopDomain = $request->header();
 
@@ -1105,12 +741,12 @@ class ApiController extends Controller
             return $carry + ($item['grams'] * $item['quantity']);
         }, 0);
 
-        $totalPrice = array_reduce($items, function ($carry, $item) {
+        $totalPrice1 = array_reduce($items, function ($carry, $item) {
             $itemTotal = ($item['price'] * $item['quantity']) / 100;
             return $carry + $itemTotal;
         }, 0);
 
-        $totalPriceFormatted = number_format($totalPrice, 2);
+        $totalPrice = round($totalPrice1, 2);
 
         $latitudeFrom = $input['rate']['origin']['latitude'];
         $longitudeFrom = $input['rate']['origin']['longitude'];
@@ -1156,7 +792,7 @@ class ApiController extends Controller
                     break;
                 case 1: // All conditions must be true
                     $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id) {
-
+                        Log::info("case 1");
                         if ($condition['label'] == 'Cart_Order') {
 
                             $currentTime = Carbon::now()->format('H');
@@ -1167,9 +803,8 @@ class ApiController extends Controller
                                 case 'quantity':
                                     $comparativeValue = $totalQuantity;
                                     break;
-
                                 case 'weight':
-                                    $comparativeValue = $totalWeight;
+                                    $comparativeValue = round($this->convertWeightUnit($condition['unit'], $totalWeight), 2);
                                     break;
 
                                 case 'localcode':
@@ -1197,13 +832,8 @@ class ApiController extends Controller
                                     break;
 
                                 case 'day':
-                                    $days = explode(',', $condition['value']);
-
-                                    if ($condition['condition'] == 'equal') {
-                                        return in_array($currentDay, $days);
-                                    } else {
-                                        return !in_array($currentDay, $days);
-                                    }
+                                    $comparativeValue = $currentDay;
+                                    break;
 
                                 default:
                                     Log::error('Unknown condition name: ' . $condition['name']);
@@ -1218,7 +848,7 @@ class ApiController extends Controller
                             $fieldMap = [
                                 'quantity2' => 'quantity',
                                 'price' => fn($item) => $item['price'] / 100,
-                                'total2' => fn($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
+                                'total2' => fn($item) => round(($item['price'] * $item['quantity']) / 100, 2),
                                 'weight2' => 'grams',
                                 'name' => 'name',
                                 'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
@@ -1234,6 +864,10 @@ class ApiController extends Controller
                                     $totalQuantity = is_callable($fieldMap[$condition['name']])
                                         ? $fieldMap[$condition['name']]($item)
                                         : $item[$fieldMap[$condition['name']]];
+
+                                    if ($condition['name'] == 'weight2') {
+                                        $totalQuantity = round($this->convertWeightUnit($condition['unit'], $totalQuantity), 2);
+                                    }
 
                                     $perProductResult[] = $this->checkCondition($condition, $totalQuantity);
                                     $perProductTag[] = $this->fetchShopifyProductData($userData, $item['product_id'], 'tags');
@@ -1278,13 +912,7 @@ class ApiController extends Controller
 
                             if ($condition['name'] == 'dayOfWeek') {
                                 $day = Carbon::createFromFormat('Y-m-d', date('Y-m-d'))->format('l');
-                                $days = explode(',', $condition['value']);
-
-                                if ($condition['condition'] == 'equal') {
-                                    return in_array($day, $days);
-                                } else {
-                                    return !in_array($day, $days);
-                                }
+                                $totalQuantity = $day;
                             }
 
                             if ($condition['name'] == 'dayIs') {
@@ -1300,14 +928,7 @@ class ApiController extends Controller
                             }
 
                             if ($condition['name'] == 'deliveryType') {
-                                $deliveryType = explode(',', $condition['value']);
-                                $day = "Shipping";
-
-                                if ($condition['condition'] == 'equal') {
-                                    return in_array($day, $deliveryType);
-                                } else {
-                                    return !in_array($day, $deliveryType);
-                                }
+                                $totalQuantity = "Shipping";
                             }
 
                             return $this->checkCondition($condition, $totalQuantity);
@@ -1317,7 +938,7 @@ class ApiController extends Controller
                     break;
                 case 2: // Any condition must be true
                     $conditionsMet = collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id) {
-
+                        Log::info("case 2");
                         if ($condition['label'] == 'Cart_Order') {
 
                             $currentTime = Carbon::now()->format('H');
@@ -1330,7 +951,7 @@ class ApiController extends Controller
                                     break;
 
                                 case 'weight':
-                                    $comparativeValue = $totalWeight;
+                                    $comparativeValue = round($this->convertWeightUnit($condition['unit'], $totalWeight), 2);
                                     break;
 
                                 case 'localcode':
@@ -1358,13 +979,8 @@ class ApiController extends Controller
                                     break;
 
                                 case 'day':
-                                    $days = explode(',', $condition['value']);
-
-                                    if ($condition['condition'] == 'equal') {
-                                        return in_array($currentDay, $days);
-                                    } else {
-                                        return !in_array($currentDay, $days);
-                                    }
+                                    $comparativeValue = $currentDay;
+                                    break;
 
                                 default:
                                     Log::error('Unknown condition name: ' . $condition['name']);
@@ -1379,7 +995,7 @@ class ApiController extends Controller
                             $fieldMap = [
                                 'quantity2' => 'quantity',
                                 'price' => fn($item) => $item['price'] / 100,
-                                'total2' => fn($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
+                                'total2' => fn($item) => round(($item['price'] * $item['quantity']) / 100, 2),
                                 'weight2' => 'grams',
                                 'name' => 'name',
                                 'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
@@ -1395,6 +1011,10 @@ class ApiController extends Controller
                                     $totalQuantity = is_callable($fieldMap[$condition['name']])
                                         ? $fieldMap[$condition['name']]($item)
                                         : $item[$fieldMap[$condition['name']]];
+
+                                    if ($condition['name'] == 'weight2') {
+                                        $totalQuantity = round($this->convertWeightUnit($condition['unit'], $totalQuantity), 2);
+                                    }
 
                                     $perProductResult[] = $this->checkCondition($condition, $totalQuantity);
                                     $perProductTag[] = $this->fetchShopifyProductData($userData, $item['product_id'], 'tags');
@@ -1439,14 +1059,7 @@ class ApiController extends Controller
 
                             if ($condition['name'] == 'dayOfWeek') {
                                 $currentDay = Carbon::now()->format('l');
-                                $days = array_map('trim', explode(',', $condition['value']));
-
-                                Log::info('Checking dayOfWeek condition', ['currentDay' => $currentDay, 'days' => $days]);
-                                if ($condition['condition'] == 'equal') {
-                                    return in_array($currentDay, $days);
-                                } else {
-                                    return !in_array($currentDay, $days);
-                                }
+                                $totalQuantity = $currentDay;
                             }
 
                             if ($condition['name'] == 'dayIs') {
@@ -1462,14 +1075,7 @@ class ApiController extends Controller
                             }
 
                             if ($condition['name'] == 'deliveryType') {
-                                $deliveryType = explode(',', $condition['value']);
-                                $day = "Shipping";
-
-                                if ($condition['condition'] == 'equal') {
-                                    return in_array($day, $deliveryType);
-                                } else {
-                                    return !in_array($day, $deliveryType);
-                                }
+                                $totalQuantity = "Shipping";
                             }
 
                             return $this->checkCondition($condition, $totalQuantity);
@@ -1480,7 +1086,7 @@ class ApiController extends Controller
                     break;
                 case 3: // All conditions must be false to return true, if any condition is true return false
                     $conditionsMet = !collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id) {
-
+                        Log::info("case 3");
                         if ($condition['label'] == 'Cart_Order') {
 
                             $currentTime = Carbon::now()->format('H');
@@ -1493,7 +1099,7 @@ class ApiController extends Controller
                                     break;
 
                                 case 'weight':
-                                    $comparativeValue = $totalWeight;
+                                    $comparativeValue = round($this->convertWeightUnit($condition['unit'], $totalWeight), 2);
                                     break;
 
                                 case 'localcode':
@@ -1521,13 +1127,8 @@ class ApiController extends Controller
                                     break;
 
                                 case 'day':
-                                    $days = explode(',', $condition['value']);
-
-                                    if ($condition['condition'] == 'equal') {
-                                        return in_array($currentDay, $days);
-                                    } else {
-                                        return !in_array($currentDay, $days);
-                                    }
+                                    $comparativeValue = $currentDay;
+                                    break;
 
                                 default:
                                     Log::error('Unknown condition name: ' . $condition['name']);
@@ -1542,7 +1143,7 @@ class ApiController extends Controller
                             $fieldMap = [
                                 'quantity2' => 'quantity',
                                 'price' => fn($item) => $item['price'] / 100,
-                                'total2' => fn($item) => number_format(($item['price'] * $item['quantity']) / 100, 2),
+                                'total2' => fn($item) => round(($item['price'] * $item['quantity']) / 100, 2),
                                 'weight2' => 'grams',
                                 'name' => 'name',
                                 'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
@@ -1558,6 +1159,10 @@ class ApiController extends Controller
                                     $totalQuantity = is_callable($fieldMap[$condition['name']])
                                         ? $fieldMap[$condition['name']]($item)
                                         : $item[$fieldMap[$condition['name']]];
+
+                                    if ($condition['name'] == 'weight2') {
+                                        $totalQuantity = round($this->convertWeightUnit($condition['unit'], $totalQuantity), 2);
+                                    }
 
                                     $perProductResult[] = $this->checkCondition($condition, $totalQuantity);
                                     $perProductTag[] = $this->fetchShopifyProductData($userData, $item['product_id'], 'tags');
@@ -1602,14 +1207,7 @@ class ApiController extends Controller
 
                             if ($condition['name'] == 'dayOfWeek') {
                                 $currentDay = Carbon::now()->format('l');
-                                $days = array_map('trim', explode(',', $condition['value']));
-
-                                Log::info('Checking dayOfWeek condition', ['currentDay' => $currentDay, 'days' => $days]);
-                                if ($condition['condition'] == 'equal') {
-                                    return in_array($currentDay, $days);
-                                } else {
-                                    return !in_array($currentDay, $days);
-                                }
+                                $totalQuantity = $currentDay;
                             }
 
                             if ($condition['name'] == 'dayIs') {
@@ -1625,14 +1223,7 @@ class ApiController extends Controller
                             }
 
                             if ($condition['name'] == 'deliveryType') {
-                                $deliveryType = explode(',', $condition['value']);
-                                $day = "Shipping";
-
-                                if ($condition['condition'] == 'equal') {
-                                    return in_array($day, $deliveryType);
-                                } else {
-                                    return !in_array($day, $deliveryType);
-                                }
+                                $totalQuantity = "Shipping";
                             }
 
                             return $this->checkCondition($condition, $totalQuantity);
@@ -1965,7 +1556,7 @@ class ApiController extends Controller
                     if ($excludeProducts['set_exclude_products'] == 'product_vendor') {
                         $excludeProducts['set_exclude_products'] = 'vendor';
                     } else if ($excludeProducts['set_exclude_products'] == 'custome_selection') {
-                        if(isset($excludeProducts['productsData'])){
+                        if (isset($excludeProducts['productsData'])) {
                             $collection = collect($excludeProducts['productsData']);
 
                             $productIds = $collection->pluck('id')->implode(',');

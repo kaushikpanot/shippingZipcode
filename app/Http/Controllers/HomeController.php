@@ -61,7 +61,7 @@ class HomeController extends Controller
         $shopJson = $shopJsonResponse->json();
 
         if (!empty($shopJson['shop']['currency'])) {
-            User::where('id', $token['id'])->update(['shop_currency' => $shopJson['shop']['currency'], 'carrier_service_id' => $carrier_service_id]);
+            User::where('id', $token['id'])->update(['shop_currency' => $shopJson['shop']['currency'], 'carrier_service_id' => $carrier_service_id, 'shop_timezone' => $shopJson['shop']['iana_timezone'], "shop_weight_unit"=>$shopJson['shop']['weight_unit']]);
         }
 
         $this->mendatoryWebhook($shop);

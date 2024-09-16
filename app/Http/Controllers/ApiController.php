@@ -795,7 +795,7 @@ class ApiController extends Controller
                         Log::info("case 1");
                         if ($condition['label'] == 'Cart_Order') {
 
-                            $currentTime = Carbon::now()->format('H');
+                            $currentTime = Carbon::now($userData['shop_timezone'])->format('H:i');
                             $currentDay = Carbon::now()->format('l');
                             $comparativeValue = null;
 
@@ -924,7 +924,7 @@ class ApiController extends Controller
                             }
 
                             if ($condition['name'] == 'timeIn') {
-                                $totalQuantity = Carbon::now()->format('H:i');
+                                $totalQuantity = Carbon::now($userData['shop_timezone'])->format('H:i');
                             }
 
                             if ($condition['name'] == 'deliveryType') {
@@ -941,7 +941,7 @@ class ApiController extends Controller
                         Log::info("case 2");
                         if ($condition['label'] == 'Cart_Order') {
 
-                            $currentTime = Carbon::now()->format('H');
+                            $currentTime = Carbon::now($userData['shop_timezone'])->format('H:i');;
                             $currentDay = Carbon::now()->format('l');
                             $comparativeValue = null;
 
@@ -1071,7 +1071,7 @@ class ApiController extends Controller
                             }
 
                             if ($condition['name'] == 'timeIn') {
-                                $totalQuantity = Carbon::now()->format('H:i');
+                                $totalQuantity = Carbon::now($userData['shop_timezone'])->format('H:i');
                             }
 
                             if ($condition['name'] == 'deliveryType') {
@@ -1089,7 +1089,7 @@ class ApiController extends Controller
                         Log::info("case 3");
                         if ($condition['label'] == 'Cart_Order') {
 
-                            $currentTime = Carbon::now()->format('H');
+                            $currentTime = Carbon::now($userData['shop_timezone'])->format('H:i');
                             $currentDay = Carbon::now()->format('l');
                             $comparativeValue = null;
 
@@ -1219,7 +1219,7 @@ class ApiController extends Controller
                             }
 
                             if ($condition['name'] == 'timeIn') {
-                                $totalQuantity = Carbon::now()->format('H:i');
+                                $totalQuantity = Carbon::now($userData['shop_timezone'])->format('H:i');
                             }
 
                             if ($condition['name'] == 'deliveryType') {
@@ -1589,7 +1589,7 @@ class ApiController extends Controller
 
                 $modifierArray = [
                     'dayOfOrder' => fn() => Carbon::now()->format('l'),
-                    'time' => fn() => Carbon::now()->format('H:i'),
+                    'time' => fn() => Carbon::now($userData['shop_timezone'])->format('H:i'),
                     'price' => fn() => $totalPrice,
                     'weight' => fn() => $totalWeight,
                     'quantity' => fn() => $totalQuantity,

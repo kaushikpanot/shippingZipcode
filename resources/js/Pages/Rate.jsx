@@ -81,6 +81,7 @@ function Rate(props) {
         if (key === 'selectedByschedule' && value === 0) {
             setDate([]);
         }
+        
     };
     const [checkedState, setCheckedState] = useState({
         checked1: false,
@@ -177,6 +178,14 @@ function Rate(props) {
         if (value === 'selected') {
             setRateModifiers([]);
         }
+
+        if (value === 'order_price') {
+            setTiers(prevTiers => prevTiers.map(tier => ({
+                ...tier,
+                unit : shop_weight_unit
+            })));
+        }
+        console.log('vsalue',value)
     };
 
     const tierOptions = [
@@ -336,13 +345,12 @@ function Rate(props) {
                 modifier.id === id ? {
                     ...modifier,
                     [field]: value,
-                    ...(field === 'rateModifier' && { label1: option?.mainlabel || '', rateDay: null }),
-                    ...(field === 'rateModifier2' && { label2: option?.mainlabel || '', rateDay2: null }),
+                    ...(field === 'rateModifier' && { label1: option?.mainlabel || '', rateDay: null , unit: value === 'weight' ? shop_weight_unit :''}),
+                    ...(field === 'rateModifier2' && { label2: option?.mainlabel || '', rateDay2: null,unit: value === 'weight' ? shop_weight_unit :'' }),
                 } : modifier
             )
         );
 
-        // Clear error for this specific field
         setErrors(prevErrors => {
             const newErrors = { ...prevErrors };
             if (field === 'name') {
@@ -985,9 +993,17 @@ function Rate(props) {
                 return updatedItems;
             });
         }
+
+        let updatedCondition = items[index].condition;
+        if (newValue === 'time') {
+        }
+        else if (newValue === 'address' || newValue === 'timeIn') {
+            updatedCondition = 'contains';
+        }
+
         const updatedItem = {
             ...items[index],
-            condition: isSecondSelect ? newValue : items[index].condition,
+            condition: isSecondSelect ? newValue : updatedCondition,
             name: isSecondSelect ? items[index].name : newValue,
             unit: isSecondSelect ? (selectedOption.unit || '') : (selectedOption.unit || ''),
             label: selectedOption.mainlabel || items[index].label,
@@ -1168,6 +1184,7 @@ function Rate(props) {
             cartCondition: items
         },
         rate_tier: {
+            unit: shop_weight_unit,
             tier_type: selectedTierType,
             rateTier: selectedTierType === 'selected' ? [] : tiers,
         },
@@ -1263,6 +1280,7 @@ function Rate(props) {
             },
             rate_tier: {
                 ...prevFormData.rate_tier,
+                unit: shop_weight_unit,
                 tier_type: selectedTierType,
                 rateTier: selectedTierType === 'selected' ? [] : tiers,
             },
@@ -1995,6 +2013,7 @@ function Rate(props) {
                                                                                 options={time}
                                                                                 onChange={handleConditionsChange(index, 'value')}
                                                                                 value={item.value}
+                                                                                error={errors[`value${index}`]}
                                                                             />
                                                                             <Select
                                                                                 options={time}
@@ -2041,6 +2060,10 @@ function Rate(props) {
                                                                                 checked={dayOfWeekSelection[index].Saturday}
                                                                                 onChange={() => handleDayCheckboxChange('Saturday', index)}
                                                                             />
+                                                                            {errors[`value${index}`] && (
+                                                                                <p style={{ color: 'red' }}>{errors[`value${index}`]}</p>
+                                                                            )}
+
                                                                         </div>
                                                                     )}
                                                                     {item.name === 'date' && (
@@ -2483,7 +2506,7 @@ function Rate(props) {
                                                             }
                                                             autoComplete="off"
                                                             prefix={
-                                                                checkstate.selectedByCart === 'weight' ? "kg" :
+                                                                checkstate.selectedByCart === 'weight' ? shop_weight_unit :
                                                                     checkstate.selectedByCart === 'Qty' ? "Qty" :
                                                                         "km"
                                                             }
@@ -4108,7 +4131,7 @@ function Rate(props) {
                                                 </div>
                                             )}
                                             {checkstate.selectedByUpdatePriceType === 2 && (
-                                                <div style={{paddingTop: '2%'}}>
+                                                <div style={{ paddingTop: '2%' }}>
                                                     <TextField
                                                         type="text"
                                                         label="Adjustment Price"

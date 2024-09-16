@@ -15,7 +15,7 @@ import Demo from '../Pages/Demo';
 export default function Routing(props) {
     return (
         <Routes>
-            <Route exact path="/Home" element={<Home {...props} />} />
+            <Route exact path="/zone-data" element={<Home {...props} />} />
             <Route exact path="/Demo" element={<Demo {...props} />} />
             <Route exact path="/Main" element={<Main {...props} />} />
             <Route exact path="/" element={<Settings {...props} />} />

@@ -81,7 +81,7 @@ function Rate(props) {
         if (key === 'selectedByschedule' && value === 0) {
             setDate([]);
         }
-        
+
     };
     const [checkedState, setCheckedState] = useState({
         checked1: false,
@@ -182,10 +182,10 @@ function Rate(props) {
         if (value === 'order_price') {
             setTiers(prevTiers => prevTiers.map(tier => ({
                 ...tier,
-                unit : shop_weight_unit
+                unit: shop_weight_unit
             })));
         }
-        console.log('vsalue',value)
+        console.log('vsalue', value)
     };
 
     const tierOptions = [
@@ -345,8 +345,8 @@ function Rate(props) {
                 modifier.id === id ? {
                     ...modifier,
                     [field]: value,
-                    ...(field === 'rateModifier' && { label1: option?.mainlabel || '', rateDay: null , unit: value === 'weight' ? shop_weight_unit :''}),
-                    ...(field === 'rateModifier2' && { label2: option?.mainlabel || '', rateDay2: null,unit: value === 'weight' ? shop_weight_unit :'' }),
+                    ...(field === 'rateModifier' && { label1: option?.mainlabel || '', rateDay: null, unit: value === 'weight' ? shop_weight_unit : '' }),
+                    ...(field === 'rateModifier2' && { label2: option?.mainlabel || '', rateDay2: null, unit2: value === 'weight' ? shop_weight_unit : '' }),
                 } : modifier
             )
         );
@@ -823,6 +823,11 @@ function Rate(props) {
                 ...updatedItems[index],
                 [key]: value
             };
+            setErrors(prevErrors => {
+                const newErrors = { ...prevErrors };
+                delete newErrors[`value${index}`]; // Clear error for the current index
+                return newErrors;
+            });
             return updatedItems;
         });
     };
@@ -844,6 +849,12 @@ function Rate(props) {
                 };
                 return updatedItemsList;
             });
+
+            setErrors(prevErrors => {
+                const newErrors = { ...prevErrors };
+                delete newErrors[`value${index}`];
+                return newErrors;
+            });
             return updatedItems;
         });
     }, [items]);
@@ -855,8 +866,10 @@ function Rate(props) {
                 ...updatedItems[index],
                 [type]: !updatedItems[index][type],
             };
+
             const selectedTypes = Object.keys(updatedItems[index]).filter(key => updatedItems[index][key]);
             const selectedTypesString = selectedTypes.join(', ');
+
             setItems((prevItems) => {
                 const updatedItemsList = [...prevItems];
                 updatedItemsList[index] = {
@@ -865,9 +878,17 @@ function Rate(props) {
                 };
                 return updatedItemsList;
             });
+
+            setErrors(prevErrors => {
+                const newErrors = { ...prevErrors };
+                delete newErrors[`value${index}`];
+                return newErrors;
+            });
+
             return updatedItems;
         });
     }, [items]);
+
 
     const getCategory = (itemName) => {
         let categoryLabel = '';
@@ -959,6 +980,12 @@ function Rate(props) {
                 [field]: value,
             };
             return updatedItems;
+        });
+
+        setErrors((prevErrors) => {
+            const newErrors = { ...prevErrors };
+            delete newErrors[`value${index}`];
+            return newErrors;
         });
     }, []);
 
@@ -2103,6 +2130,9 @@ function Rate(props) {
                                                                                 checked={deliveryType[index].Shipping}
                                                                                 onChange={() => handleCheckboxChange('Shipping', index)}
                                                                             />
+                                                                            {errors[`value${index}`] && (
+                                                                                <p style={{ color: 'red' }}>{errors[`value${index}`]}</p>
+                                                                            )}
                                                                         </div>
                                                                     )}
                                                                     {items.length > 1 && (
@@ -3225,7 +3255,7 @@ function Rate(props) {
 
 
                         <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
-                            <div style={{ alignItems: "center" }}>
+                            <div >
                                 <LegacyCard sectioned>
                                     {rateModifiers.map((modifier, index) => (
                                         <div style={{ marginBottom: "3%" }} key={`modifyKey-${modifier.id}-${index}`}>
@@ -3844,8 +3874,11 @@ function Rate(props) {
                                             </Box>
                                         </div>
                                     ))}
-                                    <div style={{ marginTop: "3%" }}>
-                                        <Button variant='primary' icon={PlusIcon} onClick={handleAddRateModifier}>Add Rate Modifier</Button>
+
+                                    <div style={{   marginTop: rateModifiers.length > 0 ? '3%' : '0', display: rateModifiers.length > 0 ? '' : 'flex',justifyContent: rateModifiers.length > 0 ? 'flex-start' : 'center' }}>
+                                        <Button variant='primary' icon={PlusIcon} onClick={handleAddRateModifier}>
+                                            Add Rate Modifier
+                                        </Button>
                                     </div>
                                 </LegacyCard>
                             </div>

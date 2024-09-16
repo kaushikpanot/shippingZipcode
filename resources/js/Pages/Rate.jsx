@@ -1032,11 +1032,12 @@ function Rate(props) {
             ...items[index],
             condition: isSecondSelect ? newValue : updatedCondition,
             name: isSecondSelect ? items[index].name : newValue,
-            unit: isSecondSelect ? (selectedOption.unit || '') : (selectedOption.unit || ''),
+            unit: isSecondSelect ? (items[index].unit || '') : (selectedOption.unit || ''),
             label: selectedOption.mainlabel || items[index].label,
             value: isSecondSelect ? items[index].value : '',
             value2: isSecondSelect ? items[index].value : '',
         };
+        
 
         const updatedItems = [...items];
         updatedItems[index] = updatedItem;
@@ -1656,7 +1657,7 @@ function Rate(props) {
     const filteredProduct = showAllProduct
         ? products
         : products?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
-    const selectedCount1 = exclude_Rate.productsData?.length
+    const selectedCount1 = exclude_Rate.productsData?.length || 0
     const productData1 = filteredProduct?.map(({ id, title, image, price }, index) => {
         return (
             <IndexTable.Row

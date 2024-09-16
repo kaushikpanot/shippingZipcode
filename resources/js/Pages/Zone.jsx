@@ -199,7 +199,6 @@ function Zone(props) {
                 label: state.nameCode,
                 value: state.code
             }));
-            console.log(response.data)
             setCountry(stateList);
             setAllCountries(stateList);
         } catch (error) {

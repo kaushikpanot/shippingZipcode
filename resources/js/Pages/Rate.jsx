@@ -3875,7 +3875,7 @@ function Rate(props) {
                                         </div>
                                     ))}
 
-                                    <div style={{   marginTop: rateModifiers.length > 0 ? '3%' : '0', display: rateModifiers.length > 0 ? '' : 'flex',justifyContent: rateModifiers.length > 0 ? 'flex-start' : 'center' }}>
+                                    <div style={{ marginTop: rateModifiers.length > 0 ? '3%' : '0', display: rateModifiers.length > 0 ? '' : 'flex', justifyContent: rateModifiers.length > 0 ? 'flex-start' : 'center' }}>
                                         <Button variant='primary' icon={PlusIcon} onClick={handleAddRateModifier}>
                                             Add Rate Modifier
                                         </Button>

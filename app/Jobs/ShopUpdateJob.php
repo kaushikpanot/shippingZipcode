@@ -35,7 +35,8 @@ class ShopUpdateJob implements ShouldQueue
         if($user){
             $user->update([
                 'shop_weight_unit'=>$this->webhookData['weight_unit'],
-                'shop_currency' => $this->webhookData['currency']
+                'shop_currency' => $this->webhookData['currency'],
+                'shop_timezone' => $this->webhookData['iana_timezone']
             ]);
         }
         // Log::info('Processing shop update webhook:', $this->webhookData);

@@ -56,7 +56,7 @@ function AddEditMixMergeRate(props) {
     service_code: '',
     description: '',
     status: 1,
-    condition: 0,
+    // condition: 0,
     price_calculation_type: 0,
     tags_to_combine: "",
     tags_to_exclude: "",
@@ -121,7 +121,7 @@ function AddEditMixMergeRate(props) {
         description: response.data.mixMergeRate.description,
         id: response.data.mixMergeRate.id,
         status: response.data.mixMergeRate.status,
-        condition: response.data.mixMergeRate.condition,
+        // condition: response.data.mixMergeRate.condition,
         min_shipping_rate: response.data.mixMergeRate.min_shipping_rate,
         mix_shipping_rate: response.data.mixMergeRate.mix_shipping_rate,
         price_calculation_type: response.data.mixMergeRate.price_calculation_type,
@@ -321,14 +321,14 @@ function AddEditMixMergeRate(props) {
 
             <div style={{ marginTop: "5%" }}>
               <LegacyCard sectioned>
-                <div className='choice' style={{ marginBottom: "3%" }}>
+                {/* <div className='choice' style={{ marginBottom: "3%" }}>
                   <Select
                     label="Merge rate Condition"
                     options={condition}
                     value={formData.condition}
                     onChange={(value) => handleSelectChange('condition', parseInt(value))}
                   />
-                </div>
+                </div> */}
                 <div style={{ marginTop: "2 %" }} className='zonetext'>
                   <Select
                     label="Merge Rate Price Calculation Type"

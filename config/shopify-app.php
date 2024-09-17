@@ -397,13 +397,9 @@ return [
             'address' => env('SHOPIFY_WEBHOOK_4_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/checkouts-update')
         ],
         [
-            'topic' => env('SHOPIFY_WEBHOOK_5_TOPIC', 'carts/create'),
-            'address' => env('SHOPIFY_WEBHOOK_5_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/carts-create')
-        ],
-        [
-            'topic' => env('SHOPIFY_WEBHOOK_6_TOPIC', 'carts/update'),
-            'address' => env('SHOPIFY_WEBHOOK_6_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/carts-update')
-        ],
+            'topic' => env('SHOPIFY_WEBHOOK_5_TOPIC', 'app_subscriptions/update'),
+            'address' => env('SHOPIFY_WEBHOOK_5_ADDRESS', env('VITE_COMMON_API_URL') . "/webhook/appsubscriptions-update")
+        ]
         // [
         //     'topic' => env('SHOPIFY_WEBHOOK_4_TOPIC', 'carts/create'),
         //     'address' => env('SHOPIFY_WEBHOOK_4_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/carts/create')

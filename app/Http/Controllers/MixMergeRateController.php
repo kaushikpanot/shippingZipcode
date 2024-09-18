@@ -96,7 +96,7 @@ class MixMergeRateController extends Controller
                 'user_id' => 'required|exists:users,id', // Ensure the user exists
                 // 'setting_id' => 'required|exists:settings,id', // Ensure the setting exists
                 'rate_name' => 'required|string|max:255', // Ensure it's a string with a reasonable length
-                'condition' => 'required|integer', // Fixed typo from 'intizer' to 'integer'
+                // 'condition' => 'required|integer', // Fixed typo from 'intizer' to 'integer'
                 'price_calculation_type' => 'required|integer',
                 'tags_to_combine' => 'required', // Ensure it's an array
                 'status' => 'required|boolean',
@@ -110,8 +110,8 @@ class MixMergeRateController extends Controller
                 'rate_name.required' => 'The rate name is required.',
                 'rate_name.string' => 'The rate name must be a valid string.',
                 'rate_name.max' => 'The rate name may not be greater than 255 characters.',
-                'condition.required' => 'The condition is required.',
-                'condition.integer' => 'The condition must be an integer.',
+                // 'condition.required' => 'The condition is required.',
+                // 'condition.integer' => 'The condition must be an integer.',
                 'price_calculation_type.required' => 'The price calculation type is required.',
                 'price_calculation_type.integer' => 'The price calculation type must be an integer.',
                 'tags_to_combine.required' => 'Tags to combine are required.',

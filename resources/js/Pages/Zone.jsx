@@ -375,15 +375,12 @@ function Zone(props) {
         }
     }, [formData.id, zone_id, navigate]);
 
-    // const { selectedResources, allResourcesSelected, handleSelectionChange } =
-    //     useIndexResourceState(rate);
-
-    const filteredZones = rate.filter(zone =>
+    const filteredZones = rate?.filter(zone =>
         zone.name.toLowerCase().includes(textFieldValue.toLowerCase())
     );
     const paginatedZones = filteredZones.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-    const rowMarkup = paginatedZones.map(
+    const rowMarkup = paginatedZones?.map(
         (
             { id, name, service_code, base_price, description },
             index,
@@ -408,9 +405,7 @@ function Zone(props) {
                 <IndexTable.Cell>{description}</IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
-                        {/* <Tooltip active content="Edit Rate"> */}
                         <Button icon={EditIcon} variant="tertiary" onClick={() => handleEditRate(id)} />
-                        {/* </Tooltip> */}
                         <Button icon={DeleteIcon} variant="tertiary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setselectedZoneId(id); toggleModal(); }} />
                     </ButtonGroup>
                 </IndexTable.Cell>
@@ -487,15 +482,15 @@ function Zone(props) {
     return (
         <div>
             <div style={{ position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#F1F1F1" }}>
-            <Page
-                title={zone_id ? 'Edit Zone' : 'Add Zone'}
-                primaryAction={<Button variant="primary" onClick={saveZone} loading={loadingButton}>Save</Button>}
-                secondaryActions={<Button onClick={navigateHome}>Back</Button>}
-            >
-                <div >
-                    <Divider borderColor="border" />
-                </div>
-            </Page>
+                <Page
+                    title={zone_id ? 'Edit Zone' : 'Add Zone'}
+                    primaryAction={<Button variant="primary" onClick={saveZone} loading={loadingButton}>Save</Button>}
+                    secondaryActions={<Button onClick={navigateHome}>Back</Button>}
+                >
+                    <div >
+                        <Divider borderColor="border" />
+                    </div>
+                </Page>
             </div>
             <Page >
                 <div style={{ marginBottom: "2%" }}>
@@ -560,7 +555,7 @@ function Zone(props) {
                 {zone_id && (
                     <div >
                         <Divider borderColor="border" />
-                        <div style={{ marginTop: "2%",  }}>
+                        <div style={{ marginTop: "2%", }}>
                             <Card>
                                 <BlockStack gap="200">
                                     <InlineGrid columns="1fr auto">

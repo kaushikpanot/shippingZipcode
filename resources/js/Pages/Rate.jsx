@@ -1037,7 +1037,7 @@ function Rate(props) {
             value: isSecondSelect ? items[index].value : '',
             value2: isSecondSelect ? items[index].value : '',
         };
-        
+
 
         const updatedItems = [...items];
         updatedItems[index] = updatedItem;
@@ -1563,40 +1563,40 @@ function Rate(props) {
     }, [formData.id, zone_id, navigate]);
 
     const handleProductChange = (productId, checked, text = '') => {
-        // Setrate_based_on_surcharge((prevState) => {
-        //     let updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
+        Setrate_based_on_surcharge((prevState) => {
+            let updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
 
-        //     if (checked) {
-        //         const product = products.find(product => product.id == productId);
-        //         if (product) {
-        //             const existingProductIndex = updatedProductData.findIndex(item => item.id == productId);
+            if (checked) {
+                const product = products.find(product => product.id == productId);
+                if (product) {
+                    const existingProductIndex = updatedProductData.findIndex(item => item.id == productId);
 
-        //             if (existingProductIndex !== -1) {
-        //                 updatedProductData[existingProductIndex] = {
-        //                     ...updatedProductData[existingProductIndex],
-        //                     value: text
-        //                 };
-        //             } else {
-        //                 updatedProductData = [
-        //                     ...updatedProductData,
-        //                     {
-        //                         id: product.id,
-        //                         title: product.title,
-        //                         price: product.price,
-        //                         value: text
-        //                     }
-        //                 ];
-        //             }
-        //         }
-        //     } else {
-        //         updatedProductData = updatedProductData.filter(item => item.id !== productId);
-        //     }
+                    if (existingProductIndex !== -1) {
+                        updatedProductData[existingProductIndex] = {
+                            ...updatedProductData[existingProductIndex],
+                            value: text
+                        };
+                    } else {
+                        updatedProductData = [
+                            ...updatedProductData,
+                            {
+                                id: product.id,
+                                title: product.title,
+                                price: product.price,
+                                value: text
+                            }
+                        ];
+                    }
+                }
+            } else {
+                updatedProductData = updatedProductData.filter(item => item.id !== productId);
+            }
 
-        //     return {
-        //         ...prevState,
-        //         productData: updatedProductData,
-        //     };
-        // });
+            return {
+                ...prevState,
+                productData: updatedProductData,
+            };
+        });
     };
 
     const selectedCount = rate_based_on_surcharge.productData?.length || 0
@@ -1607,7 +1607,7 @@ function Rate(props) {
     const rowMarkup = filteredProducts?.map(({ id, title, image, price }, index) => {
         const isChecked = Array.isArray(rate_based_on_surcharge.productData) && rate_based_on_surcharge.productData.some(item => item.id === id);
         const productValue = Array.isArray(rate_based_on_surcharge.productData) ? rate_based_on_surcharge.productData.find(item => item.id === id)?.value || '' : '';
-
+        console.log(isChecked)
         return (
             <IndexTable.Row
                 id={id}

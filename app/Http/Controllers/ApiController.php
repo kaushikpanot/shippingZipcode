@@ -1508,7 +1508,7 @@ class ApiController extends Controller
 
                     foreach ($rate->rate_tier['rateTier'] as $tier) {
                         $checkRateTier = $totalPrice >= $tier['minWeight'] && $totalPrice <= $tier['maxWeight'];
-
+                        $tier['unit'] = $tier['unit'] ?? 'kg';
                         $perItem = isset($tier['perItem']) ? $totalQuantity * $tier['perItem'] : 0;
                         $percentCharge = isset($tier['percentCharge']) ? $totalPrice * $tier['percentCharge'] / 100 : 0;
                         $perkg = isset($tier['perkg']) ? $this->convertWeightUnit($tier['unit'], $totalWeight) * $tier['perkg'] : 0;
@@ -2950,7 +2950,11 @@ class ApiController extends Controller
             }
 
             // Determine the query parameter
-            $queryParam = isset($post['query']) ? 'query:"' . $post['query'] . '"' : '';
+            if(is_numeric($post['query'])){
+                $queryParam = isset($post['query']) ? 'collection_id:"' . $post['query'] . '"' : '';
+            } else {
+                $queryParam = isset($post['query']) ? 'query:"' . $post['query'] . '"' : '';
+            }
 
             // GraphQL query to fetch products
             $query = <<<GRAPHQL

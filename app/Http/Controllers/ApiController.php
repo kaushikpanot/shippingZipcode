@@ -1503,15 +1503,14 @@ class ApiController extends Controller
 
             // tier_type
             if (!empty($rate->rate_tier) && $rate->rate_tier['tier_type'] !== 'selected') {
+                $baseUnitTier = $rate->rate_tier['unit'] ?? 'kg';
 
                 if ($rate->rate_tier['tier_type'] == 'order_price') {
-
                     foreach ($rate->rate_tier['rateTier'] as $tier) {
                         $checkRateTier = $totalPrice >= $tier['minWeight'] && $totalPrice <= $tier['maxWeight'];
-                        $tier['unit'] = $tier['unit'] ?? 'kg';
                         $perItem = isset($tier['perItem']) ? $totalQuantity * $tier['perItem'] : 0;
                         $percentCharge = isset($tier['percentCharge']) ? $totalPrice * $tier['percentCharge'] / 100 : 0;
-                        $perkg = isset($tier['perkg']) ? $this->convertWeightUnit($tier['unit'], $totalWeight) * $tier['perkg'] : 0;
+                        $perkg = isset($tier['perkg']) ? $this->convertWeightUnit($baseUnitTier, $totalWeight) * $tier['perkg'] : 0;
 
                         if ($checkRateTier) {
                             $rate->base_price = $tier['basePrice'] + $perItem + $percentCharge + $perkg;
@@ -1520,22 +1519,24 @@ class ApiController extends Controller
                             //     "perItem"=>$perItem,
                             //     "percentCharge"=>$percentCharge,
                             //     "perkg"=>$perkg,
+                            //     "perkg1"=>$tier['perkg'],
+                            //     "perkg2"=>$this->convertWeightUnit($baseUnitTier, $totalWeight),
+                            //     "totalWeight"=>$totalWeight,
                             //     "base_price"=>$rate->base_price,
                             //     "totalPrice"=>$totalPrice,
                             // ]);
                         }
                     }
                 } else {
-
                     $matchValue = 0;
                     if ($rate->rate_tier['tier_type'] == 'order_quantity') {
                         $matchValue = $totalQuantity;
                     } else if ($rate->rate_tier['tier_type'] == 'order_weight') {
-                        $matchValue = $totalWeight;
+                        $matchValue = $this->convertWeightUnit($rate->rate_tier['unit'], $totalWeight);
                     } else if ($rate->rate_tier['tier_type'] == 'order_distance') {
                         $matchValue = $distance;
                     }
-
+                    Log::info("tier_type", ["tier_type"=>$matchValue]);
                     foreach ($rate->rate_tier['rateTier'] as $tier) {
                         $checkRateTier = $matchValue >= $tier['minWeight'] && $matchValue <= $tier['maxWeight'];
                         if ($checkRateTier) {
@@ -1736,6 +1737,9 @@ class ApiController extends Controller
                             case 'RemoveRate':
                                 return null;
 
+                            case 'ShowOnly':
+                                return $rate;
+
                             default:
                                 return true;
                         }
@@ -1865,7 +1869,6 @@ class ApiController extends Controller
         //     $filteredRates = collect($filteredRates)->merge($newRates);
         // }
 
-
         // if ($setting->mix_merge_rate == 1) {
         //     $collection = collect($filteredRates);
         //     $grouped = $collection->groupBy('merge_rate_tag');
@@ -1971,112 +1974,111 @@ class ApiController extends Controller
         //     $filteredRates = collect($filteredRates)->merge(collect($newRates));
         // }
 
-        if ($setting->mix_merge_rate == 1 && !empty($filteredRates)) {
-            $collection = collect($filteredRates);
+        // if ($setting->mix_merge_rate == 1 && !empty($filteredRates)) {
+        //     $collection = collect($filteredRates);
 
-            // Group the rates by 'merge_rate_tag'
-            $grouped = $collection->groupBy('merge_rate_tag');
-            $newGrouped = [];
-            $currency = null;
-            $tagArr = [];
+        //     // Group the rates by 'merge_rate_tag'
+        //     $grouped = $collection->groupBy('merge_rate_tag');
+        //     $newGrouped = [];
+        //     $currency = null;
+        //     $tagArr = [];
 
-            // Loop through each group
-            foreach ($grouped as $tag => $ratesGroup) {
-                if (!empty($tag)) {
-                    // Fetch MixMergeRate based on the tag
-                    $mixMergeRate = MixMergeRate::whereRaw("FIND_IN_SET(?, tags_to_combine)", [$tag])
-                        ->where('user_id', $userId)
-                        ->where('status', 1)
-                        ->first();
+        //     // Loop through each group
+        //     foreach ($grouped as $tag => $ratesGroup) {
+        //         if (!empty($tag)) {
+        //             // Fetch MixMergeRate based on the tag
+        //             $mixMergeRate = MixMergeRate::whereRaw("FIND_IN_SET(?, tags_to_combine)", [$tag])
+        //                 ->where('user_id', $userId)
+        //                 ->where('status', 1)
+        //                 ->first();
 
-                    if ($mixMergeRate) {
-                        $mixMergeRateId = $mixMergeRate->id;
+        //             if ($mixMergeRate) {
+        //                 $mixMergeRateId = $mixMergeRate->id;
 
-                        // Initialize or merge rates under each MixMergeRate id
-                        if (!isset($newGrouped[$mixMergeRateId])) {
-                            $newGrouped[$mixMergeRateId] = [];
-                        }
+        //                 // Initialize or merge rates under each MixMergeRate id
+        //                 if (!isset($newGrouped[$mixMergeRateId])) {
+        //                     $newGrouped[$mixMergeRateId] = [];
+        //                 }
 
-                        // Exclude certain tags
-                        $tagsToExclude = explode(',', $mixMergeRate->tags_to_exclude);
-                        if (!in_array($tag, $tagsToExclude)) {
-                            $newGrouped[$mixMergeRateId] = array_merge($newGrouped[$mixMergeRateId], $ratesGroup->toArray());
-                        }
-                    }
+        //                 // Exclude certain tags
+        //                 $tagsToExclude = explode(',', $mixMergeRate->tags_to_exclude);
+        //                 if (!in_array($tag, $tagsToExclude)) {
+        //                     $newGrouped[$mixMergeRateId] = array_merge($newGrouped[$mixMergeRateId], $ratesGroup->toArray());
+        //                 }
+        //             }
 
-                    $tagArr[] = $tag;
-                }
+        //             $tagArr[] = $tag;
+        //         }
 
-                // Store currency (zone) if rates are not empty
-                if ($ratesGroup->isNotEmpty() && is_null($currency)) {
-                    $currency = $ratesGroup->first()['zone'];
-                }
-            }
-            // Remove the grouped rates from $filteredRates
-            $filteredRates = $filteredRates->reject(function ($rate) use ($tagArr) {
-                // Log the current rate and tag for debugging
-                Log::info("Checking rate for removal", ['merge_rate_tag' => $rate['merge_rate_tag'], 'tagArr' => $tagArr]);
+        //         // Store currency (zone) if rates are not empty
+        //         if ($ratesGroup->isNotEmpty() && is_null($currency)) {
+        //             $currency = $ratesGroup->first()['zone'];
+        //         }
+        //     }
+        //     // Remove the grouped rates from $filteredRates
+        //     $filteredRates = $filteredRates->reject(function ($rate) use ($tagArr) {
+        //         // Log the current rate and tag for debugging
+        //         Log::info("Checking rate for removal", ['merge_rate_tag' => $rate['merge_rate_tag'], 'tagArr' => $tagArr]);
 
-                // Reject (remove) if the merge_rate_tag is in the tagArr
-                return in_array($rate['merge_rate_tag'], $tagArr);
-            });
+        //         // Reject (remove) if the merge_rate_tag is in the tagArr
+        //         return in_array($rate['merge_rate_tag'], $tagArr);
+        //     });
 
-            Log::info($filteredRates);
-            // Calculate and add new rates
-            $newRates = [];
-            foreach ($newGrouped as $mixMergeRateId => $groupRates) {
-                $groupRatesCollection = collect($groupRates);
-                $mixMergeRate = MixMergeRate::find($mixMergeRateId);
+        //     // Log::info($filteredRates);
+        //     // Calculate and add new rates
+        //     $newRates = [];
+        //     foreach ($newGrouped as $mixMergeRateId => $groupRates) {
+        //         $groupRatesCollection = collect($groupRates);
+        //         $mixMergeRate = MixMergeRate::find($mixMergeRateId);
 
-                if ($mixMergeRate) {
-                    $allTagBasePrice = 0;
+        //         if ($mixMergeRate) {
+        //             $allTagBasePrice = 0;
 
-                    // Price calculation based on the type
-                    switch ($mixMergeRate->price_calculation_type) {
-                        case 0: // Sum
-                            $allTagBasePrice = $groupRatesCollection->sum('base_price');
-                            break;
-                        case 1: // Average
-                            $allTagBasePrice = round($groupRatesCollection->avg('base_price'), 2);
-                            break;
-                        case 2: // Minimum
-                            $allTagBasePrice = $groupRatesCollection->min('base_price');
-                            break;
-                        case 3: // Maximum
-                            $allTagBasePrice = $groupRatesCollection->max('base_price');
-                            break;
-                        case 4: // Product
-                            $allTagBasePrice = $groupRatesCollection->reduce(function ($carry, $item) {
-                                return $carry * $item['base_price'];
-                            }, 1);
-                            break;
-                        default:
-                            $allTagBasePrice = $groupRatesCollection->first()['base_price'];
-                            break;
-                    }
+        //             // Price calculation based on the type
+        //             switch ($mixMergeRate->price_calculation_type) {
+        //                 case 0: // Sum
+        //                     $allTagBasePrice = $groupRatesCollection->sum('base_price');
+        //                     break;
+        //                 case 1: // Average
+        //                     $allTagBasePrice = round($groupRatesCollection->avg('base_price'), 2);
+        //                     break;
+        //                 case 2: // Minimum
+        //                     $allTagBasePrice = $groupRatesCollection->min('base_price');
+        //                     break;
+        //                 case 3: // Maximum
+        //                     $allTagBasePrice = $groupRatesCollection->max('base_price');
+        //                     break;
+        //                 case 4: // Product
+        //                     $allTagBasePrice = $groupRatesCollection->reduce(function ($carry, $item) {
+        //                         return $carry * $item['base_price'];
+        //                     }, 1);
+        //                     break;
+        //                 default:
+        //                     $allTagBasePrice = $groupRatesCollection->first()['base_price'];
+        //                     break;
+        //             }
 
-                    // Apply min/max shipping rate constraints
-                    if ($mixMergeRate->min_shipping_rate > $allTagBasePrice && $mixMergeRate->min_shipping_rate != 0) {
-                        $allTagBasePrice = $mixMergeRate->min_shipping_rate;
-                    } elseif ($mixMergeRate->mix_shipping_rate < $allTagBasePrice && $mixMergeRate->mix_shipping_rate != 0) {
-                        $allTagBasePrice = $mixMergeRate->mix_shipping_rate;
-                    }
+        //             // Apply min/max shipping rate constraints
+        //             if ($mixMergeRate->min_shipping_rate > $allTagBasePrice && $mixMergeRate->min_shipping_rate != 0) {
+        //                 $allTagBasePrice = $mixMergeRate->min_shipping_rate;
+        //             } elseif ($mixMergeRate->mix_shipping_rate < $allTagBasePrice && $mixMergeRate->mix_shipping_rate != 0) {
+        //                 $allTagBasePrice = $mixMergeRate->mix_shipping_rate;
+        //             }
 
-                    // Add to new rates
-                    $newRates[] = (object)[
-                        'name' => $mixMergeRate->rate_name,
-                        'service_code' => $mixMergeRate->service_code,
-                        'description' => $mixMergeRate->description,
-                        'base_price' => $allTagBasePrice,
-                        'zone' => $currency
-                    ];
-                }
-            }
+        //             // Add to new rates
+        //             $newRates[] = (object)[
+        //                 'name' => $mixMergeRate->rate_name,
+        //                 'service_code' => $mixMergeRate->service_code,
+        //                 'description' => $mixMergeRate->description,
+        //                 'base_price' => $allTagBasePrice,
+        //                 'zone' => $currency
+        //             ];
+        //         }
+        //     }
 
-            // Merge the newly calculated rates with any remaining ungrouped rates
-            $filteredRates = collect($filteredRates)->merge($newRates);
-        }
-
+        //     // Merge the newly calculated rates with any remaining ungrouped rates
+        //     $filteredRates = collect($filteredRates)->merge($newRates);
+        // }
 
         if ($setting->shippingRate == 'Only Higher') {
             $maxRate = $filteredRates->max('base_price');
@@ -2951,46 +2953,80 @@ class ApiController extends Controller
 
             // Determine the query parameter
             if(is_numeric($post['query'])){
-                $queryParam = isset($post['query']) ? 'collection_id:"' . $post['query'] . '"' : '';
-            } else {
-                $queryParam = isset($post['query']) ? 'query:"' . $post['query'] . '"' : '';
-            }
-
-            // GraphQL query to fetch products
-            $query = <<<GRAPHQL
-            {
-                products($querystring, sortKey: CREATED_AT, reverse: true, $queryParam) {
-                    edges {
-                        node {
-                            id
-                            title
-                            variants(first: 1) {
+                $collectionId = isset($post['query']) ? $post['query'] : '';
+                $query = <<<GRAPHQL
+                    {
+                        collection(id: "gid://shopify/Collection/$collectionId") {
+                            products($querystring) {
                                 edges {
                                     node {
                                         id
-                                        price
+                                        title
+                                        variants(first: 1) {
+                                            edges {
+                                                node {
+                                                    id
+                                                    price
+                                                }
+                                            }
+                                        }
+                                        images(first: 1) {
+                                            edges {
+                                                node {
+                                                    originalSrc
+                                                    altText
+                                                }
+                                            }
+                                        }
                                     }
                                 }
-                            }
-                            images(first: 1) {
-                                edges {
-                                    node {
-                                        originalSrc
-                                        altText
-                                    }
+                                pageInfo {
+                                    hasNextPage
+                                    hasPreviousPage
+                                    endCursor
+                                    startCursor
                                 }
                             }
                         }
                     }
-                    pageInfo {
-                        hasNextPage
-                        hasPreviousPage
-                        endCursor
-                        startCursor
+                    GRAPHQL;
+            } else {
+                $queryParam = isset($post['query']) ? 'query:"' . $post['query'] . '"' : '';
+                $query = <<<GRAPHQL
+                {
+                    products($querystring, sortKey: CREATED_AT, reverse: true, $queryParam) {
+                        edges {
+                            node {
+                                id
+                                title
+                                variants(first: 1) {
+                                    edges {
+                                        node {
+                                            id
+                                            price
+                                        }
+                                    }
+                                }
+                                images(first: 1) {
+                                    edges {
+                                        node {
+                                            originalSrc
+                                            altText
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        pageInfo {
+                            hasNextPage
+                            hasPreviousPage
+                            endCursor
+                            startCursor
+                        }
                     }
                 }
+                GRAPHQL;
             }
-            GRAPHQL;
 
             // Shopify GraphQL endpoint
             $graphqlEndpoint = "https://$shop/admin/api/2023-07/graphql.json";
@@ -3006,9 +3042,9 @@ class ApiController extends Controller
             ]);
             // Parse the JSON response
             $jsonResponse = $response->json();
-
+            dd($jsonResponse);
             // Prepare the response data
-            $data = [];
+            $data['products'] = [];
             if (isset($jsonResponse['data'])) {
                 $collectionsArray = [];
                 foreach ($jsonResponse['data']['products']['edges'] as $value) {

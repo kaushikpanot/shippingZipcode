@@ -59,6 +59,17 @@ const Settings = (props) => {
 
       const data = response.data.settings;
       setSettings(data);
+      setSettings(prevState => ({
+        ...prevState,
+        status : data.status || 0 , 
+        shippingRate : data.shippingRate || 'All',
+        rateModifierTitle : data.rateModifierTitle || 'Append Description',
+        mix_merge_rate : data.mix_merge_rate || 1,
+        mix_merge_rate_1 : data.mix_merge_rate_1 || 1
+
+        
+
+    }));
       setLoading(false)
     } catch (error) {
       console.error("Error fetching settings data:", error);
@@ -244,11 +255,12 @@ const Settings = (props) => {
                 <RadioButton
                   label="Disable"
                   helpText="Disable Shipping Rates by ZipCode APP"
+                  checked={settings.status === 0}
                   id="disabled"
                   name="status"
-                  checked={settings.status === 0}
                   onChange={() => handleInputChange('status')(0)}
                 />
+
               </LegacyCard>
             </Grid.Cell>
           </Grid>

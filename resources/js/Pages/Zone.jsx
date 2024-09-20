@@ -123,7 +123,7 @@ function Zone(props) {
 
     const navigateHome = () => {
         // 👇️ Navigate to /
-        navigate('/Home');
+        navigate('/zone-data');
     };
     const handleEditRate = (id) => {
         navigate(`/Zone/${zone_id}/Rate/Edit/${id}`);

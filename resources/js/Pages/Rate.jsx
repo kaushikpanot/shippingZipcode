@@ -82,6 +82,14 @@ function Rate(props) {
             setDate([]);
         }
 
+        if (key === 'selectedByCart') {
+            Setrate_based_on_surcharge(prevState => ({
+                ...prevState,
+                descriptions: '', 
+            }));
+        }
+    
+
     };
     const [checkedState, setCheckedState] = useState({
         checked1: false,
@@ -935,7 +943,7 @@ function Rate(props) {
         { label: 'Email', value: 'email', mainlabel: 'Customer' },
         { label: 'Phone', value: 'phone', mainlabel: 'Customer' },
         { label: 'Company', value: 'company', mainlabel: 'Customer' },
-        { label: 'Address', value: 'address', mainlabel: 'Customer' },
+        // { label: 'Address', value: 'address', mainlabel: 'Customer' },
         { label: 'Address1', value: 'addrss1', mainlabel: 'Customer' },
         { label: 'Address2', value: 'address2', mainlabel: 'Customer' },
         { label: 'City', value: 'city', mainlabel: 'Customer' },
@@ -2718,9 +2726,9 @@ function Rate(props) {
                                                                     />
                                                                     <TextField
                                                                         type="text"
-                                                                        label="Enter Collection ID"
+                                                                        label="Enter Collection Name"
                                                                         autoComplete="off"
-                                                                        placeholder='Enter Collection ID'
+                                                                        placeholder='Enter Collection Name'
                                                                         value={textFields.collectionId}
                                                                         onChange={handleTextFieldChange('collectionId')}
                                                                     />
@@ -3106,11 +3114,11 @@ function Rate(props) {
                                                     />
                                                     <TextField
                                                         type="text"
-                                                        label="Enter Collection ID"
+                                                        label="Enter Collection Name"
                                                         autoComplete="off"
-                                                        placeholder='Enter Collection ID'
-                                                        value={exclude_Rate.collection_id}
-                                                        onChange={handleRateFormChange('collection_id')}
+                                                        placeholder='Enter Collection Name'
+                                                        value={textFields.collectionId}
+                                                        onChange={handleTextFieldChange('collectionId')}
                                                     />
                                                 </FormLayout.Group>
                                             </FormLayout>
@@ -3123,21 +3131,21 @@ function Rate(props) {
                                                         label="Full Product Type"
                                                         autoComplete="off"
                                                         placeholder='Enter Full Product Type'
-                                                        value={exclude_Rate.product_type}
-                                                        onChange={handleRateFormChange('product_type')}
-                                                        helpText=''
+                                                        value={textFields.productType}
+                                                        onChange={handleTextFieldChange('productType')}
                                                     />
                                                     <TextField
                                                         type="text"
                                                         label="Full Product Vendor"
                                                         autoComplete="off"
                                                         placeholder='Enter Full Product Vendor'
-                                                        value={exclude_Rate.product_vendor}
-                                                        onChange={handleRateFormChange('product_vendor')}
+                                                        value={textFields.productVendor}
+                                                        onChange={handleTextFieldChange('productVendor')}
                                                     />
                                                 </FormLayout.Group>
                                             </FormLayout>
                                         </div>
+
                                         <p style={{ marginTop: "1%", color: "gray", fontSize: "11px" }}>Note: Please enter the exact term for product title, collection id, product type, and product vendor that needs to be searched.
                                         </p>
                                         <div style={{ marginTop: "2%", width: '20%' }}>
@@ -3905,7 +3913,7 @@ function Rate(props) {
                             <LegacyCard sectioned>
                                 <TextField
                                     label="Merge rate tag"
-                                    value={formData.merge_rate_tag || ''}
+                                    value={formData.merge_rate_tag}
                                     onChange={handleRateFormChange('merge_rate_tag')}
                                     autoComplete="off"
                                     placeholder='tag1,tag2,tag3'

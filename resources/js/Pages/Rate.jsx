@@ -347,6 +347,8 @@ function Rate(props) {
     const handleRateModifierChange = (id, field) => (value) => {
         const option = rateModifiersOptions.find(opt => opt.value === value);
 
+        console.log(field,value)
+
         setRateModifiers((prevModifiers) =>
             prevModifiers.map((modifier) => {
                 if (modifier.id === id) {
@@ -357,34 +359,39 @@ function Rate(props) {
                             label1: option?.mainlabel || '',
                             unit: value === 'weight' ? shop_weight_unit : '',
                             rateDay: '',
+                            rateOperator: value === 'availableQuan' 
+                            ? 'lthenoequal' 
+                            : (value === 'title' || value === 'address' ? 'contains' : option?.mainlabel || ''),
                         }),
                         ...(field === 'rateModifier2' && {
                             label2: option?.mainlabel || '',
                             unit2: value === 'weight' ? shop_weight_unit : '',
                             rateDay2: '',
+                            rateOperator2: value === 'availableQuan' 
+                            ? 'lthenoequal' 
+                            : (value === 'title' || value === 'address' ? 'contains' : option?.mainlabel || ''),
                         }),
+
+                        // ...(value === 'availableQuan' && {
+                        //     rateOperator: 'lthenoequal',
+                        //     rateOperator2: 'lthenoequal',
+                        // }),
+
+                        // ...(['title', 'address'].includes(field) && {
+                        //     rateOperator:  'contains',
+                        // }),
                     };
                     return newModifier;
                 }
                 return modifier;
             })
         );
-
-        setErrors(prevErrors => {
-            const newErrors = { ...prevErrors };
-            if (field === 'name') {
-                delete newErrors[`name${id}`];
-            } else if (field === 'adjustment') {
-                delete newErrors[`adjustment${id}`];
-            }
-            return newErrors;
-        });
     };
 
 
 
     const rateTag = [
-        { label: 'Equals', value: 'equal' },
+        { label: 'Equal', value: 'equal' },
         { label: 'Does Not Equal', value: 'notequal' },
         { label: 'Contains', value: 'contains' },
         { label: 'Does not contains', value: 'notcontains' },
@@ -3456,11 +3463,11 @@ function Rate(props) {
                                                             )}
 
                                                             {modifier.rateModifier === 'date' && (
-                                                                <div style={{width:"0%"}}>
+                                                                <div style={{width:"50%"}}>
                                                                     <TextField
                                                                         value={modifier.rateDay}
                                                                         onChange={handleRateModifierChange(modifier.id, 'rateDay')}
-                                                                        type="time"
+                                                                        type="date"
                                                                     />
                                                                 </div>
                                                             )}

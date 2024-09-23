@@ -723,7 +723,7 @@ class ApiController extends Controller
         $input = $request->input();
 
         Log::info('header logs:', ['customerData' => $customer_id]);
-        // Log::info('header logs:', ['inputData' => $request->input()]);
+        Log::info('header logs:', ['inputData' => $request->input()]);
 
         $shopDomain = $request->header();
 
@@ -1456,7 +1456,7 @@ class ApiController extends Controller
                         if ($this->checkCondition($conditions, $commaSeparated)) {
                             if ($surcharge['selectedMultiplyLine'] == 'Yes') {
                                 $rate->base_price = $rate->base_price;
-                                Log::info('kpanot1:', ['kpanot1' => $rate->base_price]);
+                                Log::info('option1:', ['option1' => $rate->base_price]);
                             } elseif ($surcharge['selectedMultiplyLine'] == 'per') {
                                 $rate->base_price = $rate->base_price + ($rate->base_price * $surcharge['cart_total_percentage'] / 100);
                                 if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
@@ -1464,7 +1464,6 @@ class ApiController extends Controller
                                 } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
                                     $rate->base_price = $maxChargePrice;
                                 }
-                                Log::info('kpanot:', ['kpanot' => $rate->base_price]);
                             }
                         } else {
                             return null;
@@ -1626,11 +1625,13 @@ class ApiController extends Controller
                     $isApplicable = false;
 
                     if (empty($modifier['rateDay']) && !empty($modifier['productData']) && $modifier['rateModifier'] == 'ids') {
-                        $modifier['rateDay'] = $modifier['productData'];
+                        $productData = collect($modifier['productData'])->pluck('id')->filter()->all();
+                        $modifier['rateDay'] = $productData;
                     }
 
                     if (empty($modifier['rateDay2']) && !empty($modifier['productData2']) && $modifier['rateModifier2'] == 'ids') {
-                        $modifier['rateDay'] = $modifier['productData'];
+                        $productData = collect($modifier['productData2'])->pluck('id')->filter()->all();
+                        $modifier['rateDay2'] = $productData;
                     }
 
                     $conditions = [
@@ -1644,6 +1645,8 @@ class ApiController extends Controller
                             'unit' => $modifier['unit'] ?? 'kg'
                         ],
                     ];
+
+                    // Log::info("conditions", ["conditions"=>$conditions]);
 
                     if ($modifier['type'] === 'AND' || $modifier['type'] === 'OR') {
                         if (isset($modifier['rateOperator2'], $modifier['rateDay2'], $modifier['rateModifier2'])) {
@@ -1663,12 +1666,17 @@ class ApiController extends Controller
                         if ($condition['label'] == 'any_Product') {
                             if (array_key_exists($condition['modifier'], $perProductArr)) {
                                 foreach ($items as $item) {
-                                    $totalQuantity = is_callable($perProductArr[$condition['modifier']])
-                                        ? $perProductArr[$condition['modifier']]($item)
-                                        : $item[$perProductArr[$condition['modifier']]];
+                                    $totalQuantity = is_callable($perProductArr[$condition['modifier']]) ? $perProductArr[$condition['modifier']]($item) : $item[$perProductArr[$condition['modifier']]];
 
-                                    if ($this->checkCondition($condition, $totalQuantity)) {
+                                    Log::info('totalQuantity', ['totalQuantity'=>$totalQuantity]);
+
+                                    if ($this->checkCondition($condition, $totalQuantity) && $condition['condition'] == 'contains') {
                                         return true; // Return true as soon as any item meets the condition
+                                    } else if(!$this->checkCondition($condition, $totalQuantity) && $condition['condition'] == 'notcontains'){
+                                        Log::info("notcontains Section");
+                                        return false;
+                                    } else if($this->checkCondition($condition, $totalQuantity)) {
+                                        return true;
                                     }
                                 }
                             }
@@ -2920,8 +2928,8 @@ class ApiController extends Controller
     public function getProductList(Request $request)
     {
         try {
-            $shop = $request->attributes->get('shopifySession');
-            // $shop = "krishnalaravel-test.myshopify.com";
+            // $shop = $request->attributes->get('shopifySession');
+            $shop = "kaushik-panot.myshopify.com";
 
             if (!$shop) {
                 return response()->json([
@@ -2952,8 +2960,8 @@ class ApiController extends Controller
             }
 
             // Determine the query parameter
-            if(is_numeric($post['query'])){
-                $collectionId = isset($post['query']) ? $post['query'] : '';
+            if(isset($post['query']) && is_numeric($post['query'])){
+                $collectionId = $post['query'];
                 $query = <<<GRAPHQL
                     {
                         collection(id: "gid://shopify/Collection/$collectionId") {
@@ -3040,20 +3048,23 @@ class ApiController extends Controller
             $response = Http::withHeaders($customHeaders)->post($graphqlEndpoint, [
                 'query' => $query,
             ]);
+
             // Parse the JSON response
             $jsonResponse = $response->json();
-            dd($jsonResponse);
             // Prepare the response data
             $data['products'] = [];
             if (isset($jsonResponse['data'])) {
                 $collectionsArray = [];
-                foreach ($jsonResponse['data']['products']['edges'] as $value) {
+                $jsonResponseData = isset($jsonResponse['data']['collection']) ? $jsonResponse['data']['collection']['products'] : $jsonResponse['data']['products'];
+                foreach ($jsonResponseData['edges'] as $value) {
                     $product = $value['node'];
+                    // dump($product);
                     // Fetch the first variant's price
                     $price = null;
                     if (isset($product['variants']['edges'][0]['node']['price'])) {
                         $price = $product['variants']['edges'][0]['node']['price'];
                     }
+
                     $itemArray = [
                         'id' => str_replace('gid://shopify/Product/', '', $product['id']),
                         'title' => ucfirst($product['title']),
@@ -3064,17 +3075,20 @@ class ApiController extends Controller
                 }
 
                 $data['products'] = $collectionsArray;
-                $data['hasNextPage'] = $jsonResponse['data']['products']['pageInfo']['hasNextPage'];
-                $data['hasPreviousPage'] = $jsonResponse['data']['products']['pageInfo']['hasPreviousPage'];
-                $data['endCursor'] = $jsonResponse['data']['products']['pageInfo']['endCursor'];
-                $data['startCursor'] = $jsonResponse['data']['products']['pageInfo']['startCursor'];
+                $data['hasNextPage'] = $jsonResponseData['pageInfo']['hasNextPage'];
+                $data['hasPreviousPage'] = $jsonResponseData['pageInfo']['hasPreviousPage'];
+                $data['endCursor'] = $jsonResponseData['pageInfo']['endCursor'];
+                $data['startCursor'] = $jsonResponseData['pageInfo']['startCursor'];
             }
-
             // Return the JSON response
             return response()->json($data);
-        } catch (\Throwable $e) {
-            Log::error('Unexpected get product api error', ['exception' => $e->getMessage()]);
-            return response()->json(['status' => false, 'message' => 'An unexpected error occurred:']);
+        } catch (Throwable $th) {
+            Log::error('Unexpected error during banner front data fetch', [
+                'exception' => $th->getMessage(),
+                'file' => $th->getFile(),
+                'line' => $th->getLine()
+            ]);
+            return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);
         }
     }
 }

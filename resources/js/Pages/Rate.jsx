@@ -85,11 +85,9 @@ function Rate(props) {
         if (key === 'selectedByCart') {
             Setrate_based_on_surcharge(prevState => ({
                 ...prevState,
-                descriptions: '', 
+                descriptions: '',
             }));
         }
-    
-
     };
     const [checkedState, setCheckedState] = useState({
         checked1: false,
@@ -348,15 +346,28 @@ function Rate(props) {
 
     const handleRateModifierChange = (id, field) => (value) => {
         const option = rateModifiersOptions.find(opt => opt.value === value);
+
         setRateModifiers((prevModifiers) =>
-            prevModifiers.map((modifier) =>
-                modifier.id === id ? {
-                    ...modifier,
-                    [field]: value,
-                    ...(field === 'rateModifier' && { label1: option?.mainlabel || '', rateDay: null, unit: value === 'weight' ? shop_weight_unit : '' }),
-                    ...(field === 'rateModifier2' && { label2: option?.mainlabel || '', rateDay2: null, unit2: value === 'weight' ? shop_weight_unit : '' }),
-                } : modifier
-            )
+            prevModifiers.map((modifier) => {
+                if (modifier.id === id) {
+                    const newModifier = {
+                        ...modifier,
+                        [field]: value,
+                        ...(field === 'rateModifier' && {
+                            label1: option?.mainlabel || '',
+                            unit: value === 'weight' ? shop_weight_unit : '',
+                            rateDay: '',
+                        }),
+                        ...(field === 'rateModifier2' && {
+                            label2: option?.mainlabel || '',
+                            unit2: value === 'weight' ? shop_weight_unit : '',
+                            rateDay2: '',
+                        }),
+                    };
+                    return newModifier;
+                }
+                return modifier;
+            })
         );
 
         setErrors(prevErrors => {
@@ -369,6 +380,7 @@ function Rate(props) {
             return newErrors;
         });
     };
+
 
 
     const rateTag = [
@@ -3442,12 +3454,15 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'rateDay')}
                                                                 />
                                                             )}
+
                                                             {modifier.rateModifier === 'date' && (
-                                                                <TextField
-                                                                    value={modifier.rateDay}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'rateDay')}
-                                                                    type="date"
-                                                                />
+                                                                <div style={{width:"0%"}}>
+                                                                    <TextField
+                                                                        value={modifier.rateDay}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                        type="time"
+                                                                    />
+                                                                </div>
                                                             )}
                                                             {modifier.rateModifier === 'ids' && (
                                                                 <TextField

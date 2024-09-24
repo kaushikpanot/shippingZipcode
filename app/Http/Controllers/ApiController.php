@@ -3042,7 +3042,6 @@ class ApiController extends Controller
             ]);
             // Parse the JSON response
             $jsonResponse = $response->json();
-            dd($jsonResponse);
             // Prepare the response data
             $data['products'] = [];
             if (isset($jsonResponse['data'])) {

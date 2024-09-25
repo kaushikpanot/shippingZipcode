@@ -128,7 +128,16 @@ function Rate(props) {
         hasNextPage: false,
         hasPreviousPage: false
     });
-    const [products, setProducts] = useState([]);
+    const [pageInfoForEclude, setPageInfoForEclude] = useState({
+        startCursor: null,
+        endCursor: null,
+        hasNextPage: false,
+        hasPreviousPage: false
+    });
+    // const [products, setProducts] = useState([]);
+    const [productsForRateModifer, setProductsForRateModifer] = useState([])
+    const [productsForSurcharge, setProductsForSurcharge] = useState([])
+    const [productsForExcludeRate, setProductsForExcludeRate] = useState([])
     const [selectedProductIds, setSelectedProductIds] = useState([]);
     const [date, setDate] = useState({ startDate: '', endDate: '' });
     const handleDateChange = (key, value) => {
@@ -239,7 +248,7 @@ function Rate(props) {
 
         { label: 'Any Product', value: '', disabled: true, className: 'select-header' },
         { label: 'Available Quantity ', value: 'availableQuan', mainlabel: "any_Product" },
-        // { label: 'IDs', value: 'ids', mainlabel: "any_Product" },
+        { label: 'IDs', value: 'ids', mainlabel: "any_Product" },
         { label: 'Title', value: 'title', mainlabel: "any_Product" },
         { label: 'Tag', value: 'tag', mainlabel: "any_Product" },
         { label: 'Type', value: 'type2', mainlabel: "any_Product" },
@@ -331,7 +340,7 @@ function Rate(props) {
 
             return updatedModifiers;
         });
-    }, [selectedProductIds, products]);
+    }, [selectedProductIds, productsForRateModifer]);
 
     const handleRemoveRateModifier = (id) => {
         setRateModifiers((prevModifiers) =>
@@ -677,11 +686,11 @@ function Rate(props) {
                 ));
             }
         },
-        [products]
+        [productsForSurcharge]
     );
     const handleClearButtonClick = useCallback(() => {
         setValue('');
-    }, [products]);
+    }, [productsForSurcharge]);
 
 
 
@@ -1500,9 +1509,32 @@ function Rate(props) {
         productType: '',
         productVendor: ''
     });
+    
+    const [textFieldsForExcludeRate, setTextFieldsForExcludeRate] = useState({
+        fullProductTitle: '',
+        collectionId: '',
+        productType: '',
+        productVendor: ''
+    });
 
     const handleTextFieldChange = (field) => (value) => {
         setTextFields((prevFields) => {
+            const updatedFields = {
+                fullProductTitle: field === 'fullProductTitle' ? value : '',
+                collectionId: field === 'collectionId' ? value : '',
+                productType: field === 'productType' ? value : '',
+                productVendor: field === 'productVendor' ? value : '',
+            };
+
+            return {
+                ...prevFields,
+                ...updatedFields,
+            };
+        });
+    };
+
+    const handleTextFieldChangeForExcludeRate = (field) => (value) => {
+        setTextFieldsForExcludeRate((prevFields) => {
             const updatedFields = {
                 fullProductTitle: field === 'fullProductTitle' ? value : '',
                 collectionId: field === 'collectionId' ? value : '',
@@ -1542,8 +1574,7 @@ function Rate(props) {
             });
 
             const productData = response.data;
-            console.log(productData)
-            setProducts(productData.products);
+            setProductsForSurcharge(productData.products)
             setPageInfo({
                 startCursor: productData.startCursor,
                 endCursor: productData.endCursor,
@@ -1569,26 +1600,82 @@ function Rate(props) {
             fetchProducts(pageInfo.startCursor, 'prev');
         }
     };
+
+
+    const fetchProductsForExcludeRate = async (cursor, direction) => {
+        try {
+            setLoadingTable(true)
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
+            const token = await getSessionToken(app);
+            console.log(token)
+
+            const queryArray = Object.values(textFieldsForExcludeRate).filter(value => value.trim() !== '');
+            const queryString = queryArray.join(' ');
+
+            const payload = {
+                ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
+                query: queryString
+            };
+
+            const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const productData = response.data;
+            setProductsForExcludeRate(productData.products)
+
+            setPageInfoForEclude({
+                startCursor: productData.startCursor,
+                endCursor: productData.endCursor,
+                hasNextPage: productData.hasNextPage,
+                hasPreviousPage: productData.hasPreviousPage,
+            });
+            setLoading(false);
+            setLoadingTable(false)
+        } catch (error) {
+            setLoadingTable
+            setLoading(false);
+            console.error('Error fetching product data:', error);
+        }
+    };
+
+    const handleNextPageExcludeRate = () => {
+        if (pageInfoForEclude.hasNextPage) {
+            fetchProductsForExcludeRate(pageInfoForEclude.endCursor, 'next');
+        }
+    };
+    const handlePreviousPageExcludeRate = () => {
+        if (pageInfoForEclude.hasPreviousPage) {
+            fetchProductsForExcludeRate(pageInfoForEclude.startCursor, 'prev');
+        }
+    };
+
+
+
     const resourceName = {
         singular: 'order',
         plural: 'products',
     };
-    // const handleSearchClick = () => {
-    //     setShowAllProducts(true);
-    // };
+
     const handleSearchClick = () => {
         fetchProducts();
         setShowAllProducts(true);
     };
     const handleClick = () => {
-        fetchProducts();
-        setShowAllProduct(!showAllProducts);
+        fetchProductsForExcludeRate();
+        setShowAllProduct(true);
     };
 
     useEffect(() => {
         if (formData.id) {
             navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
         }
+        fetchProductsForExcludeRate()
     }, [formData.id, zone_id, navigate]);
 
     const handleProductChange = (productId, checked, text = '') => {
@@ -1596,7 +1683,7 @@ function Rate(props) {
             let updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
 
             if (checked) {
-                const product = products.find(product => product.id == productId);
+                const product = productsForSurcharge.find(product => product.id == productId);
                 if (product) {
                     const existingProductIndex = updatedProductData.findIndex(item => item.id == productId);
 
@@ -1630,8 +1717,8 @@ function Rate(props) {
 
     const selectedCount = rate_based_on_surcharge.productData?.length || 0
     const filteredProducts = showAllProducts
-        ? products?.filter(product => product.title.toLowerCase().includes)
-        : products?.filter(product => rate_based_on_surcharge.productData?.some(item => item.id === product.id));
+        ? productsForSurcharge?.filter(product => product.title.toLowerCase().includes)
+        : productsForSurcharge?.filter(product => rate_based_on_surcharge.productData?.some(item => item.id === product.id));
 
     const rowMarkup = filteredProducts?.map(({ id, title, image, price }, index) => {
         const isChecked = Array.isArray(rate_based_on_surcharge.productData) && rate_based_on_surcharge.productData.some(item => item.id === id);
@@ -1684,9 +1771,13 @@ function Rate(props) {
     });
 
     const filteredProduct = showAllProduct
-        ? products
-        : products?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
+        ? productsForExcludeRate?.filter(product => product.title.toLowerCase().includes)
+        : productsForExcludeRate?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
+
     const selectedCount1 = exclude_Rate.productsData?.length || 0
+
+    console.log(filteredProduct)
+
     const productData1 = filteredProduct?.map(({ id, title, image, price }, index) => {
         return (
             <IndexTable.Row
@@ -1720,6 +1811,7 @@ function Rate(props) {
             </IndexTable.Row>
         );
     });
+
     const toggleProduct = (id, title, price) => {
         SetExclude_Rate(prevState => {
             const currentProductData = Array.isArray(prevState.productsData) ? prevState.productsData : [];
@@ -1731,48 +1823,48 @@ function Rate(props) {
         });
     };
 
-    const handleCheckboxChange2 = (id) => {
-        setSelectedProductIds((prevSelected) =>
-            prevSelected.includes(id)
-                ? prevSelected.filter((productId) => productId !== id)
-                : [...prevSelected, id]
-        );
-    };
-    const selectedCount2 = selectedProductIds.length;
+    // const handleCheckboxChange2 = (id) => {
+    //     setSelectedProductIds((prevSelected) =>
+    //         prevSelected.includes(id)
+    //             ? prevSelected.filter((productId) => productId !== id)
+    //             : [...prevSelected, id]
+    //     );
+    // };
+    // const selectedCount2 = selectedProductIds.length;
 
-    const productData2 = products.map(({ id, title, image, price }, index) => (
-        <IndexTable.Row
-            id={id}
-            key={id}
-            position={index}
-        >
-            <IndexTable.Cell>
-                <Checkbox
-                    checked={selectedProductIds.includes(id)}
-                    onChange={() => handleCheckboxChange2(id)}
-                />
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <Thumbnail
-                    source={image}
-                    size="small"
-                    alt={title}
-                />
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
-                    <Text fontWeight="bold" as="span">
-                        {title}
-                    </Text>
-                </div>
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <Text fontWeight="bold" as="span">
-                    {price}
-                </Text>
-            </IndexTable.Cell>
-        </IndexTable.Row>
-    ));
+    // const productData2 = products.map(({ id, title, image, price }, index) => (
+    //     <IndexTable.Row
+    //         id={id}
+    //         key={id}
+    //         position={index}
+    //     >
+    //         <IndexTable.Cell>
+    //             <Checkbox
+    //                 checked={selectedProductIds.includes(id)}
+    //                 onChange={() => handleCheckboxChange2(id)}
+    //             />
+    //         </IndexTable.Cell>
+    //         <IndexTable.Cell>
+    //             <Thumbnail
+    //                 source={image}
+    //                 size="small"
+    //                 alt={title}
+    //             />
+    //         </IndexTable.Cell>
+    //         <IndexTable.Cell>
+    //             <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+    //                 <Text fontWeight="bold" as="span">
+    //                     {title}
+    //                 </Text>
+    //             </div>
+    //         </IndexTable.Cell>
+    //         <IndexTable.Cell>
+    //             <Text fontWeight="bold" as="span">
+    //                 {price}
+    //             </Text>
+    //         </IndexTable.Cell>
+    //     </IndexTable.Row>
+    // ));
 
     if (loading) {
         return (
@@ -2748,9 +2840,9 @@ function Rate(props) {
                                                                     />
                                                                     <TextField
                                                                         type="text"
-                                                                        label="Enter Collection Name"
+                                                                        label="Enter Collection Id"
                                                                         autoComplete="off"
-                                                                        placeholder='Enter Collection Name'
+                                                                        placeholder='Enter Collection Id'
                                                                         value={textFields.collectionId}
                                                                         onChange={handleTextFieldChange('collectionId')}
                                                                     />
@@ -2784,7 +2876,7 @@ function Rate(props) {
                                                         <div style={{ marginTop: "2%", width: '20%' }} >
                                                             <Button variant="primary" onClick={handleSearchClick} >Search Product</Button></div>
                                                         <div style={{ marginTop: "4%" }}>
-                                                            {filteredProducts.length > 0 && (
+                                                            {filteredProducts?.length > 0 && (
                                                                 <div>
                                                                     <div>
                                                                         <TextField
@@ -2801,7 +2893,7 @@ function Rate(props) {
                                                                     <div style={{ marginTop: "4%" }}>
                                                                         <IndexTable
                                                                             resourceName={resourceName}
-                                                                            itemCount={products.length}
+                                                                            itemCount={productsForSurcharge.length}
 
                                                                             headings={[
                                                                                 { title: ` ${selectedCount} Selected` },
@@ -3131,16 +3223,16 @@ function Rate(props) {
                                                         label="Full Product Title"
                                                         autoComplete="off"
                                                         placeholder='Enter Full Product Title'
-                                                        value={textFields.fullProductTitle}
-                                                        onChange={handleTextFieldChange('fullProductTitle')}
+                                                        value={textFieldsForExcludeRate.fullProductTitle}
+                                                        onChange={handleTextFieldChangeForExcludeRate('fullProductTitle')}
                                                     />
                                                     <TextField
                                                         type="text"
-                                                        label="Enter Collection Name"
+                                                        label="Enter Collection Id"
                                                         autoComplete="off"
-                                                        placeholder='Enter Collection Name'
-                                                        value={textFields.collectionId}
-                                                        onChange={handleTextFieldChange('collectionId')}
+                                                        placeholder='Enter Collection Id'
+                                                        value={textFieldsForExcludeRate.collectionId}
+                                                        onChange={handleTextFieldChangeForExcludeRate('collectionId')}
                                                     />
                                                 </FormLayout.Group>
                                             </FormLayout>
@@ -3153,16 +3245,16 @@ function Rate(props) {
                                                         label="Full Product Type"
                                                         autoComplete="off"
                                                         placeholder='Enter Full Product Type'
-                                                        value={textFields.productType}
-                                                        onChange={handleTextFieldChange('productType')}
+                                                        value={textFieldsForExcludeRate.productType}
+                                                        onChange={handleTextFieldChangeForExcludeRate('productType')}
                                                     />
                                                     <TextField
                                                         type="text"
                                                         label="Full Product Vendor"
                                                         autoComplete="off"
                                                         placeholder='Enter Full Product Vendor'
-                                                        value={textFields.productVendor}
-                                                        onChange={handleTextFieldChange('productVendor')}
+                                                        value={textFieldsForExcludeRate.productVendor}
+                                                        onChange={handleTextFieldChangeForExcludeRate('productVendor')}
                                                     />
                                                 </FormLayout.Group>
                                             </FormLayout>
@@ -3172,8 +3264,9 @@ function Rate(props) {
                                         </p>
                                         <div style={{ marginTop: "2%", width: '20%' }}>
                                             <Button variant="primary" onClick={handleClick}>Search Product</Button></div>
-                                        <div style={{ marginTop: "4%" }}>
-                                            <div>
+
+                                        {filteredProduct?.length > 0 && (
+                                            <div style={{ marginTop: "4%" }}>
                                                 <div>
                                                     <TextField
                                                         placeholder='search'
@@ -3189,7 +3282,7 @@ function Rate(props) {
                                                 <div style={{ marginTop: "4%" }}>
                                                     <IndexTable
                                                         resourceName={resourceName}
-                                                        itemCount={products.length}
+                                                        itemCount={productsForExcludeRate.length}
 
                                                         headings={[
                                                             { title: ` ${selectedCount1} Selected` },
@@ -3200,10 +3293,10 @@ function Rate(props) {
                                                         ]}
                                                         selectable={false}
                                                         pagination={{
-                                                            hasNext: pageInfo.hasNextPage,
-                                                            onNext: handleNextPage,
-                                                            hasPrevious: pageInfo.hasPreviousPage,
-                                                            onPrevious: handlePreviousPage,
+                                                            hasNext: pageInfoForEclude.hasNextPage,
+                                                            onNext: handleNextPageExcludeRate,
+                                                            hasPrevious: pageInfoForEclude.hasPreviousPage,
+                                                            onPrevious: handlePreviousPageExcludeRate,
                                                         }}
                                                     >
                                                         {loadingTable ? (
@@ -3221,7 +3314,8 @@ function Rate(props) {
                                                     </IndexTable>
                                                 </div>
                                             </div>
-                                        </div>
+                                        )}
+
                                     </div>
                                 )}
 
@@ -4294,7 +4388,7 @@ function Rate(props) {
                                     />
                                 </div>
                                 <div style={{ marginTop: '4%', height: '400px', overflowY: 'scroll' }}>
-                                    <IndexTable
+                                    {/* <IndexTable
                                         resourceName={resourceName}
                                         itemCount={products.length}
                                         headings={[
@@ -4322,7 +4416,7 @@ function Rate(props) {
                                         ) : (
                                             productData2
                                         )}
-                                    </IndexTable>
+                                    </IndexTable> */}
                                 </div>
                             </div>
                         </Modal.Section>

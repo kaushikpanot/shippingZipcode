@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('rate_name');
             $table->string('service_code')->nullable();
             $table->text('description')->nullable();
-            $table->tinyInteger('condition')->comment('0=ALL rates must have at least one tag, 1=ANY rates found with tag');
+            $table->tinyInteger('condition')->comment('0=ALL rates must have at least one tag, 1=ANY rates found with tag')->default(0);
             $table->tinyInteger('price_calculation_type')->comment("0=SUM, 1=AVERAGE, 2=LOWEST, 3=HIGHEST, 4=MULTIPLY of the values");
             $table->text('tags_to_combine');
             $table->text('tags_to_exclude')->nullable()->comment('Tags To Exclude from Rate Calculation');

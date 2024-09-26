@@ -20,7 +20,7 @@ const Settings = (props) => {
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState({
-    status: 0,
+    status: 1,
     shippingRate: 'All',
     rateModifierTitle: 'Append Description',
     mix_merge_rate: 1,
@@ -61,7 +61,7 @@ const Settings = (props) => {
       setSettings(data);
       setSettings(prevState => ({
         ...prevState,
-        status : data.status || 0 , 
+        status : data.status || 1 , 
         shippingRate : data.shippingRate || 'All',
         rateModifierTitle : data.rateModifierTitle || 'Append Description',
         mix_merge_rate : data.mix_merge_rate || 1,
@@ -287,7 +287,7 @@ const Settings = (props) => {
                   onChange={handleInputChange('shippingRate')}
                   value={settings.shippingRate}
                 /><br />
-                <Select
+                {/* <Select
                   label="Rate Modifier Title Settings"
                   options={[
                     { label: 'Append Description', value: 'Append Description' },
@@ -298,7 +298,7 @@ const Settings = (props) => {
                   ]}
                   onChange={handleInputChange('rateModifierTitle')}
                   value={settings.rateModifierTitle}
-                />
+                /> */}
               </LegacyCard>
             </Grid.Cell>
           </Grid>
@@ -322,11 +322,11 @@ const Settings = (props) => {
             <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
               <LegacyCard sectioned>
                 <div style={{ marginBottom: "2%", marginLeft: "83%" }}>
-                  <Button variant='primary' onClick={handleAddMixMergeRate}  >Merge Rates</Button>
+                  <Button variant='primary' onClick={handleAddMixMergeRate}  disabled={settings.mix_merge_rate === 1}>Merge Rates</Button>
                 </div>
                 <Banner tone="warning">
                   <p>
-                    If the first option of mix/merge rate setting is Yes (Automatic), the merge rate will not work.
+                    If the first option of mix/merge rate setting is No, the merge rate will not work.
                   </p>
                 </Banner>
                 <div style={{ marginTop: "3%" }}>
@@ -335,63 +335,21 @@ const Settings = (props) => {
                   </Text>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: "2%" }}>
                     <RadioButton
-                      label="Yes (Automatic)"
+                      label="Yes (Manually - Using merge rate)"
                       checked={settings.mix_merge_rate === 0}
                       id="yes"
                       name="mix_merge_rate"
                       onChange={() => handleCheckedChange('mix_merge_rate', 0)}
                     />
                     <RadioButton
-                      label="No (Manually - Using merge rate)"
+                      label="No"
                       checked={settings.mix_merge_rate === 1}
                       id="No"
                       name="mix_merge_rate"
                       onChange={() => handleCheckedChange('mix_merge_rate', 1)}
                     />
                   </div>
-                  {settings.mix_merge_rate !== 1 && (
-                    <div style={{ marginTop: '3%' }}>
-                      <p>
-                        Applicable only if you set shipping rates based on product. If the cart contains some products with rate and some items without rate then a default rate like weight-based will come along with product-based rate.
-                      </p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: "2%" }}>
-                        <RadioButton
-                          label="Yes"
-                          checked={settings.mix_merge_rate_1 === 0}
-                          id="yesMix"
-                          name="mix_merge_rate_1"
-                          onChange={() => handleCheckedChange('mix_merge_rate_1', 0)}
-                        />
-                        <RadioButton
-                          label="No"
-                          checked={settings.mix_merge_rate_1 === 1}
-                          id="NoMix"
-                          name="mix_merge_rate_1"
-                          onChange={() => handleCheckedChange('mix_merge_rate_1', 1)}
-                        />
-                      </div>
-                      {settings.mix_merge_rate_1 !== 1 && (
-                        <div style={{ marginTop: "3%" }}>
-                          <FormLayout>
-                            <TextField
-                              label="Additional Description of Mix Rate"
-                              placeholder='Included with product base rate'
-                              value={settings.additional_description_of_mix_rate}
-                              onChange={handleInputChange('additional_description_of_mix_rate')}
-
-                            />
-                            <TextField
-                              label="Maximum Price of Auto Product Base Mix Rate"
-                              value={settings.max_price_of_auto_product_base_mix_rate}
-                              onChange={handleInputChange('max_price_of_auto_product_base_mix_rate')}
-                              type="number"
-                              placeholder='0.00'
-                            />
-                          </FormLayout>
-                        </div>
-                      )}
-                    </div>
-                  )}
+               
                 </div>
               </LegacyCard>
             </Grid.Cell>

@@ -146,6 +146,7 @@ function Rate(props) {
     const [productsForExcludeRate, setProductsForExcludeRate] = useState([])
     const [selectedProductIds2, setSelectedProductIds2] = useState([]);
     const [selectedProductIds3, setSelectedProductIds3] = useState([]);
+    console.log(selectedProductIds2,selectedProductIds3)
     const [date, setDate] = useState({ startDate: '', endDate: '' });
     const handleDateChange = (key, value) => {
         setDate(prevDates => {
@@ -284,13 +285,13 @@ function Rate(props) {
         }));
     };
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const[activeTextBox,setActiveTextBox]= ('')
+    const [activeTextBox, setActiveTextBox] = useState(''); // Use useState to initialize activeTextBox
 
-    const handleFocus = useCallback((id,value) => {
-        setIsModalOpen(true);
-        console.log(value)
-        setActiveTextBox(value)
+    const handleFocus = useCallback((id, value) => {
+      setIsModalOpen(true); 
+        setActiveTextBox(value); 
     }, []);
+
 
     const handleModalClose = useCallback(() => {
         setIsModalOpen(false);
@@ -300,6 +301,7 @@ function Rate(props) {
         const newId = rateModifiers.length ? rateModifiers[rateModifiers.length - 1].id + 1 : 1;
         const defaultRateModifier = 'dayOfOrder';
         const defaultOption = rateModifiersOptions.find(option => option.value === defaultRateModifier);
+        
 
         setRateModifiers((prevModifiers) => [
             ...prevModifiers,
@@ -332,33 +334,39 @@ function Rate(props) {
     };
     useEffect(() => {
         if (rateModifiers.length === 0) return;
-
+    
+        // Filter and map the selected products for productData1 and productData2
         const selectedProducts1 = productsForRateModifer.filter(product => selectedProductIds2.includes(product.id));
         const selectedProducts2 = productsForRateModifer.filter(product => selectedProductIds3.includes(product.id));
-
+    
+        const mappedProductData1 = selectedProducts1.map(({ id, title, price }) => ({
+            id,
+            title,
+            price,
+        }));
+    
+        const mappedProductData2 = selectedProducts2.map(({ id, title, price }) => ({
+            id,
+            title,
+            price,
+        }));
+    
         setRateModifiers((prevModifiers) => {
-            // Find the latest modifier to update
+            // Update the latest modifier with selected products
             const lastModifierIndex = prevModifiers.length - 1;
             if (lastModifierIndex < 0) return prevModifiers;
-
+    
             const updatedModifiers = [...prevModifiers];
             updatedModifiers[lastModifierIndex] = {
                 ...updatedModifiers[lastModifierIndex],
-                productData1: selectedProducts1.map(({ id, title, price }) => ({
-                    id,
-                    title,
-                    price,
-                })),
-                productData2: selectedProducts2.map(({ id, title, price }) => ({
-                    id,
-                    title,
-                    price,
-                })),
+                productData1: mappedProductData1, // Update productData1
+                productData2: mappedProductData2, // Update productData2
             };
-
+    
             return updatedModifiers;
         });
-    }, [selectedProductIds2, productsForRateModifer,selectedProductIds3]);
+    }, [selectedProductIds2, selectedProductIds3, productsForRateModifer]);
+    
 
     const handleRemoveRateModifier = (id) => {
         setRateModifiers((prevModifiers) =>
@@ -534,9 +542,14 @@ function Rate(props) {
                 setRateModifiers(response.data.rate.rate_modifiers);
 
                 const selectedIds = response.data.rate.rate_modifiers.flatMap(modifier =>
-                    modifier.productData ? modifier.productData.map(product => product.id) : []
+                    modifier.productData1 ? modifier.productData1.map(product => product.id) : []
                 );
                 setSelectedProductIds2(selectedIds);
+
+                const selectedIds2 = response.data.rate.rate_modifiers.flatMap(modifier =>
+                    modifier.productData2 ? modifier.productData2.map(product => product.id) : []
+                );
+                setSelectedProductIds3(selectedIds2);
             }
 
             if (response.data.rate.cart_condition) {
@@ -1075,7 +1088,9 @@ function Rate(props) {
 
         let updatedCondition = items[index].condition;
         if (newValue === 'time') {
+            updatedCondition = 'between';
         }
+
         else if (newValue === 'address' || newValue === 'timeIn') {
             updatedCondition = 'contains';
         }
@@ -1895,8 +1910,8 @@ function Rate(props) {
     };
 
     const selectedCount2 = selectedProductIds2.length;
-    console.log('selectedProductIds2',selectedProductIds2); 
-    console.log('selectedProductIds3',selectedProductIds3); // Logs selected product objects
+ 
+    console.log(rateModifiers)
 
 
     const productData2 = productsForRateModifer?.map(({ id, title, image, price }, index) => (
@@ -1913,7 +1928,7 @@ function Rate(props) {
             <IndexTable.Cell>
                 <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
                     <Text fontWeight="bold" as="span">
-                        {title}
+                     {title}
                     </Text>
                 </div>
             </IndexTable.Cell>
@@ -1924,7 +1939,8 @@ function Rate(props) {
             </IndexTable.Cell>
         </IndexTable.Row>
     ));
-
+ 
+    
 
     const handleCheckboxChange3 = (id) => {
         setSelectedProductIds3((prevSelected) =>
@@ -1968,7 +1984,7 @@ function Rate(props) {
             </IndexTable.Cell>
         </IndexTable.Row>
     ));
-
+  
     if (loading) {
         return (
             <Page
@@ -4148,7 +4164,7 @@ function Rate(props) {
                                     value={formData.merge_rate_tag}
                                     onChange={handleRateFormChange('merge_rate_tag')}
                                     autoComplete="off"
-                                    placeholder='tag1,tag2,tag3'
+                                    placeholder='tag'
                                 />
                             </LegacyCard>
                         </Grid.Cell>
@@ -4437,7 +4453,7 @@ function Rate(props) {
                                                             value={send_another_rate.another_merge_rate_tag}
                                                             onChange={handleRateFormChange('another_merge_rate_tag')}
                                                             autoComplete="off"
-                                                            placeholder='tag1,tag2,tag3'
+                                                            placeholder='tag'
                                                         />
                                                     </FormLayout.Group>
                                                 </FormLayout>
@@ -4517,7 +4533,7 @@ function Rate(props) {
                                                 </IndexTable.Cell>
                                             </IndexTable.Row>
                                         ) : (
-                                            (activeTextBox === 'productsData1' ? productData2 : productData3)
+                                            (activeTextBox === 'productData1' ? productData2 : productData3)
                                         )}
                                     </IndexTable>
                                 </div>

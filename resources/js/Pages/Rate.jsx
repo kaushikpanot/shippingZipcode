@@ -85,11 +85,9 @@ function Rate(props) {
         if (key === 'selectedByCart') {
             Setrate_based_on_surcharge(prevState => ({
                 ...prevState,
-                descriptions: '', 
+                descriptions: '',
             }));
         }
-    
-
     };
     const [checkedState, setCheckedState] = useState({
         checked1: false,
@@ -130,8 +128,24 @@ function Rate(props) {
         hasNextPage: false,
         hasPreviousPage: false
     });
-    const [products, setProducts] = useState([]);
-    const [selectedProductIds, setSelectedProductIds] = useState([]);
+    const [pageInfoForEclude, setPageInfoForEclude] = useState({
+        startCursor: null,
+        endCursor: null,
+        hasNextPage: false,
+        hasPreviousPage: false
+    });
+    const [pageInfoForRate, setPageInfoForRate] = useState({
+        startCursor: null,
+        endCursor: null,
+        hasNextPage: false,
+        hasPreviousPage: false
+    });
+    // const [products, setProducts] = useState([]);
+    const [productsForRateModifer, setProductsForRateModifer] = useState([])
+    const [productsForSurcharge, setProductsForSurcharge] = useState([])
+    const [productsForExcludeRate, setProductsForExcludeRate] = useState([])
+    const [selectedProductIds2, setSelectedProductIds2] = useState([]);
+    const [selectedProductIds3, setSelectedProductIds3] = useState([]);
     const [date, setDate] = useState({ startDate: '', endDate: '' });
     const handleDateChange = (key, value) => {
         setDate(prevDates => {
@@ -193,7 +207,7 @@ function Rate(props) {
                 unit: shop_weight_unit
             })));
         }
-        console.log('vsalue', value)
+      
     };
 
     const tierOptions = [
@@ -270,8 +284,12 @@ function Rate(props) {
         }));
     };
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const handleFocus = useCallback(() => {
+    const[activeTextBox,setActiveTextBox]= ('')
+
+    const handleFocus = useCallback((id,value) => {
         setIsModalOpen(true);
+        console.log(value)
+        setActiveTextBox(value)
     }, []);
 
     const handleModalClose = useCallback(() => {
@@ -302,7 +320,8 @@ function Rate(props) {
                 modifierType: 'Fixed',
                 adjustment: '',
                 effect: 'Decrease',
-                productData: []
+                productData1: [],
+                productData2: []
             },
         ]);
 
@@ -314,7 +333,8 @@ function Rate(props) {
     useEffect(() => {
         if (rateModifiers.length === 0) return;
 
-        const selectedProducts = products.filter(product => selectedProductIds.includes(product.id));
+        const selectedProducts1 = productsForRateModifer.filter(product => selectedProductIds2.includes(product.id));
+        const selectedProducts2 = productsForRateModifer.filter(product => selectedProductIds3.includes(product.id));
 
         setRateModifiers((prevModifiers) => {
             // Find the latest modifier to update
@@ -324,7 +344,12 @@ function Rate(props) {
             const updatedModifiers = [...prevModifiers];
             updatedModifiers[lastModifierIndex] = {
                 ...updatedModifiers[lastModifierIndex],
-                productData: selectedProducts.map(({ id, title, price }) => ({
+                productData1: selectedProducts1.map(({ id, title, price }) => ({
+                    id,
+                    title,
+                    price,
+                })),
+                productData2: selectedProducts2.map(({ id, title, price }) => ({
                     id,
                     title,
                     price,
@@ -333,7 +358,7 @@ function Rate(props) {
 
             return updatedModifiers;
         });
-    }, [selectedProductIds, products]);
+    }, [selectedProductIds2, productsForRateModifer,selectedProductIds3]);
 
     const handleRemoveRateModifier = (id) => {
         setRateModifiers((prevModifiers) =>
@@ -348,31 +373,50 @@ function Rate(props) {
 
     const handleRateModifierChange = (id, field) => (value) => {
         const option = rateModifiersOptions.find(opt => opt.value === value);
-        setRateModifiers((prevModifiers) =>
-            prevModifiers.map((modifier) =>
-                modifier.id === id ? {
-                    ...modifier,
-                    [field]: value,
-                    ...(field === 'rateModifier' && { label1: option?.mainlabel || '', rateDay: null, unit: value === 'weight' ? shop_weight_unit : '' }),
-                    ...(field === 'rateModifier2' && { label2: option?.mainlabel || '', rateDay2: null, unit2: value === 'weight' ? shop_weight_unit : '' }),
-                } : modifier
-            )
-        );
 
-        setErrors(prevErrors => {
-            const newErrors = { ...prevErrors };
-            if (field === 'name') {
-                delete newErrors[`name${id}`];
-            } else if (field === 'adjustment') {
-                delete newErrors[`adjustment${id}`];
-            }
-            return newErrors;
-        });
+        setRateModifiers((prevModifiers) =>
+            prevModifiers.map((modifier) => {
+                if (modifier.id === id) {
+                    const newModifier = {
+                        ...modifier,
+                        [field]: value,
+                        ...(field === 'rateModifier' && {
+                            label1: option?.mainlabel || '',
+                            unit: value === 'weight' ? shop_weight_unit : '',
+                            rateDay: '',
+                            rateOperator: value === 'availableQuan'
+                                ? 'lthenoequal'
+                                : (value === 'title' || value === 'address' ? 'contains' : option?.mainlabel || ''),
+                        }),
+                        ...(field === 'rateModifier2' && {
+                            label2: option?.mainlabel || '',
+                            unit2: value === 'weight' ? shop_weight_unit : '',
+                            rateDay2: '',
+                            rateOperator2: value === 'availableQuan'
+                                ? 'lthenoequal'
+                                : (value === 'title' || value === 'address' ? 'contains' : option?.mainlabel || ''),
+                        }),
+
+                        // ...(value === 'availableQuan' && {
+                        //     rateOperator: 'lthenoequal',
+                        //     rateOperator2: 'lthenoequal',
+                        // }),
+
+                        // ...(['title', 'address'].includes(field) && {
+                        //     rateOperator:  'contains',
+                        // }),
+                    };
+                    return newModifier;
+                }
+                return modifier;
+            })
+        );
     };
 
 
+
     const rateTag = [
-        { label: 'Equals', value: 'equal' },
+        { label: 'Equal', value: 'equal' },
         { label: 'Does Not Equal', value: 'notequal' },
         { label: 'Contains', value: 'contains' },
         { label: 'Does not contains', value: 'notcontains' },
@@ -492,7 +536,7 @@ function Rate(props) {
                 const selectedIds = response.data.rate.rate_modifiers.flatMap(modifier =>
                     modifier.productData ? modifier.productData.map(product => product.id) : []
                 );
-                setSelectedProductIds(selectedIds);
+                setSelectedProductIds2(selectedIds);
             }
 
             if (response.data.rate.cart_condition) {
@@ -658,11 +702,11 @@ function Rate(props) {
                 ));
             }
         },
-        [products]
+        [productsForSurcharge]
     );
     const handleClearButtonClick = useCallback(() => {
         setValue('');
-    }, [products]);
+    }, [productsForSurcharge]);
 
 
 
@@ -1481,9 +1525,32 @@ function Rate(props) {
         productType: '',
         productVendor: ''
     });
+    
+    const [textFieldsForExcludeRate, setTextFieldsForExcludeRate] = useState({
+        fullProductTitle: '',
+        collectionId: '',
+        productType: '',
+        productVendor: ''
+    });
 
     const handleTextFieldChange = (field) => (value) => {
         setTextFields((prevFields) => {
+            const updatedFields = {
+                fullProductTitle: field === 'fullProductTitle' ? value : '',
+                collectionId: field === 'collectionId' ? value : '',
+                productType: field === 'productType' ? value : '',
+                productVendor: field === 'productVendor' ? value : '',
+            };
+
+            return {
+                ...prevFields,
+                ...updatedFields,
+            };
+        });
+    };
+
+    const handleTextFieldChangeForExcludeRate = (field) => (value) => {
+        setTextFieldsForExcludeRate((prevFields) => {
             const updatedFields = {
                 fullProductTitle: field === 'fullProductTitle' ? value : '',
                 collectionId: field === 'collectionId' ? value : '',
@@ -1506,7 +1573,6 @@ function Rate(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
-
             const queryArray = Object.values(textFields).filter(value => value.trim() !== '');
             const queryString = queryArray.join(' ');
 
@@ -1522,7 +1588,7 @@ function Rate(props) {
             });
 
             const productData = response.data;
-            setProducts(productData.products);
+            setProductsForSurcharge(productData.products)
             setPageInfo({
                 startCursor: productData.startCursor,
                 endCursor: productData.endCursor,
@@ -1548,26 +1614,135 @@ function Rate(props) {
             fetchProducts(pageInfo.startCursor, 'prev');
         }
     };
+
+
+    const fetchProductsForExcludeRate = async (cursor, direction) => {
+        try {
+            setLoadingTable(true)
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
+            const token = await getSessionToken(app);
+           
+            const queryArray = Object.values(textFieldsForExcludeRate).filter(value => value.trim() !== '');
+            const queryString = queryArray.join(' ');
+
+            const payload = {
+                ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
+                query: queryString
+            };
+
+            const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const productData = response.data;
+            setProductsForExcludeRate(productData.products)
+
+            setPageInfoForEclude({
+                startCursor: productData.startCursor,
+                endCursor: productData.endCursor,
+                hasNextPage: productData.hasNextPage,
+                hasPreviousPage: productData.hasPreviousPage,
+            });
+            setLoading(false);
+            setLoadingTable(false)
+        } catch (error) {
+            setLoadingTable
+            setLoading(false);
+            console.error('Error fetching product data:', error);
+        }
+    };
+
+    const handleNextPageExcludeRate = () => {
+        if (pageInfoForEclude.hasNextPage) {
+            fetchProductsForExcludeRate(pageInfoForEclude.endCursor, 'next');
+        }
+    };
+    const handlePreviousPageExcludeRate = () => {
+        if (pageInfoForEclude.hasPreviousPage) {
+            fetchProductsForExcludeRate(pageInfoForEclude.startCursor, 'prev');
+        }
+    };
+
+
+    const fetchProductsForRate = async (cursor, direction) => {
+        try {
+            setLoadingTable(true)
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
+            const token = await getSessionToken(app);
+           
+            const queryString = ''
+
+            const payload = {
+                ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
+                query: queryString
+            };
+
+            const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const productData = response.data;
+            setProductsForRateModifer(productData.products)
+        
+
+            setPageInfoForRate({
+                startCursor: productData.startCursor,
+                endCursor: productData.endCursor,
+                hasNextPage: productData.hasNextPage,
+                hasPreviousPage: productData.hasPreviousPage,
+            });
+            setLoading(false);
+            setLoadingTable(false)
+        } catch (error) {
+            setLoadingTable
+            setLoading(false);
+            console.error('Error fetching product data:', error);
+        }
+    };
+
+    const handleNextPageRate = () => {
+        if (pageInfoForRate.hasNextPage) {
+            fetchProductsForRate(pageInfoForEclude.endCursor, 'next');
+        }
+    };
+    const handlePreviousPageRate = () => {
+        if (pageInfoForRate.hasPreviousPage) {
+            fetchProductsForRate(pageInfoForEclude.startCursor, 'prev');
+        }
+    };
+
+
+
     const resourceName = {
         singular: 'order',
         plural: 'products',
     };
-    // const handleSearchClick = () => {
-    //     setShowAllProducts(true);
-    // };
+
     const handleSearchClick = () => {
         fetchProducts();
         setShowAllProducts(true);
     };
     const handleClick = () => {
-        fetchProducts();
-        setShowAllProduct(!showAllProducts);
+        fetchProductsForExcludeRate();
+        setShowAllProduct(true);
     };
 
     useEffect(() => {
         if (formData.id) {
             navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
         }
+        fetchProductsForExcludeRate()
+        fetchProductsForRate()
     }, [formData.id, zone_id, navigate]);
 
     const handleProductChange = (productId, checked, text = '') => {
@@ -1575,7 +1750,7 @@ function Rate(props) {
             let updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
 
             if (checked) {
-                const product = products.find(product => product.id == productId);
+                const product = productsForSurcharge.find(product => product.id == productId);
                 if (product) {
                     const existingProductIndex = updatedProductData.findIndex(item => item.id == productId);
 
@@ -1609,13 +1784,12 @@ function Rate(props) {
 
     const selectedCount = rate_based_on_surcharge.productData?.length || 0
     const filteredProducts = showAllProducts
-        ? products?.filter(product => product.title.toLowerCase().includes)
-        : products?.filter(product => rate_based_on_surcharge.productData?.some(item => item.id === product.id));
+        ? productsForSurcharge?.filter(product => product.title.toLowerCase().includes)
+        : productsForSurcharge?.filter(product => rate_based_on_surcharge.productData?.some(item => item.id === product.id));
 
     const rowMarkup = filteredProducts?.map(({ id, title, image, price }, index) => {
         const isChecked = Array.isArray(rate_based_on_surcharge.productData) && rate_based_on_surcharge.productData.some(item => item.id === id);
         const productValue = Array.isArray(rate_based_on_surcharge.productData) ? rate_based_on_surcharge.productData.find(item => item.id === id)?.value || '' : '';
-        console.log(isChecked)
         return (
             <IndexTable.Row
                 id={id}
@@ -1663,8 +1837,9 @@ function Rate(props) {
     });
 
     const filteredProduct = showAllProduct
-        ? products
-        : products?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
+        ? productsForExcludeRate?.filter(product => product.title.toLowerCase().includes)
+        : productsForExcludeRate?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
+
     const selectedCount1 = exclude_Rate.productsData?.length || 0
     const productData1 = filteredProduct?.map(({ id, title, image, price }, index) => {
         return (
@@ -1699,6 +1874,7 @@ function Rate(props) {
             </IndexTable.Row>
         );
     });
+
     const toggleProduct = (id, title, price) => {
         SetExclude_Rate(prevState => {
             const currentProductData = Array.isArray(prevState.productsData) ? prevState.productsData : [];
@@ -1711,14 +1887,55 @@ function Rate(props) {
     };
 
     const handleCheckboxChange2 = (id) => {
-        setSelectedProductIds((prevSelected) =>
+        setSelectedProductIds2((prevSelected) =>
             prevSelected.includes(id)
                 ? prevSelected.filter((productId) => productId !== id)
                 : [...prevSelected, id]
         );
     };
-    const selectedCount2 = selectedProductIds.length;
-    const productData2 = products.map(({ id, title, image, price }, index) => (
+
+    const selectedCount2 = selectedProductIds2.length;
+    console.log('selectedProductIds2',selectedProductIds2); 
+    console.log('selectedProductIds3',selectedProductIds3); // Logs selected product objects
+
+
+    const productData2 = productsForRateModifer?.map(({ id, title, image, price }, index) => (
+        <IndexTable.Row id={id} key={id} position={index}>
+            <IndexTable.Cell>
+                <Checkbox
+                     checked={selectedProductIds2.includes(id)}
+                     onChange={() => handleCheckboxChange2(id)}
+                />
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <Thumbnail source={image} size="small" alt={title} />
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+                    <Text fontWeight="bold" as="span">
+                        {title}
+                    </Text>
+                </div>
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <Text fontWeight="bold" as="span">
+                    {price}
+                </Text>
+            </IndexTable.Cell>
+        </IndexTable.Row>
+    ));
+
+
+    const handleCheckboxChange3 = (id) => {
+        setSelectedProductIds3((prevSelected) =>
+            prevSelected.includes(id)
+                ? prevSelected.filter((productId) => productId !== id)
+                : [...prevSelected, id]
+        );
+    };
+    const selectedCount3 = selectedProductIds3.length;
+
+    const productData3 = productsForRateModifer?.map(({ id, title, image, price }, index) => (
         <IndexTable.Row
             id={id}
             key={id}
@@ -1726,8 +1943,8 @@ function Rate(props) {
         >
             <IndexTable.Cell>
                 <Checkbox
-                    checked={selectedProductIds.includes(id)}
-                    onChange={() => handleCheckboxChange2(id)}
+                    checked={selectedProductIds3.includes(id)}
+                    onChange={() => handleCheckboxChange3(id)}
                 />
             </IndexTable.Cell>
             <IndexTable.Cell>
@@ -2726,9 +2943,9 @@ function Rate(props) {
                                                                     />
                                                                     <TextField
                                                                         type="text"
-                                                                        label="Enter Collection Name"
+                                                                        label="Enter Collection Id"
                                                                         autoComplete="off"
-                                                                        placeholder='Enter Collection Name'
+                                                                        placeholder='Enter Collection Id'
                                                                         value={textFields.collectionId}
                                                                         onChange={handleTextFieldChange('collectionId')}
                                                                     />
@@ -2762,7 +2979,7 @@ function Rate(props) {
                                                         <div style={{ marginTop: "2%", width: '20%' }} >
                                                             <Button variant="primary" onClick={handleSearchClick} >Search Product</Button></div>
                                                         <div style={{ marginTop: "4%" }}>
-                                                            {filteredProducts.length > 0 && (
+                                                            {filteredProducts?.length > 0 && (
                                                                 <div>
                                                                     <div>
                                                                         <TextField
@@ -2779,7 +2996,7 @@ function Rate(props) {
                                                                     <div style={{ marginTop: "4%" }}>
                                                                         <IndexTable
                                                                             resourceName={resourceName}
-                                                                            itemCount={products.length}
+                                                                            itemCount={productsForSurcharge.length}
 
                                                                             headings={[
                                                                                 { title: ` ${selectedCount} Selected` },
@@ -3109,16 +3326,16 @@ function Rate(props) {
                                                         label="Full Product Title"
                                                         autoComplete="off"
                                                         placeholder='Enter Full Product Title'
-                                                        value={textFields.fullProductTitle}
-                                                        onChange={handleTextFieldChange('fullProductTitle')}
+                                                        value={textFieldsForExcludeRate.fullProductTitle}
+                                                        onChange={handleTextFieldChangeForExcludeRate('fullProductTitle')}
                                                     />
                                                     <TextField
                                                         type="text"
-                                                        label="Enter Collection Name"
+                                                        label="Enter Collection Id"
                                                         autoComplete="off"
-                                                        placeholder='Enter Collection Name'
-                                                        value={textFields.collectionId}
-                                                        onChange={handleTextFieldChange('collectionId')}
+                                                        placeholder='Enter Collection Id'
+                                                        value={textFieldsForExcludeRate.collectionId}
+                                                        onChange={handleTextFieldChangeForExcludeRate('collectionId')}
                                                     />
                                                 </FormLayout.Group>
                                             </FormLayout>
@@ -3131,16 +3348,16 @@ function Rate(props) {
                                                         label="Full Product Type"
                                                         autoComplete="off"
                                                         placeholder='Enter Full Product Type'
-                                                        value={textFields.productType}
-                                                        onChange={handleTextFieldChange('productType')}
+                                                        value={textFieldsForExcludeRate.productType}
+                                                        onChange={handleTextFieldChangeForExcludeRate('productType')}
                                                     />
                                                     <TextField
                                                         type="text"
                                                         label="Full Product Vendor"
                                                         autoComplete="off"
                                                         placeholder='Enter Full Product Vendor'
-                                                        value={textFields.productVendor}
-                                                        onChange={handleTextFieldChange('productVendor')}
+                                                        value={textFieldsForExcludeRate.productVendor}
+                                                        onChange={handleTextFieldChangeForExcludeRate('productVendor')}
                                                     />
                                                 </FormLayout.Group>
                                             </FormLayout>
@@ -3150,8 +3367,9 @@ function Rate(props) {
                                         </p>
                                         <div style={{ marginTop: "2%", width: '20%' }}>
                                             <Button variant="primary" onClick={handleClick}>Search Product</Button></div>
-                                        <div style={{ marginTop: "4%" }}>
-                                            <div>
+
+                                        {filteredProduct?.length > 0 && (
+                                            <div style={{ marginTop: "4%" }}>
                                                 <div>
                                                     <TextField
                                                         placeholder='search'
@@ -3167,7 +3385,7 @@ function Rate(props) {
                                                 <div style={{ marginTop: "4%" }}>
                                                     <IndexTable
                                                         resourceName={resourceName}
-                                                        itemCount={products.length}
+                                                        itemCount={productsForExcludeRate.length}
 
                                                         headings={[
                                                             { title: ` ${selectedCount1} Selected` },
@@ -3178,10 +3396,10 @@ function Rate(props) {
                                                         ]}
                                                         selectable={false}
                                                         pagination={{
-                                                            hasNext: pageInfo.hasNextPage,
-                                                            onNext: handleNextPage,
-                                                            hasPrevious: pageInfo.hasPreviousPage,
-                                                            onPrevious: handlePreviousPage,
+                                                            hasNext: pageInfoForEclude.hasNextPage,
+                                                            onNext: handleNextPageExcludeRate,
+                                                            hasPrevious: pageInfoForEclude.hasPreviousPage,
+                                                            onPrevious: handlePreviousPageExcludeRate,
                                                         }}
                                                     >
                                                         {loadingTable ? (
@@ -3199,7 +3417,8 @@ function Rate(props) {
                                                     </IndexTable>
                                                 </div>
                                             </div>
-                                        </div>
+                                        )}
+
                                     </div>
                                 )}
 
@@ -3369,7 +3588,7 @@ function Rate(props) {
                                                                         onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
                                                                     />
                                                                 )}
-                                                                {(modifier.rateModifier === 'price' || modifier.rateModifier === 'time' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'calculateRate') && (
+                                                                {(modifier.rateModifier === 'price' || modifier.rateModifier === 'time' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'dayFromToday') && (
                                                                     <Select
                                                                         label="Select Operator"
                                                                         options={rateTimeOptions}
@@ -3442,26 +3661,29 @@ function Rate(props) {
                                                                     onChange={handleRateModifierChange(modifier.id, 'rateDay')}
                                                                 />
                                                             )}
+
                                                             {modifier.rateModifier === 'date' && (
-                                                                <TextField
-                                                                    value={modifier.rateDay}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'rateDay')}
-                                                                    type="date"
-                                                                />
+                                                                <div style={{ width: "50%" }}>
+                                                                    <TextField
+                                                                        value={modifier.rateDay}
+                                                                        onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                        type="date"
+                                                                    />
+                                                                </div>
                                                             )}
                                                             {modifier.rateModifier === 'ids' && (
                                                                 <TextField
                                                                     type='text'
-                                                                    value={modifier.productData
-                                                                        ? modifier.productData.map(product => product.id).join(',')
+                                                                    value={modifier.productData1
+                                                                        ? modifier.productData1.map(product => product.id).join(',')
                                                                         : ''}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'productData')}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'productData1')}
                                                                     multiline={4}
-                                                                    onFocus={() => handleFocus(modifier.id)}
+                                                                    onFocus={() => handleFocus(modifier.id,'productData1')}
                                                                     helpText='Add product IDs with comma(,) separator'
                                                                 />
                                                             )}
-                                                            {(modifier.rateModifier === 'price' || modifier.rateModifier === 'calculateRate' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'localCode' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
+                                                            {(modifier.rateModifier === 'price' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
                                                                 <TextField
                                                                     type="number"
                                                                     value={modifier.rateDay}
@@ -3476,8 +3698,7 @@ function Rate(props) {
                                                                                             modifier.rateModifier === 'timefromCurrent' ? "Order Delivery X hours from current is" :
                                                                                                 modifier.rateModifier === 'estimatedDay' ? "Estimated Delivery day" :
                                                                                                     modifier.rateModifier === 'availableQuan' ? "Quantity" :
-                                                                                                        modifier.rateModifier === 'calculateRate' ? "Calculate Rate Price" :
-                                                                                                            "Local Code"
+                                                                                                        "Calculate Rate Price"
                                                                     }
                                                                 />
                                                             )}
@@ -3487,6 +3708,16 @@ function Rate(props) {
                                                                     value={modifier.rateDay}
                                                                     onChange={handleRateModifierChange(modifier.id, 'rateDay')}
                                                                 />
+                                                            )}
+                                                            {modifier.rateModifier === 'localCode' && (
+                                                                <TextField
+                                                                    type="text"
+                                                                    value={modifier.rateDay}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'rateDay')}
+                                                                    autoComplete="off"
+                                                                    placeholder='locale code'
+                                                                />
+
                                                             )}
                                                             {modifier.rateModifier === 'available' && (
                                                                 <Select
@@ -3644,13 +3875,14 @@ function Rate(props) {
                                                                     {modifier.rateModifier2 === 'ids' && (
                                                                         <TextField
                                                                             type='text'
-                                                                            value={modifier.productData ? String(modifier.productData) : ''}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'productData')}
+                                                                            value={modifier.productData2
+                                                                                ? modifier.productData2.map(product => product.id).join(',')
+                                                                                : ''}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'productData2')}
                                                                             multiline={4}
-                                                                            onFocus={handleFocus}
-                                                                            helpText='add product ids with comma(,) separator'
+                                                                            onFocus={() => handleFocus(modifier.id,'productData2')}
+                                                                            helpText='Add product IDs with comma(,) separator'
                                                                         />
-
                                                                     )}
                                                                     {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (
                                                                         <TextField
@@ -3668,7 +3900,7 @@ function Rate(props) {
                                                                                                         modifier.rateModifier2 === 'estimatedDay' ? "Estimated Delivery day" :
                                                                                                             modifier.rateModifier2 === 'availableQuan' ? "Quantity" :
                                                                                                                 modifier.rateModifier2 === 'calculateRate' ? "Calculate Rate Price" :
-                                                                                                                    "Local Code"
+                                                                                                                    "Locale Code"
                                                                             }
                                                                         />
                                                                     )}
@@ -3923,7 +4155,7 @@ function Rate(props) {
                     </Grid>
                 </div>
 
-                <Divider borderColor="border" />
+                {/* <Divider borderColor="border" />
                 <div style={{ marginTop: "3%", marginBottom: "3%" }}>
                     <Grid>
                         <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
@@ -3984,7 +4216,7 @@ function Rate(props) {
                             </LegacyCard>
                         </Grid.Cell>
                     </Grid>
-                </div>
+                </div> */}
 
                 <Divider borderColor="border" />
                 <div style={{ marginTop: "3%", marginBottom: "3%" }}>
@@ -4235,7 +4467,7 @@ function Rate(props) {
                         primaryAction={{
                             content: 'Add',
                             onAction: handleModalClose,
-                            disabled: selectedProductIds.length === 0,
+                            // disabled: selectedProductIds2.length === 0,
                         }}
                         secondaryActions={[
                             {
@@ -4261,9 +4493,9 @@ function Rate(props) {
                                 <div style={{ marginTop: '4%', height: '400px', overflowY: 'scroll' }}>
                                     <IndexTable
                                         resourceName={resourceName}
-                                        itemCount={products.length}
+                                        itemCount={productsForRateModifer.length}
                                         headings={[
-                                            { title: ` ${selectedCount2} Selected` },
+                                            { title: `Selecte` },
                                             { title: 'Image' },
                                             { title: 'Title' },
                                             { title: 'Price' },
@@ -4271,9 +4503,9 @@ function Rate(props) {
                                         selectable={false}
                                         pagination={{
                                             hasNext: pageInfo.hasNextPage,
-                                            onNext: handleNextPage,
+                                            onNext: handleNextPageRate,
                                             hasPrevious: pageInfo.hasPreviousPage,
-                                            onPrevious: handlePreviousPage,
+                                            onPrevious: handlePreviousPageRate,
                                         }}
                                     >
                                         {loadingTable ? (
@@ -4285,7 +4517,7 @@ function Rate(props) {
                                                 </IndexTable.Cell>
                                             </IndexTable.Row>
                                         ) : (
-                                            productData2
+                                            (activeTextBox === 'productsData1' ? productData2 : productData3)
                                         )}
                                     </IndexTable>
                                 </div>

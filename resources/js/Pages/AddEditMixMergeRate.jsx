@@ -63,7 +63,18 @@ function AddEditMixMergeRate(props) {
     min_shipping_rate: 0,
     mix_shipping_rate: 0
   });
+
   const handleZoneDataChange = (field) => (value) => {
+
+    const numericValue = Number(value);
+    if (numericValue < 0) {
+        setErrors((prevErrors) => ({
+            ...prevErrors,
+            [field]: 'Value cannot be negative',
+        }));
+        return; 
+    }
+
     setFormData((prevState) => ({
       ...prevState,
       [field]: value,
@@ -72,8 +83,8 @@ function AddEditMixMergeRate(props) {
       ...prevErrors,
       [field]: '',
     }));
-
   };
+
   const handleStatusChange = useCallback(
     (newStatus) => {
       const statusValue = newStatus === 'Enabled' ? 1 : 0;
@@ -365,14 +376,14 @@ function AddEditMixMergeRate(props) {
                       label="Minimum Shipping Rate (Optional)"
                       value={formData.min_shipping_rate}
                       onChange={handleZoneDataChange('min_shipping_rate')}
-                    // helpText='Minimum shipping rate would be used when calculated rate is less than minimum rate'
+                      error={errors.min_shipping_rate}
                     />
                     <TextField
                       type="number"
                       label="Maximum Shipping Rate (Optional)"
                       value={formData.mix_shipping_rate}
                       onChange={handleZoneDataChange('mix_shipping_rate')}
-                    // helpText='Maximum shipping rate would be used when calculated rate is greater than maximum rate'
+                      error={errors.mix_shipping_rate} 
                     />
                   </FormLayout.Group>
                 </div>

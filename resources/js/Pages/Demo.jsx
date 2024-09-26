@@ -354,6 +354,101 @@
 // export default RateModifiersComponent;
 
 
+
+{/* <div style={{ marginTop: '2%' }}>
+<Grid>
+  <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+    <div style={{ marginTop: '5%' }}>
+      <Text variant="headingMd" as="h6">Mix/Merge Rate Setting</Text>
+    </div>
+    <div style={{ marginTop: '4%' }}>
+      <List>
+        <List.Item>
+          When product rate set combine it with all product rates & additive with normal rate.
+        </List.Item>
+      </List>
+    </div>
+  </Grid.Cell>
+  <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+    <LegacyCard sectioned>
+      <div style={{ marginBottom: "2%", marginLeft: "83%" }}>
+        <Button variant='primary' onClick={handleAddMixMergeRate}  >Merge Rates</Button>
+      </div>
+      <Banner tone="warning">
+        <p>
+          If the first option of mix/merge rate setting is Yes (Automatic), the merge rate will not work.
+        </p>
+      </Banner>
+      <div style={{ marginTop: "3%" }}>
+        <Text variant="headingXs" as="h6">
+          Do you want to combine all product/tag/SKU/type/vendor shipping rates into one rate?
+        </Text>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: "2%" }}>
+          <RadioButton
+            label="Yes (Automatic)"
+            checked={settings.mix_merge_rate === 0}
+            id="yes"
+            name="mix_merge_rate"
+            onChange={() => handleCheckedChange('mix_merge_rate', 0)}
+          />
+          <RadioButton
+            label="No (Manually - Using merge rate)"
+            checked={settings.mix_merge_rate === 1}
+            id="No"
+            name="mix_merge_rate"
+            onChange={() => handleCheckedChange('mix_merge_rate', 1)}
+          />
+        </div>
+        {settings.mix_merge_rate !== 1 && (
+          <div style={{ marginTop: '3%' }}>
+            <p>
+              Applicable only if you set shipping rates based on product. If the cart contains some products with rate and some items without rate then a default rate like weight-based will come along with product-based rate.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: "2%" }}>
+              <RadioButton
+                label="Yes"
+                checked={settings.mix_merge_rate_1 === 0}
+                id="yesMix"
+                name="mix_merge_rate_1"
+                onChange={() => handleCheckedChange('mix_merge_rate_1', 0)}
+              />
+              <RadioButton
+                label="No"
+                checked={settings.mix_merge_rate_1 === 1}
+                id="NoMix"
+                name="mix_merge_rate_1"
+                onChange={() => handleCheckedChange('mix_merge_rate_1', 1)}
+              />
+            </div>
+            {settings.mix_merge_rate_1 !== 1 && (
+              <div style={{ marginTop: "3%" }}>
+                <FormLayout>
+                  <TextField
+                    label="Additional Description of Mix Rate"
+                    placeholder='Included with product base rate'
+                    value={settings.additional_description_of_mix_rate}
+                    onChange={handleInputChange('additional_description_of_mix_rate')}
+
+                  />
+                  <TextField
+                    label="Maximum Price of Auto Product Base Mix Rate"
+                    value={settings.max_price_of_auto_product_base_mix_rate}
+                    onChange={handleInputChange('max_price_of_auto_product_base_mix_rate')}
+                    type="number"
+                    placeholder='0.00'
+                  />
+                </FormLayout>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </LegacyCard>
+  </Grid.Cell>
+</Grid>
+</div> */}
+
+
 import React from 'react'
 
 function Demo() {

@@ -134,11 +134,18 @@ function Rate(props) {
         hasNextPage: false,
         hasPreviousPage: false
     });
+    const [pageInfoForRate, setPageInfoForRate] = useState({
+        startCursor: null,
+        endCursor: null,
+        hasNextPage: false,
+        hasPreviousPage: false
+    });
     // const [products, setProducts] = useState([]);
     const [productsForRateModifer, setProductsForRateModifer] = useState([])
     const [productsForSurcharge, setProductsForSurcharge] = useState([])
     const [productsForExcludeRate, setProductsForExcludeRate] = useState([])
-    const [selectedProductIds, setSelectedProductIds] = useState([]);
+    const [selectedProductIds2, setSelectedProductIds2] = useState([]);
+    const [selectedProductIds3, setSelectedProductIds3] = useState([]);
     const [date, setDate] = useState({ startDate: '', endDate: '' });
     const handleDateChange = (key, value) => {
         setDate(prevDates => {
@@ -200,7 +207,7 @@ function Rate(props) {
                 unit: shop_weight_unit
             })));
         }
-        console.log('vsalue', value)
+      
     };
 
     const tierOptions = [
@@ -277,8 +284,12 @@ function Rate(props) {
         }));
     };
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const handleFocus = useCallback(() => {
+    const[activeTextBox,setActiveTextBox]= ('')
+
+    const handleFocus = useCallback((id,value) => {
         setIsModalOpen(true);
+        console.log(value)
+        setActiveTextBox(value)
     }, []);
 
     const handleModalClose = useCallback(() => {
@@ -309,7 +320,8 @@ function Rate(props) {
                 modifierType: 'Fixed',
                 adjustment: '',
                 effect: 'Decrease',
-                productData: []
+                productData1: [],
+                productData2: []
             },
         ]);
 
@@ -321,7 +333,8 @@ function Rate(props) {
     useEffect(() => {
         if (rateModifiers.length === 0) return;
 
-        const selectedProducts = products.filter(product => selectedProductIds.includes(product.id));
+        const selectedProducts1 = productsForRateModifer.filter(product => selectedProductIds2.includes(product.id));
+        const selectedProducts2 = productsForRateModifer.filter(product => selectedProductIds3.includes(product.id));
 
         setRateModifiers((prevModifiers) => {
             // Find the latest modifier to update
@@ -331,7 +344,12 @@ function Rate(props) {
             const updatedModifiers = [...prevModifiers];
             updatedModifiers[lastModifierIndex] = {
                 ...updatedModifiers[lastModifierIndex],
-                productData: selectedProducts.map(({ id, title, price }) => ({
+                productData1: selectedProducts1.map(({ id, title, price }) => ({
+                    id,
+                    title,
+                    price,
+                })),
+                productData2: selectedProducts2.map(({ id, title, price }) => ({
                     id,
                     title,
                     price,
@@ -340,7 +358,7 @@ function Rate(props) {
 
             return updatedModifiers;
         });
-    }, [selectedProductIds, productsForRateModifer]);
+    }, [selectedProductIds2, productsForRateModifer,selectedProductIds3]);
 
     const handleRemoveRateModifier = (id) => {
         setRateModifiers((prevModifiers) =>
@@ -355,8 +373,6 @@ function Rate(props) {
 
     const handleRateModifierChange = (id, field) => (value) => {
         const option = rateModifiersOptions.find(opt => opt.value === value);
-
-        console.log(field, value)
 
         setRateModifiers((prevModifiers) =>
             prevModifiers.map((modifier) => {
@@ -520,7 +536,7 @@ function Rate(props) {
                 const selectedIds = response.data.rate.rate_modifiers.flatMap(modifier =>
                     modifier.productData ? modifier.productData.map(product => product.id) : []
                 );
-                setSelectedProductIds(selectedIds);
+                setSelectedProductIds2(selectedIds);
             }
 
             if (response.data.rate.cart_condition) {
@@ -1557,8 +1573,6 @@ function Rate(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
-            console.log(token)
-
             const queryArray = Object.values(textFields).filter(value => value.trim() !== '');
             const queryString = queryArray.join(' ');
 
@@ -1610,8 +1624,7 @@ function Rate(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
-            console.log(token)
-
+           
             const queryArray = Object.values(textFieldsForExcludeRate).filter(value => value.trim() !== '');
             const queryString = queryArray.join(' ');
 
@@ -1656,6 +1669,59 @@ function Rate(props) {
     };
 
 
+    const fetchProductsForRate = async (cursor, direction) => {
+        try {
+            setLoadingTable(true)
+            const app = createApp({
+                apiKey: SHOPIFY_API_KEY,
+                host: props.host,
+            });
+            const token = await getSessionToken(app);
+           
+            const queryString = ''
+
+            const payload = {
+                ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
+                query: queryString
+            };
+
+            const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const productData = response.data;
+            setProductsForRateModifer(productData.products)
+        
+
+            setPageInfoForRate({
+                startCursor: productData.startCursor,
+                endCursor: productData.endCursor,
+                hasNextPage: productData.hasNextPage,
+                hasPreviousPage: productData.hasPreviousPage,
+            });
+            setLoading(false);
+            setLoadingTable(false)
+        } catch (error) {
+            setLoadingTable
+            setLoading(false);
+            console.error('Error fetching product data:', error);
+        }
+    };
+
+    const handleNextPageRate = () => {
+        if (pageInfoForRate.hasNextPage) {
+            fetchProductsForRate(pageInfoForEclude.endCursor, 'next');
+        }
+    };
+    const handlePreviousPageRate = () => {
+        if (pageInfoForRate.hasPreviousPage) {
+            fetchProductsForRate(pageInfoForEclude.startCursor, 'prev');
+        }
+    };
+
+
 
     const resourceName = {
         singular: 'order',
@@ -1676,6 +1742,7 @@ function Rate(props) {
             navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
         }
         fetchProductsForExcludeRate()
+        fetchProductsForRate()
     }, [formData.id, zone_id, navigate]);
 
     const handleProductChange = (productId, checked, text = '') => {
@@ -1723,7 +1790,6 @@ function Rate(props) {
     const rowMarkup = filteredProducts?.map(({ id, title, image, price }, index) => {
         const isChecked = Array.isArray(rate_based_on_surcharge.productData) && rate_based_on_surcharge.productData.some(item => item.id === id);
         const productValue = Array.isArray(rate_based_on_surcharge.productData) ? rate_based_on_surcharge.productData.find(item => item.id === id)?.value || '' : '';
-        console.log(isChecked)
         return (
             <IndexTable.Row
                 id={id}
@@ -1775,9 +1841,6 @@ function Rate(props) {
         : productsForExcludeRate?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
 
     const selectedCount1 = exclude_Rate.productsData?.length || 0
-
-    console.log(filteredProduct)
-
     const productData1 = filteredProduct?.map(({ id, title, image, price }, index) => {
         return (
             <IndexTable.Row
@@ -1823,48 +1886,88 @@ function Rate(props) {
         });
     };
 
-    // const handleCheckboxChange2 = (id) => {
-    //     setSelectedProductIds((prevSelected) =>
-    //         prevSelected.includes(id)
-    //             ? prevSelected.filter((productId) => productId !== id)
-    //             : [...prevSelected, id]
-    //     );
-    // };
-    // const selectedCount2 = selectedProductIds.length;
+    const handleCheckboxChange2 = (id) => {
+        setSelectedProductIds2((prevSelected) =>
+            prevSelected.includes(id)
+                ? prevSelected.filter((productId) => productId !== id)
+                : [...prevSelected, id]
+        );
+    };
 
-    // const productData2 = products.map(({ id, title, image, price }, index) => (
-    //     <IndexTable.Row
-    //         id={id}
-    //         key={id}
-    //         position={index}
-    //     >
-    //         <IndexTable.Cell>
-    //             <Checkbox
-    //                 checked={selectedProductIds.includes(id)}
-    //                 onChange={() => handleCheckboxChange2(id)}
-    //             />
-    //         </IndexTable.Cell>
-    //         <IndexTable.Cell>
-    //             <Thumbnail
-    //                 source={image}
-    //                 size="small"
-    //                 alt={title}
-    //             />
-    //         </IndexTable.Cell>
-    //         <IndexTable.Cell>
-    //             <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
-    //                 <Text fontWeight="bold" as="span">
-    //                     {title}
-    //                 </Text>
-    //             </div>
-    //         </IndexTable.Cell>
-    //         <IndexTable.Cell>
-    //             <Text fontWeight="bold" as="span">
-    //                 {price}
-    //             </Text>
-    //         </IndexTable.Cell>
-    //     </IndexTable.Row>
-    // ));
+    const selectedCount2 = selectedProductIds2.length;
+    console.log('selectedProductIds2',selectedProductIds2); 
+    console.log('selectedProductIds3',selectedProductIds3); // Logs selected product objects
+
+
+    const productData2 = productsForRateModifer?.map(({ id, title, image, price }, index) => (
+        <IndexTable.Row id={id} key={id} position={index}>
+            <IndexTable.Cell>
+                <Checkbox
+                     checked={selectedProductIds2.includes(id)}
+                     onChange={() => handleCheckboxChange2(id)}
+                />
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <Thumbnail source={image} size="small" alt={title} />
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+                    <Text fontWeight="bold" as="span">
+                        {title}
+                    </Text>
+                </div>
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <Text fontWeight="bold" as="span">
+                    {price}
+                </Text>
+            </IndexTable.Cell>
+        </IndexTable.Row>
+    ));
+
+
+    const handleCheckboxChange3 = (id) => {
+        setSelectedProductIds3((prevSelected) =>
+            prevSelected.includes(id)
+                ? prevSelected.filter((productId) => productId !== id)
+                : [...prevSelected, id]
+        );
+    };
+    const selectedCount3 = selectedProductIds3.length;
+
+    const productData3 = productsForRateModifer?.map(({ id, title, image, price }, index) => (
+        <IndexTable.Row
+            id={id}
+            key={id}
+            position={index}
+        >
+            <IndexTable.Cell>
+                <Checkbox
+                    checked={selectedProductIds3.includes(id)}
+                    onChange={() => handleCheckboxChange3(id)}
+                />
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <Thumbnail
+                    source={image}
+                    size="small"
+                    alt={title}
+                />
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+                    <Text fontWeight="bold" as="span">
+                        {title}
+                    </Text>
+                </div>
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <Text fontWeight="bold" as="span">
+                    {price}
+                </Text>
+            </IndexTable.Cell>
+        </IndexTable.Row>
+    ));
 
     if (loading) {
         return (
@@ -3571,12 +3674,12 @@ function Rate(props) {
                                                             {modifier.rateModifier === 'ids' && (
                                                                 <TextField
                                                                     type='text'
-                                                                    value={modifier.productData
-                                                                        ? modifier.productData.map(product => product.id).join(',')
+                                                                    value={modifier.productData1
+                                                                        ? modifier.productData1.map(product => product.id).join(',')
                                                                         : ''}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'productData')}
+                                                                    onChange={handleRateModifierChange(modifier.id, 'productData1')}
                                                                     multiline={4}
-                                                                    onFocus={() => handleFocus(modifier.id)}
+                                                                    onFocus={() => handleFocus(modifier.id,'productData1')}
                                                                     helpText='Add product IDs with comma(,) separator'
                                                                 />
                                                             )}
@@ -3772,12 +3875,12 @@ function Rate(props) {
                                                                     {modifier.rateModifier2 === 'ids' && (
                                                                         <TextField
                                                                             type='text'
-                                                                            value={modifier.productData
-                                                                                ? modifier.productData.map(product => product.id).join(',')
+                                                                            value={modifier.productData2
+                                                                                ? modifier.productData2.map(product => product.id).join(',')
                                                                                 : ''}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'productData')}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'productData2')}
                                                                             multiline={4}
-                                                                            onFocus={() => handleFocus(modifier.id)}
+                                                                            onFocus={() => handleFocus(modifier.id,'productData2')}
                                                                             helpText='Add product IDs with comma(,) separator'
                                                                         />
                                                                     )}
@@ -4052,7 +4155,7 @@ function Rate(props) {
                     </Grid>
                 </div>
 
-                <Divider borderColor="border" />
+                {/* <Divider borderColor="border" />
                 <div style={{ marginTop: "3%", marginBottom: "3%" }}>
                     <Grid>
                         <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
@@ -4113,7 +4216,7 @@ function Rate(props) {
                             </LegacyCard>
                         </Grid.Cell>
                     </Grid>
-                </div>
+                </div> */}
 
                 <Divider borderColor="border" />
                 <div style={{ marginTop: "3%", marginBottom: "3%" }}>
@@ -4364,7 +4467,7 @@ function Rate(props) {
                         primaryAction={{
                             content: 'Add',
                             onAction: handleModalClose,
-                            disabled: selectedProductIds.length === 0,
+                            // disabled: selectedProductIds2.length === 0,
                         }}
                         secondaryActions={[
                             {
@@ -4388,9 +4491,9 @@ function Rate(props) {
                                     />
                                 </div>
                                 <div style={{ marginTop: '4%', height: '400px', overflowY: 'scroll' }}>
-                                    {/* <IndexTable
+                                    <IndexTable
                                         resourceName={resourceName}
-                                        itemCount={products.length}
+                                        itemCount={productsForRateModifer.length}
                                         headings={[
                                             { title: `Selecte` },
                                             { title: 'Image' },
@@ -4400,9 +4503,9 @@ function Rate(props) {
                                         selectable={false}
                                         pagination={{
                                             hasNext: pageInfo.hasNextPage,
-                                            onNext: handleNextPage,
+                                            onNext: handleNextPageRate,
                                             hasPrevious: pageInfo.hasPreviousPage,
-                                            onPrevious: handlePreviousPage,
+                                            onPrevious: handlePreviousPageRate,
                                         }}
                                     >
                                         {loadingTable ? (
@@ -4414,9 +4517,9 @@ function Rate(props) {
                                                 </IndexTable.Cell>
                                             </IndexTable.Row>
                                         ) : (
-                                            productData2
+                                            (activeTextBox === 'productsData1' ? productData2 : productData3)
                                         )}
-                                    </IndexTable> */}
+                                    </IndexTable>
                                 </div>
                             </div>
                         </Modal.Section>

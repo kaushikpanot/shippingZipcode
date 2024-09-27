@@ -67,7 +67,7 @@ function MergeRate(props) {
         apiKey: SHOPIFY_API_KEY,
         host: props.host,
     });
-    
+
     const getMergeRateDetails = async () => {
         const token = await getSessionToken(app);
 
@@ -94,6 +94,10 @@ function MergeRate(props) {
     };
     const AddRateNavigate = () => {
         navigate('/add-edit-merge-rate');
+    };
+
+    const BackToSetting = () => {
+        navigate('/');
     };
 
     const handleDelete = async () => {
@@ -143,7 +147,7 @@ function MergeRate(props) {
     };
 
     const rowMarkup = mixMergeRate.map(
-        ({ id, rate_name, service_code, description,tags_to_combine }, index) => (
+        ({ id, rate_name, service_code, description, tags_to_combine }, index) => (
             <IndexTable.Row
                 id={id}
                 key={id}
@@ -211,18 +215,27 @@ function MergeRate(props) {
                     <Grid.Cell columnSpan={{ xs: 10, sm: 3, md: 3, lg: 10, xl: 10 }}>
                         <Card roundedAbove="sm">
                             <BlockStack gap="200">
-                                <InlineGrid columns="1fr auto">
+                                <div style={{ display: "flex", justifyContent: "space-between" }}>
+
+
                                     <Text variant="headingLg" as="h5">
                                         Merge Rate
                                     </Text>
-                                    <Button
-                                        onClick={() => AddRateNavigate()}
-                                        variant='primary'
-                                        icon={PlusIcon}
-                                    >
-                                        Add     Merge Rate
-                                    </Button>
-                                </InlineGrid>
+                                    <div style={{ display: "flex" , gap:"20px"}}>
+                                        <Button
+                                            onClick={BackToSetting}
+                                        >
+                                            Back
+                                        </Button>
+                                        <Button
+                                            onClick={() => AddRateNavigate()}
+                                            variant='primary'
+                                            icon={PlusIcon}
+                                        >
+                                            Add     Merge Rate
+                                        </Button>
+                                    </div>
+                                </div>
                                 <div style={{ marginTop: "1%", fontWeight: "bold" }}>
                                     <Text as="p" variant="bodyMd">
                                         If the first option of the mix/merge rate setting on the shipping settings page is No (Manually - Using merge rate), this merge rate setting will work.

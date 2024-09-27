@@ -19,6 +19,33 @@ const Settings = (props) => {
   const [loadingButton, setLoadingButton] = useState(false);
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(true);
+  const getSettingData = async () => {
+    try {
+      const token = await getSessionToken(app);
+      const response = await axios.get(`${apiCommonURL}/api/settings`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = response.data.settings;
+      setSettings(prevState => ({
+        ...prevState,
+        status: data.status ?? 1,
+        shippingRate: data.shippingRate || 'All',
+        rateModifierTitle: data.rateModifierTitle || 'Append Description',
+        mix_merge_rate: data.mix_merge_rate ?? 1,
+        mix_merge_rate_1: data.mix_merge_rate_1 ?? 1,
+        additional_description_of_mix_rate: data.additional_description_of_mix_rate || '',
+        max_price_of_auto_product_base_mix_rate: data.max_price_of_auto_product_base_mix_rate || ''
+      }));
+
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching settings data:", error);
+    }
+  };
+
   const [settings, setSettings] = useState({
     status: 1,
     shippingRate: 'All',
@@ -28,7 +55,7 @@ const Settings = (props) => {
     additional_description_of_mix_rate: '',
     max_price_of_auto_product_base_mix_rate: ''
   });
-
+  console.log(settings)
   const app = createApp({
     apiKey: SHOPIFY_API_KEY,
     host: props.host,
@@ -46,34 +73,6 @@ const Settings = (props) => {
       ...prevState,
       [key]: value,
     }));
-  };
-
-  const getSettingData = async () => {
-    try {
-      const token = await getSessionToken(app);
-      const response = await axios.get(`${apiCommonURL}/api/settings`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = response.data.settings;
-      setSettings(data);
-      setSettings(prevState => ({
-        ...prevState,
-        status : data.status || 1 , 
-        shippingRate : data.shippingRate || 'All',
-        rateModifierTitle : data.rateModifierTitle || 'Append Description',
-        mix_merge_rate : data.mix_merge_rate || 1,
-        mix_merge_rate_1 : data.mix_merge_rate_1 || 1
-
-        
-
-    }));
-      setLoading(false)
-    } catch (error) {
-      console.error("Error fetching settings data:", error);
-    }
   };
 
   useEffect(() => {
@@ -322,7 +321,7 @@ const Settings = (props) => {
             <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
               <LegacyCard sectioned>
                 <div style={{ marginBottom: "2%", marginLeft: "83%" }}>
-                  <Button variant='primary' onClick={handleAddMixMergeRate}  disabled={settings.mix_merge_rate === 1}>Merge Rates</Button>
+                  <Button variant='primary' onClick={handleAddMixMergeRate} disabled={settings.mix_merge_rate === 1}>Merge Rates</Button>
                 </div>
                 <Banner tone="warning">
                   <p>
@@ -349,7 +348,7 @@ const Settings = (props) => {
                       onChange={() => handleCheckedChange('mix_merge_rate', 1)}
                     />
                   </div>
-               
+
                 </div>
               </LegacyCard>
             </Grid.Cell>

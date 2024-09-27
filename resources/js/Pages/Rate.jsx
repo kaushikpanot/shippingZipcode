@@ -204,10 +204,9 @@ function Rate(props) {
         if (value === 'order_price') {
             setTiers(prevTiers => prevTiers.map(tier => ({
                 ...tier,
-                unit: shop_weight_unit
+                unit: shop_weight_unit,
             })));
         }
-      
     };
 
     const tierOptions = [
@@ -223,6 +222,10 @@ function Rate(props) {
         if (value === 'selected') {
             SetExclude_Rate([]);
         }
+        SetExclude_Rate(prevState => ({
+            ...prevState,
+            exclude_products_textbox: ''
+        }));
     };
     const rateOptions = [
         { label: 'Set Exclude Products Option', value: 'selected' },
@@ -287,8 +290,8 @@ function Rate(props) {
     const [activeTextBox, setActiveTextBox] = useState(''); // Use useState to initialize activeTextBox
 
     const handleFocus = useCallback((id, value) => {
-      setIsModalOpen(true); 
-        setActiveTextBox(value); 
+        setIsModalOpen(true);
+        setActiveTextBox(value);
     }, []);
 
 
@@ -300,7 +303,7 @@ function Rate(props) {
         const newId = rateModifiers.length ? rateModifiers[rateModifiers.length - 1].id + 1 : 1;
         const defaultRateModifier = 'dayOfOrder';
         const defaultOption = rateModifiersOptions.find(option => option.value === defaultRateModifier);
-        
+
 
         setRateModifiers((prevModifiers) => [
             ...prevModifiers,
@@ -333,39 +336,39 @@ function Rate(props) {
     };
     useEffect(() => {
         if (rateModifiers.length === 0) return;
-    
+
         // Filter and map the selected products for productData1 and productData2
         const selectedProducts1 = productsForRateModifer.filter(product => selectedProductIds2.includes(product.id));
         const selectedProducts2 = productsForRateModifer.filter(product => selectedProductIds3.includes(product.id));
-    
+
         const mappedProductData1 = selectedProducts1.map(({ id, title, price }) => ({
             id,
             title,
             price,
         }));
-    
+
         const mappedProductData2 = selectedProducts2.map(({ id, title, price }) => ({
             id,
             title,
             price,
         }));
-    
+
         setRateModifiers((prevModifiers) => {
             // Update the latest modifier with selected products
             const lastModifierIndex = prevModifiers.length - 1;
             if (lastModifierIndex < 0) return prevModifiers;
-    
+
             const updatedModifiers = [...prevModifiers];
             updatedModifiers[lastModifierIndex] = {
                 ...updatedModifiers[lastModifierIndex],
                 productData1: mappedProductData1, // Update productData1
                 productData2: mappedProductData2, // Update productData2
             };
-    
+
             return updatedModifiers;
         });
     }, [selectedProductIds2, selectedProductIds3, productsForRateModifer]);
-    
+
 
     const handleRemoveRateModifier = (id) => {
         setRateModifiers((prevModifiers) =>
@@ -380,7 +383,7 @@ function Rate(props) {
 
     const handleRateModifierChange = (id, field) => (value) => {
         const option = rateModifiersOptions.find(opt => opt.value === value);
-    
+
         setRateModifiers((prevModifiers) =>
             prevModifiers.map((modifier) => {
                 if (modifier.id === id) {
@@ -410,16 +413,16 @@ function Rate(props) {
                             } : {}),
                         }),
                     };
-    
+
                     return newModifier;
                 }
                 return modifier;
             })
         );
     };
-    
-    
-    
+
+
+
 
 
 
@@ -1222,10 +1225,6 @@ function Rate(props) {
     const [exclude_Rate, SetExclude_Rate] = useState({
         set_exclude_products: selectedRate,
         exclude_products_radio: checkstate.exclude_products_radio,
-        product_title: '',
-        collection_id: '',
-        product_type: '',
-        product_vendor: '',
         exclude_products_textbox: '',
         productsData: []
     })
@@ -1540,7 +1539,7 @@ function Rate(props) {
         productType: '',
         productVendor: ''
     });
-    
+
     const [textFieldsForExcludeRate, setTextFieldsForExcludeRate] = useState({
         fullProductTitle: '',
         collectionId: '',
@@ -1639,7 +1638,7 @@ function Rate(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
-           
+
             const queryArray = Object.values(textFieldsForExcludeRate).filter(value => value.trim() !== '');
             const queryString = queryArray.join(' ');
 
@@ -1692,7 +1691,7 @@ function Rate(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
-           
+
             const queryString = ''
 
             const payload = {
@@ -1708,7 +1707,7 @@ function Rate(props) {
 
             const productData = response.data;
             setProductsForRateModifer(productData.products)
-        
+
 
             setPageInfoForRate({
                 startCursor: productData.startCursor,
@@ -1914,8 +1913,8 @@ function Rate(props) {
         <IndexTable.Row id={id} key={id} position={index}>
             <IndexTable.Cell>
                 <Checkbox
-                     checked={selectedProductIds2.includes(id)}
-                     onChange={() => handleCheckboxChange2(id)}
+                    checked={selectedProductIds2.includes(id)}
+                    onChange={() => handleCheckboxChange2(id)}
                 />
             </IndexTable.Cell>
             <IndexTable.Cell>
@@ -1924,7 +1923,7 @@ function Rate(props) {
             <IndexTable.Cell>
                 <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
                     <Text fontWeight="bold" as="span">
-                     {title}
+                        {title}
                     </Text>
                 </div>
             </IndexTable.Cell>
@@ -1935,8 +1934,8 @@ function Rate(props) {
             </IndexTable.Cell>
         </IndexTable.Row>
     ));
- 
-    
+
+
 
     const handleCheckboxChange3 = (id) => {
         setSelectedProductIds3((prevSelected) =>
@@ -1980,7 +1979,7 @@ function Rate(props) {
             </IndexTable.Cell>
         </IndexTable.Row>
     ));
-  
+
     if (loading) {
         return (
             <Page
@@ -3691,7 +3690,7 @@ function Rate(props) {
                                                                         : ''}
                                                                     onChange={handleRateModifierChange(modifier.id, 'productData1')}
                                                                     multiline={4}
-                                                                    onFocus={() => handleFocus(modifier.id,'productData1')}
+                                                                    onFocus={() => handleFocus(modifier.id, 'productData1')}
                                                                     helpText='Add product IDs with comma(,) separator'
                                                                 />
                                                             )}
@@ -3892,7 +3891,7 @@ function Rate(props) {
                                                                                 : ''}
                                                                             onChange={handleRateModifierChange(modifier.id, 'productData2')}
                                                                             multiline={4}
-                                                                            onFocus={() => handleFocus(modifier.id,'productData2')}
+                                                                            onFocus={() => handleFocus(modifier.id, 'productData2')}
                                                                             helpText='Add product IDs with comma(,) separator'
                                                                         />
                                                                     )}

@@ -56,7 +56,7 @@ function AddEditMixMergeRate(props) {
     service_code: '',
     description: '',
     status: 1,
-    // condition: 0,
+    condition: 0,
     price_calculation_type: 0,
     tags_to_combine: "",
     tags_to_exclude: "",
@@ -189,6 +189,7 @@ function AddEditMixMergeRate(props) {
       }))
       setToastContent("Merge rate saved successfully..");
       setShowToast(true);
+      // navigate(`/add-edit-merge-rate/${formData.id}`)
     } catch (error) {
       console.error('Error occurs', error);
       setToastContent("Error occurred while saving data");

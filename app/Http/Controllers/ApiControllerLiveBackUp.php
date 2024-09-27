@@ -1819,7 +1819,7 @@ class ApiController extends Controller
             }
         }
 
-        if ($setting->mix_merge_rate == 0 && !empty($filteredRates)) {
+        if ($setting->mix_merge_rate == 1 && !empty($filteredRates)) {
             $collection = collect($filteredRates);
 
             // Group the rates by 'merge_rate_tag'
@@ -1924,6 +1924,124 @@ class ApiController extends Controller
             // Merge the newly calculated rates with any remaining ungrouped rates
             $filteredRates = collect($filteredRates)->merge($newRates);
         }
+
+        // if ($setting->mix_merge_rate == 1 && !empty($filteredRates)) {
+        //     $collection = collect($filteredRates);
+
+        //     // Group the rates by 'merge_rate_tag'
+        //     $grouped = $collection->groupBy(function ($rate) {
+        //         // Split by commas to ensure we handle multiple tags
+        //         return explode(',', $rate->merge_rate_tag);
+        //     });
+
+        //     $newGrouped = [];
+        //     $currency = null;
+        //     $tagArr = [];
+
+        //     // Loop through each group of tags
+        //     foreach ($grouped as $tagSet => $ratesGroup) {
+        //         // Ensure $tagSet is an array even if it's a single tag
+        //         $tags = is_array($tagSet) ? $tagSet : explode(',', $tagSet);
+
+        //         foreach ($tags as $tag) {
+        //             if (!empty($tag)) {
+        //                 // Fetch MixMergeRate based on the tag
+        //                 $mixMergeRate = MixMergeRate::whereRaw("FIND_IN_SET(?, tags_to_combine)", [$tag])
+        //                     ->where('user_id', $userId)
+        //                     ->where('status', 1)
+        //                     ->first();
+
+        //                 if ($mixMergeRate) {
+        //                     $mixMergeRateId = $mixMergeRate->id;
+
+        //                     // Initialize or merge rates under each MixMergeRate id
+        //                     if (!isset($newGrouped[$mixMergeRateId])) {
+        //                         $newGrouped[$mixMergeRateId] = [];
+        //                     }
+
+        //                     // Exclude certain tags
+        //                     $tagsToExclude = explode(',', $mixMergeRate->tags_to_exclude);
+
+        //                     if (!in_array($tag, $tagsToExclude)) {
+        //                         $newGrouped[$mixMergeRateId] = array_merge($newGrouped[$mixMergeRateId], $ratesGroup->toArray());
+        //                     }
+        //                 }
+
+        //                 $tagArr[] = $tag;
+        //             }
+        //         }
+
+        //         // Store currency (zone) if rates are not empty
+        //         if ($ratesGroup->isNotEmpty() && is_null($currency)) {
+        //             $currency = $ratesGroup->first()->zone; // Ensure to use -> for object access
+        //         }
+        //     }
+
+        //     // Remove the grouped rates from $filteredRates
+        //     $filteredRates = $filteredRates->reject(function ($rate) use ($tagArr) {
+        //         $rateTags = explode(',', $rate->merge_rate_tag); // Split the merge_rate_tag
+
+        //         // Log the current rate and tag for debugging
+        //         Log::info("Checking rate for removal", ['merge_rate_tag' => $rateTags, 'tagArr' => $tagArr]);
+
+        //         // Reject (remove) if any of the merge_rate_tags is in the tagArr
+        //         return count(array_intersect($rateTags, $tagArr)) > 0; // Check for intersection
+        //     });
+
+        //     // Calculate and add new rates
+        //     $newRates = [];
+        //     foreach ($newGrouped as $mixMergeRateId => $groupRates) {
+        //         $groupRatesCollection = collect($groupRates);
+        //         $mixMergeRate = MixMergeRate::find($mixMergeRateId);
+
+        //         if ($mixMergeRate) {
+        //             $allTagBasePrice = 0;
+
+        //             // Price calculation based on the type
+        //             switch ($mixMergeRate->price_calculation_type) {
+        //                 case 0: // Sum
+        //                     $allTagBasePrice = $groupRatesCollection->sum('base_price');
+        //                     break;
+        //                 case 1: // Average
+        //                     $allTagBasePrice = round($groupRatesCollection->avg('base_price'), 2);
+        //                     break;
+        //                 case 2: // Minimum
+        //                     $allTagBasePrice = $groupRatesCollection->min('base_price');
+        //                     break;
+        //                 case 3: // Maximum
+        //                     $allTagBasePrice = $groupRatesCollection->max('base_price');
+        //                     break;
+        //                 case 4: // Product
+        //                     $allTagBasePrice = $groupRatesCollection->reduce(function ($carry, $item) {
+        //                         return $carry * $item->base_price; // Ensure to use -> for object access
+        //                     }, 1);
+        //                     break;
+        //                 default:
+        //                     $allTagBasePrice = $groupRatesCollection->first()->base_price; // Ensure to use -> for object access
+        //                     break;
+        //             }
+
+        //             // Apply min/max shipping rate constraints
+        //             if ($mixMergeRate->min_shipping_rate > $allTagBasePrice && $mixMergeRate->min_shipping_rate != 0) {
+        //                 $allTagBasePrice = $mixMergeRate->min_shipping_rate;
+        //             } elseif ($mixMergeRate->mix_shipping_rate < $allTagBasePrice && $mixMergeRate->mix_shipping_rate != 0) {
+        //                 $allTagBasePrice = $mixMergeRate->mix_shipping_rate;
+        //             }
+
+        //             // Add to new rates
+        //             $newRates[] = (object)[
+        //                 'name' => $mixMergeRate->rate_name,
+        //                 'service_code' => $mixMergeRate->service_code,
+        //                 'description' => $mixMergeRate->description,
+        //                 'base_price' => $allTagBasePrice,
+        //                 'zone' => $currency
+        //             ];
+        //         }
+        //     }
+
+        //     // Merge the newly calculated rates with any remaining ungrouped rates
+        //     $filteredRates = collect($filteredRates)->merge($newRates);
+        // }
 
         if ($setting->shippingRate == 'Only Higher') {
             $maxRate = $filteredRates->max('base_price');
@@ -2766,7 +2884,8 @@ class ApiController extends Controller
     public function getProductList(Request $request)
     {
         try {
-            $shop = $request->attributes->get('shopifySession');
+            // $shop = $request->attributes->get('shopifySession');
+            $shop = "kaushik-panot.myshopify.com";
 
             if (!$shop) {
                 return response()->json([

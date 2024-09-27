@@ -146,7 +146,6 @@ function Rate(props) {
     const [productsForExcludeRate, setProductsForExcludeRate] = useState([])
     const [selectedProductIds2, setSelectedProductIds2] = useState([]);
     const [selectedProductIds3, setSelectedProductIds3] = useState([]);
-    console.log(selectedProductIds2,selectedProductIds3)
     const [date, setDate] = useState({ startDate: '', endDate: '' });
     const handleDateChange = (key, value) => {
         setDate(prevDates => {
@@ -381,7 +380,7 @@ function Rate(props) {
 
     const handleRateModifierChange = (id, field) => (value) => {
         const option = rateModifiersOptions.find(opt => opt.value === value);
-
+    
         setRateModifiers((prevModifiers) =>
             prevModifiers.map((modifier) => {
                 if (modifier.id === id) {
@@ -392,34 +391,35 @@ function Rate(props) {
                             label1: option?.mainlabel || '',
                             unit: value === 'weight' ? shop_weight_unit : '',
                             rateDay: '',
-                            rateOperator: value === 'availableQuan'
-                                ? 'lthenoequal'
-                                : (value === 'title' || value === 'address' ? 'contains' : option?.mainlabel || ''),
+                            ...(value === 'availableQuan' && {
+                                rateOperator: 'lthenoequal',
+                            }),
+                            ...(value === 'title' || value === 'address' ? {
+                                rateOperator: 'contains',
+                            } : {}),
                         }),
                         ...(field === 'rateModifier2' && {
                             label2: option?.mainlabel || '',
                             unit2: value === 'weight' ? shop_weight_unit : '',
                             rateDay2: '',
-                            rateOperator2: value === 'availableQuan'
-                                ? 'lthenoequal'
-                                : (value === 'title' || value === 'address' ? 'contains' : option?.mainlabel || ''),
+                            ...(value === 'availableQuan' && {
+                                rateOperator2: 'lthenoequal',
+                            }),
+                            ...(value === 'title' || value === 'address' ? {
+                                rateOperator2: 'contains',
+                            } : {}),
                         }),
-
-                        // ...(value === 'availableQuan' && {
-                        //     rateOperator: 'lthenoequal',
-                        //     rateOperator2: 'lthenoequal',
-                        // }),
-
-                        // ...(['title', 'address'].includes(field) && {
-                        //     rateOperator:  'contains',
-                        // }),
                     };
+    
                     return newModifier;
                 }
                 return modifier;
             })
         );
     };
+    
+    
+    
 
 
 
@@ -1910,10 +1910,6 @@ function Rate(props) {
     };
 
     const selectedCount2 = selectedProductIds2.length;
- 
-    console.log(rateModifiers)
-
-
     const productData2 = productsForRateModifer?.map(({ id, title, image, price }, index) => (
         <IndexTable.Row id={id} key={id} position={index}>
             <IndexTable.Cell>

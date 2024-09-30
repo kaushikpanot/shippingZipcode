@@ -109,7 +109,7 @@ function AddEditMixMergeRate(props) {
   ];
   const navigateHome = () => {
     // 👇️ Navigate to /
-    navigate('/mixMergeRate');
+    navigate('/');
   };
 
   const editMergeRate = async () => {

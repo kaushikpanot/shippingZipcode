@@ -59,7 +59,7 @@ function MergeRate(props) {
     const toggleToast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
     const toggleModal = useCallback(() => setActive((active) => !active), []);
 
-    const toastMarkup = toastActive ? (
+    const toastMarkupMixRate = toastActive ? (
         <Toast content="Merge rate deleted successfully." error onDismiss={toggleToast} />
     ) : null;
 
@@ -303,7 +303,7 @@ function MergeRate(props) {
                     </TextContainer>
                 </Modal.Section>
             </Modal>
-            {toastMarkup}
+            {toastMarkupMixRate}
         </Page>
     );
 }

@@ -1,14 +1,20 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   Toast, Select, Page, Button, Grid, Divider,
-  LegacyCard, RadioButton, Text, Banner, TextField, FormLayout, List, SkeletonDisplayText, SkeletonBodyText, Card
+  LegacyCard, RadioButton, Text, Banner, TextField, BlockStack, List, SkeletonDisplayText, SkeletonBodyText, Card, Icon, IndexTable,
+  Link, ButtonGroup, Modal, TextContainer
 } from '@shopify/polaris';
 import axios from 'axios';
 import '../../../public/css/style.css';
 import createApp from '@shopify/app-bridge';
 import { getSessionToken } from "@shopify/app-bridge-utils";
-import { PlusIcon } from '@shopify/polaris-icons';
+import {
+  PlusIcon, EditIcon,
+  DeleteIcon,
+  SearchIcon
+} from '@shopify/polaris-icons';
 import { useNavigate } from 'react-router-dom';
+
 
 
 const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
@@ -17,10 +23,53 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 const Settings = (props) => {
   const navigate = useNavigate()
   const [loadingButton, setLoadingButton] = useState(false);
-  const [active, setActive] = useState(false);
+  const [activeToast, setActiveToast] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingDelete, setLoadingDelete] = useState(false);
+  const [mixMergeRate, setMixMergeRate] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage] = useState(5);
+  const [active, setActive] = useState(false);
+  const [toastActive, setToastActive] = useState(false);
+  const [selectedRateId, setSelectedRateId] = useState(null);
+  const [textFieldValue, setTextFieldValue] = useState("");
+  const [rateName, setRateName] = useState("");
+  const app = createApp({
+    apiKey: SHOPIFY_API_KEY,
+    host: props.host,
+  });
+
+  const handleTextFieldChange = useCallback(
+    (value) => setTextFieldValue(value),
+    [],
+  );
+  const handleNextPage = useCallback(() => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  }, [currentPage, totalPages]);
+
+  const handlePreviousPage = useCallback(() => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  }, [currentPage]);
+  const handleEditMergeRate = (id) => {
+    navigate(`/add-edit-merge-rate/${id}`);
+  };
+  const AddRateNavigate = () => {
+    navigate('/add-edit-merge-rate');
+  };
+
+
+
   const getSettingData = async () => {
     try {
+      const app = createApp({
+        apiKey: SHOPIFY_API_KEY,
+        host: props.host,
+      });
       const token = await getSessionToken(app);
       const response = await axios.get(`${apiCommonURL}/api/settings`, {
         headers: {
@@ -45,6 +94,22 @@ const Settings = (props) => {
       console.error("Error fetching settings data:", error);
     }
   };
+  const getMergeRateDetails = async () => {
+    const token = await getSessionToken(app);
+
+    setLoading(true);
+    try {
+      const response = await axios.get(`${apiCommonURL}/api/mixMergeRate`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      setMixMergeRate(response.data.mixMergeRates);
+      setLoading(false);
+    } catch (error) {
+      console.error(error, 'error from');
+    }
+  };
 
   const [settings, setSettings] = useState({
     status: 1,
@@ -56,10 +121,7 @@ const Settings = (props) => {
     max_price_of_auto_product_base_mix_rate: ''
   });
   console.log(settings)
-  const app = createApp({
-    apiKey: SHOPIFY_API_KEY,
-    host: props.host,
-  });
+
 
   const handleInputChange = useCallback((field) => (value) => {
     setSettings((prevState) => ({
@@ -77,6 +139,7 @@ const Settings = (props) => {
 
   useEffect(() => {
     getSettingData();
+    getMergeRateDetails()
   }, []);
 
   const handleSaveSettings = async () => {
@@ -88,7 +151,7 @@ const Settings = (props) => {
           'Authorization': `Bearer ${token}`
         }
       });
-      setActive(true);
+      setActiveToast(true);
     } catch (error) {
       console.error('Error saving settings:', error);
     }
@@ -97,9 +160,33 @@ const Settings = (props) => {
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      const token = await getSessionToken(app);
+      await axios.delete(`${apiCommonURL}/api/mixMergeRate/${selectedRateId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      toggleModal();
+      toggleToast();
+      getMergeRateDetails();
+    } catch (error) {
+      console.error('Error deleting Mix merge:', error);
+    } finally {
+      setLoadingDelete(false);
+    }
+  };
 
-  const toastMarkup = active ? (
-    <Toast content="Setting saved successfully." onDismiss={() => setActive(false)} />
+  const toggleToast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
+  const toggleModal = useCallback(() => setActive((active) => !active), []);
+
+  const toastMarkupMixRate = toastActive ? (
+    <Toast content="Merge rate deleted successfully." error onDismiss={toggleToast} />
+  ) : null;
+
+  const toastMarkup = activeToast ? (
+    <Toast content="Setting saved successfully." onDismiss={() => setActiveToast(false)} />
   ) : null;
   if (loading) {
     return (
@@ -208,6 +295,52 @@ const Settings = (props) => {
   const handleAddMixMergeRate = () => {
     navigate('/mixMergeRate');
   };
+
+
+  // ====================================================
+
+
+
+  const handleDeleteClick = (id, rateName) => {
+    setSelectedRateId(id);
+    setRateName(rateName);
+    toggleModal();
+  };
+
+  const resourceName = {
+    singular: 'Mix merge rates',
+    plural: 'Mix Merge Rates',
+  };
+  const rowMarkup = mixMergeRate.map(
+    ({ id, rate_name, service_code, description, tags_to_combine }, index) => (
+      <IndexTable.Row
+        id={id}
+        key={id}
+        position={index}
+      >
+        <IndexTable.Cell>
+          <Link
+            dataPrimaryLink
+            onClick={() => handleEditMergeRate(id)}>
+            <Text variant="bodyMd" fontWeight="bold" as="span">
+              {rate_name}
+            </Text>
+          </Link>
+        </IndexTable.Cell>
+        <IndexTable.Cell>
+          {service_code}
+        </IndexTable.Cell>
+        <IndexTable.Cell> {description}</IndexTable.Cell>
+        <IndexTable.Cell> {tags_to_combine}</IndexTable.Cell>
+        <IndexTable.Cell>
+          <ButtonGroup>
+            <Button icon={EditIcon} variant="primary" onClick={() => handleEditMergeRate(id)} />
+            <Button icon={DeleteIcon} variant="primary" tone="critical" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteClick(id, rate_name); }} />
+          </ButtonGroup>
+        </IndexTable.Cell>
+      </IndexTable.Row>
+    ),
+  );
   return (
     <div>
       <div style={{ position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#F1F1F1" }}>
@@ -320,9 +453,6 @@ const Settings = (props) => {
             </Grid.Cell>
             <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
               <LegacyCard sectioned>
-                <div style={{ marginBottom: "2%", marginLeft: "83%" }}>
-                  <Button variant='primary' onClick={handleAddMixMergeRate} disabled={settings.mix_merge_rate === 1}>Merge Rates</Button>
-                </div>
                 <Banner tone="warning">
                   <p>
                     If the first option of mix/merge rate setting is No, the merge rate will not work.
@@ -349,12 +479,164 @@ const Settings = (props) => {
                     />
                   </div>
 
+
                 </div>
+
+
+                {settings.mix_merge_rate === 0 && (
+                  <div>
+                    <div style={{ marginTop: "4%", marginBottom: "4%" }}>
+                      <Divider borderColor="border" />
+                    </div>
+                    <BlockStack gap="200">
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+
+
+                        <Text variant="headingMd" as="h6">
+                          Merge Rate
+                        </Text>
+                        <div style={{ display: "flex", gap: "20px" }}>
+                          <Button
+                            onClick={() => AddRateNavigate()}
+                            variant='primary'
+                            icon={PlusIcon}
+                          >
+                            Add     Merge Rate
+                          </Button>
+                        </div>
+                      </div>
+                      <div style={{ marginTop: "1%", fontWeight: "bold" }}>
+                        <Text as="p" variant="bodyMd">
+                          If the first option of the mix/merge rate setting on the shipping settings page is No (Manually - Using merge rate), this merge rate setting will work.
+                        </Text>
+                      </div>
+                    </BlockStack>
+                    <div style={{ marginTop: "3%" }}>
+                      <TextField
+                        type="text"
+                        value={textFieldValue}
+                        placeholder="Search by name..."
+                        onChange={handleTextFieldChange}
+                        prefix={<Icon source={SearchIcon} />}
+                        autoComplete="off"
+                      />
+                    </div>
+                    <div style={{ marginTop: "2.5%", position: 'relative' }}>
+                      <IndexTable
+                        resourceName={resourceName}
+                        itemCount={mixMergeRate.length}
+                        headings={[
+                          { title: 'Rate Name' },
+                          { title: 'Service Code' },
+                          { title: 'Description' },
+                          { title: 'Tags' },
+                          { title: 'Action' },
+                        ]}
+                        paginated
+                        pagination={{
+                          hasPrevious: currentPage > 1,
+                          hasNext: currentPage < totalPages,
+                          onNext: handleNextPage,
+                          onPrevious: handlePreviousPage,
+                        }}
+                        selectable={false}
+                      >
+                        {rowMarkup}
+                      </IndexTable>
+                    </div>
+                  </div>
+                )}
+                {/* <div style={{ marginTop: "4%", marginBottom: "4%" }}>
+                  <Divider borderColor="border" />
+                </div>
+                <BlockStack gap="200">
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+
+
+                    <Text variant="headingMd" as="h6">
+                      Merge Rate
+                    </Text>
+                    <div style={{ display: "flex", gap: "20px" }}>
+                      <Button
+                        onClick={() => AddRateNavigate()}
+                        variant='primary'
+                        icon={PlusIcon}
+                      >
+                        Add     Merge Rate
+                      </Button>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: "1%", fontWeight: "bold" }}>
+                    <Text as="p" variant="bodyMd">
+                      If the first option of the mix/merge rate setting on the shipping settings page is No (Manually - Using merge rate), this merge rate setting will work.
+                    </Text>
+                  </div>
+                </BlockStack>
+                <div style={{ marginTop: "3%" }}>
+                  <TextField
+                    type="text"
+                    value={textFieldValue}
+                    placeholder="Search by name..."
+                    onChange={handleTextFieldChange}
+                    prefix={<Icon source={SearchIcon} />}
+                    autoComplete="off"
+                  />
+                </div>
+                <div style={{ marginTop: "2.5%", position: 'relative' }}>
+                  <IndexTable
+                    resourceName={resourceName}
+                    itemCount={mixMergeRate.length}
+                    headings={[
+                      { title: 'Rate Name' },
+                      { title: 'Service Code' },
+                      { title: 'Description' },
+                      { title: 'Tags' },
+                      { title: 'Action' },
+                    ]}
+                    paginated
+                    pagination={{
+                      hasPrevious: currentPage > 1,
+                      hasNext: currentPage < totalPages,
+                      onNext: handleNextPage,
+                      onPrevious: handlePreviousPage,
+                    }}
+                    selectable={false}
+                  >
+                    {rowMarkup}
+                  </IndexTable>
+                </div> */}
+
+
               </LegacyCard>
             </Grid.Cell>
           </Grid>
         </div>
       </Page>
+
+      <Modal
+        open={active}
+        onClose={toggleModal}
+        title="Delete Rate"
+        primaryAction={{
+          content: 'Delete',
+          destructive: true,
+          onAction: handleDelete,
+          loading: loadingDelete
+        }}
+        secondaryActions={[
+          {
+            content: 'Cancel',
+            onAction: toggleModal,
+          },
+        ]}
+      >
+        <Modal.Section>
+          <TextContainer>
+            <p >Are You Sure Delete <strong style={{ fontWeight: "bolder" }}>" {rateName} "</strong> ?</p>
+          </TextContainer>
+        </Modal.Section>
+      </Modal>
+      {toastMarkupMixRate}
     </div>
   );
 };

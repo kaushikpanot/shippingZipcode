@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import moment from 'moment';
 import Demo from './Demo'
+import debounce from 'lodash.debounce';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Page,
@@ -706,23 +707,6 @@ function Rate(props) {
         });
     };
 
-    const handlesearchChange = useCallback(
-        (newValue) => {
-            setValue(newValue);
-            if (newValue === '') {
-                setFilteredProducts(products);
-            } else {
-                const lowerCaseValue = newValue.toLowerCase();
-                setFilteredProducts(products.filter(product =>
-                    product.title.toLowerCase().includes(lowerCaseValue)
-                ));
-            }
-        },
-        [productsForSurcharge]
-    );
-    const handleClearButtonClick = useCallback(() => {
-        setValue('');
-    }, [productsForSurcharge]);
 
 
 
@@ -1682,8 +1666,8 @@ function Rate(props) {
         }
     };
 
-
-    const fetchProductsForRate = async (cursor, direction) => {
+    const [textFieldValue, setTextFieldValue] = useState("");
+    const fetchProductsForRate = async (value = null, cursor, direction) => {
         try {
             setLoadingTable(true)
             const app = createApp({
@@ -1692,13 +1676,12 @@ function Rate(props) {
             });
             const token = await getSessionToken(app);
 
-            const queryString = ''
-
+            console.log(token)
             const payload = {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
-                query: queryString
+                ...(value ? { query: value } : {}),
             };
-
+           
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -1715,6 +1698,7 @@ function Rate(props) {
                 hasNextPage: productData.hasNextPage,
                 hasPreviousPage: productData.hasPreviousPage,
             });
+            console.log(productData)
             setLoading(false);
             setLoadingTable(false)
         } catch (error) {
@@ -1726,16 +1710,33 @@ function Rate(props) {
 
     const handleNextPageRate = () => {
         if (pageInfoForRate.hasNextPage) {
-            fetchProductsForRate(pageInfoForEclude.endCursor, 'next');
+            fetchProductsForRate(null,pageInfoForRate.endCursor, 'next');
         }
     };
     const handlePreviousPageRate = () => {
         if (pageInfoForRate.hasPreviousPage) {
-            fetchProductsForRate(pageInfoForEclude.startCursor, 'prev');
+            fetchProductsForRate(null,pageInfoForRate.startCursor, 'prev');
         }
     };
 
 
+    const debouncedFetchProducts = useCallback(
+        debounce((value) => {
+            fetchProductsForRate(value);
+        }, 1000),
+        []
+    );
+
+    const handlesearchChange = useCallback(
+        (value) => {
+            setTextFieldValue(value);
+            debouncedFetchProducts(value);
+        },
+        [debouncedFetchProducts]
+    );
+    const handleClearButtonClick = useCallback(() => {
+        setTextFieldValue('');
+    }, [productsForSurcharge]);
 
     const resourceName = {
         singular: 'order',
@@ -1979,6 +1980,8 @@ function Rate(props) {
             </IndexTable.Cell>
         </IndexTable.Row>
     ));
+
+    const selectedCountForRate = activeTextBox === 'productData1' ? selectedCount2 : selectedCount3;
 
     if (loading) {
         return (
@@ -4491,31 +4494,29 @@ function Rate(props) {
                             <div style={{ position: 'relative' }}>
                                 <div style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
                                     <TextField
-                                        placeholder='search'
-                                        onChange={handlesearchChange}
-                                        value={value}
                                         type="text"
-                                        prefix={<Icon source={SearchIcon} color="inkLighter" />}
+                                        value={textFieldValue}
+                                        placeholder="Search by Title..."
+                                        onChange={handlesearchChange}
+                                        prefix={<Icon source={SearchIcon} />}
                                         autoComplete="off"
-                                        clearButton
-                                        onClearButtonClick={handleClearButtonClick}
                                     />
                                 </div>
-                                <div style={{ marginTop: '4%', height: '400px', overflowY: 'scroll' }}>
+                                <div style={{ marginTop: '4%',overflowY: 'scroll' }}>
                                     <IndexTable
                                         resourceName={resourceName}
                                         itemCount={productsForRateModifer.length}
                                         headings={[
-                                            { title: `Selecte` },
+                                            { title: `${selectedCountForRate} Selected` },
                                             { title: 'Image' },
                                             { title: 'Title' },
                                             { title: 'Price' },
                                         ]}
                                         selectable={false}
                                         pagination={{
-                                            hasNext: pageInfo.hasNextPage,
+                                            hasNext: pageInfoForRate.hasNextPage,
                                             onNext: handleNextPageRate,
-                                            hasPrevious: pageInfo.hasPreviousPage,
+                                            hasPrevious: pageInfoForRate.hasPreviousPage,
                                             onPrevious: handlePreviousPageRate,
                                         }}
                                     >

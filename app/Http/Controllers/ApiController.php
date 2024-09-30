@@ -1303,7 +1303,7 @@ class ApiController extends Controller
                         break;
 
                     case 'Percentage':
-                        $rate->base_price += $rate->base_price * $surcharge['cart_total_percentage'] / 100;
+                        $rate->base_price += $totalPrice * $surcharge['cart_total_percentage'] / 100;
                         if ($rate->base_price < $minChargePrice) {
                             $rate->base_price = $minChargePrice;
                         } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
@@ -1623,8 +1623,8 @@ class ApiController extends Controller
                 foreach ($rate->rate_modifiers as $modifier) {
                     $isApplicable = false;
 
-                    if (empty($modifier['rateDay']) && !empty($modifier['productData']) && $modifier['rateModifier'] == 'ids') {
-                        $productData = collect($modifier['productData'])->pluck('id')->filter()->all();
+                    if (empty($modifier['rateDay']) && !empty($modifier['productData1']) && $modifier['rateModifier'] == 'ids') {
+                        $productData = collect($modifier['productData1'])->pluck('id')->filter()->all();
                         $modifier['rateDay'] = $productData;
                     }
 

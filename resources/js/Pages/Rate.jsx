@@ -670,7 +670,7 @@ function Rate(props) {
         } catch (error) {
             console.error("Error fetching edit data:", error);
         }
-        finally{
+        finally {
             setLoading(false);
         }
     };
@@ -689,7 +689,7 @@ function Rate(props) {
                 return acc;
             }, {});
             setCheckedlocation(initialCheckedState);
-          
+
         } catch (error) {
             console.error("Error fetching shop location:", error);
         }
@@ -1520,27 +1520,29 @@ function Rate(props) {
 
     const [textFields, setTextFields] = useState({
         fullProductTitle: '',
-        collectionId: '',
         productType: '',
         productVendor: ''
     });
+    const [collectionId, setCollectionId] = useState('')
 
-    const [textFieldsForExcludeRate, setTextFieldsForExcludeRate] = useState({
-        fullProductTitle: '',
-        collectionId: '',
-        productType: '',
-        productVendor: ''
-    });
+    const handleCollectionIdChange = (value) => {
+        setCollectionId(value);
+        setTextFields((prevFields) => ({
+            ...prevFields,
+            fullProductTitle: '',
+            productType: '',
+            productVendor: ''
+        }));
+    };
 
     const handleTextFieldChange = (field) => (value) => {
         setTextFields((prevFields) => {
             const updatedFields = {
                 fullProductTitle: field === 'fullProductTitle' ? value : '',
-                collectionId: field === 'collectionId' ? value : '',
                 productType: field === 'productType' ? value : '',
                 productVendor: field === 'productVendor' ? value : '',
             };
-
+            setCollectionId('');
             return {
                 ...prevFields,
                 ...updatedFields,
@@ -1548,6 +1550,24 @@ function Rate(props) {
         });
     };
 
+    const [textFieldsForExcludeRate, setTextFieldsForExcludeRate] = useState({
+        fullProductTitle: '',
+        collectionId: '',
+        productType: '',
+        productVendor: ''
+    });
+    const [collectionIdForExcludeRate, setCollectionIdForExcludeRate] = useState('')
+
+
+    const handleCollectionIdChangeForExcludeRate = (value) => {
+        setCollectionIdForExcludeRate(value);
+        setTextFieldsForExcludeRate((prevFields) => ({
+            ...prevFields,
+            fullProductTitle: '',
+            productType: '',
+            productVendor: ''
+        }));
+    };
     const handleTextFieldChangeForExcludeRate = (field) => (value) => {
         setTextFieldsForExcludeRate((prevFields) => {
             const updatedFields = {
@@ -1556,7 +1576,7 @@ function Rate(props) {
                 productType: field === 'productType' ? value : '',
                 productVendor: field === 'productVendor' ? value : '',
             };
-
+            setCollectionIdForExcludeRate('')
             return {
                 ...prevFields,
                 ...updatedFields,
@@ -1574,12 +1594,16 @@ function Rate(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
-        
+            const queryArray = Object.values(textFields).filter(value => value.trim() !== '');
+            const queryString = queryArray.join(' ');
+
             const payload = {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
                 ...(value ? { query: value } : {}),
+                query: queryString,
+                collectionId: collectionId
             };
-
+            console.log(payload)
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -1629,7 +1653,7 @@ function Rate(props) {
     // ========================================================second table==========================================
     const [textFieldValueForExclude, setTextFieldValueForExclude] = useState("");
 
-    const fetchProductsForExcludeRate = async (value = null,cursor, direction) => {
+    const fetchProductsForExcludeRate = async (value = null, cursor, direction) => {
         try {
             setLoadingTable(true)
             const app = createApp({
@@ -1638,12 +1662,15 @@ function Rate(props) {
             });
             const token = await getSessionToken(app);
 
-    
+            const queryArray = Object.values(textFieldsForExcludeRate).filter(value => value.trim() !== '');
+            const queryString = queryArray.join(' ');
 
             const payload = {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
                 ...(value ? { query: value } : {}),
-            
+                query: queryString,
+                collectionId: collectionIdForExcludeRate
+
             };
 
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
@@ -1692,7 +1719,7 @@ function Rate(props) {
             fetchProductsForExcludeRate(pageInfoForEclude.startCursor, 'prev');
         }
     };
-// ===========================================third table===========================
+    // ===========================================third table===========================
     const [textFieldValue, setTextFieldValue] = useState("");
     const fetchProductsForRate = async (value = null, cursor, direction) => {
         try {
@@ -2982,8 +3009,8 @@ function Rate(props) {
                                                                         label="Enter Collection Id"
                                                                         autoComplete="off"
                                                                         placeholder='Enter Collection Id'
-                                                                        value={textFields.collectionId}
-                                                                        onChange={handleTextFieldChange('collectionId')}
+                                                                        value={collectionId}
+                                                                        onChange={handleCollectionIdChange}
                                                                     />
                                                                 </FormLayout.Group>
                                                             </FormLayout>
@@ -3369,8 +3396,8 @@ function Rate(props) {
                                                         label="Enter Collection Id"
                                                         autoComplete="off"
                                                         placeholder='Enter Collection Id'
-                                                        value={textFieldsForExcludeRate.collectionId}
-                                                        onChange={handleTextFieldChangeForExcludeRate('collectionId')}
+                                                        value={collectionIdForExcludeRate}
+                                                        onChange={handleCollectionIdChangeForExcludeRate}
                                                     />
                                                 </FormLayout.Group>
                                             </FormLayout>

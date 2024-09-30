@@ -22,6 +22,7 @@ use CountryState;
 use Currency\Util\CurrencySymbolUtil;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
+use Mgcodeur\CurrencyConverter\Facades\CurrencyConverter;
 
 class ApiController extends Controller
 {
@@ -780,7 +781,7 @@ class ApiController extends Controller
             $query->where('status', 1)->where('currency', $reqCurrency);
         })->pluck('zone_id');
 
-        Log::info('header logs:', ['reqCurrency' => $zoneIds]);
+        Log::info('header logs:', ['reqCurrency' => $reqCurrency]);
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode')->get();
 
@@ -1315,32 +1316,34 @@ class ApiController extends Controller
                         }
                         break;
                     case 'Product':
-                        $surchargeData = collect($surcharge['productData']);
-                        $itemsProductIds = collect($items)->pluck('product_id');
+                        if (!empty($surcharge['productData'])) {
+                            $surchargeData = collect($surcharge['productData']);
+                            $itemsProductIds = collect($items)->pluck('product_id');
 
-                        // Filter the surcharge data to only include items with matching product_id
-                        $filteredData = $surchargeData->filter(function ($item) use ($itemsProductIds) {
-                            return $itemsProductIds->contains($item['id']);
-                        });
+                            // Filter the surcharge data to only include items with matching product_id
+                            $filteredData = $surchargeData->filter(function ($item) use ($itemsProductIds) {
+                                return $itemsProductIds->contains($item['id']);
+                            });
 
-                        $filteredDataWithQuantity = $filteredData->map(function ($item) use ($items) {
-                            $quantity = collect($items)->firstWhere('product_id', $item['id'])['quantity'] ?? 0;
-                            $item['quantity'] = $quantity;
-                            return $item;
-                        })->toArray();
+                            $filteredDataWithQuantity = $filteredData->map(function ($item) use ($items) {
+                                $quantity = collect($items)->firstWhere('product_id', $item['id'])['quantity'] ?? 0;
+                                $item['quantity'] = $quantity;
+                                return $item;
+                            })->toArray();
 
-                        $lastFilteredData = collect($filteredDataWithQuantity)->last();
+                            $lastFilteredData = collect($filteredDataWithQuantity)->last();
 
-                        Log::info('lastFilteredData:', ['lastFilteredData' => $lastFilteredData]);
+                            Log::info('lastFilteredData:', ['lastFilteredData' => $lastFilteredData]);
 
-                        if ($surcharge['selectedMultiplyLine'] == 'Yes' && !empty($lastFilteredData)) {
-                            $rate->base_price = $rate->base_price + ($lastFilteredData['value'] * $lastFilteredData['quantity']);
-                        } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
-                            $rate->base_price = $rate->base_price + $lastFilteredData['value'] + (($lastFilteredData['price'] % $surcharge['cart_total_percentage'] / 100) * $lastFilteredData['quantity']);
-                            if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
-                                $rate->base_price = $minChargePrice;
-                            } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
-                                $rate->base_price = $maxChargePrice;
+                            if ($surcharge['selectedMultiplyLine'] == 'Yes' && !empty($lastFilteredData)) {
+                                $rate->base_price = $rate->base_price + ($lastFilteredData['value'] * $lastFilteredData['quantity']);
+                            } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
+                                $rate->base_price = $rate->base_price + $lastFilteredData['value'] + (($lastFilteredData['price'] % $surcharge['cart_total_percentage'] / 100) * $lastFilteredData['quantity']);
+                                if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
+                                    $rate->base_price = $minChargePrice;
+                                } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
+                                    $rate->base_price = $maxChargePrice;
+                                }
                             }
                         }
                         break;
@@ -1941,13 +1944,32 @@ class ApiController extends Controller
             });
         }
 
-        // Log::info('Query logs:', ['queries' => DB::getQueryLog()]);
         // Log::info('Query logs:', ['totalQuantity' => $totalQuantity]);
         // Log::info('Shopify Carrier Service Request input:', ['filteredRates' => $filteredRates]);
 
+        $jsonFileData = file_get_contents(public_path('countries.json'));
+        $data = json_decode($jsonFileData, true);
+        $countries = $data['countries']['country'];
+        $country = collect($countries)->firstWhere('countryCode', $destinationCountryName);
+
+        if ($country) {
+            $currencyCode = $country['currencyCode'];
+        } else {
+            $currencyCode = "INR";
+        }
+
         foreach ($filteredRates as $rate) {
-            // dd($rate->name);
-            // Log::info($rate);
+
+            Log::info('input logs:', ['finalRatePrice' => $rate->base_price]);
+
+            $convertedAmount = 0;
+            if ($rate->base_price > 0) {
+                $convertedAmount1 = CurrencyConverter::convert($rate->base_price)->from($reqCurrency)->to($currencyCode)->get();
+                $convertedAmount = round($convertedAmount1, 2);
+            }
+
+            Log::info('input logs:', ['convertedAmount' => $convertedAmount]);
+
             if (strpos($rate->description, "#") !== false) {
                 $deliveryDay = str_replace('#', '', $rate->description);
                 $descriptionNew = Carbon::now()->addDay($deliveryDay)->format('l, d M');
@@ -1964,64 +1986,12 @@ class ApiController extends Controller
                 // 'min_delivery_date' => Carbon::now()->addDay($deliveryDay)->toIso8601String(),
                 // 'max_delivery_date' => Carbon::now()->addDay($deliveryDay)->toIso8601String(),
             ];
-
-            // if (@$rate->send_another_rate['send_another_rate']) {
-            //     $finalTotalPrice = 0;
-
-            //     if ($rate->send_another_rate['update_price_type'] == 0) {
-            //         if ($rate->send_another_rate['update_price_effect']) {
-            //             $finalTotalPrice = $rate->base_price - $rate->send_another_rate['adjustment_price'];
-            //         } else {
-            //             $finalTotalPrice = $rate->base_price + $rate->send_another_rate['adjustment_price'];
-            //         }
-            //     } elseif ($rate->send_another_rate['update_price_type'] == 1) {
-            //         if ($rate->send_another_rate['update_price_effect']) {
-            //             $finalTotalPrice = $rate->base_price - ($rate->base_price * $rate->send_another_rate['adjustment_price'] / 100);
-            //         } else {
-            //             $finalTotalPrice = $rate->base_price + ($rate->base_price * $rate->send_another_rate['adjustment_price'] / 100);
-            //         }
-            //     } else {
-            //         $finalTotalPrice = $rate->send_another_rate['adjustment_price'];
-            //     }
-
-            //     $response['rates'][] = [
-            //         "service_name" => $rate->send_another_rate['another_rate_name'],
-            //         "service_code" => $rate->send_another_rate['another_service_code'],
-            //         "total_price" => $finalTotalPrice * 100,
-            //         "description" => $rate->send_another_rate['another_rate_description'],
-            //         "currency" => $rate->zone->currency,
-            //         // 'min_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
-            //         // 'max_delivery_date' => Carbon::now()->addDay()->toIso8601String(),
-            //     ];
-            // }
         }
 
-        // Log::info('Shopify Carrier Service input:', ["input" => $input]);
         Log::info('Shopify Carrier Service response:', ["response" => $response]);
 
         return response()->json($response);
     }
-
-    // Function to calculate base price based on price_calculation_type
-    // function calculateBasePrice($filteredRates, $mixRate, $priceCalculationType)
-    // {
-    //     switch ($priceCalculationType) {
-    //         case 0:
-    //             return $filteredRates->sum('base_price');
-    //         case 1:
-    //             return number_format($filteredRates->avg('base_price'), 2);
-    //         case 2:
-    //             return $filteredRates->min('base_price');
-    //         case 3:
-    //             return $filteredRates->max('base_price');
-    //         case 4:
-    //             return $filteredRates->reduce(function ($carry, $item) {
-    //                 return $carry * $item['base_price'];
-    //             }, 1);
-    //         default:
-    //             return $mixRate->base_price;
-    //     }
-    // }
 
     public function zoneStore(Request $request)
     {
@@ -2840,41 +2810,43 @@ class ApiController extends Controller
                     }
                     GRAPHQL;
             } else {
-                $queryParam = isset($post['query']) ? 'query:"' . $post['query'] . '"' : '';
+                $queryParam = isset($post['query']) ? 'query: "' . $post['query'] . '"' : '';
                 $query = <<<GRAPHQL
-                {
-                    products($querystring, sortKey: CREATED_AT, reverse: true, $queryParam) {
-                        edges {
-                            node {
-                                id
-                                title
-                                variants(first: 1) {
-                                    edges {
-                                        node {
-                                            id
-                                            price
+                    {
+                        products($querystring, sortKey: CREATED_AT, reverse: true, $queryParam) {
+                            edges {
+                                node {
+                                    id
+                                    title
+                                    productType
+                                    vendor
+                                    variants(first: 1) {
+                                        edges {
+                                            node {
+                                                id
+                                                price
+                                            }
                                         }
                                     }
-                                }
-                                images(first: 1) {
-                                    edges {
-                                        node {
-                                            originalSrc
-                                            altText
+                                    images(first: 1) {
+                                        edges {
+                                            node {
+                                                originalSrc
+                                                altText
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
-                        pageInfo {
-                            hasNextPage
-                            hasPreviousPage
-                            endCursor
-                            startCursor
+                            pageInfo {
+                                hasNextPage
+                                hasPreviousPage
+                                endCursor
+                                startCursor
+                            }
                         }
                     }
-                }
-                GRAPHQL;
+                    GRAPHQL;
             }
 
             // Shopify GraphQL endpoint

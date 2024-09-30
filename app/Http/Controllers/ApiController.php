@@ -780,7 +780,11 @@ class ApiController extends Controller
             $query->where('status', 1)->where('currency', $reqCurrency);
         })->pluck('zone_id');
 
+        Log::info('header logs:', ['reqCurrency' => $zoneIds]);
+
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode')->get();
+
+        Log::info('header logs:', ['rates' => count($rates)]);
 
         $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id) {
             $zipcode = optional($rate->zipcode);
@@ -792,7 +796,7 @@ class ApiController extends Controller
                     break;
                 case 1: // All conditions must be true
                     $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id) {
-                        Log::info("case 1");
+
                         if ($condition['label'] == 'Cart_Order') {
                             $currentTime = Carbon::now($userData['shop_timezone'])->format('H:i');
                             $currentDay = Carbon::now()->format('l');
@@ -2797,8 +2801,8 @@ class ApiController extends Controller
             }
 
             // Determine the query parameter
-            if (isset($post['query']) && is_numeric($post['query'])) {
-                $collectionId = $post['query'];
+            if (isset($post['collectionId']) && is_numeric($post['collectionId']) && empty($post['query'])) {
+                $collectionId = $post['collectionId'];
                 $query = <<<GRAPHQL
                     {
                         collection(id: "gid://shopify/Collection/$collectionId") {

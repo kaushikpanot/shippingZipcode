@@ -1640,12 +1640,12 @@ function Rate(props) {
     );
     const handleNextPage = () => {
         if (pageInfo.hasNextPage) {
-            fetchProducts(pageInfo.endCursor, 'next');
+            fetchProducts(null,pageInfo.endCursor, 'next');
         }
     };
     const handlePreviousPage = () => {
         if (pageInfo.hasPreviousPage) {
-            fetchProducts(pageInfo.startCursor, 'prev');
+            fetchProducts(null,pageInfo.startCursor, 'prev');
         }
     };
 
@@ -1672,7 +1672,7 @@ function Rate(props) {
                 collectionId: collectionIdForExcludeRate
 
             };
-
+console.log(cursor,direction)
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -1711,12 +1711,12 @@ function Rate(props) {
 
     const handleNextPageExcludeRate = () => {
         if (pageInfoForEclude.hasNextPage) {
-            fetchProductsForExcludeRate(pageInfoForEclude.endCursor, 'next');
+            fetchProductsForExcludeRate(null,pageInfoForEclude.endCursor, 'next');
         }
     };
     const handlePreviousPageExcludeRate = () => {
         if (pageInfoForEclude.hasPreviousPage) {
-            fetchProductsForExcludeRate(pageInfoForEclude.startCursor, 'prev');
+            fetchProductsForExcludeRate(null,pageInfoForEclude.startCursor, 'prev');
         }
     };
     // ===========================================third table===========================

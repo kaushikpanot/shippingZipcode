@@ -176,8 +176,6 @@ function AddEditMixMergeRate(props) {
       });
       setLoadingButton(true);
       const token = await getSessionToken(app);
-      console.log(token)
-
       const response = await axios.post(`${apiCommonURL}/api/mixMergeRate`, formData, {
         headers: {
           'Authorization': `Bearer ${token}`

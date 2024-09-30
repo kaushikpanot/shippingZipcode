@@ -422,11 +422,6 @@ function Rate(props) {
         );
     };
 
-
-
-
-
-
     const rateTag = [
         { label: 'Equal', value: 'equal' },
         { label: 'Does Not Equal', value: 'notequal' },
@@ -499,6 +494,7 @@ function Rate(props) {
     const editRate = async () => {
         try {
             const token = await getSessionToken(app);
+            setLoading(true)
             const response = await axios.get(`${apiCommonURL}/api/rate/${id}/edit`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -670,8 +666,12 @@ function Rate(props) {
                 }, {});
                 setCheckedlocation(initialCheckedState);
             }
+            setLoading(false);
         } catch (error) {
             console.error("Error fetching edit data:", error);
+        }
+        finally{
+            setLoading(false);
         }
     };
 
@@ -689,6 +689,7 @@ function Rate(props) {
                 return acc;
             }, {});
             setCheckedlocation(initialCheckedState);
+          
         } catch (error) {
             console.error("Error fetching shop location:", error);
         }
@@ -1176,6 +1177,7 @@ function Rate(props) {
             setOptions(formattedOptions);
             setOriginalOptions(formattedOptions);
             setState(formattedOptions.map(section => section.options).flat());
+            setLoading(false)
         } catch (error) {
             console.error("Error fetching shop location:", error);
         }
@@ -1188,7 +1190,7 @@ function Rate(props) {
         if (id) {
             editRate();
         }
-        getLocation();
+        // getLocation();
         getstate();
         fetchProducts()
     }, []);
@@ -1503,7 +1505,6 @@ function Rate(props) {
         } catch (error) {
             const errors = error.response?.data?.errors || {};
             const service_code = errors.service_code?.[0];
-            console.log(errors)
             if (service_code) {
 
                 setToastContent(service_code);
@@ -1562,8 +1563,10 @@ function Rate(props) {
             };
         });
     };
+    // ===============================================first tabe=================================
+    const [textFieldValueForRateSurcharge, setTextFieldValueForRateSurcharge] = useState("");
 
-    const fetchProducts = async (cursor, direction) => {
+    const fetchProducts = async (value = null, cursor, direction) => {
         try {
             setLoadingTable(true)
             const app = createApp({
@@ -1571,12 +1574,10 @@ function Rate(props) {
                 host: props.host,
             });
             const token = await getSessionToken(app);
-            const queryArray = Object.values(textFields).filter(value => value.trim() !== '');
-            const queryString = queryArray.join(' ');
-
+        
             const payload = {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
-                query: queryString
+                ...(value ? { query: value } : {}),
             };
 
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
@@ -1593,15 +1594,26 @@ function Rate(props) {
                 hasNextPage: productData.hasNextPage,
                 hasPreviousPage: productData.hasPreviousPage,
             });
-            setLoading(false);
             setLoadingTable(false)
         } catch (error) {
             setLoadingTable
-            setLoading(false);
             console.error('Error fetching product data:', error);
         }
     };
+    const debouncedFetchProductsForRateSurcharge = useCallback(
+        debounce((value) => {
+            fetchProducts(value);
+        }, 1000),
+        []
+    );
 
+    const handlesearchChangeForRateSurcharge = useCallback(
+        (value) => {
+            setTextFieldValueForRateSurcharge(value);
+            debouncedFetchProductsForRateSurcharge(value);
+        },
+        [debouncedFetchProductsForRateSurcharge]
+    );
     const handleNextPage = () => {
         if (pageInfo.hasNextPage) {
             fetchProducts(pageInfo.endCursor, 'next');
@@ -1614,7 +1626,10 @@ function Rate(props) {
     };
 
 
-    const fetchProductsForExcludeRate = async (cursor, direction) => {
+    // ========================================================second table==========================================
+    const [textFieldValueForExclude, setTextFieldValueForExclude] = useState("");
+
+    const fetchProductsForExcludeRate = async (value = null,cursor, direction) => {
         try {
             setLoadingTable(true)
             const app = createApp({
@@ -1623,12 +1638,12 @@ function Rate(props) {
             });
             const token = await getSessionToken(app);
 
-            const queryArray = Object.values(textFieldsForExcludeRate).filter(value => value.trim() !== '');
-            const queryString = queryArray.join(' ');
+    
 
             const payload = {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
-                query: queryString
+                ...(value ? { query: value } : {}),
+            
             };
 
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
@@ -1646,14 +1661,26 @@ function Rate(props) {
                 hasNextPage: productData.hasNextPage,
                 hasPreviousPage: productData.hasPreviousPage,
             });
-            setLoading(false);
             setLoadingTable(false)
         } catch (error) {
             setLoadingTable
-            setLoading(false);
             console.error('Error fetching product data:', error);
         }
     };
+    const debouncedFetchProductsForEcxlude = useCallback(
+        debounce((value) => {
+            fetchProductsForExcludeRate(value);
+        }, 1000),
+        []
+    );
+
+    const handlesearchChangeForExclude = useCallback(
+        (value) => {
+            setTextFieldValueForExclude(value);
+            debouncedFetchProductsForEcxlude(value);
+        },
+        [debouncedFetchProductsForEcxlude]
+    );
 
     const handleNextPageExcludeRate = () => {
         if (pageInfoForEclude.hasNextPage) {
@@ -1665,7 +1692,7 @@ function Rate(props) {
             fetchProductsForExcludeRate(pageInfoForEclude.startCursor, 'prev');
         }
     };
-
+// ===========================================third table===========================
     const [textFieldValue, setTextFieldValue] = useState("");
     const fetchProductsForRate = async (value = null, cursor, direction) => {
         try {
@@ -1676,12 +1703,11 @@ function Rate(props) {
             });
             const token = await getSessionToken(app);
 
-            console.log(token)
             const payload = {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
                 ...(value ? { query: value } : {}),
             };
-           
+
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -1698,27 +1724,23 @@ function Rate(props) {
                 hasNextPage: productData.hasNextPage,
                 hasPreviousPage: productData.hasPreviousPage,
             });
-            console.log(productData)
-            setLoading(false);
             setLoadingTable(false)
         } catch (error) {
             setLoadingTable
-            setLoading(false);
             console.error('Error fetching product data:', error);
         }
     };
 
     const handleNextPageRate = () => {
         if (pageInfoForRate.hasNextPage) {
-            fetchProductsForRate(null,pageInfoForRate.endCursor, 'next');
+            fetchProductsForRate(null, pageInfoForRate.endCursor, 'next');
         }
     };
     const handlePreviousPageRate = () => {
         if (pageInfoForRate.hasPreviousPage) {
-            fetchProductsForRate(null,pageInfoForRate.startCursor, 'prev');
+            fetchProductsForRate(null, pageInfoForRate.startCursor, 'prev');
         }
     };
-
 
     const debouncedFetchProducts = useCallback(
         debounce((value) => {
@@ -1856,7 +1878,7 @@ function Rate(props) {
         : productsForExcludeRate?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
 
     const selectedCount1 = exclude_Rate.productsData?.length || 0
-    const productData1 = filteredProduct?.map(({ id, title, image, price }, index) => {
+    const productDataExclude = filteredProduct?.map(({ id, title, image, price }, index) => {
         return (
             <IndexTable.Row
                 id={id}
@@ -1983,7 +2005,7 @@ function Rate(props) {
 
     const selectedCountForRate = activeTextBox === 'productData1' ? selectedCount2 : selectedCount3;
 
-    if (loading) {
+    if (loading === true) {
         return (
             <Page
                 title={id ? 'Edit Rate' : 'Add Rate'}
@@ -2998,13 +3020,12 @@ function Rate(props) {
                                                                     <div>
                                                                         <TextField
                                                                             placeholder='search'
-                                                                            onChange={handlesearchChange}
-                                                                            value={value}
+                                                                            onChange={handlesearchChangeForRateSurcharge}
+                                                                            value={textFieldValueForRateSurcharge}
                                                                             type="text"
                                                                             prefix={<Icon source={SearchIcon} color="inkLighter" />}
                                                                             autoComplete="off"
                                                                             clearButton
-                                                                            onClearButtonClick={handleClearButtonClick}
                                                                         />
                                                                     </div>
                                                                     <div style={{ marginTop: "4%" }}>
@@ -3386,14 +3407,12 @@ function Rate(props) {
                                             <div style={{ marginTop: "4%" }}>
                                                 <div>
                                                     <TextField
-                                                        placeholder='search'
-                                                        onChange={handlesearchChange}
-                                                        value={value}
                                                         type="text"
-                                                        prefix={<Icon source={SearchIcon} color="inkLighter" />}
+                                                        value={textFieldValueForExclude}
+                                                        placeholder="Search by Title..."
+                                                        onChange={handlesearchChangeForExclude}
+                                                        prefix={<Icon source={SearchIcon} />}
                                                         autoComplete="off"
-                                                        clearButton
-                                                        onClearButtonClick={handleClearButtonClick}
                                                     />
                                                 </div>
                                                 <div style={{ marginTop: "4%" }}>
@@ -3425,7 +3444,7 @@ function Rate(props) {
                                                                 </IndexTable.Cell>
                                                             </IndexTable.Row>
                                                         ) : (
-                                                            productData1
+                                                            productDataExclude
                                                         )}
 
                                                     </IndexTable>
@@ -4502,7 +4521,7 @@ function Rate(props) {
                                         autoComplete="off"
                                     />
                                 </div>
-                                <div style={{ marginTop: '4%',overflowY: 'scroll' }}>
+                                <div style={{ marginTop: '4%', overflowY: 'scroll' }}>
                                     <IndexTable
                                         resourceName={resourceName}
                                         itemCount={productsForRateModifer.length}

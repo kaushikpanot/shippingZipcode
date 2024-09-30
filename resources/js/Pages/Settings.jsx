@@ -120,8 +120,6 @@ const Settings = (props) => {
     additional_description_of_mix_rate: '',
     max_price_of_auto_product_base_mix_rate: ''
   });
-  console.log(settings)
-
 
   const handleInputChange = useCallback((field) => (value) => {
     setSettings((prevState) => ({

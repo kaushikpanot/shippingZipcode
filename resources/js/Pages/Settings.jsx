@@ -312,8 +312,9 @@ const Settings = (props) => {
     zone.rate_name.toLowerCase().includes(textFieldValue?.toLowerCase())
   );
 
+  const paginatedZones = filteredZones.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const rowMarkup = filteredZones.map(
+  const rowMarkup = paginatedZones.map(
     ({ id, rate_name, service_code, description, tags_to_combine }, index) => (
       <IndexTable.Row
         id={id}

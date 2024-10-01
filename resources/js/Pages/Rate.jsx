@@ -145,7 +145,10 @@ function Rate(props) {
     const [productsForRateModifer, setProductsForRateModifer] = useState([])
     const [productsForSurcharge, setProductsForSurcharge] = useState([])
     const [productsForExcludeRate, setProductsForExcludeRate] = useState([])
-    const [selectedProductIds2, setSelectedProductIds2] = useState([]);
+    const [selectedProductIds, setSelectedProductIds] = useState({});
+    const [selectedProductIds2, setSelectedProductIds2] = useState({});
+
+    const [activeModifierId, setActiveModifierId] = useState(null);
     const [selectedProductIds3, setSelectedProductIds3] = useState([]);
     const [date, setDate] = useState({ startDate: '', endDate: '' });
     const handleDateChange = (key, value) => {
@@ -288,14 +291,15 @@ function Rate(props) {
         }));
     };
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [activeTextBox, setActiveTextBox] = useState(''); // Use useState to initialize activeTextBox
+    const [activeTextBox, setActiveTextBox] = useState('');
 
-    const handleFocus = useCallback((id, value) => {
+    const handleFocus = useCallback((modifierId, type) => {
         setIsModalOpen(true);
-        setActiveTextBox(value);
+        setActiveModifierId(modifierId);
+        setActiveTextBox(type)
     }, []);
 
-
+    console.log(activeTextBox)
     const handleModalClose = useCallback(() => {
         setIsModalOpen(false);
     }, []);
@@ -338,37 +342,35 @@ function Rate(props) {
     useEffect(() => {
         if (rateModifiers.length === 0) return;
 
-        // Filter and map the selected products for productData1 and productData2
-        const selectedProducts1 = productsForRateModifer.filter(product => selectedProductIds2.includes(product.id));
-        const selectedProducts2 = productsForRateModifer.filter(product => selectedProductIds3.includes(product.id));
-
-        const mappedProductData1 = selectedProducts1.map(({ id, title, price }) => ({
-            id,
-            title,
-            price,
-        }));
-
-        const mappedProductData2 = selectedProducts2.map(({ id, title, price }) => ({
-            id,
-            title,
-            price,
-        }));
-
         setRateModifiers((prevModifiers) => {
-            // Update the latest modifier with selected products
-            const lastModifierIndex = prevModifiers.length - 1;
-            if (lastModifierIndex < 0) return prevModifiers;
+            const updatedModifiers = prevModifiers.map((modifier) => {
+                // Get selected products for productData1
+                const selectedProducts1 = productsForRateModifer.filter(product =>
+                    selectedProductIds[modifier.id]?.includes(product.id)
+                );
 
-            const updatedModifiers = [...prevModifiers];
-            updatedModifiers[lastModifierIndex] = {
-                ...updatedModifiers[lastModifierIndex],
-                productData1: mappedProductData1, // Update productData1
-                productData2: mappedProductData2, // Update productData2
-            };
+                // Get selected products for productData2
+                const selectedProducts2 = productsForRateModifer.filter(product =>
+                    selectedProductIds2[modifier.id]?.includes(product.id)
+                );
 
+                return {
+                    ...modifier,
+                    productData1: selectedProducts1.map(({ id, title, price }) => ({
+                        id,
+                        title,
+                        price,
+                    })),
+                    productData2: selectedProducts2.map(({ id, title, price }) => ({
+                        id,
+                        title,
+                        price,
+                    })),
+                };
+            });
             return updatedModifiers;
         });
-    }, [selectedProductIds2, selectedProductIds3, productsForRateModifer]);
+    }, [selectedProductIds, selectedProductIds2]);
 
 
     const handleRemoveRateModifier = (id) => {
@@ -541,15 +543,24 @@ function Rate(props) {
             if (response.data.rate.rate_modifiers) {
                 setRateModifiers(response.data.rate.rate_modifiers);
 
-                const selectedIds = response.data.rate.rate_modifiers.flatMap(modifier =>
-                    modifier.productData1 ? modifier.productData1.map(product => product.id) : []
-                );
-                setSelectedProductIds2(selectedIds);
+                const selectedIds = {};
+                response.data.rate.rate_modifiers.forEach(modifier => {
+                    if (modifier.productData1) {
+                        selectedIds[modifier.id] = modifier.productData1.map(product => product.id);
+                    }
+                });
+                setSelectedProductIds(selectedIds);
 
-                const selectedIds2 = response.data.rate.rate_modifiers.flatMap(modifier =>
-                    modifier.productData2 ? modifier.productData2.map(product => product.id) : []
-                );
-                setSelectedProductIds3(selectedIds2);
+
+                const selectedIds2 = {};
+                response.data.rate.rate_modifiers.forEach(modifier => {
+                    if (modifier.productData1) {
+                        selectedIds2[modifier.id] = modifier.productData2.map(product => product.id);
+                    }
+                });
+                setSelectedProductIds2(selectedIds2);
+
+                
             }
 
             if (response.data.rate.cart_condition) {
@@ -1607,7 +1618,6 @@ function Rate(props) {
                 collectionId: collectionId,
                 type: searchType
             };
-            console.log(payload)
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -1663,7 +1673,7 @@ function Rate(props) {
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
-              
+
             });
             const token = await getSessionToken(app);
 
@@ -1679,7 +1689,6 @@ function Rate(props) {
                 type: searchTypeForExcludeRate
 
             };
-            console.log(cursor, direction)
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -1790,9 +1799,6 @@ function Rate(props) {
         },
         [debouncedFetchProducts]
     );
-    const handleClearButtonClick = useCallback(() => {
-        setTextFieldValue('');
-    }, [productsForSurcharge]);
 
     const resourceName = {
         singular: 'order',
@@ -1956,88 +1962,38 @@ function Rate(props) {
             return { ...prevState, productsData: updatedProductData };
         });
     };
-
-    const handleCheckboxChange2 = (id) => {
-        setSelectedProductIds2((prevSelected) =>
-            prevSelected.includes(id)
-                ? prevSelected.filter((productId) => productId !== id)
-                : [...prevSelected, id]
-        );
+    const handleCheckboxChange2 = (modifierId, productId) => {
+        setSelectedProductIds((prevSelected) => ({
+            ...prevSelected,
+            [modifierId]: prevSelected[modifierId]
+                ? prevSelected[modifierId].includes(productId)
+                    ? prevSelected[modifierId].filter((id) => id !== productId)
+                    : [...(prevSelected[modifierId] || []), productId] 
+                : [productId],
+        }));
     };
 
-    const selectedCount2 = selectedProductIds2.length;
-    const productData2 = productsForRateModifer?.map(({ id, title, image, price }, index) => (
-        <IndexTable.Row id={id} key={id} position={index}>
-            <IndexTable.Cell>
-                <Checkbox
-                    checked={selectedProductIds2.includes(id)}
-                    onChange={() => handleCheckboxChange2(id)}
-                />
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <Thumbnail source={image} size="small" alt={title} />
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
-                    <Text fontWeight="bold" as="span">
-                        {title}
-                    </Text>
-                </div>
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <Text fontWeight="bold" as="span">
-                    {price}
-                </Text>
-            </IndexTable.Cell>
-        </IndexTable.Row>
-    ));
+   
 
-
-
-    const handleCheckboxChange3 = (id) => {
-        setSelectedProductIds3((prevSelected) =>
-            prevSelected.includes(id)
-                ? prevSelected.filter((productId) => productId !== id)
-                : [...prevSelected, id]
-        );
+    const filteredProductsFirst = productsForRateModifer.filter(product =>
+        product.title.toLowerCase().includes(textFieldValue.toLowerCase())
+    );
+    const filteredProductsSecond = productsForRateModifer.filter(product =>
+        product.title.toLowerCase().includes(textFieldValue.toLowerCase())
+    );
+    const handleCheckboxChange3 = (modifierId, productId) => {
+        setSelectedProductIds2((prevSelected) => ({
+            ...prevSelected,
+            [modifierId]: prevSelected[modifierId]
+                ? prevSelected[modifierId].includes(productId)
+                    ? prevSelected[modifierId].filter((id) => id !== productId) 
+                    : [...(prevSelected[modifierId] || []), productId] 
+                : [productId], 
+        }));
     };
-    const selectedCount3 = selectedProductIds3.length;
-
-    const productData3 = productsForRateModifer?.map(({ id, title, image, price }, index) => (
-        <IndexTable.Row
-            id={id}
-            key={id}
-            position={index}
-        >
-            <IndexTable.Cell>
-                <Checkbox
-                    checked={selectedProductIds3.includes(id)}
-                    onChange={() => handleCheckboxChange3(id)}
-                />
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <Thumbnail
-                    source={image}
-                    size="small"
-                    alt={title}
-                />
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
-                    <Text fontWeight="bold" as="span">
-                        {title}
-                    </Text>
-                </div>
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <Text fontWeight="bold" as="span">
-                    {price}
-                </Text>
-            </IndexTable.Cell>
-        </IndexTable.Row>
-    ));
-
-    const selectedCountForRate = activeTextBox === 'productData1' ? selectedCount2 : selectedCount3;
+    const selectedCountForRate = activeTextBox === 'productData' 
+    ? selectedProductIds[activeModifierId]?.length || 0
+    : selectedProductIds2[activeModifierId]?.length || 0;
 
     if (loading === true) {
         return (
@@ -3741,13 +3697,11 @@ function Rate(props) {
                                                             {modifier.rateModifier === 'ids' && (
                                                                 <TextField
                                                                     type='text'
-                                                                    value={modifier.productData1
-                                                                        ? modifier.productData1.map(product => product.id).join(',')
-                                                                        : ''}
-                                                                    onChange={handleRateModifierChange(modifier.id, 'productData1')}
-                                                                    multiline={4}
-                                                                    onFocus={() => handleFocus(modifier.id, 'productData1')}
-                                                                    helpText='Add product IDs with comma(,) separator'
+                                                                    value={selectedProductIds[modifier.id]?.join(', ') || ''}
+                                                                    onFocus={() => handleFocus(modifier.id, 'productData')}
+                                                                    readOnly // Make it read-only to prevent direct editing
+                                                                    helpText='Selected product IDs'
+                                                                    multiline= {2}
                                                                 />
                                                             )}
                                                             {(modifier.rateModifier === 'price' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
@@ -3942,13 +3896,12 @@ function Rate(props) {
                                                                     {modifier.rateModifier2 === 'ids' && (
                                                                         <TextField
                                                                             type='text'
-                                                                            value={modifier.productData2
-                                                                                ? modifier.productData2.map(product => product.id).join(',')
-                                                                                : ''}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'productData2')}
-                                                                            multiline={4}
+                                                                            value={selectedProductIds2[modifier.id]?.join(', ') || ''}
                                                                             onFocus={() => handleFocus(modifier.id, 'productData2')}
-                                                                            helpText='Add product IDs with comma(,) separator'
+                                                                            readOnly // Make it read-only to prevent direct editing
+                                                                            helpText='Selected product IDs'
+                                                                            multiline= {2}
+
                                                                         />
                                                                     )}
                                                                     {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (
@@ -4558,7 +4511,7 @@ function Rate(props) {
                                 <div style={{ marginTop: '4%', overflowY: 'scroll' }}>
                                     <IndexTable
                                         resourceName={resourceName}
-                                        itemCount={productsForRateModifer.length}
+                                        itemCount={activeTextBox === 'productData' ? filteredProductsFirst.length : filteredProductsSecond.length}
                                         headings={[
                                             { title: `${selectedCountForRate} Selected` },
                                             { title: 'Image' },
@@ -4575,14 +4528,40 @@ function Rate(props) {
                                     >
                                         {loadingTable ? (
                                             <IndexTable.Row>
-                                                <IndexTable.Cell colSpan={5}>
+                                                <IndexTable.Cell colSpan={4}>
                                                     <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
                                                         <Spinner accessibilityLabel="Loading products" size="small" />
                                                     </div>
                                                 </IndexTable.Cell>
                                             </IndexTable.Row>
                                         ) : (
-                                            (activeTextBox === 'productData1' ? productData2 : productData3)
+                                            (activeTextBox === 'productData' ? filteredProductsFirst : filteredProductsSecond).map(({ id, title, image, price }, index) => (
+                                                <IndexTable.Row id={id} key={id} position={index}>
+                                                    <IndexTable.Cell>
+                                                        <Checkbox
+                                                            checked={activeTextBox === 'productData'
+                                                                ? selectedProductIds[activeModifierId]?.includes(id) || false
+                                                                : selectedProductIds2[activeModifierId]?.includes(id) || false}
+                                                            onChange={() => activeTextBox === 'productData'
+                                                                ? handleCheckboxChange2(activeModifierId, id)
+                                                                : handleCheckboxChange3(activeModifierId, id)}
+                                                        />
+                                                    </IndexTable.Cell>
+                                                    <IndexTable.Cell>
+                                                        <Thumbnail source={image} size="small" alt={title} />
+                                                    </IndexTable.Cell>
+                                                    <IndexTable.Cell>
+                                                        <Text fontWeight="bold" as="span">
+                                                            {title}
+                                                        </Text>
+                                                    </IndexTable.Cell>
+                                                    <IndexTable.Cell>
+                                                        <Text fontWeight="bold" as="span">
+                                                            {price}
+                                                        </Text>
+                                                    </IndexTable.Cell>
+                                                </IndexTable.Row>
+                                            ))
                                         )}
                                     </IndexTable>
                                 </div>

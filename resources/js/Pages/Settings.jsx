@@ -40,29 +40,13 @@ const Settings = (props) => {
     host: props.host,
   });
 
-  const handleTextFieldChange = useCallback(
-    (value) => setTextFieldValue(value),
-    [],
-  );
-  const handleNextPage = useCallback(() => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  }, [currentPage, totalPages]);
 
-  const handlePreviousPage = useCallback(() => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  }, [currentPage]);
   const handleEditMergeRate = (id) => {
     navigate(`/add-edit-merge-rate/${id}`);
   };
   const AddRateNavigate = () => {
     navigate('/add-edit-merge-rate');
   };
-
-
 
   const getSettingData = async () => {
     try {
@@ -94,6 +78,7 @@ const Settings = (props) => {
       console.error("Error fetching settings data:", error);
     }
   };
+
   const getMergeRateDetails = async () => {
     const token = await getSessionToken(app);
 
@@ -104,12 +89,30 @@ const Settings = (props) => {
           'Authorization': `Bearer ${token}`
         }
       });
-      setMixMergeRate(response.data.mixMergeRates);
+      const mixRatedata = response.data.mixMergeRates
+      setMixMergeRate(mixRatedata);
+      setTotalPages(Math.ceil(mixRatedata.length / itemsPerPage));
       setLoading(false);
     } catch (error) {
       console.error(error, 'error from');
     }
   };
+  const handleTextFieldChange = useCallback(
+    (value) => setTextFieldValue(value),
+    [],
+  );
+  const handleNextPage = useCallback(() => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  }, [currentPage, totalPages]);
+
+  const handlePreviousPage = useCallback(() => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  }, [currentPage]);
+
 
   const [settings, setSettings] = useState({
     status: 1,
@@ -290,10 +293,6 @@ const Settings = (props) => {
       </Page>
     );
   }
-  const handleAddMixMergeRate = () => {
-    navigate('/mixMergeRate');
-  };
-
 
   // ====================================================
 
@@ -309,7 +308,12 @@ const Settings = (props) => {
     singular: 'Mix merge rates',
     plural: 'Mix Merge Rates',
   };
-  const rowMarkup = mixMergeRate.map(
+  const filteredZones = mixMergeRate?.filter(zone =>
+    zone.rate_name.toLowerCase().includes(textFieldValue?.toLowerCase())
+  );
+
+
+  const rowMarkup = filteredZones.map(
     ({ id, rate_name, service_code, description, tags_to_combine }, index) => (
       <IndexTable.Row
         id={id}
@@ -544,66 +548,6 @@ const Settings = (props) => {
                     </div>
                   </div>
                 )}
-                {/* <div style={{ marginTop: "4%", marginBottom: "4%" }}>
-                  <Divider borderColor="border" />
-                </div>
-                <BlockStack gap="200">
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-
-
-                    <Text variant="headingMd" as="h6">
-                      Merge Rate
-                    </Text>
-                    <div style={{ display: "flex", gap: "20px" }}>
-                      <Button
-                        onClick={() => AddRateNavigate()}
-                        variant='primary'
-                        icon={PlusIcon}
-                      >
-                        Add     Merge Rate
-                      </Button>
-                    </div>
-                  </div>
-                  <div style={{ marginTop: "1%", fontWeight: "bold" }}>
-                    <Text as="p" variant="bodyMd">
-                      If the first option of the mix/merge rate setting on the shipping settings page is No (Manually - Using merge rate), this merge rate setting will work.
-                    </Text>
-                  </div>
-                </BlockStack>
-                <div style={{ marginTop: "3%" }}>
-                  <TextField
-                    type="text"
-                    value={textFieldValue}
-                    placeholder="Search by name..."
-                    onChange={handleTextFieldChange}
-                    prefix={<Icon source={SearchIcon} />}
-                    autoComplete="off"
-                  />
-                </div>
-                <div style={{ marginTop: "2.5%", position: 'relative' }}>
-                  <IndexTable
-                    resourceName={resourceName}
-                    itemCount={mixMergeRate.length}
-                    headings={[
-                      { title: 'Rate Name' },
-                      { title: 'Service Code' },
-                      { title: 'Description' },
-                      { title: 'Tags' },
-                      { title: 'Action' },
-                    ]}
-                    paginated
-                    pagination={{
-                      hasPrevious: currentPage > 1,
-                      hasNext: currentPage < totalPages,
-                      onNext: handleNextPage,
-                      onPrevious: handlePreviousPage,
-                    }}
-                    selectable={false}
-                  >
-                    {rowMarkup}
-                  </IndexTable>
-                </div> */}
-
 
               </LegacyCard>
             </Grid.Cell>

@@ -1534,8 +1534,9 @@ function Rate(props) {
             productVendor: ''
         }));
     };
-
+    const [searchType, setSearcType] = useState('')
     const handleTextFieldChange = (field) => (value) => {
+        setSearcType(field)
         setTextFields((prevFields) => {
             const updatedFields = {
                 fullProductTitle: field === 'fullProductTitle' ? value : '',
@@ -1557,6 +1558,7 @@ function Rate(props) {
         productVendor: ''
     });
     const [collectionIdForExcludeRate, setCollectionIdForExcludeRate] = useState('')
+    const [searchTypeForExcludeRate, setSearcTypeForExcludeRate] = useState('')
 
 
     const handleCollectionIdChangeForExcludeRate = (value) => {
@@ -1569,6 +1571,7 @@ function Rate(props) {
         }));
     };
     const handleTextFieldChangeForExcludeRate = (field) => (value) => {
+        setSearcTypeForExcludeRate(field)
         setTextFieldsForExcludeRate((prevFields) => {
             const updatedFields = {
                 fullProductTitle: field === 'fullProductTitle' ? value : '',
@@ -1601,7 +1604,8 @@ function Rate(props) {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
                 ...(value ? { query: value } : {}),
                 query: queryString,
-                collectionId: collectionId
+                collectionId: collectionId,
+                type: searchType
             };
             console.log(payload)
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
@@ -1640,12 +1644,12 @@ function Rate(props) {
     );
     const handleNextPage = () => {
         if (pageInfo.hasNextPage) {
-            fetchProducts(null,pageInfo.endCursor, 'next');
+            fetchProducts(null, pageInfo.endCursor, 'next');
         }
     };
     const handlePreviousPage = () => {
         if (pageInfo.hasPreviousPage) {
-            fetchProducts(null,pageInfo.startCursor, 'prev');
+            fetchProducts(null, pageInfo.startCursor, 'prev');
         }
     };
 
@@ -1659,6 +1663,7 @@ function Rate(props) {
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
+              
             });
             const token = await getSessionToken(app);
 
@@ -1669,10 +1674,12 @@ function Rate(props) {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
                 ...(value ? { query: value } : {}),
                 query: queryString,
-                collectionId: collectionIdForExcludeRate
+                type: 'sad',
+                collectionId: collectionIdForExcludeRate,
+                type: searchTypeForExcludeRate
 
             };
-console.log(cursor,direction)
+            console.log(cursor, direction)
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -1711,12 +1718,12 @@ console.log(cursor,direction)
 
     const handleNextPageExcludeRate = () => {
         if (pageInfoForEclude.hasNextPage) {
-            fetchProductsForExcludeRate(null,pageInfoForEclude.endCursor, 'next');
+            fetchProductsForExcludeRate(null, pageInfoForEclude.endCursor, 'next');
         }
     };
     const handlePreviousPageExcludeRate = () => {
         if (pageInfoForEclude.hasPreviousPage) {
-            fetchProductsForExcludeRate(null,pageInfoForEclude.startCursor, 'prev');
+            fetchProductsForExcludeRate(null, pageInfoForEclude.startCursor, 'prev');
         }
     };
     // ===========================================third table===========================

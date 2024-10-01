@@ -2361,7 +2361,9 @@ class ApiController extends Controller
                 'zone_id' => 'required|exists:zones,id',
                 'service_code' => [
                     'required',
-                    Rule::unique('rates', 'service_code')->ignore($request->input('id')),
+                    Rule::unique('rates', 'service_code')
+                        ->where('user_id', $user_id) // Specify user context
+                        ->ignore($request->input('id')),
                 ],
             ];
 
@@ -2885,9 +2887,11 @@ class ApiController extends Controller
             $jsonResponse = $response->json();
 
             // Check if collection exists or products are found
-            if (!isset($jsonResponse['data']) ||
-            (isset($jsonResponse['data']['collection']) && empty($jsonResponse['data']['collection']['products']['edges'])) ||
-            (!isset($jsonResponse['data']['products']) && !isset($jsonResponse['data']['collection']))) {
+            if (
+                !isset($jsonResponse['data']) ||
+                (isset($jsonResponse['data']['collection']) && empty($jsonResponse['data']['collection']['products']['edges'])) ||
+                (!isset($jsonResponse['data']['products']) && !isset($jsonResponse['data']['collection']))
+            ) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Collection or products not found.'
@@ -2896,8 +2900,8 @@ class ApiController extends Controller
 
             // Handle product data
             $productsData = isset($jsonResponse['data']['collection'])
-                            ? $jsonResponse['data']['collection']['products']
-                            : $jsonResponse['data']['products'];
+                ? $jsonResponse['data']['collection']['products']
+                : $jsonResponse['data']['products'];
 
             $collectionsArray = [];
             foreach ($productsData['edges'] as $value) {
@@ -2925,7 +2929,6 @@ class ApiController extends Controller
 
             // Return the JSON response
             return response()->json($data);
-
         } catch (Throwable $th) {
             Log::error('Unexpected error during product list fetch', [
                 'exception' => $th->getMessage(),
@@ -2935,5 +2938,4 @@ class ApiController extends Controller
             return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);
         }
     }
-
 }

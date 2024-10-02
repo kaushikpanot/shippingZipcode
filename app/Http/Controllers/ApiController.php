@@ -763,7 +763,6 @@ class ApiController extends Controller
 
         $destinationZipcode = $input['rate']['destination']['postal_code'];
         $destinationData = $input['rate']['destination'];
-        $originData = $input['rate']['origin'];
         $destinationAddress = $input['rate']['destination']['address1'] . " " . $input['rate']['destination']['address2'];
 
         $userData = User::where('name', $companyName)->first();
@@ -771,17 +770,38 @@ class ApiController extends Controller
 
         $setting = Setting::where('user_id', $userId)->first();
         $response = [];
-        $mixMergeRate = MixMergeRate::where('user_id', $userId)->get();
 
-        if (!empty($setting) && !$setting->status) {
+        if (!$setting) {
+            Log::info('Setting Data Not Found');
             return response()->json($response);
         }
 
-        $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $destinationCountryName)->whereHas('zone', function ($query) use ($reqCurrency) {
-            $query->where('status', 1)->where('currency', $reqCurrency);
-        })->pluck('zone_id');
+        if (!$setting->status) {
+            return response()->json($response);
+        }
 
+        $jsonFileData = file_get_contents(public_path('countries.json'));
+        $data = json_decode($jsonFileData, true);
+        $countries = $data['countries']['country'];
+        $country = collect($countries)->firstWhere('countryCode', $destinationCountryName);
+
+        if ($country) {
+            $currencyCode = $country['currencyCode'];
+        } else {
+            $currencyCode = "INR";
+        }
+
+        $mixMergeRate = MixMergeRate::where('user_id', $userId)->get();
+
+        $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $destinationCountryName)->pluck('zone_id');
+
+        // $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $destinationCountryName)->whereHas('zone', function ($query) use ($reqCurrency, $currencyCode) {
+        //     $query->where('status', 1)->where('currency', $currencyCode);
+        // })->pluck('zone_id');
+
+        Log::info('header logs:', ['zoneIds' => $zoneIds]);
         Log::info('header logs:', ['reqCurrency' => $reqCurrency]);
+        Log::info('header logs:', ['destinationCountryName' => $destinationCountryName]);
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode')->get();
 
@@ -920,7 +940,8 @@ class ApiController extends Controller
                             }
 
                             if ($condition['name'] == 'dayIs') {
-                                $totalQuantity = Carbon::now()->format('d');
+                                $condition['value'] = isset($condition['deliveryXday']) ? $condition['deliveryXday'] : null;
+                                $totalQuantity = Carbon::now()->format('Y-m-d');
                             }
 
                             if ($condition['name'] == 'date') {
@@ -1067,7 +1088,8 @@ class ApiController extends Controller
                             }
 
                             if ($condition['name'] == 'dayIs') {
-                                $totalQuantity = Carbon::now()->format('d');
+                                $condition['value'] = isset($condition['deliveryXday']) ? $condition['deliveryXday'] : null;
+                                $totalQuantity = Carbon::now()->format('Y-m-d');
                             }
 
                             if ($condition['name'] == 'date') {
@@ -1215,7 +1237,8 @@ class ApiController extends Controller
                             }
 
                             if ($condition['name'] == 'dayIs') {
-                                $totalQuantity = Carbon::now()->format('d');
+                                $condition['value'] = isset($condition['deliveryXday']) ? $condition['deliveryXday'] : null;
+                                $totalQuantity = Carbon::now()->format('Y-m-d');
                             }
 
                             if ($condition['name'] == 'date') {
@@ -1606,12 +1629,12 @@ class ApiController extends Controller
                     'city' => fn() => $destinationData['city'],
                     'provinceCode' => fn() => $destinationData['province'],
                     'address' => fn() => $destinationData['address1'],
-                    'day' => fn($day) => Carbon::now()->addDay($day)->format('l'),
-                    'date' => fn($day) => Carbon::now()->addDay($day)->format('Y-m-d'),
-                    'dayFromToday' => fn($day) => $day,
+                    'day' => fn() => Carbon::now()->format('l'),
+                    'date' => fn() => Carbon::now()->format('Y-m-d'),
+                    'dayFromToday' => fn() => Carbon::now()->format('Y-m-d'),
                     'type' => fn() => "shipping",
-                    'estimatedDay' => fn() => Carbon::now()->addDay()->format('l'),
-                    'timefromCurrent' => fn() => null,
+                    'estimatedDay' => fn() => Carbon::now()->format('Y-m-d'),
+                    'timefromCurrent' => fn() => Carbon::now($userData['shop_timezone'])->format('H:i'),
                     'available' => fn() => true,
                     'tag2' => fn($item) => $this->getCustomerByPhone('tags', $customer_id),
                 ];
@@ -1648,7 +1671,8 @@ class ApiController extends Controller
                             'label' => $modifier['label1'],
                             'xDay' => $modifier['rateDay'],
                             'rateModifier' => $modifier['rateModifier'],
-                            'unit' => $modifier['unit'] ?? 'kg'
+                            'unit' => $modifier['unit'] ?? 'kg',
+                            'deliveryXday' => $modifier['deliveryXday'] ?? null
                         ],
                     ];
 
@@ -1663,7 +1687,8 @@ class ApiController extends Controller
                                 'label' => $modifier['label2'],
                                 'xDay' => $modifier['rateDay2'],
                                 'rateModifier' => $modifier['rateModifier2'],
-                                'unit' => $modifier['unit'] ?? 'kg'
+                                'unit' => $modifier['unit'] ?? 'kg',
+                                'deliveryXday' => $modifier['deliveryXday2'] ?? null
                             ];
                         }
                     }
@@ -1696,7 +1721,10 @@ class ApiController extends Controller
                                     $deliveryDay = str_replace('#', '', $modifier['title']);
                                 } else if ($condition['modifier'] == 'dayFromToday') {
                                     $deliveryDay = $condition['xDay'];
-                                    $condition['value'] = str_replace('#', '', $modifier['title']);
+                                    $condition['value'] = isset($condition['deliveryXday']) ? $condition['deliveryXday'] : null;
+                                } else if ($condition['modifier'] == 'estimatedDay') {
+                                    $deliveryDay = $condition['xDay'];
+                                    $condition['value'] = isset($condition['deliveryXday']) ? $condition['deliveryXday'] : null;
                                 } else {
                                     $deliveryDay = 0;
                                 }
@@ -1826,7 +1854,7 @@ class ApiController extends Controller
             }
         }
 
-        if ($setting->mix_merge_rate == 0 && !empty($filteredRates)) {
+        if (isset($setting) && $setting->mix_merge_rate == 0 && !empty($filteredRates)) {
             $collection = collect($filteredRates);
 
             // Group the rates by 'merge_rate_tag'
@@ -1932,12 +1960,12 @@ class ApiController extends Controller
             $filteredRates = collect($filteredRates)->merge($newRates);
         }
 
-        if ($setting->shippingRate == 'Only Higher') {
+        if (isset($setting) && $setting->shippingRate == 'Only Higher') {
             $maxRate = $filteredRates->max('base_price');
             $filteredRates = $filteredRates->filter(function ($rate) use ($maxRate) {
                 return $rate->base_price == $maxRate;
             });
-        } elseif ($setting->shippingRate == 'Only Lower') {
+        } elseif (isset($setting) && $setting->shippingRate == 'Only Lower') {
             $minRate = $filteredRates->min('base_price');
             $filteredRates = $filteredRates->filter(function ($rate) use ($minRate) {
                 return $rate->base_price == $minRate;
@@ -1947,20 +1975,10 @@ class ApiController extends Controller
         // Log::info('Query logs:', ['totalQuantity' => $totalQuantity]);
         // Log::info('Shopify Carrier Service Request input:', ['filteredRates' => $filteredRates]);
 
-        $jsonFileData = file_get_contents(public_path('countries.json'));
-        $data = json_decode($jsonFileData, true);
-        $countries = $data['countries']['country'];
-        $country = collect($countries)->firstWhere('countryCode', $destinationCountryName);
-
-        if ($country) {
-            $currencyCode = $country['currencyCode'];
-        } else {
-            $currencyCode = "INR";
-        }
-
         foreach ($filteredRates as $rate) {
 
             Log::info('input logs:', ['finalRatePrice' => $rate->base_price]);
+            Log::info('input logs:', ['currencyCode' => $currencyCode]);
 
             $convertedAmount = 0;
             if ($rate->base_price > 0) {
@@ -2307,8 +2325,8 @@ class ApiController extends Controller
                 "shop_weight_unit" => $user->shop_weight_unit
             ];
 
-            if (!empty($user->shop_currency)) {
-                $symbol = CurrencySymbolUtil::getSymbol($user->shop_currency);
+            if (!empty($zone->currency)) {
+                $symbol = CurrencySymbolUtil::getSymbol($zone->currency);
                 $rate['shop_currency'] = $symbol;
             }
 
@@ -2605,8 +2623,8 @@ class ApiController extends Controller
             }
 
             $rate->shop_weight_unit = $user->shop_weight_unit;
-            if (!empty($user->shop_currency)) {
-                $symbol = CurrencySymbolUtil::getSymbol($user->shop_currency);
+            if (!empty($rate->zone->currency)) {
+                $symbol = CurrencySymbolUtil::getSymbol($rate->zone->currency);
                 $rate->shop_currency = $symbol;
             }
 

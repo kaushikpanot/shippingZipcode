@@ -301,11 +301,7 @@ function Rate(props) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTextBox, setActiveTextBox] = useState('');
 
-    const handleFocus = useCallback((modifierId, type) => {
-        setIsModalOpen(true);
-        setActiveModifierId(modifierId);
-        setActiveTextBox(type)
-    }, []);
+   
 
     const handleModalClose = useCallback(() => {
         setIsModalOpen(false);
@@ -1800,7 +1796,12 @@ function Rate(props) {
             fetchProductsForRate(null, pageInfoForRate.startCursor, 'prev');
         }
     };
-
+    const handleFocus = useCallback((modifierId, type) => {
+        setIsModalOpen(true);
+        setActiveModifierId(modifierId);
+        setActiveTextBox(type)
+        fetchProductsForRate()
+    }, []);
     const debouncedFetchProducts = useCallback(
         debounce((value) => {
             fetchProductsForRate(value);
@@ -1835,7 +1836,7 @@ function Rate(props) {
             navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
         }
         fetchProductsForExcludeRate()
-        fetchProductsForRate()
+      
     }, [formData.id, zone_id, navigate]);
 
     const handleProductChange = (productId, checked, text = '') => {

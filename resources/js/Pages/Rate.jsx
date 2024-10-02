@@ -120,7 +120,6 @@ function Rate(props) {
     const [showAllProducts, setShowAllProducts] = useState(false);
     const [showAllProduct, setShowAllProduct] = useState(false);
     const [loadingTable, setLoadingTable] = useState(false)
-    const [value, setValue] = useState('');
     const [shop_weight_unit, setshop_weight_unit] = useState('')
     const [shop_currency, setShop_currency] = useState()
     const [pageInfo, setPageInfo] = useState({
@@ -149,7 +148,6 @@ function Rate(props) {
     const [selectedProductIds2, setSelectedProductIds2] = useState({});
 
     const [activeModifierId, setActiveModifierId] = useState(null);
-    const [selectedProductIds3, setSelectedProductIds3] = useState([]);
     const [date, setDate] = useState({ startDate: '', endDate: '' });
     const handleDateChange = (key, value) => {
         setDate(prevDates => {
@@ -258,7 +256,7 @@ function Rate(props) {
         { label: 'Type', value: 'type', mainlabel: "Delivery" },
         { label: 'X Estimated Delivery Day ', value: 'estimatedDay', mainlabel: "Delivery" },
         { label: 'X Time From Current Time', value: 'timefromCurrent', mainlabel: "Delivery" },
-        { label: 'First Available Day', value: 'available', mainlabel: "Delivery" },
+        // { label: 'First Available Day', value: 'available', mainlabel: "Delivery" },
 
         { label: 'Any Product', value: '', disabled: true, className: 'select-header' },
         { label: 'Available Quantity ', value: 'availableQuan', mainlabel: "any_Product" },
@@ -301,7 +299,7 @@ function Rate(props) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTextBox, setActiveTextBox] = useState('');
 
-   
+
 
     const handleModalClose = useCallback(() => {
         setIsModalOpen(false);
@@ -342,6 +340,7 @@ function Rate(props) {
             [newId]: true,
         }));
     };
+
     useEffect(() => {
         if (rateModifiers.length === 0) return;
 
@@ -388,6 +387,7 @@ function Rate(props) {
     };
 
     const handleRateModifierChange = (id, field) => (value) => {
+        console.log('rate modifer',id,field,value)
         const option = rateModifiersOptions.find(opt => opt.value === value);
 
         setRateModifiers((prevModifiers) =>
@@ -563,7 +563,7 @@ function Rate(props) {
                 });
                 setSelectedProductIds2(selectedIds2);
 
-                
+
             }
 
             if (response.data.rate.cart_condition) {
@@ -1116,33 +1116,48 @@ function Rate(props) {
 
     const handleConditionChange = useCallback(
         (newValue, index, key) => {
+            const parsedValue = parseInt(newValue, 10);
+    console.log('rate base on surches',newValue,index,key)
             setErrors(prevErrors => {
                 const updatedErrors = { ...prevErrors };
-                if (newValue) {
+    
+                if (newValue && parsedValue < 0) {
+                    updatedErrors[`value${index}`] = 'Value cannot be negative';
+                } else {
                     delete updatedErrors[`value${index}`];
                 }
+    
                 return updatedErrors;
             });
-            setItems(prevItems => {
-                return prevItems.map((item, idx) => {
-                    if (idx === index) {
-                        let updatedItem = { ...item, [key]: newValue };
-                        if (item.name === 'dayIs' && !isNaN(newValue)) {
-                            const daysToAdd = parseInt(newValue, 10);
-                            const futureDate = new Date();
-                            futureDate.setDate(futureDate.getDate() + daysToAdd);
-                            const deliveryXday = futureDate.toISOString().split('T')[0];
-                            updatedItem = { ...updatedItem, deliveryXday };
-                        }
+                if (newValue && parsedValue >= 0) {
+                setItems(prevItems => {
+                    return prevItems.map((item, idx) => {
+                        if (idx === index) {
+                            let updatedItem = { ...item, [key]: newValue };
     
-                        return updatedItem;
-                    }
-                    return item;
+                            if (item.name === 'dayIs' && !isNaN(parsedValue) && parsedValue >= 0) {
+                                const daysToAdd = parsedValue;
+                                if (daysToAdd > 0) {
+                                    const futureDate = new Date();
+                                    futureDate.setDate(futureDate.getDate() + daysToAdd);
+                                    
+                                    if (!isNaN(futureDate.getTime())) {
+                                        const deliveryXday = futureDate.toISOString().split('T')[0];
+                                        updatedItem = { ...updatedItem, deliveryXday };
+                                    }
+                                }
+                            }
+                            return updatedItem;
+                        }
+                        return item;
+                    });
                 });
-            });
+            }
         },
         []
     );
+    
+    
 
     const handleDeleteItem = (index) => {
         const updatedItems = items.filter((item, i) => i !== index);
@@ -1418,6 +1433,10 @@ function Rate(props) {
 
     const saveRate = async () => {
         const newErrors = {};
+
+        if (exclude_Rate.set_exclude_products === 'custome_selection' && exclude_Rate.productsData.length === 0) {
+            newErrors.productsData = 'Select at least 1 product.';
+        }
         if (!formData.name) newErrors.name = 'Rate name is required';
         if (!formData.base_price) newErrors.base_price = 'Base price is required';
         if (!formData.service_code) newErrors.service_code = 'Service code is required';
@@ -1481,6 +1500,12 @@ function Rate(props) {
             if (checkstate.selectedByCart === 'Percentage') {
                 if (!rate_based_on_surcharge.cart_total_percentage) {
                     newErrors.cart_total_percentage = 'The cart total percentage field is required.';
+                }
+
+            }
+            if (checkstate.selectedByCart === 'Product') {
+                if (rate_based_on_surcharge.productData.length === 0) {
+                    newErrors.productsData = 'Select at least 1 product.';
                 }
 
             }
@@ -1836,7 +1861,7 @@ function Rate(props) {
             navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
         }
         fetchProductsForExcludeRate()
-      
+
     }, [formData.id, zone_id, navigate]);
 
     const handleProductChange = (productId, checked, text = '') => {
@@ -1985,12 +2010,12 @@ function Rate(props) {
             [modifierId]: prevSelected[modifierId]
                 ? prevSelected[modifierId].includes(productId)
                     ? prevSelected[modifierId].filter((id) => id !== productId)
-                    : [...(prevSelected[modifierId] || []), productId] 
+                    : [...(prevSelected[modifierId] || []), productId]
                 : [productId],
         }));
     };
 
-   
+
 
     const filteredProductsFirst = productsForRateModifer.filter(product =>
         product.title.toLowerCase().includes(textFieldValue.toLowerCase())
@@ -2003,14 +2028,14 @@ function Rate(props) {
             ...prevSelected,
             [modifierId]: prevSelected[modifierId]
                 ? prevSelected[modifierId].includes(productId)
-                    ? prevSelected[modifierId].filter((id) => id !== productId) 
-                    : [...(prevSelected[modifierId] || []), productId] 
-                : [productId], 
+                    ? prevSelected[modifierId].filter((id) => id !== productId)
+                    : [...(prevSelected[modifierId] || []), productId]
+                : [productId],
         }));
     };
-    const selectedCountForRate = activeTextBox === 'productData' 
-    ? selectedProductIds[activeModifierId]?.length || 0
-    : selectedProductIds2[activeModifierId]?.length || 0;
+    const selectedCountForRate = activeTextBox === 'productData'
+        ? selectedProductIds[activeModifierId]?.length || 0
+        : selectedProductIds2[activeModifierId]?.length || 0;
 
     if (loading === true) {
         return (
@@ -2295,6 +2320,7 @@ function Rate(props) {
                                                                             autoComplete="off"
                                                                             placeholder='Delivery X days from today is'
                                                                             error={errors[`value${index}`]}
+                                                                            type='number'
                                                                         />
                                                                     )}
                                                                     {item.name === 'time' && (
@@ -3021,6 +3047,11 @@ function Rate(props) {
                                                         </p>
                                                         <div style={{ marginTop: "2%", width: '20%' }} >
                                                             <Button variant="primary" onClick={handleSearchClick} >Search Product</Button></div>
+
+                                                        {errors.productsData && (
+                                                            <p style={{ color: 'red', marginTop: "2%" }}>{errors.productsData}</p>
+                                                        )}
+
                                                         <div style={{ marginTop: "4%" }}>
                                                             {filteredProducts?.length > 0 && (
                                                                 <div>
@@ -3409,7 +3440,9 @@ function Rate(props) {
                                         </p>
                                         <div style={{ marginTop: "2%", width: '20%' }}>
                                             <Button variant="primary" onClick={handleClick}>Search Product</Button></div>
-
+                                        {errors.productsData && (
+                                            <p style={{ color: 'red', marginTop: "2%" }}>{errors.productsData}</p>
+                                        )}
                                         {filteredProduct?.length > 0 && (
                                             <div style={{ marginTop: "4%" }}>
                                                 <div>
@@ -3718,7 +3751,7 @@ function Rate(props) {
                                                                     onFocus={() => handleFocus(modifier.id, 'productData')}
                                                                     readOnly // Make it read-only to prevent direct editing
                                                                     helpText='Selected product IDs'
-                                                                    multiline= {2}
+                                                                    multiline={2}
                                                                 />
                                                             )}
                                                             {(modifier.rateModifier === 'price' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
@@ -3917,7 +3950,7 @@ function Rate(props) {
                                                                             onFocus={() => handleFocus(modifier.id, 'productData2')}
                                                                             readOnly // Make it read-only to prevent direct editing
                                                                             helpText='Selected product IDs'
-                                                                            multiline= {2}
+                                                                            multiline={2}
 
                                                                         />
                                                                     )}

@@ -307,7 +307,6 @@ function Rate(props) {
         setActiveTextBox(type)
     }, []);
 
-    console.log(activeTextBox)
     const handleModalClose = useCallback(() => {
         setIsModalOpen(false);
     }, []);
@@ -1131,7 +1130,16 @@ function Rate(props) {
             setItems(prevItems => {
                 return prevItems.map((item, idx) => {
                     if (idx === index) {
-                        return { ...item, [key]: newValue };
+                        let updatedItem = { ...item, [key]: newValue };
+                        if (item.name === 'dayIs' && !isNaN(newValue)) {
+                            const daysToAdd = parseInt(newValue, 10);
+                            const futureDate = new Date();
+                            futureDate.setDate(futureDate.getDate() + daysToAdd);
+                            const deliveryXday = futureDate.toISOString().split('T')[0];
+                            updatedItem = { ...updatedItem, deliveryXday };
+                        }
+    
+                        return updatedItem;
                     }
                     return item;
                 });

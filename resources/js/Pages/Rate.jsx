@@ -284,6 +284,14 @@ function Rate(props) {
         // { label: 'Third Party Service', value: 'thirdParty', mainlabel: "Rate" },
     ];
     const [open, setOpen] = useState({});
+    useEffect(() => {
+        const initialOpenState = rateModifiers.reduce((acc, modifier) => {
+            acc[modifier.id] = true;
+            return acc;
+        }, {});
+        setOpen(initialOpenState);
+    }, [rateModifiers]);
+
     const handleToggle = (id) => () => {
         setOpen((prevState) => ({
             ...prevState,

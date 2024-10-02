@@ -307,7 +307,6 @@ function Rate(props) {
         setActiveTextBox(type)
     }, []);
 
-    console.log(activeTextBox)
     const handleModalClose = useCallback(() => {
         setIsModalOpen(false);
     }, []);
@@ -1121,6 +1120,7 @@ function Rate(props) {
 
     const handleConditionChange = useCallback(
         (newValue, index, key) => {
+            // Update errors if there's a new value
             setErrors(prevErrors => {
                 const updatedErrors = { ...prevErrors };
                 if (newValue) {
@@ -1128,10 +1128,30 @@ function Rate(props) {
                 }
                 return updatedErrors;
             });
+    
+            // Update items
             setItems(prevItems => {
                 return prevItems.map((item, idx) => {
                     if (idx === index) {
-                        return { ...item, [key]: newValue };
+                        let updatedItem = { ...item, [key]: newValue };
+    
+                        // Check if name is 'dayIs' and calculate delivery date
+                        if (item.name === 'dayIs' && !isNaN(newValue)) {
+                            const daysToAdd = parseInt(newValue, 10);
+                            const futureDate = new Date();
+                            futureDate.setDate(futureDate.getDate() + daysToAdd);
+                            
+                            // Get the delivery date in YYYY-MM-DD format
+                            const deliveryXday = futureDate.toISOString().split('T')[0];
+    
+                            // Log the future date to the console
+                            console.log(`Delivery date calculated: ${deliveryXday}`);
+    
+                            // Update the item with the calculated delivery date
+                            updatedItem = { ...updatedItem, deliveryXday };
+                        }
+    
+                        return updatedItem;
                     }
                     return item;
                 });

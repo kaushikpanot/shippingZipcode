@@ -333,7 +333,7 @@ const Settings = (props) => {
         <IndexTable.Cell>
           {service_code}
         </IndexTable.Cell>
-        <IndexTable.Cell> {description}</IndexTable.Cell>
+        {/* <IndexTable.Cell> {description}</IndexTable.Cell> */}
         <IndexTable.Cell> {tags_to_combine}</IndexTable.Cell>
         <IndexTable.Cell>  {status === 1 ? "Enabled" : "Disabled"}</IndexTable.Cell>
         <IndexTable.Cell>
@@ -532,7 +532,7 @@ const Settings = (props) => {
                         headings={[
                           { title: 'Rate Name' },
                           { title: 'Service Code' },
-                          { title: 'Description' },
+                          // { title: 'Description' },
                           { title: 'Tags' },
                           { title: 'Status' },
                           { title: 'Action' },

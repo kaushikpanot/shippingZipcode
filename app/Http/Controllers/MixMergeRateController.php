@@ -127,6 +127,10 @@ class MixMergeRateController extends Controller
                 return response()->json(['status' => false, 'errors' => $validator->errors()], 422);
             }
 
+            $inputData['min_shipping_rate'] = (isset($inputData['min_shipping_rate']) && $inputData['min_shipping_rate'] > 0) ? $inputData['min_shipping_rate'] : 0;
+
+            $inputData['mix_shipping_rate'] = (isset($inputData['mix_shipping_rate']) && $inputData['mix_shipping_rate'] > 0) ? $inputData['mix_shipping_rate'] : 0;
+
             $mergeRate = MixMergeRate::updateOrCreate(['id' => $request->input('id')], $inputData);
 
             if ($mergeRate->wasRecentlyCreated) {

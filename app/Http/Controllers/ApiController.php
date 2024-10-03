@@ -718,6 +718,28 @@ class ApiController extends Controller
         return $unitPrice / ($unitConversion[$baseUnit] ?? 1) ?? 0;
     }
 
+    private function convertCurrency($storeCurrency, $zoneCurrency, $price)
+    {
+        // $jsonFileData = file_get_contents(public_path('countries.json'));
+        // $data = json_decode($jsonFileData, true);
+        // $countries = $data['countries']['country'];
+        // $country = collect($countries)->firstWhere('countryCode', $destinationCountryName);
+
+        if ($zoneCurrency) {
+            $currencyCode = $zoneCurrency;
+        } else {
+            $currencyCode = "INR";
+        }
+
+        $convertedAmount = 0;
+        if ($price > 0) {
+            $convertedAmount1 = CurrencyConverter::convert($price)->from($storeCurrency)->to($currencyCode)->get();
+            $convertedAmount = round($convertedAmount1, 2);
+        }
+
+        return $convertedAmount;
+    }
+
 
     public function handleCallback(Request $request, $customer_id = null)
     {
@@ -807,8 +829,12 @@ class ApiController extends Controller
 
         Log::info('header logs:', ['rates' => count($rates)]);
 
-        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id) {
+        $filteredRates = $rates->map(function ($rate) use ($destinationData, $destinationZipcode, $totalQuantity, $totalWeight, $localeCode, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id, $reqCurrency) {
             $zipcode = optional($rate->zipcode);
+
+            $totalPrice = $this->convertCurrency($reqCurrency, $rate->zone->currency, $totalPrice);
+
+            Log::info('header logs:', ['totalPrice' => $totalPrice]);
             // Check cart conditions
             $conditionsMet = false;
             switch ($rate->cart_condition['conditionMatch']) {
@@ -816,7 +842,7 @@ class ApiController extends Controller
                     $conditionsMet = true;
                     break;
                 case 1: // All conditions must be true
-                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id) {
+                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->every(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id, $reqCurrency, $rate) {
 
                         if ($condition['label'] == 'Cart_Order') {
                             $currentTime = Carbon::now($userData['shop_timezone'])->format('H:i');
@@ -885,6 +911,7 @@ class ApiController extends Controller
                                 $perProductResult = [];
                                 $perProductTag = [];
                                 foreach ($items as $item) {
+                                    $item['price'] = $this->convertCurrency($reqCurrency, $rate->zone->currency, $item['price']);
                                     $totalQuantity = is_callable($fieldMap[$condition['name']])
                                         ? $fieldMap[$condition['name']]($item)
                                         : $item[$fieldMap[$condition['name']]];
@@ -962,7 +989,7 @@ class ApiController extends Controller
                     });
                     break;
                 case 2: // Any condition must be true
-                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id) {
+                    $conditionsMet = collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id, $reqCurrency, $rate) {
                         Log::info("case 2");
                         if ($condition['label'] == 'Cart_Order') {
 
@@ -1033,6 +1060,7 @@ class ApiController extends Controller
                                 $perProductResult = [];
                                 $perProductTag = [];
                                 foreach ($items as $item) {
+                                    $item['price'] = $this->convertCurrency($reqCurrency, $rate->zone->currency, $item['price']);
                                     $totalQuantity = is_callable($fieldMap[$condition['name']])
                                         ? $fieldMap[$condition['name']]($item)
                                         : $item[$fieldMap[$condition['name']]];
@@ -1111,7 +1139,7 @@ class ApiController extends Controller
                     });
                     break;
                 case 3: // All conditions must be false to return true, if any condition is true return false
-                    $conditionsMet = !collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id) {
+                    $conditionsMet = !collect($rate->cart_condition['cartCondition'])->some(function ($condition) use ($totalQuantity, $totalWeight, $localeCode, $destinationData, $destinationAddress, $items, $totalPrice, $distance, $userData, $customer_id, $reqCurrency, $rate) {
                         Log::info("case 3");
                         if ($condition['label'] == 'Cart_Order') {
 
@@ -1182,6 +1210,7 @@ class ApiController extends Controller
                                 $perProductResult = [];
                                 $perProductTag = [];
                                 foreach ($items as $item) {
+                                    $item['price'] = $this->convertCurrency($reqCurrency, $rate->zone->currency, $item['price']);
                                     $totalQuantity = is_callable($fieldMap[$condition['name']])
                                         ? $fieldMap[$condition['name']]($item)
                                         : $item[$fieldMap[$condition['name']]];
@@ -1542,17 +1571,17 @@ class ApiController extends Controller
 
                         if ($checkRateTier) {
                             $rate->base_price = $tier['basePrice'] + $perItem + $percentCharge + $perkg;
-                            // Log::info("checkRateTier", [
-                            //     "basePrice"=>$tier['basePrice'],
-                            //     "perItem"=>$perItem,
-                            //     "percentCharge"=>$percentCharge,
-                            //     "perkg"=>$perkg,
-                            //     "perkg1"=>$tier['perkg'],
-                            //     "perkg2"=>$this->convertWeightUnit($baseUnitTier, $totalWeight),
-                            //     "totalWeight"=>$totalWeight,
-                            //     "base_price"=>$rate->base_price,
-                            //     "totalPrice"=>$totalPrice,
-                            // ]);
+                            Log::info("checkRateTier", [
+                                "basePrice"=>$tier['basePrice'],
+                                "perItem"=>$perItem,
+                                "percentCharge"=>$percentCharge,
+                                "perkg"=>$perkg,
+                                "perkg1"=>$perkg,
+                                "perkg2"=>$this->convertWeightUnit($baseUnitTier, $totalWeight),
+                                "totalWeight"=>$totalWeight,
+                                "base_price"=>$rate->base_price,
+                                "totalPrice"=>$totalPrice,
+                            ]);
                         }
                     }
                 } else {

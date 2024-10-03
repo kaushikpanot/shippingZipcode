@@ -720,11 +720,6 @@ class ApiController extends Controller
 
     private function convertCurrency($storeCurrency, $zoneCurrency, $price)
     {
-        // $jsonFileData = file_get_contents(public_path('countries.json'));
-        // $data = json_decode($jsonFileData, true);
-        // $countries = $data['countries']['country'];
-        // $country = collect($countries)->firstWhere('countryCode', $destinationCountryName);
-
         if ($zoneCurrency) {
             $currencyCode = $zoneCurrency;
         } else {

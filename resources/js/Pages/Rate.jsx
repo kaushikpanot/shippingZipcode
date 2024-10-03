@@ -387,9 +387,7 @@ function Rate(props) {
     };
 
     const handleRateModifierChange = (id, field) => (value) => {
-        console.log('rate modifer', id, field, value)
         const option = rateModifiersOptions.find(opt => opt.value === value);
-        console.log(rateModifiers)
         setRateModifiers((prevModifiers) =>
             prevModifiers.map((modifier) => {
                 if (modifier.id === id) {
@@ -1162,7 +1160,6 @@ function Rate(props) {
                 }));
                 return;
             }
-            console.log('rate base on surcharges', newValue, index, key);
             setErrors(prevErrors => {
                 const updatedErrors = { ...prevErrors };
 

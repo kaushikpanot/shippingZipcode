@@ -1370,18 +1370,8 @@ function Rate(props) {
     });
 
     const handleRateFormChange = (field) => (value) => {
-        if (value.includes(',')) {
-            return; 
-        }
-    
-        setFormData((prevState) => ({
-            ...prevState,
-            [field]: value,
-        }));
-        setsend_another_rate((prevState) => ({
-            ...prevState,
-            [field]: value,
-        }));
+       
+        
         SetExclude_Rate((prevState) => ({
             ...prevState,
             [field]: value,
@@ -1393,6 +1383,18 @@ function Rate(props) {
         setErrors((prevErrors) => ({
             ...prevErrors,
             [field]: '',
+        }));
+
+        if (value.includes(',','.')) {
+            return; 
+        }
+        setsend_another_rate((prevState) => ({
+            ...prevState,
+            [field]: value,
+        }));
+        setFormData((prevState) => ({
+            ...prevState,
+            [field]: value,
         }));
     };
 

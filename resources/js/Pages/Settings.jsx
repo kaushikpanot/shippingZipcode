@@ -315,7 +315,7 @@ const Settings = (props) => {
   const paginatedZones = filteredZones.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const rowMarkup = paginatedZones.map(
-    ({ id, rate_name, service_code, description, tags_to_combine }, index) => (
+    ({ id, rate_name, service_code, description, tags_to_combine, status }, index) => (
       <IndexTable.Row
         id={id}
         key={id}
@@ -335,6 +335,7 @@ const Settings = (props) => {
         </IndexTable.Cell>
         <IndexTable.Cell> {description}</IndexTable.Cell>
         <IndexTable.Cell> {tags_to_combine}</IndexTable.Cell>
+        <IndexTable.Cell>  {status === 1 ? "Enabled" : "Disabled"}</IndexTable.Cell>
         <IndexTable.Cell>
           <ButtonGroup>
             <Button icon={EditIcon} variant="primary" onClick={() => handleEditMergeRate(id)} />
@@ -533,6 +534,7 @@ const Settings = (props) => {
                           { title: 'Service Code' },
                           { title: 'Description' },
                           { title: 'Tags' },
+                          { title: 'Status' },
                           { title: 'Action' },
                         ]}
                         paginated

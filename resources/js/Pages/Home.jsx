@@ -19,7 +19,7 @@ import {
     InlineGrid,
     SkeletonBodyText,
     SkeletonDisplayText,
-    LegacyCard, 
+    LegacyCard,
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
@@ -77,7 +77,7 @@ function Home(props) {
             console.error(error, 'error from');
         }
     };
-   
+
     useEffect(() => {
         getZoneDetails();
     }, []);
@@ -138,9 +138,9 @@ function Home(props) {
     );
 
     const paginatedZones = filteredZones.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
+    console.log(paginatedZones)
     const rowMarkup = paginatedZones.map(
-        ({ id, name, countries, currency }, index) => (          
+        ({ id, name, countries, currency,status  }, index) => (
             <IndexTable.Row
                 id={id}
                 key={id}
@@ -168,6 +168,7 @@ function Home(props) {
                     })}
                 </IndexTable.Cell>
                 <IndexTable.Cell> {currency}</IndexTable.Cell>
+                <IndexTable.Cell>  {status === 1 ? "Enabled" : "Disabled"}</IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
                         <Button icon={EditIcon} variant="primary" onClick={() => handleEditZone(id)} />
@@ -245,30 +246,31 @@ function Home(props) {
                                 />
                             </div>
                             <div style={{ marginTop: "2.5%", position: 'relative' }}>
-                                    <IndexTable
-                                        resourceName={resourceName}
-                                        itemCount={filteredZones.length}
-                                        // selectedItemsCount={
-                                        //     allResourcesSelected ? 'All' : selectedResources.length
-                                        // }
-                                        // onSelectionChange={handleSelectionChange}
-                                        headings={[
-                                            { title: 'Zipcode Rule Name' },
-                                            { title: 'Country' },
-                                            { title: 'currency' },
-                                            { title: 'Action' },
-                                        ]}
-                                        selectable={false}
-                                        paginated
-                                        pagination={{
-                                            hasPrevious: currentPage > 1,
-                                            hasNext: currentPage < totalPages,
-                                            onNext: handleNextPage,
-                                            onPrevious: handlePreviousPage,
-                                        }}
-                                    >
-                                        {rowMarkup}
-                                    </IndexTable>                           
+                                <IndexTable
+                                    resourceName={resourceName}
+                                    itemCount={filteredZones.length}
+                                    // selectedItemsCount={
+                                    //     allResourcesSelected ? 'All' : selectedResources.length
+                                    // }
+                                    // onSelectionChange={handleSelectionChange}
+                                    headings={[
+                                        { title: 'Zipcode Rule Name' },
+                                        { title: 'Country' },
+                                        { title: 'currency' },
+                                        { title: 'Status' },
+                                        { title: 'Action' },
+                                    ]}
+                                    selectable={false}
+                                    paginated
+                                    pagination={{
+                                        hasPrevious: currentPage > 1,
+                                        hasNext: currentPage < totalPages,
+                                        onNext: handleNextPage,
+                                        onPrevious: handlePreviousPage,
+                                    }}
+                                >
+                                    {rowMarkup}
+                                </IndexTable>
                             </div>
                         </Card>
                     </Grid.Cell>

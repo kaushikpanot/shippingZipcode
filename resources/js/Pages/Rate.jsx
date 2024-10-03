@@ -282,13 +282,13 @@ function Rate(props) {
         // { label: 'Third Party Service', value: 'thirdParty', mainlabel: "Rate" },
     ];
     const [open, setOpen] = useState({});
-    useEffect(() => {
-        const initialOpenState = rateModifiers.reduce((acc, modifier) => {
-            acc[modifier.id] = true;
-            return acc;
-        }, {});
-        setOpen(initialOpenState);
-    }, [rateModifiers]);
+    // useEffect(() => {
+    //     const initialOpenState = rateModifiers.reduce((acc, modifier) => {
+    //         acc[modifier.id] = true;
+    //         return acc;
+    //     }, {});
+    //     setOpen(initialOpenState);
+    // }, [open]);
 
     const handleToggle = (id) => () => {
         setOpen((prevState) => ({
@@ -387,9 +387,7 @@ function Rate(props) {
     };
 
     const handleRateModifierChange = (id, field) => (value) => {
-        console.log('rate modifer',id,field,value)
         const option = rateModifiersOptions.find(opt => opt.value === value);
-
         setRateModifiers((prevModifiers) =>
             prevModifiers.map((modifier) => {
                 if (modifier.id === id) {
@@ -406,6 +404,7 @@ function Rate(props) {
                             ...(value === 'title' || value === 'address' ? {
                                 rateOperator: 'contains',
                             } : {}),
+                            deliveryXday: '',
                         }),
                         ...(field === 'rateModifier2' && {
                             label2: option?.mainlabel || '',
@@ -417,8 +416,29 @@ function Rate(props) {
                             ...(value === 'title' || value === 'address' ? {
                                 rateOperator2: 'contains',
                             } : {}),
+                            deliveryXday3: '',
                         }),
                     };
+
+                    const daysValue = parseInt(newModifier.rateDay, 10);
+                    const daysValue2 = parseInt(newModifier.rateDay2, 10);
+
+                    if (!isNaN(daysValue) && daysValue >= 0) {
+                        const futureDate = new Date();
+                        futureDate.setDate(futureDate.getDate() + daysValue);
+                        newModifier.deliveryXday = futureDate.toISOString().split('T')[0];
+                    } else {
+                        newModifier.deliveryXday = '';
+                    }
+
+                    if (!isNaN(daysValue2) && daysValue2 >= 0) {
+                        const futureDate2 = new Date();
+                        futureDate2.setDate(futureDate2.getDate() + daysValue2);
+                        newModifier.deliveryXday2 = futureDate2.toISOString().split('T')[0];
+                    } else {
+                        newModifier.deliveryXday2 = '';
+                    }
+
 
                     return newModifier;
                 }
@@ -426,7 +446,24 @@ function Rate(props) {
             })
         );
     };
+    const handleRateDayInputChange = (id, field) => (value) => {
+        const parsedValue = parseInt(value, 10);
 
+        if (value === '' || (parsedValue >= 0 && !isNaN(parsedValue))) {
+            setRateModifiers((prevModifiers) =>
+                prevModifiers.map((modifier) => {
+                    if (modifier.id === id) {
+                        return {
+                            ...modifier,
+                            [field]: value,
+                        };
+                    }
+                    return modifier;
+                })
+            );
+            handleRateModifierChange(id, field)(value);
+        }
+    };
     const rateTag = [
         { label: 'Equal', value: 'equal' },
         { label: 'Does Not Equal', value: 'notequal' },
@@ -1112,52 +1149,54 @@ function Rate(props) {
         updatedItems[index] = updatedItem;
         setItems(updatedItems);
     };
-
-
     const handleConditionChange = useCallback(
         (newValue, index, key) => {
-            const parsedValue = parseInt(newValue, 10);
-    console.log('rate base on surches',newValue,index,key)
+            const parsedValue = newValue === '' ? '' : parseInt(newValue, 10);
+
+            if (parsedValue < 0) {
+                setErrors(prevErrors => ({
+                    ...prevErrors,
+                    [`value${index}`]: 'Value cannot be negative',
+                }));
+                return;
+            }
             setErrors(prevErrors => {
                 const updatedErrors = { ...prevErrors };
-    
-                if (newValue && parsedValue < 0) {
-                    updatedErrors[`value${index}`] = 'Value cannot be negative';
-                } else {
+
+                if (newValue === '' || parsedValue >= 0) {
                     delete updatedErrors[`value${index}`];
                 }
-    
+
                 return updatedErrors;
             });
-                if (newValue && parsedValue >= 0) {
-                setItems(prevItems => {
-                    return prevItems.map((item, idx) => {
-                        if (idx === index) {
-                            let updatedItem = { ...item, [key]: newValue };
-    
-                            if (item.name === 'dayIs' && !isNaN(parsedValue) && parsedValue >= 0) {
-                                const daysToAdd = parsedValue;
-                                if (daysToAdd > 0) {
-                                    const futureDate = new Date();
-                                    futureDate.setDate(futureDate.getDate() + daysToAdd);
-                                    
-                                    if (!isNaN(futureDate.getTime())) {
-                                        const deliveryXday = futureDate.toISOString().split('T')[0];
-                                        updatedItem = { ...updatedItem, deliveryXday };
-                                    }
+            setItems(prevItems => {
+                return prevItems.map((item, idx) => {
+                    if (idx === index) {
+                        let updatedItem = { ...item, [key]: newValue };
+
+                        if (item.name === 'dayIs' && newValue !== '' && !isNaN(parsedValue) && parsedValue >= 0) {
+                            const daysToAdd = parsedValue;
+                            if (daysToAdd > 0) {
+                                const futureDate = new Date();
+                                futureDate.setDate(futureDate.getDate() + daysToAdd);
+
+                                if (!isNaN(futureDate.getTime())) {
+                                    const deliveryXday = futureDate.toISOString().split('T')[0];
+                                    updatedItem = { ...updatedItem, deliveryXday };
                                 }
                             }
-                            return updatedItem;
+                        } else if (newValue === '') {
+                            updatedItem = { ...updatedItem, deliveryXday: undefined };
                         }
-                        return item;
-                    });
+
+                        return updatedItem;
+                    }
+                    return item;
                 });
-            }
+            });
         },
         []
     );
-    
-    
 
     const handleDeleteItem = (index) => {
         const updatedItems = items.filter((item, i) => i !== index);
@@ -1328,14 +1367,8 @@ function Rate(props) {
     });
 
     const handleRateFormChange = (field) => (value) => {
-        setFormData((prevState) => ({
-            ...prevState,
-            [field]: value,
-        }));
-        setsend_another_rate((prevState) => ({
-            ...prevState,
-            [field]: value,
-        }));
+       
+        
         SetExclude_Rate((prevState) => ({
             ...prevState,
             [field]: value,
@@ -1347,6 +1380,18 @@ function Rate(props) {
         setErrors((prevErrors) => ({
             ...prevErrors,
             [field]: '',
+        }));
+
+        if (value.includes(',','.')) {
+            return; 
+        }
+        setsend_another_rate((prevState) => ({
+            ...prevState,
+            [field]: value,
+        }));
+        setFormData((prevState) => ({
+            ...prevState,
+            [field]: value,
         }));
     };
 
@@ -1689,6 +1734,7 @@ function Rate(props) {
         },
         [debouncedFetchProductsForRateSurcharge]
     );
+
     const handleNextPage = () => {
         if (pageInfo.hasNextPage) {
             fetchProducts(null, pageInfo.endCursor, 'next');
@@ -2150,6 +2196,7 @@ function Rate(props) {
                                         value={formData.base_price}
                                         onChange={handleRateFormChange('base_price')}
                                         error={errors.base_price}
+                                        type='number'
                                     />
                                 </div>
                                 <div style={{ marginTop: '2%', marginBottom: '2%' }} className='zonetext'>
@@ -2292,7 +2339,9 @@ function Rate(props) {
                                                                             value={item.condition}
                                                                         />
                                                                     )}
-                                                                    {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && (
+                                                                    {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && item.name !== 'total' &&
+                                                                    item.name !== 'total2' &&
+                                                                    item.name !== 'price' && (
                                                                         <TextField
                                                                             value={item.value}
                                                                             onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
@@ -2301,6 +2350,17 @@ function Rate(props) {
                                                                             error={errors[`value${index}`]}
                                                                         />
                                                                     )}
+
+                                                                    {(item.name === 'total' || item.name === 'total2' || item.name === 'price') &&(
+                                                                        <TextField
+                                                                        value={item.value}
+                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
+                                                                        autoComplete="off"
+                                                                        suffix={shop_currency}
+                                                                        error={errors[`value${index}`]}
+                                                                    />
+                                                                    )}
+
                                                                     {item.condition === 'between' && (
                                                                         <div>
                                                                             {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'name2' && item.name !== 'email' && item.name !== 'phone' && item.name !== 'company' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'Customer' && item.name !== 'localcode' && (
@@ -2313,6 +2373,7 @@ function Rate(props) {
                                                                             )}
                                                                         </div>
                                                                     )}
+
                                                                     {item.name === 'dayIs' && (
                                                                         <TextField
                                                                             value={item.value}
@@ -2323,6 +2384,8 @@ function Rate(props) {
                                                                             type='number'
                                                                         />
                                                                     )}
+
+
                                                                     {item.name === 'time' && (
                                                                         <div style={{
                                                                             display: 'flex',
@@ -3661,7 +3724,7 @@ function Rate(props) {
                                                                         onChange={handleRateModifierChange(modifier.id, 'rateOperator')}
                                                                     />
                                                                 )}
-                                                                {(modifier.rateModifier === 'price' || modifier.rateModifier === 'time' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'dayFromToday') && (
+                                                                {(modifier.rateModifier === 'price' || modifier.rateModifier === 'time' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent') && (
                                                                     <Select
                                                                         label="Select Operator"
                                                                         options={rateTimeOptions}
@@ -3754,7 +3817,7 @@ function Rate(props) {
                                                                     multiline={2}
                                                                 />
                                                             )}
-                                                            {(modifier.rateModifier === 'price' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'dayFromToday' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
+                                                            {(modifier.rateModifier === 'price' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
                                                                 <TextField
                                                                     type="number"
                                                                     value={modifier.rateDay}
@@ -3765,12 +3828,21 @@ function Rate(props) {
                                                                             modifier.rateModifier === 'weight' ? "Weight" :
                                                                                 modifier.rateModifier === 'quantity' ? "Quantity" :
                                                                                     modifier.rateModifier === 'distance' ? "Distance" :
-                                                                                        modifier.rateModifier === 'dayFromToday' ? "Order Delivery X day from today is" :
-                                                                                            modifier.rateModifier === 'timefromCurrent' ? "Order Delivery X hours from current is" :
-                                                                                                modifier.rateModifier === 'estimatedDay' ? "Estimated Delivery day" :
-                                                                                                    modifier.rateModifier === 'availableQuan' ? "Quantity" :
-                                                                                                        "Calculate Rate Price"
+                                                                                        modifier.rateModifier === 'timefromCurrent' ? "Order Delivery X hours from current is" :
+                                                                                            modifier.rateModifier === 'estimatedDay' ? "Estimated Delivery day" :
+                                                                                                modifier.rateModifier === 'availableQuan' ? "Quantity" :
+                                                                                                    "Calculate Rate Price"
                                                                     }
+                                                                />
+                                                            )}
+
+                                                            {modifier.rateModifier === 'dayFromToday' && (
+                                                                <TextField
+                                                                    type="number"
+                                                                    value={modifier.rateDay}
+                                                                    onChange={handleRateDayInputChange(modifier.id, 'rateDay')}
+                                                                    autoComplete="off"
+                                                                    placeholder="Delivery X day from today is"
                                                                 />
                                                             )}
                                                             {modifier.rateModifier === 'type' && (
@@ -3863,7 +3935,7 @@ function Rate(props) {
                                                                                 onChange={handleRateModifierChange(modifier.id, 'rateOperator2')}
                                                                             />
                                                                         )}
-                                                                        {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'time' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'calculateRate') && (
+                                                                        {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'time' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'calculateRate') && (
                                                                             <Select
                                                                                 label="Select Operator"
                                                                                 options={rateTimeOptions}
@@ -3954,7 +4026,7 @@ function Rate(props) {
 
                                                                         />
                                                                     )}
-                                                                    {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'dayFromToday' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (
+                                                                    {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (
                                                                         <TextField
                                                                             type="number"
                                                                             value={modifier.rateDay2}
@@ -3965,12 +4037,11 @@ function Rate(props) {
                                                                                     modifier.rateModifier2 === 'weight' ? "Weight" :
                                                                                         modifier.rateModifier2 === 'quantity' ? "Quantity" :
                                                                                             modifier.rateModifier2 === 'distance' ? "Distance" :
-                                                                                                modifier.rateModifier2 === 'dayFromToday' ? "Order Delivery X day from today is" :
-                                                                                                    modifier.rateModifier2 === 'timefromCurrent' ? "Order Delivery X hours from current is" :
-                                                                                                        modifier.rateModifier2 === 'estimatedDay' ? "Estimated Delivery day" :
-                                                                                                            modifier.rateModifier2 === 'availableQuan' ? "Quantity" :
-                                                                                                                modifier.rateModifier2 === 'calculateRate' ? "Calculate Rate Price" :
-                                                                                                                    "Locale Code"
+                                                                                                modifier.rateModifier2 === 'timefromCurrent' ? "Order Delivery X hours from current is" :
+                                                                                                    modifier.rateModifier2 === 'estimatedDay' ? "Estimated Delivery day" :
+                                                                                                        modifier.rateModifier2 === 'availableQuan' ? "Quantity" :
+                                                                                                            modifier.rateModifier2 === 'calculateRate' ? "Calculate Rate Price" :
+                                                                                                                "Locale Code"
                                                                             }
                                                                         />
                                                                     )}
@@ -3979,6 +4050,15 @@ function Rate(props) {
                                                                             options={type}
                                                                             value={modifier.rateDay2}
                                                                             onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
+                                                                        />
+                                                                    )}
+                                                                    {modifier.rateModifier2 === 'dayFromToday' && (
+                                                                        <TextField
+                                                                            type="number"
+                                                                            value={modifier.rateDay2}
+                                                                            onChange={handleRateDayInputChange(modifier.id, 'rateDay2')}
+                                                                            autoComplete="off"
+                                                                            placeholder="Delivery X day from today is"
                                                                         />
                                                                     )}
                                                                     {modifier.rateModifier2 === 'available' && (
@@ -4219,6 +4299,7 @@ function Rate(props) {
                                     onChange={handleRateFormChange('merge_rate_tag')}
                                     autoComplete="off"
                                     placeholder='tag'
+                                    helpText='Add only one tag (commas are not allowed).'
                                 />
                             </LegacyCard>
                         </Grid.Cell>

@@ -382,7 +382,7 @@ function Zone(props) {
 
     const rowMarkup = paginatedZones?.map(
         (
-            { id, name, service_code, base_price, description },
+            { id, name, service_code, base_price, description, status },
             index,
         ) => (
             <IndexTable.Row
@@ -403,6 +403,7 @@ function Zone(props) {
                 <IndexTable.Cell>{service_code}</IndexTable.Cell>
                 <IndexTable.Cell>{base_price}</IndexTable.Cell>
                 <IndexTable.Cell>{description}</IndexTable.Cell>
+                <IndexTable.Cell> {status === 1 ? "Enabled" : "Disabled"}</IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
                         <Button icon={EditIcon} variant="tertiary" onClick={() => handleEditRate(id)} />
@@ -601,6 +602,7 @@ function Zone(props) {
                                             { title: 'Service Code' },
                                             { title: 'Base Rate Price' },
                                             { title: 'Description' },
+                                            { title: 'Status' },
                                             { title: 'Actions' },
 
                                         ]}

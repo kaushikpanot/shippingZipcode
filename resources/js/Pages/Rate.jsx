@@ -1367,8 +1367,8 @@ function Rate(props) {
     });
 
     const handleRateFormChange = (field) => (value) => {
-       
-        
+
+
         SetExclude_Rate((prevState) => ({
             ...prevState,
             [field]: value,
@@ -1382,8 +1382,8 @@ function Rate(props) {
             [field]: '',
         }));
 
-        if (value.includes(',','.')) {
-            return; 
+        if (value.includes(',', '.')) {
+            return;
         }
         setsend_another_rate((prevState) => ({
             ...prevState,
@@ -1550,7 +1550,7 @@ function Rate(props) {
             }
             if (checkstate.selectedByCart === 'Product') {
                 if (rate_based_on_surcharge.productData.length === 0) {
-                    newErrors.productsData = 'Select at least 1 product.';
+                    newErrors.productsDatas = 'Select at least 1 product.';
                 }
 
             }
@@ -2137,7 +2137,7 @@ function Rate(props) {
     }
     return (
         <div className='page'>
-            <div style={{ position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#F1F1F1" }}>
+            <div style={{ position: "sticky", top: 0, zIndex: 150, backgroundColor: "#F1F1F1" }}>
                 <Page
                     title={id ? 'Edit Rate' : 'Add Rate'}
                     primaryAction={<Button variant="primary" onClick={saveRate} loading={loadingButton}>Save</Button>}
@@ -2340,25 +2340,25 @@ function Rate(props) {
                                                                         />
                                                                     )}
                                                                     {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && item.name !== 'total' &&
-                                                                    item.name !== 'total2' &&
-                                                                    item.name !== 'price' && (
+                                                                        item.name !== 'total2' &&
+                                                                        item.name !== 'price' && (
+                                                                            <TextField
+                                                                                value={item.value}
+                                                                                onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
+                                                                                autoComplete="off"
+                                                                                suffix={item.unit ? item.unit : ''}
+                                                                                error={errors[`value${index}`]}
+                                                                            />
+                                                                        )}
+
+                                                                    {(item.name === 'total' || item.name === 'total2' || item.name === 'price') && (
                                                                         <TextField
                                                                             value={item.value}
                                                                             onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
                                                                             autoComplete="off"
-                                                                            suffix={item.unit ? item.unit : ''}
+                                                                            suffix={shop_currency}
                                                                             error={errors[`value${index}`]}
                                                                         />
-                                                                    )}
-
-                                                                    {(item.name === 'total' || item.name === 'total2' || item.name === 'price') &&(
-                                                                        <TextField
-                                                                        value={item.value}
-                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
-                                                                        autoComplete="off"
-                                                                        suffix={shop_currency}
-                                                                        error={errors[`value${index}`]}
-                                                                    />
                                                                     )}
 
                                                                     {item.condition === 'between' && (
@@ -3002,19 +3002,19 @@ function Rate(props) {
                                                         Multiply line item QTY price:
                                                     </Text>
                                                     <RadioButton
-                                                        label="Yes"
+                                                        label="product condition"
                                                         checked={checkstate.selectedMultiplyLine === 'Yes'}
                                                         id="Yes"
                                                         name="Yes"
                                                         onChange={() => handlecheckedChange('selectedMultiplyLine', 'Yes')}
                                                     />
-                                                    <RadioButton
+                                                    {/* <RadioButton
                                                         label="No"
                                                         checked={checkstate.selectedMultiplyLine === 'no'}
                                                         id="no"
                                                         name="SKU"
                                                         onChange={() => handlecheckedChange('selectedMultiplyLine', 'no')}
-                                                    />
+                                                    /> */}
                                                     <RadioButton
                                                         label="Percentage"
                                                         checked={checkstate.selectedMultiplyLine === 'per'}
@@ -3111,8 +3111,8 @@ function Rate(props) {
                                                         <div style={{ marginTop: "2%", width: '20%' }} >
                                                             <Button variant="primary" onClick={handleSearchClick} >Search Product</Button></div>
 
-                                                        {errors.productsData && (
-                                                            <p style={{ color: 'red', marginTop: "2%" }}>{errors.productsData}</p>
+                                                        {errors.productsDatas && (
+                                                            <p style={{ color: 'red', marginTop: "2%" }}>{errors.productsDatas}</p>
                                                         )}
 
                                                         <div style={{ marginTop: "4%" }}>
@@ -3177,19 +3177,19 @@ function Rate(props) {
                                                         Multiply line item QTY price:
                                                     </Text>
                                                     <RadioButton
-                                                        label="Yes"
+                                                        label="product condition"
                                                         checked={checkstate.selectedMultiplyLine === 'Yes'}
                                                         id="Yes"
                                                         name="Yes"
                                                         onChange={() => handlecheckedChange('selectedMultiplyLine', 'Yes')}
                                                     />
-                                                    <RadioButton
+                                                    {/* <RadioButton
                                                         label="No"
                                                         checked={checkstate.selectedMultiplyLine === 'no'}
                                                         id="no"
                                                         name="SKU"
                                                         onChange={() => handlecheckedChange('selectedMultiplyLine', 'no')}
-                                                    />
+                                                    /> */}
                                                     <RadioButton
                                                         label="Percentage"
                                                         checked={checkstate.selectedMultiplyLine === 'per'}
@@ -3324,7 +3324,7 @@ function Rate(props) {
                                                                 type='number'
                                                                 onChange={(value) => handleInputChange(index, 'minWeight', value)}
                                                                 autoComplete="off"
-                                                                prefix={shop_currency}
+                                                                prefix={selectedTierType === 'order_weight' ? shop_weight_unit : selectedTierType === 'order_price' ? shop_currency : selectedTierType === 'order_quantity' ? 'Qty' : 'km'}
                                                                 placeholder="0.00"
                                                                 error={errors[`minWeight${index}`]}
                                                             />
@@ -3334,7 +3334,7 @@ function Rate(props) {
                                                                 type='number'
                                                                 onChange={(value) => handleInputChange(index, 'maxWeight', value)}
                                                                 autoComplete="off"
-                                                                prefix={shop_currency}
+                                                                prefix={selectedTierType === 'order_weight' ? shop_weight_unit : selectedTierType === 'order_price' ? shop_currency : selectedTierType === 'order_quantity' ? 'Qty' : 'km'}
                                                                 placeholder="0.00"
                                                                 error={errors[`maxWeight${index}`]}
                                                             />
@@ -4118,7 +4118,7 @@ function Rate(props) {
                                                                 alignItems: 'center',
                                                                 gap: '5%',
                                                                 marginTop: '3%',
-                                                                marginBottom: '3%',
+
                                                             }}
                                                         >
                                                             <Text variant="headingXs" as="h6">
@@ -4138,6 +4138,14 @@ function Rate(props) {
                                                                 name={`behaviour-${modifier.id}`}
                                                                 onChange={() => handleRateModifierChange(modifier.id, 'behaviour')('Terminate')}
                                                             />
+
+                                                        </div>
+                                                        <div style={{ marginBottom: "3%", marginTop: "2%" }}>
+                                                            {modifier.behaviour === 'Terminate' && (
+                                                                <p>
+                                                                    When you select the 'Terminate' option, the subsequent rate modifiers are not working.
+                                                                </p>
+                                                            )}
                                                         </div>
                                                         <Divider borderColor="border" />
                                                         <div
@@ -4255,6 +4263,7 @@ function Rate(props) {
                                                                         autoComplete="off"
                                                                         placeholder="00"
                                                                         error={errors[`adjustment${index}`]}
+                                                                        helpText='When you select "static" option then base price is not working'
 
                                                                     />
                                                                 </FormLayout>
@@ -4589,6 +4598,7 @@ function Rate(props) {
                                                             onChange={handleRateFormChange('another_merge_rate_tag')}
                                                             autoComplete="off"
                                                             placeholder='tag'
+                                                            helpText="Add only one tag (commas are not allowed)."
                                                         />
                                                     </FormLayout.Group>
                                                 </FormLayout>
@@ -4611,95 +4621,100 @@ function Rate(props) {
                     <Toast content={toastMessage} error onDismiss={toggleToastActive} />
                 )}
                 {isModalOpen && (
-                    <Modal
-                        open={isModalOpen}
-                        onClose={handleModalClose}
-                        title="My Shopify Modal"
-                        primaryAction={{
-                            content: 'Add',
-                            onAction: handleModalClose,
-                            // disabled: selectedProductIds2.length === 0,
-                        }}
-                        secondaryActions={[
-                            {
-                                content: 'Cancel',
-                                onAction: handleModalClose,
-                            },
-                        ]}
+                    <div
+                    // style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1100, backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
                     >
-                        <Modal.Section>
-                            <div style={{ position: 'relative' }}>
-                                <div style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
-                                    <TextField
-                                        type="text"
-                                        value={textFieldValue}
-                                        placeholder="Search by Title..."
-                                        onChange={handlesearchChange}
-                                        prefix={<Icon source={SearchIcon} />}
-                                        autoComplete="off"
-                                    />
-                                </div>
-                                <div style={{ marginTop: '4%', overflowY: 'scroll' }}>
-                                    <IndexTable
-                                        resourceName={resourceName}
-                                        itemCount={activeTextBox === 'productData' ? filteredProductsFirst.length : filteredProductsSecond.length}
-                                        headings={[
-                                            { title: `${selectedCountForRate} Selected` },
-                                            { title: 'Image' },
-                                            { title: 'Title' },
-                                            { title: 'Price' },
-                                        ]}
-                                        selectable={false}
-                                        pagination={{
-                                            hasNext: pageInfoForRate.hasNextPage,
-                                            onNext: handleNextPageRate,
-                                            hasPrevious: pageInfoForRate.hasPreviousPage,
-                                            onPrevious: handlePreviousPageRate,
-                                        }}
-                                    >
-                                        {loadingTable ? (
-                                            <IndexTable.Row>
-                                                <IndexTable.Cell colSpan={4}>
-                                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-                                                        <Spinner accessibilityLabel="Loading products" size="small" />
-                                                    </div>
-                                                </IndexTable.Cell>
-                                            </IndexTable.Row>
-                                        ) : (
-                                            (activeTextBox === 'productData' ? filteredProductsFirst : filteredProductsSecond).map(({ id, title, image, price }, index) => (
-                                                <IndexTable.Row id={id} key={id} position={index}>
-                                                    <IndexTable.Cell>
-                                                        <Checkbox
-                                                            checked={activeTextBox === 'productData'
-                                                                ? selectedProductIds[activeModifierId]?.includes(id) || false
-                                                                : selectedProductIds2[activeModifierId]?.includes(id) || false}
-                                                            onChange={() => activeTextBox === 'productData'
-                                                                ? handleCheckboxChange2(activeModifierId, id)
-                                                                : handleCheckboxChange3(activeModifierId, id)}
-                                                        />
-                                                    </IndexTable.Cell>
-                                                    <IndexTable.Cell>
-                                                        <Thumbnail source={image} size="small" alt={title} />
-                                                    </IndexTable.Cell>
-                                                    <IndexTable.Cell>
-                                                        <Text fontWeight="bold" as="span">
-                                                            {title}
-                                                        </Text>
-                                                    </IndexTable.Cell>
-                                                    <IndexTable.Cell>
-                                                        <Text fontWeight="bold" as="span">
-                                                            {price}
-                                                        </Text>
+                        <Modal
+                            open={isModalOpen}
+
+                            onClose={handleModalClose}
+                            title="Select Products"
+                            primaryAction={{
+                                content: 'Add',
+                                onAction: handleModalClose,
+                                // disabled: selectedProductIds2.length === 0,
+                            }}
+                            secondaryActions={[
+                                {
+                                    content: 'Cancel',
+                                    onAction: handleModalClose,
+                                },
+                            ]}
+                        >
+                            <Modal.Section>
+                                <div >
+                                    <div >
+                                        <TextField
+                                            type="text"
+                                            value={textFieldValue}
+                                            placeholder="Search by Title..."
+                                            onChange={handlesearchChange}
+                                            prefix={<Icon source={SearchIcon} />}
+                                            autoComplete="off"
+                                        />
+                                    </div>
+                                    <div style={{ marginTop: '4%', overflowY: 'scroll' }}>
+                                        <IndexTable
+                                            resourceName={resourceName}
+                                            itemCount={activeTextBox === 'productData' ? filteredProductsFirst.length : filteredProductsSecond.length}
+                                            headings={[
+                                                { title: `${selectedCountForRate} Selected` },
+                                                { title: 'Image' },
+                                                { title: 'Title' },
+                                                { title: 'Price' },
+                                            ]}
+                                            selectable={false}
+                                            pagination={{
+                                                hasNext: pageInfoForRate.hasNextPage,
+                                                onNext: handleNextPageRate,
+                                                hasPrevious: pageInfoForRate.hasPreviousPage,
+                                                onPrevious: handlePreviousPageRate,
+                                            }}
+                                        >
+                                            {loadingTable ? (
+                                                <IndexTable.Row>
+                                                    <IndexTable.Cell colSpan={4}>
+                                                        <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                                            <Spinner accessibilityLabel="Loading products" size="small" />
+                                                        </div>
                                                     </IndexTable.Cell>
                                                 </IndexTable.Row>
-                                            ))
-                                        )}
-                                    </IndexTable>
+                                            ) : (
+                                                (activeTextBox === 'productData' ? filteredProductsFirst : filteredProductsSecond).map(({ id, title, image, price }, index) => (
+                                                    <IndexTable.Row id={id} key={id} position={index}>
+                                                        <IndexTable.Cell>
+                                                            <Checkbox
+                                                                checked={activeTextBox === 'productData'
+                                                                    ? selectedProductIds[activeModifierId]?.includes(id) || false
+                                                                    : selectedProductIds2[activeModifierId]?.includes(id) || false}
+                                                                onChange={() => activeTextBox === 'productData'
+                                                                    ? handleCheckboxChange2(activeModifierId, id)
+                                                                    : handleCheckboxChange3(activeModifierId, id)}
+                                                            />
+                                                        </IndexTable.Cell>
+                                                        <IndexTable.Cell>
+                                                            <Thumbnail source={image} size="small" alt={title} />
+                                                        </IndexTable.Cell>
+                                                        <IndexTable.Cell>
+                                                            <Text fontWeight="bold" as="span">
+                                                                {title}
+                                                            </Text>
+                                                        </IndexTable.Cell>
+                                                        <IndexTable.Cell>
+                                                            <Text fontWeight="bold" as="span">
+                                                                {price}
+                                                            </Text>
+                                                        </IndexTable.Cell>
+                                                    </IndexTable.Row>
+                                                ))
+                                            )}
+                                        </IndexTable>
+                                    </div>
                                 </div>
-                            </div>
-                        </Modal.Section>
-                    </Modal>
+                            </Modal.Section>
+                        </Modal>
 
+                    </div>
                 )}
             </Page>
         </div>

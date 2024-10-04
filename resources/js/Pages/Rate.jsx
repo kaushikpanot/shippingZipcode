@@ -103,6 +103,10 @@ function Rate(props) {
         };
         if (checkbox === 'checked1' && !newCheckedState.checked1) {
             Setrate_based_on_surcharge({});
+            setCheckState(prevState => ({
+                ...prevState,
+                selectedByCart: 'weight',
+            }));
         }
         if (checkbox === 'checked3' && !newCheckedState.checked3) {
             setsend_another_rate({});
@@ -1133,6 +1137,14 @@ function Rate(props) {
         else if (newValue === 'address' || newValue === 'timeIn') {
             updatedCondition = 'contains';
         }
+        else {
+            updatedCondition = 'equal'
+        }
+
+        let time = items[index].value;
+        if (newValue === 'time') {
+            time = '00:00';
+        }
 
         const updatedItem = {
             ...items[index],
@@ -1140,8 +1152,8 @@ function Rate(props) {
             name: isSecondSelect ? items[index].name : newValue,
             unit: isSecondSelect ? (items[index].unit || '') : (selectedOption.unit || ''),
             label: selectedOption.mainlabel || items[index].label,
-            value: isSecondSelect ? items[index].value : '',
-            value2: isSecondSelect ? items[index].value : '',
+            value: isSecondSelect ? '' : (newValue === 'time' ? time : ''),
+            value2: isSecondSelect ? '' : (newValue === 'time' ? time : ''),
         };
 
 
@@ -1219,7 +1231,6 @@ function Rate(props) {
         productData: [],
         base_weight_unit: ''
     })
-
     const getstate = async () => {
         try {
             const token = await getSessionToken(app);
@@ -1233,7 +1244,7 @@ function Rate(props) {
             const fetchedWeightUnit = response.data.rate.shop_weight_unit;
             Setrate_based_on_surcharge(prevState => ({
                 ...prevState,
-                base_weight_unit: fetchedWeightUnit || 'sd'
+                base_weight_unit: fetchedWeightUnit || ''
             }));
 
             setShop_currency(response.data.rate.shop_currency);
@@ -1291,7 +1302,7 @@ function Rate(props) {
         exclude_products_textbox: '',
         productsData: []
     })
-
+    console.log(exclude_Rate)
     useEffect(() => {
 
         setsend_another_rate(prevState => ({
@@ -1479,7 +1490,7 @@ function Rate(props) {
     const saveRate = async () => {
         const newErrors = {};
 
-        if (exclude_Rate.set_exclude_products === 'custome_selection' && exclude_Rate.productsData.length === 0) {
+        if (exclude_Rate.set_exclude_products === 'custome_selection' && exclude_Rate.productsData?.length === 0) {
             newErrors.productsData = 'Select at least 1 product.';
         }
         if (!formData.name) newErrors.name = 'Rate name is required';
@@ -1549,7 +1560,7 @@ function Rate(props) {
 
             }
             if (checkstate.selectedByCart === 'Product') {
-                if (rate_based_on_surcharge.productData.length === 0) {
+                if (rate_based_on_surcharge?.productData?.length === 0) {
                     newErrors.productsDatas = 'Select at least 1 product.';
                 }
 
@@ -1912,34 +1923,35 @@ function Rate(props) {
 
     const handleProductChange = (productId, checked, text = '') => {
         Setrate_based_on_surcharge((prevState) => {
-            let updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
+            const updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
+
+            const product = productsForSurcharge.find(product => product.id === productId);
 
             if (checked) {
-                const product = productsForSurcharge.find(product => product.id == productId);
                 if (product) {
-                    const existingProductIndex = updatedProductData.findIndex(item => item.id == productId);
+                    const existingProductIndex = updatedProductData.findIndex(item => item.id === productId);
 
                     if (existingProductIndex !== -1) {
+
                         updatedProductData[existingProductIndex] = {
                             ...updatedProductData[existingProductIndex],
                             value: text
                         };
                     } else {
-                        updatedProductData = [
-                            ...updatedProductData,
-                            {
-                                id: product.id,
-                                title: product.title,
-                                price: product.price,
-                                value: text
-                            }
-                        ];
+                        updatedProductData.push({
+                            id: product.id,
+                            title: product.title,
+                            price: product.price,
+                            value: text
+                        });
                     }
                 }
             } else {
-                updatedProductData = updatedProductData.filter(item => item.id !== productId);
+                return {
+                    ...prevState,
+                    productData: updatedProductData.filter(item => item.id !== productId),
+                };
             }
-
             return {
                 ...prevState,
                 productData: updatedProductData,
@@ -1994,6 +2006,7 @@ function Rate(props) {
                         disabled={!isChecked}
                         placeholder={isChecked ? '0.00' : ''}
                         prefix={isChecked ? shop_currency : undefined}
+                        type='number'
                     />
 
                 </IndexTable.Cell>
@@ -2005,6 +2018,16 @@ function Rate(props) {
         ? productsForExcludeRate?.filter(product => product.title.toLowerCase().includes)
         : productsForExcludeRate?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
 
+    const toggleProduct = (id, title, price) => {
+        SetExclude_Rate(prevState => {
+            const currentProductData = Array.isArray(prevState.productsData) ? prevState.productsData : [];
+            const isSelected = currentProductData.some(product => product.id === id);
+            const updatedProductData = isSelected
+                ? currentProductData.filter(product => product.id !== id)
+                : [...currentProductData, { id, title, price }];
+            return { ...prevState, productsData: updatedProductData };
+        });
+    };
     const selectedCount1 = exclude_Rate.productsData?.length || 0
     const productDataExclude = filteredProduct?.map(({ id, title, image, price }, index) => {
         return (
@@ -2040,16 +2063,7 @@ function Rate(props) {
         );
     });
 
-    const toggleProduct = (id, title, price) => {
-        SetExclude_Rate(prevState => {
-            const currentProductData = Array.isArray(prevState.productsData) ? prevState.productsData : [];
-            const isSelected = currentProductData.some(product => product.id === id);
-            const updatedProductData = isSelected
-                ? currentProductData.filter(product => product.id !== id)
-                : [...currentProductData, { id, title, price }];
-            return { ...prevState, productsData: updatedProductData };
-        });
-    };
+
     const handleCheckboxChange2 = (modifierId, productId) => {
         setSelectedProductIds((prevSelected) => ({
             ...prevSelected,

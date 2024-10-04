@@ -1550,7 +1550,7 @@ function Rate(props) {
             }
             if (checkstate.selectedByCart === 'Product') {
                 if (rate_based_on_surcharge.productData.length === 0) {
-                    newErrors.productsData = 'Select at least 1 product.';
+                    newErrors.productsDatas = 'Select at least 1 product.';
                 }
 
             }
@@ -3002,19 +3002,19 @@ function Rate(props) {
                                                         Multiply line item QTY price:
                                                     </Text>
                                                     <RadioButton
-                                                        label="Yes"
+                                                        label="product condition"
                                                         checked={checkstate.selectedMultiplyLine === 'Yes'}
                                                         id="Yes"
                                                         name="Yes"
                                                         onChange={() => handlecheckedChange('selectedMultiplyLine', 'Yes')}
                                                     />
-                                                    <RadioButton
+                                                    {/* <RadioButton
                                                         label="No"
                                                         checked={checkstate.selectedMultiplyLine === 'no'}
                                                         id="no"
                                                         name="SKU"
                                                         onChange={() => handlecheckedChange('selectedMultiplyLine', 'no')}
-                                                    />
+                                                    /> */}
                                                     <RadioButton
                                                         label="Percentage"
                                                         checked={checkstate.selectedMultiplyLine === 'per'}
@@ -3111,8 +3111,8 @@ function Rate(props) {
                                                         <div style={{ marginTop: "2%", width: '20%' }} >
                                                             <Button variant="primary" onClick={handleSearchClick} >Search Product</Button></div>
 
-                                                        {errors.productsData && (
-                                                            <p style={{ color: 'red', marginTop: "2%" }}>{errors.productsData}</p>
+                                                        {errors.productsDatas && (
+                                                            <p style={{ color: 'red', marginTop: "2%" }}>{errors.productsDatas}</p>
                                                         )}
 
                                                         <div style={{ marginTop: "4%" }}>
@@ -3177,19 +3177,19 @@ function Rate(props) {
                                                         Multiply line item QTY price:
                                                     </Text>
                                                     <RadioButton
-                                                        label="Yes"
+                                                        label="product condition"
                                                         checked={checkstate.selectedMultiplyLine === 'Yes'}
                                                         id="Yes"
                                                         name="Yes"
                                                         onChange={() => handlecheckedChange('selectedMultiplyLine', 'Yes')}
                                                     />
-                                                    <RadioButton
+                                                    {/* <RadioButton
                                                         label="No"
                                                         checked={checkstate.selectedMultiplyLine === 'no'}
                                                         id="no"
                                                         name="SKU"
                                                         onChange={() => handlecheckedChange('selectedMultiplyLine', 'no')}
-                                                    />
+                                                    /> */}
                                                     <RadioButton
                                                         label="Percentage"
                                                         checked={checkstate.selectedMultiplyLine === 'per'}
@@ -4118,7 +4118,7 @@ function Rate(props) {
                                                                 alignItems: 'center',
                                                                 gap: '5%',
                                                                 marginTop: '3%',
-                                                                marginBottom: '3%',
+
                                                             }}
                                                         >
                                                             <Text variant="headingXs" as="h6">
@@ -4138,6 +4138,14 @@ function Rate(props) {
                                                                 name={`behaviour-${modifier.id}`}
                                                                 onChange={() => handleRateModifierChange(modifier.id, 'behaviour')('Terminate')}
                                                             />
+
+                                                        </div>
+                                                        <div style={{ marginBottom: "3%", marginTop: "2%" }}>
+                                                            {modifier.behaviour === 'Terminate' && (
+                                                                <p>
+                                                                    When you select the 'Terminate' option, the subsequent rate modifiers are not working.
+                                                                </p>
+                                                            )}
                                                         </div>
                                                         <Divider borderColor="border" />
                                                         <div
@@ -4255,6 +4263,7 @@ function Rate(props) {
                                                                         autoComplete="off"
                                                                         placeholder="00"
                                                                         error={errors[`adjustment${index}`]}
+                                                                        helpText='When you select "static" option then base price is not working'
 
                                                                     />
                                                                 </FormLayout>
@@ -4589,6 +4598,7 @@ function Rate(props) {
                                                             onChange={handleRateFormChange('another_merge_rate_tag')}
                                                             autoComplete="off"
                                                             placeholder='tag'
+                                                            helpText="Add only one tag (commas are not allowed)."
                                                         />
                                                     </FormLayout.Group>
                                                 </FormLayout>
@@ -4611,12 +4621,12 @@ function Rate(props) {
                     <Toast content={toastMessage} error onDismiss={toggleToastActive} />
                 )}
                 {isModalOpen && (
-                    <div 
+                    <div
                     // style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1100, backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
                     >
                         <Modal
                             open={isModalOpen}
-                            
+
                             onClose={handleModalClose}
                             title="Select Products"
                             primaryAction={{

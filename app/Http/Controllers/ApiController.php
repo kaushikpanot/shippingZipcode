@@ -593,6 +593,11 @@ class ApiController extends Controller
 
     private function arraysHaveCommonElement($array1, $array2)
     {
+        Log::info('array', [
+            'array1' => $array1,
+            'array2' => $array2,
+            'array_intersect' => array_intersect($array1, $array2),
+        ]);
         return !empty(array_intersect($array1, $array2));
     }
 
@@ -1401,7 +1406,7 @@ class ApiController extends Controller
 
                         $conditions = [
                             'condition' => "equal",
-                            'value' => $surcharge['descriptions']
+                            'value' => $surcharge['descriptions'] ?? null
                         ];
 
                         if ($this->checkCondition($conditions, $vendorsCommaSeparated)) {
@@ -1435,7 +1440,7 @@ class ApiController extends Controller
 
                         $conditions = [
                             'condition' => "equal",
-                            'value' => $surcharge['descriptions']
+                            'value' => $surcharge['descriptions'] ?? null
                         ];
 
                         if ($this->checkCondition($conditions, $tagsCommaSeparated)) {
@@ -1469,7 +1474,7 @@ class ApiController extends Controller
 
                         $conditions = [
                             'condition' => "equal",
-                            'value' => $surcharge['descriptions']
+                            'value' => $surcharge['descriptions'] ?? null
                         ];
 
                         if ($this->checkCondition($conditions, $commaSeparated)) {
@@ -1503,7 +1508,7 @@ class ApiController extends Controller
 
                         $conditions = [
                             'condition' => "equal",
-                            'value' => $surcharge['descriptions']
+                            'value' => $surcharge['descriptions'] ?? null
                         ];
 
                         if ($this->checkCondition($conditions, $commaSeparated)) {
@@ -1529,7 +1534,7 @@ class ApiController extends Controller
 
                         $conditions = [
                             'condition' => "equal",
-                            'value' => $surcharge['descriptions']
+                            'value' => $surcharge['descriptions'] ?? null
                         ];
 
                         if ($this->checkCondition($conditions, $skuCommaSeparated)) {
@@ -1608,6 +1613,8 @@ class ApiController extends Controller
                 if (!$excludeProducts['exclude_products_radio']) {
                     if ($excludeProducts['set_exclude_products'] == 'product_vendor') {
                         $excludeProducts['set_exclude_products'] = 'vendor';
+                    }else if ($excludeProducts['set_exclude_products'] == 'product_tag') {
+                        $excludeProducts['set_exclude_products'] = 'tags';
                     } else if ($excludeProducts['set_exclude_products'] == 'custome_selection') {
                         if (isset($excludeProducts['productsData'])) {
                             $collection = collect($excludeProducts['productsData']);
@@ -1622,14 +1629,15 @@ class ApiController extends Controller
                     $excludeText = explode(',', $excludeProducts['exclude_products_textbox']);
 
                     Log::info('Filtered conditions:', [
-                        'productData' => $excludeText
+                        'productData1' => $excludeText,
+                        'excludeType' => $excludeType
                     ]);
 
                     foreach ($items as $item) {
                         $productData = ($excludeType != 'product_sku') ?
                             $this->fetchShopifyProductData($userData, $item['product_id'], $excludeType) :
                             $item['sku'];
-
+                        Log::info('productData',['productData'=>$productData]);
                         if ($this->arraysHaveCommonElement($excludeText, explode(',', $productData))) {
                             return null;
                         }
@@ -2099,8 +2107,6 @@ class ApiController extends Controller
             $filteredRates = collect($filteredRates)->merge($newRates);
         }
 
-
-
         if (isset($setting) && $setting->shippingRate == 'Only Higher') {
             $maxRate = $filteredRates->max('base_price');
             $filteredRates = $filteredRates->filter(function ($rate) use ($maxRate) {
@@ -2118,8 +2124,8 @@ class ApiController extends Controller
 
         foreach ($filteredRates as $rate) {
 
-            Log::info('input logs:', ['finalRatePrice' => $rate->base_price]);
-            Log::info('input logs:', ['currencyCode' => $currencyCode]);
+            // Log::info('input logs:', ['finalRatePrice' => $rate->base_price]);
+            // Log::info('input logs:', ['currencyCode' => $currencyCode]);
 
             $convertedAmount = 0;
             if ($rate->base_price > 0) {
@@ -2127,7 +2133,7 @@ class ApiController extends Controller
                 $convertedAmount = round($convertedAmount1, 2);
             }
 
-            Log::info('input logs:', ['convertedAmount' => $convertedAmount]);
+            // Log::info('input logs:', ['convertedAmount' => $convertedAmount]);
 
             if (strpos($rate->description, "#") !== false) {
                 $deliveryDay = str_replace('#', '', $rate->description);
@@ -2924,11 +2930,11 @@ class ApiController extends Controller
             }
 
             // Pagination setup
-            $querystring = 'first: 10'; // Default pagination
+            $querystring = 'first: 25'; // Default pagination
             if (!empty($post['endCursor'])) {
-                $querystring = 'first: 10, after: "' . $post['endCursor'] . '"';
+                $querystring = 'first: 25, after: "' . $post['endCursor'] . '"';
             } elseif (!empty($post['startCursor'])) {
-                $querystring = 'last: 10, before: "' . $post['startCursor'] . '"';
+                $querystring = 'last: 25, before: "' . $post['startCursor'] . '"';
             }
 
             // GraphQL query based on collectionId or search filters

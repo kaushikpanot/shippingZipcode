@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ProcessDataEvent;
 use App\Mail\InstallMail;
 use App\Mail\InstallSupportMail;
 use App\Models\User;
@@ -21,51 +22,16 @@ class HomeController extends Controller
         $shopName = $post['shop'];
         $token = User::where('name', $shopName)->first();
 
-        $graphqlEndpoint = "https://$shopName/admin/api/2024-04/carrier_services.json";
+        if($token){
+            $shopDetail = [
+                "name" => $token['name'],
+                "password" => $token['password']
+            ];
 
-        // Headers for Shopify API request
-        $customHeaders = [
-            'X-Shopify-Access-Token' => $token['password'],
-        ];
+            event(new ProcessDataEvent($token));
 
-        $data = [
-            'carrier_service' => [
-                'name' => 'Shipping Rate Provider For Meetanshi',
-                'callback_url' => env('VITE_COMMON_API_URL') . "/api/carrier/callback",
-                'service_discovery' => true,
-                'format' => 'json'
-            ]
-        ];
-        // dd($token['password']);
-        // Encode the data as JSON
-        $jsonData = json_encode($data);
-        // Make HTTP POST request to Shopify GraphQL endpoint
-        $response = Http::withHeaders($customHeaders)->post($graphqlEndpoint, $data);
-
-        // Parse the JSON response
-        $carrier_service_id = $token['carrier_service_id'];
-        if(isset($response->json()['carrier_service'])){
-            $jsonResponse = $response->json()['carrier_service'];
-
-            if (isset($jsonResponse['id'])) {
-                $carrier_service_id = $jsonResponse['id'];
-            }
+            $this->mendatoryWebhook($shopDetail);
         }
-
-        // Define the REST API endpoint
-        $apiEndpoint = "https://{$shop}/admin/api/2024-04/shop.json";
-
-        // Make HTTP GET request to Shopify REST API endpoint
-        $shopJsonResponse = Http::withHeaders($customHeaders)->get($apiEndpoint);
-
-        $shopJson = $shopJsonResponse->json();
-
-        if (!empty($shopJson['shop']['currency'])) {
-            User::where('id', $token['id'])->update(['shop_currency' => $shopJson['shop']['currency'], 'carrier_service_id' => $carrier_service_id, 'shop_timezone' => $shopJson['shop']['iana_timezone'], "shop_weight_unit"=>$shopJson['shop']['weight_unit']]);
-        }
-
-        $this->mendatoryWebhook($shop);
-        $this->getStoreOwnerEmail($shop);
 
         return view('welcome', compact('shop', 'host'));
     }
@@ -77,11 +43,9 @@ class HomeController extends Controller
         return view('welcome', compact('shop', 'host'));
     }
 
-    private function mendatoryWebhook($shopDetail)
+    private function mendatoryWebhook($token)
     {
-        // Log::info('input logs:', ['shopDetail' => $shopDetail]);
-
-        $token = User::where('name', $shopDetail)->first();
+        Log::info('input logs:', ['shopDetail' => $token]);
 
         $topics = [
             'customers/update'
@@ -116,67 +80,5 @@ class HomeController extends Controller
             Log::info('input logs:', ['shopDetail' => $jsonResponse]);
         }
         return true;
-    }
-
-    private function getStoreOwnerEmail($shop)
-    {
-        try {
-            // Fetch the Shopify API token from the User model
-            $token = User::where('name', $shop)->value('password');
-
-            if (!$token) {
-                Log::error("No API token found for shop: {$shop}");
-                return false;
-            }
-
-            // Get the Shopify API version from the config
-            $apiVersion = config('services.shopify.api_version');
-
-            // Construct the Shopify API endpoint URL
-            $shopUrl = "https://{$shop}/admin/api/{$apiVersion}/shop.json";
-
-            // Send a GET request to the Shopify API
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'X-Shopify-Access-Token' => $token,
-            ])->get($shopUrl);
-
-            // Check for HTTP errors
-            if ($response->failed()) {
-                Log::error("Failed to retrieve shop details for: {$shop}", ['response' => $response->body()]);
-                return false;
-            }
-
-            // Decode the response body as an array
-            $data = $response->json();
-
-            if (!isset($data['shop'])) {
-                Log::error("Shop data is not available in the response.", ['response' => $data]);
-                return false;
-            }
-
-            // Extract shop details
-            $storeOwnerEmail = $data['shop']['email'] ?? 'default@example.com'; // Default email if not found
-            $storeName = $data['shop']['name'];
-            $shopOwner = $data['shop']['shop_owner'];
-            $shopDomain = $data['shop']['domain'];
-
-            // Optionally update the user with store owner email and store name
-            // User::where('name', $shop)->update([
-            //     'store_owner_email' => $storeOwnerEmail,
-            //     'store_name' => $storeName,
-            // ]);
-
-            // Send emails
-            Mail::to("bhushan.trivedi@meetanshi.com")->send(new InstallMail($shopOwner, $shopDomain));
-
-            return true;
-        } catch (\Exception $e) {
-            Log::error("An error occurred while getting store owner email.", [
-                'shop' => $shop,
-                'error' => $e->getMessage(),
-            ]);
-            return false;
-        }
     }
 }

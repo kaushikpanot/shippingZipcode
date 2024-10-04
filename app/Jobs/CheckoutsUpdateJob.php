@@ -62,6 +62,7 @@ class CheckoutsUpdateJob implements ShouldQueue
                     'total_spent' => $this->webhookData['customer']['total_spent'],
                     'phone' => $this->webhookData['customer']['phone'],
                     'tags' => $this->webhookData['customer']['tags'],
+                    'email' => $this->webhookData['customer']['email']
                 ];
 
                 Cache::put($this->webhookData['customer']['id'], ["customer" => $customerData], $seconds);

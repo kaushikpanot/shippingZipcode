@@ -22,7 +22,6 @@ class SettingContoller extends Controller
     public function index(Request $request)
     {
         try {
-
             $shop = $request->attributes->get('shopifySession');
             // $shop = "krishnalaravel-test.myshopify.com";
 
@@ -33,7 +32,7 @@ class SettingContoller extends Controller
                 ], 400);
             }
 
-            $user_id = User::where('name', $shop)->pluck('id')->first();
+            $user_id = User::where('name', $shop)->first();
 
             if (!$user_id) {
                 return response()->json([
@@ -42,7 +41,11 @@ class SettingContoller extends Controller
                 ], 404);
             }
 
-            $settings = Setting::where('user_id', $user_id)->first();
+            $settings = Setting::where('user_id', $user_id['id'])->first();
+
+            if ($settings) {
+                $settings->is_on_board = $user_id['is_on_board'];
+            }
 
             return response()->json([
                 'status' => true,
@@ -260,6 +263,13 @@ class SettingContoller extends Controller
                 ], 404);
             }
 
+            if($eventUser->is_on_board){
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Carrier service call applied successfully!'
+                ], 200);
+            }
+
             $graphqlEndpoint = "https://{$eventUser['name']}/admin/api/2024-04/carrier_services.json";
 
             // // Headers for Shopify API request
@@ -275,7 +285,7 @@ class SettingContoller extends Controller
                     'format' => 'json'
                 ]
             ];
-            // // dd($token['password']);
+
             // // Encode the data as JSON
             $jsonData = json_encode($data);
             // // Make HTTP POST request to Shopify GraphQL endpoint
@@ -291,21 +301,24 @@ class SettingContoller extends Controller
                 }
             }
 
-            // // Define the REST API endpoint
+            // Define the REST API endpoint
             $apiEndpoint = "https://{$eventUser['name']}/admin/api/2024-04/shop.json";
 
-            // // Make HTTP GET request to Shopify REST API endpoint
+            // Make HTTP GET request to Shopify REST API endpoint
             $shopJsonResponse = Http::withHeaders($customHeaders)->get($apiEndpoint);
 
             $shopJson = $shopJsonResponse->json();
 
             if (!empty($shopJson['shop']['currency'])) {
-                User::where('id', $eventUser['id'])->update(['shop_currency' => $shopJson['shop']['currency'], 'carrier_service_id' => $carrier_service_id, 'shop_timezone' => $shopJson['shop']['iana_timezone'], "shop_weight_unit" => $shopJson['shop']['weight_unit']]);
+                User::where('id', $eventUser['id'])->update(['shop_currency' => $shopJson['shop']['currency'], 'carrier_service_id' => $carrier_service_id, 'shop_timezone' => $shopJson['shop']['iana_timezone'], "shop_weight_unit" => $shopJson['shop']['weight_unit'], 'is_on_board' => 1]);
+            } else {
+                User::where('id', $eventUser['id'])->update(['is_on_board', 1]);
             }
+
 
             return response()->json([
                 'status' => true,
-                'message' => 'On board process successfully done.'
+                'message' => 'Carrier service call applied successfully!'
             ]);
         } catch (Throwable $ex) {
             Log::error('Unexpected error when retrieving setting based on token list', [

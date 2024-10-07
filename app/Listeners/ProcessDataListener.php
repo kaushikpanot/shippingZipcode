@@ -72,13 +72,13 @@ class ProcessDataListener
             User::where('id', $eventUser['id'])->update(['shop_currency' => $shopJson['shop']['currency'], 'carrier_service_id' => $carrier_service_id, 'shop_timezone' => $shopJson['shop']['iana_timezone'], "shop_weight_unit"=>$shopJson['shop']['weight_unit']]);
         }
 
-        // Extract shop details
-        $storeOwnerEmail = $shopJson['shop']['email'] ?? 'kaushik.panot@meetanshi.com'; // Default email if not found
-        $storeName = $shopJson['shop']['name'];
-        $shopOwner = $shopJson['shop']['shop_owner'];
-        $shopDomain = $shopJson['shop']['domain'];
+        // // Extract shop details
+        // $storeOwnerEmail = $shopJson['shop']['email'] ?? 'kaushik.panot@meetanshi.com'; // Default email if not found
+        // $storeName = $shopJson['shop']['name'];
+        // $shopOwner = $shopJson['shop']['shop_owner'];
+        // $shopDomain = $shopJson['shop']['domain'];
 
-        // Mail::to("kaushik.panot@meetanshi.com")->send(new InstallMail($shopOwner, $shopDomain));
-        Mail::to("bhushan.trivedi@meetanshi.com")->send(new InstallMail($shopOwner, $shopDomain));
+        // // Mail::to("kaushik.panot@meetanshi.com")->send(new InstallMail($shopOwner, $shopDomain));
+        // Mail::to("bhushan.trivedi@meetanshi.com")->send(new InstallMail($shopOwner, $shopDomain));
     }
 }

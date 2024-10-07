@@ -391,6 +391,7 @@ function Rate(props) {
     };
 
     const handleRateModifierChange = (id, field) => (value) => {
+        console.log(id,field,value)
         const option = rateModifiersOptions.find(opt => opt.value === value);
         setRateModifiers((prevModifiers) =>
             prevModifiers.map((modifier) => {
@@ -402,25 +403,25 @@ function Rate(props) {
                             label1: option?.mainlabel || '',
                             unit: value === 'weight' ? shop_weight_unit : '',
                             rateDay: '',
-                            ...(value === 'availableQuan' && {
-                                rateOperator: 'lthenoequal',
-                            }),
-                            ...(value === 'title' || value === 'address' ? {
-                                rateOperator: 'contains',
-                            } : {}),
+                            rateOperator:
+                            value === 'availableQuan'
+                                ? 'lthenoequal'
+                                : value === 'title' || value === 'address'
+                                ? 'contains'
+                                : 'equal',
                             deliveryXday: '',
                         }),
                         ...(field === 'rateModifier2' && {
                             label2: option?.mainlabel || '',
                             unit2: value === 'weight' ? shop_weight_unit : '',
                             rateDay2: '',
-                            ...(value === 'availableQuan' && {
-                                rateOperator2: 'lthenoequal',
-                            }),
-                            ...(value === 'title' || value === 'address' ? {
-                                rateOperator2: 'contains',
-                            } : {}),
-                            deliveryXday3: '',
+                            rateOperator2:
+                            value === 'availableQuan'
+                                ? 'lthenoequal'
+                                : value === 'title' || value === 'address'
+                                ? 'contains'
+                                : 'equal',
+                            deliveryXday2: '',
                         }),
                     };
 
@@ -4260,7 +4261,7 @@ function Rate(props) {
                                                                     </div>
                                                                     <div style={{ width: "55%" }}>
                                                                         <TextField
-                                                                            type="text"
+                                                                            type="number"
                                                                             label="Adjustment"
                                                                             value={modifier.adjustment}
                                                                             onChange={handleRateModifierChange(modifier.id, 'adjustment')}

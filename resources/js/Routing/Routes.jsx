@@ -9,6 +9,7 @@ import Settings from '../Pages/Settings'
 import MergeRate from '../Pages/MergeRate';
 import AddEditMixMergeRate from '../Pages/AddEditMixMergeRate';
 import Demo from '../Pages/Demo';
+import OnBording from '../Pages/onBording';
 
 
 

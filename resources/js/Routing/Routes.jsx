@@ -11,6 +11,7 @@ import AddEditMixMergeRate from '../Pages/AddEditMixMergeRate';
 import Demo from '../Pages/Demo';
 import HelpCenter from '../Pages/helpCenter';
 import Plans from '../Pages/Plans';
+import OnBording from '../Pages/onBording';
 
 
 
@@ -30,6 +31,7 @@ export default function Routing(props) {
             <Route exact path="/add-edit-merge-rate/:id" element={<AddEditMixMergeRate {...props} />} />
             <Route exact path="/helpCenter" element={<HelpCenter {...props} />} />
             <Route exact path="/plans" element={<Plans {...props} />} />
+            <Route exact path="/dashboard" element={<OnBording {...props} />} />
         </Routes>
     );
 }

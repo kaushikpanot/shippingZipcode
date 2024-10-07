@@ -14,6 +14,7 @@ import {
   SearchIcon
 } from '@shopify/polaris-icons';
 import { useNavigate } from 'react-router-dom';
+import OnBording from './onBording';
 
 
 
@@ -55,6 +56,7 @@ const Settings = (props) => {
         host: props.host,
       });
       const token = await getSessionToken(app);
+      console.log(token)
       const response = await axios.get(`${apiCommonURL}/api/settings`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -189,6 +191,8 @@ const Settings = (props) => {
   const toastMarkup = activeToast ? (
     <Toast content="Setting saved successfully." onDismiss={() => setActiveToast(false)} />
   ) : null;
+
+
   if (loading) {
     return (
       <Page
@@ -347,6 +351,9 @@ const Settings = (props) => {
   );
   return (
     <div>
+      <OnBording/>
+
+
       <div style={{ position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#F1F1F1" }}>
         <Page
           title="Settings"

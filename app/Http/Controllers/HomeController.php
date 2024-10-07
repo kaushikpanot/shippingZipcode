@@ -21,6 +21,7 @@ class HomeController extends Controller
 
         $shopName = $post['shop'];
         // $token = User::where('name', $shopName)->first();
+        User::where('name', $shopName)->update(['is_on_board'=>0]);
 
         // if ($token) {
         //     $shopDetail = [

@@ -49,4 +49,8 @@ Route::middleware(['verify.shopify.jwt'])->group(function () {
         Route::get('shop/location', 'getShopLocation');
         Route::post('products', 'getProductList');
     });
+
+    Route::get('plans', [SettingContoller::class, 'getUserBasedPlans']);
+    Route::get('onBoardProcess', [SettingContoller::class, 'onBoardProcess']);
+
 });

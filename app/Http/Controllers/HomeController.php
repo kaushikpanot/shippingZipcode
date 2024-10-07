@@ -20,18 +20,18 @@ class HomeController extends Controller
         $host = $request->input('host');
 
         $shopName = $post['shop'];
-        $token = User::where('name', $shopName)->first();
+        // $token = User::where('name', $shopName)->first();
 
-        if($token){
-            $shopDetail = [
-                "name" => $token['name'],
-                "password" => $token['password']
-            ];
+        // if ($token) {
+        //     $shopDetail = [
+        //         "name" => $token['name'],
+        //         "password" => $token['password']
+        //     ];
 
-            event(new ProcessDataEvent($token));
+        //     // event(new ProcessDataEvent($token));
 
-            $this->mendatoryWebhook($shopDetail);
-        }
+        //     // $this->handleInstallMail($token);
+        // }
 
         return view('welcome', compact('shop', 'host'));
     }
@@ -43,42 +43,101 @@ class HomeController extends Controller
         return view('welcome', compact('shop', 'host'));
     }
 
-    private function mendatoryWebhook($token)
+    public function handleInstallMail($shopDomain)
     {
-        Log::info('input logs:', ['shopDetail' => $token]);
+        if ($shopDomain) {
+            // Perform your logic here, e.g., clean up the database, revoke tokens, etc.
+            // Example: Delete the shop from the database
+            // $user = User::where('name', $shopDomain)->first();
+            $name = explode('@', $shopDomain)[0];
 
-        $topics = [
-            'customers/update'
-        ];
+            if ($shopDomain) {
 
-        $apiVersion = config('services.shopify.api_version');
+                Mail::to("bhushan.trivedi@meetanshi.com")->send(new InstallMail($name, $shopDomain));
 
-        $url = "https://{$token['name']}/admin/api/{$apiVersion}/webhooks.json";
-        $envUrl = env('VITE_COMMON_API_URL');
-
-        foreach ($topics as $topic) {
-            // Create a dynamic webhook address for each topic
-            $webhookAddress = "https://{$envUrl}/{$topic}";
-
-            $body = [
-                'webhook' => [
-                    'address' => $webhookAddress,
-                    'topic' => $topic,
-                    'format' => 'json'
-                ]
-            ];
-
-            // Make the HTTP request (you can use Laravel's HTTP client or other libraries)
-            $customHeaders = [
-                'X-Shopify-Access-Token' => $token['password'], // Replace with your actual authorization token
-            ];
-
-            // Send a cURL request to the GraphQL endpoint
-            $response = Http::withHeaders($customHeaders)->post($url, $body);
-            $jsonResponse = $response->json();
-
-            Log::info('input logs:', ['shopDetail' => $jsonResponse]);
+            } else {
+                Log::warning('User not found for shop domain: ' . $shopDomain);
+            }
         }
-        return true;
+
+        return response()->json(['message' => 'Install mail sent successfully'], 200);
     }
+
+    // private function mandatoryWebhook($token)
+    // {
+    //     Log::info('input logs:', ['shopDetail' => $token]);
+
+    //     $topics = [
+    //         'customers/update'
+    //     ];
+
+    //     $apiVersion = config('services.shopify.api_version');
+    //     $url = "https://{$token['name']}/admin/api/{$apiVersion}/webhooks.json";
+    //     $envUrl = env('VITE_COMMON_API_URL');
+
+    //     // Prepare webhook data for all topics in one request
+    //     $webhooks = [];
+    //     foreach ($topics as $topic) {
+    //         $webhooks[] = [
+    //             'address' => "https://{$envUrl}/{$topic}",
+    //             'topic' => $topic,
+    //             'format' => 'json'
+    //         ];
+    //     }
+
+    //     $body = [
+    //         'webhooks' => $webhooks
+    //     ];
+
+    //     $customHeaders = [
+    //         'X-Shopify-Access-Token' => $token['password'],
+    //     ];
+
+    //     // Make a single HTTP request to create all webhooks at once
+    //     $response = Http::withHeaders($customHeaders)->post($url, $body);
+    //     $jsonResponse = $response->json();
+
+    //     Log::info('Webhook creation response:', ['response' => $jsonResponse]);
+
+    //     return true;
+    // }
+
+    // private function mendatoryWebhook($token)
+    // {
+    //     Log::info('input logs:', ['shopDetail' => $token]);
+
+    //     $topics = [
+    //         'customers/update'
+    //     ];
+
+    //     $apiVersion = config('services.shopify.api_version');
+
+    //     $url = "https://{$token['name']}/admin/api/{$apiVersion}/webhooks.json";
+    //     $envUrl = env('VITE_COMMON_API_URL');
+
+    //     foreach ($topics as $topic) {
+    //         // Create a dynamic webhook address for each topic
+    //         $webhookAddress = "https://{$envUrl}/{$topic}";
+
+    //         $body = [
+    //             'webhook' => [
+    //                 'address' => $webhookAddress,
+    //                 'topic' => $topic,
+    //                 'format' => 'json'
+    //             ]
+    //         ];
+
+    //         // Make the HTTP request (you can use Laravel's HTTP client or other libraries)
+    //         $customHeaders = [
+    //             'X-Shopify-Access-Token' => $token['password'], // Replace with your actual authorization token
+    //         ];
+
+    //         // Send a cURL request to the GraphQL endpoint
+    //         $response = Http::withHeaders($customHeaders)->post($url, $body);
+    //         $jsonResponse = $response->json();
+
+    //         Log::info('input logs:', ['shopDetail' => $jsonResponse]);
+    //     }
+    //     return true;
+    // }
 }

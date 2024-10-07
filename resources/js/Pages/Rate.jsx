@@ -103,6 +103,10 @@ function Rate(props) {
         };
         if (checkbox === 'checked1' && !newCheckedState.checked1) {
             Setrate_based_on_surcharge({});
+            setCheckState(prevState => ({
+                ...prevState,
+                selectedByCart: 'weight',
+            }));
         }
         if (checkbox === 'checked3' && !newCheckedState.checked3) {
             setsend_another_rate({});
@@ -661,8 +665,6 @@ function Rate(props) {
                     max_charge_price: surchargeData.max_charge_price || 0.00,
                     rate_price: surchargeData.rate_price || '',
                     cart_total_percentage: surchargeData.cart_total_percentage || '',
-                    // productData: surchargeData.productData || '',
-
                 });
 
             }
@@ -1133,6 +1135,14 @@ function Rate(props) {
         else if (newValue === 'address' || newValue === 'timeIn') {
             updatedCondition = 'contains';
         }
+        else {
+            updatedCondition = 'equal'
+        }
+
+        let time = items[index].value;
+        if (newValue === 'time') {
+            time = '00:00';
+        }
 
         const updatedItem = {
             ...items[index],
@@ -1140,8 +1150,8 @@ function Rate(props) {
             name: isSecondSelect ? items[index].name : newValue,
             unit: isSecondSelect ? (items[index].unit || '') : (selectedOption.unit || ''),
             label: selectedOption.mainlabel || items[index].label,
-            value: isSecondSelect ? items[index].value : '',
-            value2: isSecondSelect ? items[index].value : '',
+            value: isSecondSelect ? '' : (newValue === 'time' ? time : ''),
+            value2: isSecondSelect ? '' : (newValue === 'time' ? time : ''),
         };
 
 
@@ -1219,7 +1229,6 @@ function Rate(props) {
         productData: [],
         base_weight_unit: ''
     })
-
     const getstate = async () => {
         try {
             const token = await getSessionToken(app);
@@ -1233,7 +1242,7 @@ function Rate(props) {
             const fetchedWeightUnit = response.data.rate.shop_weight_unit;
             Setrate_based_on_surcharge(prevState => ({
                 ...prevState,
-                base_weight_unit: fetchedWeightUnit || 'sd'
+                base_weight_unit: fetchedWeightUnit || ''
             }));
 
             setShop_currency(response.data.rate.shop_currency);
@@ -1291,6 +1300,7 @@ function Rate(props) {
         exclude_products_textbox: '',
         productsData: []
     })
+
 
     useEffect(() => {
 
@@ -1357,13 +1367,13 @@ function Rate(props) {
             selectedByAmount: checkstate.selectedByAmount,
             selectedMultiplyLine: checkstate.selectedMultiplyLine,
 
+
         },
         rate_modifiers: rateModifiers,
         exclude_rate_for_products: exclude_Rate,
         status: 1,
         merge_rate_tag: '',
         origin_locations: [],
-        productdata: [],
     });
 
     const handleRateFormChange = (field) => (value) => {
@@ -1435,10 +1445,7 @@ function Rate(props) {
                 productData: rate_based_on_surcharge?.productData || '',
                 descriptions: rate_based_on_surcharge?.descriptions || '',
                 cart_total_percentage: rate_based_on_surcharge?.cart_total_percentage || '',
-                product_title: rate_based_on_surcharge?.product_title || '',
-                collecion_id: rate_based_on_surcharge?.collecion_id || '',
-                product_type: rate_based_on_surcharge?.product_type || '',
-                product_vendor: rate_based_on_surcharge?.product_vendor || '',
+
                 base_weight_unit: rate_based_on_surcharge?.base_weight_unit || 'asd'
             },
             rate_tier: {
@@ -1475,11 +1482,15 @@ function Rate(props) {
                 return acc;
             }, {});
     };
+    useEffect(() => {
+        console.log('rate_based_on_surcharge', rate_based_on_surcharge)
+        console.log('exclude_Rate', exclude_Rate)
+    }, [rate_based_on_surcharge, exclude_Rate])
 
     const saveRate = async () => {
         const newErrors = {};
 
-        if (exclude_Rate.set_exclude_products === 'custome_selection' && exclude_Rate.productsData.length === 0) {
+        if ( (!exclude_Rate.productsData || !exclude_Rate.set_exclude_products )||(exclude_Rate.set_exclude_products === 'custome_selection' && exclude_Rate.productsData?.length === 0)) {
             newErrors.productsData = 'Select at least 1 product.';
         }
         if (!formData.name) newErrors.name = 'Rate name is required';
@@ -1535,10 +1546,10 @@ function Rate(props) {
         }
         if (checkedState.checked1) {
             if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
-                if (!rate_based_on_surcharge.charge_per_wight) {
+                if (rate_based_on_surcharge.charge_per_wight < 0) {
                     newErrors.charge_per_wight = 'The charge field is required.';
                 }
-                if (!rate_based_on_surcharge.unit_for) {
+                if (rate_based_on_surcharge.unit_for < 0) {
                     newErrors.unit_for = 'The unit field is required.';
                 }
             }
@@ -1548,8 +1559,15 @@ function Rate(props) {
                 }
 
             }
+
+            if (checkstate.selectedByCart === 'Vendor' ||  checkstate.selectedByCart === 'Tag'||checkstate.selectedByCart === 'Type'||checkstate.selectedByCart === 'SKU'||checkstate.selectedByCart === 'Collection' || checkstate.selectedByCart === 'Collection' ) {
+                if (!rate_based_on_surcharge.descriptions) {
+                    newErrors.descriptions = 'This field is required.';
+                }
+
+            }
             if (checkstate.selectedByCart === 'Product') {
-                if (rate_based_on_surcharge.productData.length === 0) {
+                if (!rate_based_on_surcharge.productData  || rate_based_on_surcharge?.productData?.length <= 0 ) {
                     newErrors.productsDatas = 'Select at least 1 product.';
                 }
 
@@ -1610,6 +1628,7 @@ function Rate(props) {
             setLoadingButton(false);
         }
     };
+
 
     const [textFields, setTextFields] = useState({
         fullProductTitle: '',
@@ -1767,7 +1786,6 @@ function Rate(props) {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
                 ...(value ? { query: value } : {}),
                 query: queryString,
-                type: 'sad',
                 collectionId: collectionIdForExcludeRate,
                 type: searchTypeForExcludeRate
 
@@ -1912,38 +1930,40 @@ function Rate(props) {
 
     const handleProductChange = (productId, checked, text = '') => {
         Setrate_based_on_surcharge((prevState) => {
-            let updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
+            const updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
+
+            const product = productsForSurcharge.find(product => product.id === productId);
 
             if (checked) {
-                const product = productsForSurcharge.find(product => product.id == productId);
                 if (product) {
-                    const existingProductIndex = updatedProductData.findIndex(item => item.id == productId);
+                    const existingProductIndex = updatedProductData.findIndex(item => item.id === productId);
 
                     if (existingProductIndex !== -1) {
+
                         updatedProductData[existingProductIndex] = {
                             ...updatedProductData[existingProductIndex],
                             value: text
                         };
                     } else {
-                        updatedProductData = [
-                            ...updatedProductData,
-                            {
-                                id: product.id,
-                                title: product.title,
-                                price: product.price,
-                                value: text
-                            }
-                        ];
+                        updatedProductData.push({
+                            id: product.id,
+                            title: product.title,
+                            price: product.price,
+                            value: text
+                        });
                     }
                 }
+                return {
+                    ...prevState,
+                    productData: updatedProductData,
+                };
             } else {
-                updatedProductData = updatedProductData.filter(item => item.id !== productId);
+                return {
+                    ...prevState,
+                    productData: updatedProductData.filter(item => item.id !== productId),
+                };
             }
 
-            return {
-                ...prevState,
-                productData: updatedProductData,
-            };
         });
     };
 
@@ -1994,6 +2014,7 @@ function Rate(props) {
                         disabled={!isChecked}
                         placeholder={isChecked ? '0.00' : ''}
                         prefix={isChecked ? shop_currency : undefined}
+                        type='number'
                     />
 
                 </IndexTable.Cell>
@@ -2005,6 +2026,16 @@ function Rate(props) {
         ? productsForExcludeRate?.filter(product => product.title.toLowerCase().includes)
         : productsForExcludeRate?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
 
+    const toggleProduct = (id, title, price) => {
+        SetExclude_Rate(prevState => {
+            const currentProductData = Array.isArray(prevState.productsData) ? prevState.productsData : [];
+            const isSelected = currentProductData.some(product => product.id === id);
+            const updatedProductData = isSelected
+                ? currentProductData.filter(product => product.id !== id)
+                : [...currentProductData, { id, title, price }];
+            return { ...prevState, productsData: updatedProductData };
+        });
+    };
     const selectedCount1 = exclude_Rate.productsData?.length || 0
     const productDataExclude = filteredProduct?.map(({ id, title, image, price }, index) => {
         return (
@@ -2040,16 +2071,7 @@ function Rate(props) {
         );
     });
 
-    const toggleProduct = (id, title, price) => {
-        SetExclude_Rate(prevState => {
-            const currentProductData = Array.isArray(prevState.productsData) ? prevState.productsData : [];
-            const isSelected = currentProductData.some(product => product.id === id);
-            const updatedProductData = isSelected
-                ? currentProductData.filter(product => product.id !== id)
-                : [...currentProductData, { id, title, price }];
-            return { ...prevState, productsData: updatedProductData };
-        });
-    };
+
     const handleCheckboxChange2 = (modifierId, productId) => {
         setSelectedProductIds((prevSelected) => ({
             ...prevSelected,
@@ -3265,9 +3287,10 @@ function Rate(props) {
                                                                             checkstate.selectedByCart === 'Collection' ? 'Product Collection Id' : 'Variant Metafields'
                                                                     } with comma separator(,).`
                                                                 }
-
+                                                                error={errors.descriptions}
                                                                 value={rate_based_on_surcharge.descriptions}
                                                                 onChange={handleRateFormChange('descriptions')}
+                                                               
                                                             />
                                                         </div>
                                                     </div>

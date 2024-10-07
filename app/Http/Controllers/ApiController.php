@@ -595,8 +595,8 @@ class ApiController extends Controller
     {
         Log::info('array', [
             'array1' => $array1,
-            'array2' => $array2,
-            'array_intersect' => array_intersect($array1, $array2),
+            'array2' => $array2
+            // 'array_intersect' => array_intersect($array1, $array2),
         ]);
         return !empty(array_intersect($array1, $array2));
     }
@@ -739,7 +739,6 @@ class ApiController extends Controller
 
         return $convertedAmount;
     }
-
 
     public function handleCallback(Request $request, $customer_id = null)
     {
@@ -935,7 +934,7 @@ class ApiController extends Controller
                         if ($condition['label'] == 'Customer') {
                             $fieldMap = [
                                 'name2' => 'name',
-                                'email' => 'email',
+                                'email' => fn($item) => $this->getCustomerByPhone('email', $customer_id),
                                 'phone' => 'phone',
                                 'company' => 'company_name',
                                 'address' => 'address1',
@@ -1084,7 +1083,7 @@ class ApiController extends Controller
                         if ($condition['label'] == 'Customer') {
                             $fieldMap = [
                                 'name2' => 'name',
-                                'email' => 'email',
+                                'email' => fn($item) => $this->getCustomerByPhone('email', $customer_id),
                                 'phone' => 'phone',
                                 'company' => 'company_name',
                                 'address' => 'address1',
@@ -1234,7 +1233,7 @@ class ApiController extends Controller
                         if ($condition['label'] == 'Customer') {
                             $fieldMap = [
                                 'name2' => 'name',
-                                'email' => 'email',
+                                'email' => fn($item) => $this->getCustomerByPhone('email', $customer_id),
                                 'phone' => 'phone',
                                 'company' => 'company_name',
                                 'address' => 'address1',

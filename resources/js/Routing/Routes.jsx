@@ -9,7 +9,8 @@ import Settings from '../Pages/Settings'
 import MergeRate from '../Pages/MergeRate';
 import AddEditMixMergeRate from '../Pages/AddEditMixMergeRate';
 import Demo from '../Pages/Demo';
-import OnBording from '../Pages/onBording';
+import HelpCenter from '../Pages/helpCenter';
+import Plans from '../Pages/Plans';
 
 
 
@@ -27,6 +28,8 @@ export default function Routing(props) {
             <Route exact path="/mixMergeRate" element={<MergeRate {...props} />} />
             <Route exact path="/add-edit-merge-rate" element={<AddEditMixMergeRate {...props} />} />
             <Route exact path="/add-edit-merge-rate/:id" element={<AddEditMixMergeRate {...props} />} />
+            <Route exact path="/helpCenter" element={<HelpCenter {...props} />} />
+            <Route exact path="/plans" element={<Plans {...props} />} />
         </Routes>
     );
 }

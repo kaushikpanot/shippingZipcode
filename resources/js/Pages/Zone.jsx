@@ -64,6 +64,7 @@ function Zone(props) {
     const [totalPages, setTotalPages] = useState(1);
     const [itemsPerPage] = useState(5);
     const [loadingButton, setLoadingButton] = useState(false);
+    const[deleteLading,setDeleteLoading] = useState(false)
 
     const [toastActive, setToastActive] = useState(false);
     const toggleToast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
@@ -208,6 +209,7 @@ function Zone(props) {
 
     const handleDelete = async () => {
         try {
+            setDeleteLoading(true);
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
@@ -225,6 +227,9 @@ function Zone(props) {
             console.error('Error deleting item:', error);
             setToastContent("Error occurred while deleting item");
             setShowToast(true);
+        }
+        finally{
+            setDeleteLoading(false); 
         }
     };
 
@@ -633,11 +638,13 @@ function Zone(props) {
                         content: 'Delete',
                         destructive: true,
                         onAction: handleDelete,
+                        loading: deleteLading,
                     }}
                     secondaryActions={[
                         {
                             content: 'Cancel',
                             onAction: toggleModal,
+                            
                         },
                     ]}
                 >

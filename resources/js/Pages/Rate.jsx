@@ -257,7 +257,7 @@ function Rate(props) {
         { label: 'Day ', value: 'day', mainlabel: "Delivery" },
         { label: 'Date', value: 'date', mainlabel: "Delivery" },
         { label: 'X Day from today', value: 'dayFromToday', mainlabel: "Delivery" },
-        { label: 'Type', value: 'type', mainlabel: "Delivery" },
+        // { label: 'Type', value: 'type', mainlabel: "Delivery" },
         { label: 'X Estimated Delivery Day ', value: 'estimatedDay', mainlabel: "Delivery" },
         { label: 'X Time From Current Time', value: 'timefromCurrent', mainlabel: "Delivery" },
         // { label: 'First Available Day', value: 'available', mainlabel: "Delivery" },
@@ -391,6 +391,7 @@ function Rate(props) {
     };
 
     const handleRateModifierChange = (id, field) => (value) => {
+        console.log(id,field,value)
         const option = rateModifiersOptions.find(opt => opt.value === value);
         setRateModifiers((prevModifiers) =>
             prevModifiers.map((modifier) => {
@@ -402,25 +403,25 @@ function Rate(props) {
                             label1: option?.mainlabel || '',
                             unit: value === 'weight' ? shop_weight_unit : '',
                             rateDay: '',
-                            ...(value === 'availableQuan' && {
-                                rateOperator: 'lthenoequal',
-                            }),
-                            ...(value === 'title' || value === 'address' ? {
-                                rateOperator: 'contains',
-                            } : {}),
+                            rateOperator:
+                            value === 'availableQuan'
+                                ? 'lthenoequal'
+                                : value === 'title' || value === 'address'
+                                ? 'contains'
+                                : 'equal',
                             deliveryXday: '',
                         }),
                         ...(field === 'rateModifier2' && {
                             label2: option?.mainlabel || '',
                             unit2: value === 'weight' ? shop_weight_unit : '',
                             rateDay2: '',
-                            ...(value === 'availableQuan' && {
-                                rateOperator2: 'lthenoequal',
-                            }),
-                            ...(value === 'title' || value === 'address' ? {
-                                rateOperator2: 'contains',
-                            } : {}),
-                            deliveryXday3: '',
+                            rateOperator2:
+                            value === 'availableQuan'
+                                ? 'lthenoequal'
+                                : value === 'title' || value === 'address'
+                                ? 'contains'
+                                : 'equal',
+                            deliveryXday2: '',
                         }),
                     };
 
@@ -1055,7 +1056,7 @@ function Rate(props) {
         { label: 'Day Is', value: 'dayIs', mainlabel: "Delivery" },
         { label: 'Date', value: 'date', mainlabel: "Delivery" },
         { label: 'Time In', value: 'timeIn', mainlabel: "Delivery" },
-        { label: 'Type', value: 'type2', mainlabel: "Delivery" }
+        // { label: 'Type', value: 'type2', mainlabel: "Delivery" }
     ];
 
     const handleAddItem = () => {
@@ -1490,9 +1491,10 @@ function Rate(props) {
     const saveRate = async () => {
         const newErrors = {};
 
-        if ( (!exclude_Rate.productsData || !exclude_Rate.set_exclude_products )||(exclude_Rate.set_exclude_products === 'custome_selection' && exclude_Rate.productsData?.length === 0)) {
+        if (selectedRate === 'custome_selection' && (!exclude_Rate.productsData || exclude_Rate.productsData.length === 0)) {
             newErrors.productsData = 'Select at least 1 product.';
         }
+        
         if (!formData.name) newErrors.name = 'Rate name is required';
         if (!formData.base_price) newErrors.base_price = 'Base price is required';
         if (!formData.service_code) newErrors.service_code = 'Service code is required';
@@ -3291,7 +3293,9 @@ function Rate(props) {
                                                                 value={rate_based_on_surcharge.descriptions}
                                                                 onChange={handleRateFormChange('descriptions')}
                                                                
-                                                            />
+
+
+/>
                                                         </div>
                                                     </div>
                                                 )}
@@ -4257,7 +4261,7 @@ function Rate(props) {
                                                                     </div>
                                                                     <div style={{ width: "55%" }}>
                                                                         <TextField
-                                                                            type="text"
+                                                                            type="number"
                                                                             label="Adjustment"
                                                                             value={modifier.adjustment}
                                                                             onChange={handleRateModifierChange(modifier.id, 'adjustment')}

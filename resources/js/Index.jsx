@@ -18,11 +18,10 @@ export default function Index(props) {
             <AppProvider i18n={translations}>
                 <Frame>
                     <NavMenu>
-                        <a href="/" rel="home">
-                        </a>
+                        <a href="/" rel="home"></a>
                         <a href="/zone-data">Shipping Zone & Rates</a>
-                        {/* <a href="/logs">Logs</a>
-                        <a href="/settings">Settings</a> */}
+                        <a href="/helpCenter">Help Center</a>
+                        <a href="/plans">Plans</a>
                     </NavMenu>
                     <Main {...props} />
                 </Frame>

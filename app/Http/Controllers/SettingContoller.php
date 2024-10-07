@@ -228,7 +228,7 @@ class SettingContoller extends Controller
                 ], 404);
             }
 
-            $plans = Charge::where('user_id', $userId)->first();
+            $plans = Charge::where('user_id', $userId)->select('id','user_id', 'status')->first();
 
             return response()->json([
                 'status' => true,

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\ProcessDataEvent;
+use App\Jobs\SendEmailJob;
 use App\Mail\InstallMail;
 use App\Mail\InstallSupportMail;
 use App\Models\User;
@@ -22,6 +23,10 @@ class HomeController extends Controller
         $shopName = $post['shop'];
         // $token = User::where('name', $shopName)->first();
         User::where('name', $shopName)->update(['is_on_board'=>0]);
+
+        $this->handleInstallMail($shopName);
+
+
 
         // if ($token) {
         //     $shopDetail = [
@@ -54,7 +59,16 @@ class HomeController extends Controller
 
             if ($shopDomain) {
 
-                Mail::to("bhushan.trivedi@meetanshi.com")->send(new InstallMail($name, $shopDomain));
+                $emailData = [
+                    "to" => "bhushan.trivedi@meetanshi.com",
+                    'name' => $name,
+                    'shopDomain' => $shopDomain,
+                ];
+
+                SendEmailJob::dispatch($emailData, InstallMail::class)->onQueue('emails');
+
+                // Mail::to("bhushan.trivedi@meetanshi.com")->send(new InstallMail($name, $shopDomain));
+                // Mail::to("bhushan.trivedi@meetanshi.com")->send(new InstallMail($name, $shopDomain));
 
             } else {
                 Log::warning('User not found for shop domain: ' . $shopDomain);

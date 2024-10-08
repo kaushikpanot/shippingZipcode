@@ -391,7 +391,6 @@ function Rate(props) {
     };
 
     const handleRateModifierChange = (id, field) => (value) => {
-        console.log(id,field,value)
         const option = rateModifiersOptions.find(opt => opt.value === value);
         setRateModifiers((prevModifiers) =>
             prevModifiers.map((modifier) => {
@@ -404,11 +403,11 @@ function Rate(props) {
                             unit: value === 'weight' ? shop_weight_unit : '',
                             rateDay: '',
                             rateOperator:
-                            value === 'availableQuan'
-                                ? 'lthenoequal'
-                                : value === 'title' || value === 'address'
-                                ? 'contains'
-                                : 'equal',
+                                value === 'availableQuan'
+                                    ? 'lthenoequal'
+                                    : value === 'title' || value === 'address'
+                                        ? 'contains'
+                                        : 'equal',
                             deliveryXday: '',
                         }),
                         ...(field === 'rateModifier2' && {
@@ -416,11 +415,11 @@ function Rate(props) {
                             unit2: value === 'weight' ? shop_weight_unit : '',
                             rateDay2: '',
                             rateOperator2:
-                            value === 'availableQuan'
-                                ? 'lthenoequal'
-                                : value === 'title' || value === 'address'
-                                ? 'contains'
-                                : 'equal',
+                                value === 'availableQuan'
+                                    ? 'lthenoequal'
+                                    : value === 'title' || value === 'address'
+                                        ? 'contains'
+                                        : 'equal',
                             deliveryXday2: '',
                         }),
                     };
@@ -1098,7 +1097,7 @@ function Rate(props) {
 
     const handleSelectChange = (index, newValue, isSecondSelect) => {
         const selectedOption = validations.find(option => option.value === newValue) || {};
-
+        console.log(selectedOption)
         if (newValue === 'type2') {
             setDeliveryType(prevState => {
                 const updatedItems = [...prevState];
@@ -1151,8 +1150,10 @@ function Rate(props) {
             name: isSecondSelect ? items[index].name : newValue,
             unit: isSecondSelect ? (items[index].unit || '') : (selectedOption.unit || ''),
             label: selectedOption.mainlabel || items[index].label,
-            value: isSecondSelect ? '' : (newValue === 'time' ? time : ''),
-            value2: isSecondSelect ? '' : (newValue === 'time' ? time : ''),
+            value: isSecondSelect ? items[index].value : (newValue === 'time' ? time : ''),
+            value2: isSecondSelect ? items[index].value2 : (newValue === 'time' ? time : ''),
+            // value: isSecondSelect ? items[index].value : '',
+            // value2: isSecondSelect ? items[index].value : '',
         };
 
 
@@ -1482,19 +1483,14 @@ function Rate(props) {
                 }
                 return acc;
             }, {});
-    };
-    useEffect(() => {
-        console.log('rate_based_on_surcharge', rate_based_on_surcharge)
-        console.log('exclude_Rate', exclude_Rate)
-    }, [rate_based_on_surcharge, exclude_Rate])
-
+    }
     const saveRate = async () => {
         const newErrors = {};
 
         if (selectedRate === 'custome_selection' && (!exclude_Rate.productsData || exclude_Rate.productsData.length === 0)) {
             newErrors.productsData = 'Select at least 1 product.';
         }
-        
+
         if (!formData.name) newErrors.name = 'Rate name is required';
         if (!formData.base_price) newErrors.base_price = 'Base price is required';
         if (!formData.service_code) newErrors.service_code = 'Service code is required';
@@ -1562,14 +1558,14 @@ function Rate(props) {
 
             }
 
-            if (checkstate.selectedByCart === 'Vendor' ||  checkstate.selectedByCart === 'Tag'||checkstate.selectedByCart === 'Type'||checkstate.selectedByCart === 'SKU'||checkstate.selectedByCart === 'Collection' || checkstate.selectedByCart === 'Collection' ) {
+            if (checkstate.selectedByCart === 'Vendor' || checkstate.selectedByCart === 'Tag' || checkstate.selectedByCart === 'Type' || checkstate.selectedByCart === 'SKU' || checkstate.selectedByCart === 'Collection' || checkstate.selectedByCart === 'Collection') {
                 if (!rate_based_on_surcharge.descriptions) {
                     newErrors.descriptions = 'This field is required.';
                 }
 
             }
             if (checkstate.selectedByCart === 'Product') {
-                if (!rate_based_on_surcharge.productData  || rate_based_on_surcharge?.productData?.length <= 0 ) {
+                if (!rate_based_on_surcharge.productData || rate_based_on_surcharge?.productData?.length <= 0) {
                     newErrors.productsDatas = 'Select at least 1 product.';
                 }
 
@@ -3292,10 +3288,10 @@ function Rate(props) {
                                                                 error={errors.descriptions}
                                                                 value={rate_based_on_surcharge.descriptions}
                                                                 onChange={handleRateFormChange('descriptions')}
-                                                               
 
 
-/>
+
+                                                            />
                                                         </div>
                                                     </div>
                                                 )}

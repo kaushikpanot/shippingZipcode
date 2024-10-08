@@ -138,7 +138,6 @@ function Home(props) {
     );
 
     const paginatedZones = filteredZones.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-    console.log(paginatedZones)
     const rowMarkup = paginatedZones.map(
         ({ id, name, countries, currency,status  }, index) => (
             <IndexTable.Row

@@ -1389,7 +1389,7 @@ class ApiController extends Controller
                             if ($surcharge['selectedMultiplyLine'] == 'Yes' && !empty($lastFilteredData)) {
                                 $rate->base_price = $rate->base_price + ($lastFilteredData['value'] * $lastFilteredData['quantity']);
                             } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
-                                $rate->base_price = $rate->base_price + $lastFilteredData['value'] + (($lastFilteredData['price'] % $surcharge['cart_total_percentage'] / 100) * $lastFilteredData['quantity']);
+                                $rate->base_price = $rate->base_price + $lastFilteredData['value'] + ((($lastFilteredData['price'] % $surcharge['cart_total_percentage'] / 100) * $lastFilteredData['quantity']));
                                 if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
                                     $rate->base_price = $minChargePrice;
                                 } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {

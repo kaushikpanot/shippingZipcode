@@ -2978,7 +2978,7 @@ class ApiController extends Controller
             } else {
                 $searchFilters = [];
 
-                if (!empty($post['query'])) {
+                if (!empty($post['query']) && isset($post['type'])) {
                     switch ($post['type']) {
                         case 'fullProductTitle':
                             $searchFilters[] = 'title:*' . $post['query'] . '*';
@@ -2989,7 +2989,12 @@ class ApiController extends Controller
                         case 'productVendor':
                             $searchFilters[] = 'vendor:*' . $post['query'] . '*';
                             break;
+                        default:
+                            $searchFilters[] = 'title:*' . $post['query'] . '*';
+                            break;
                     }
+                } else if(!empty($post['query'])){
+                    $searchFilters[] = 'title:*' . $post['query'] . '*';
                 }
 
                 $queryParam = '';

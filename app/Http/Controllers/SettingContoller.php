@@ -312,7 +312,7 @@ class SettingContoller extends Controller
             if (!empty($shopJson['shop']['currency'])) {
                 User::where('id', $eventUser['id'])->update(['shop_currency' => $shopJson['shop']['currency'], 'carrier_service_id' => $carrier_service_id, 'shop_timezone' => $shopJson['shop']['iana_timezone'], "shop_weight_unit" => $shopJson['shop']['weight_unit'], 'is_on_board' => 1]);
             } else {
-                User::where('id', $eventUser['id'])->update(['is_on_board', 1]);
+                User::where('id', $eventUser['id'])->update(['is_on_board' => 1]);
             }
 
 

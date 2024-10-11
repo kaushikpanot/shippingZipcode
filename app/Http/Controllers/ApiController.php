@@ -814,15 +814,16 @@ class ApiController extends Controller
 
         $mixMergeRate = MixMergeRate::where('user_id', $userId)->get();
 
-        $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $destinationCountryName)->pluck('zone_id');
+        // $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $destinationCountryName)->pluck('zone_id');
 
-        // $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $destinationCountryName)->whereHas('zone', function ($query) use ($reqCurrency, $currencyCode) {
-        //     $query->where('status', 1)->where('currency', $currencyCode);
-        // })->pluck('zone_id');
+        $zoneIds = ZoneCountry::where('user_id', $userId)->where('countryCode', $destinationCountryName)->whereHas('zone', function ($query) {
+            $query->where('status', 1);
+            // ->where('currency', $currencyCode)
+        })->pluck('zone_id');
 
         Log::info('header logs:', ['zoneIds' => $zoneIds]);
-        Log::info('header logs:', ['reqCurrency' => $reqCurrency]);
-        Log::info('header logs:', ['destinationCountryName' => $destinationCountryName]);
+        // Log::info('header logs:', ['reqCurrency' => $reqCurrency]);
+        // Log::info('header logs:', ['destinationCountryName' => $destinationCountryName]);
 
         $rates = Rate::whereIn('zone_id', $zoneIds)->where('user_id', $userId)->where('status', 1)->with('zone:id,currency', 'zipcode')->get();
 
@@ -1326,6 +1327,9 @@ class ApiController extends Controller
             if (!empty($rate->rate_based_on_surcharge) && $rate->rate_based_on_surcharge['based_on_cart']) {
                 $surcharge = $rate->rate_based_on_surcharge;
 
+                $surcharge['unit_for'] = $surcharge['selectedByAmount'] == 'unit' ? ($surcharge['unit_for'] ?? 1) : ($surcharge['unit_for'] ?? 0);
+                $surcharge['charge_per_weight'] = $surcharge['selectedByAmount'] == 'unit' ? ($surcharge['charge_per_weight'] ?? 1) : ($surcharge['charge_per_weight'] ?? 0);
+
                 if (isset($surcharge['charge_per_wight'])) {
                     $surcharge['charge_per_weight'] = $surcharge['charge_per_wight'];
                 }
@@ -1370,11 +1374,14 @@ class ApiController extends Controller
                         if (!empty($surcharge['productData'])) {
                             $surchargeData = collect($surcharge['productData']);
                             $itemsProductIds = collect($items)->pluck('product_id');
-
+                            Log::info("surchargeData", ["surchargeData" => $surchargeData]);
+                            Log::info("itemsProductIds", ["itemsProductIds" => $itemsProductIds]);
                             // Filter the surcharge data to only include items with matching product_id
                             $filteredData = $surchargeData->filter(function ($item) use ($itemsProductIds) {
                                 return $itemsProductIds->contains($item['id']);
                             });
+
+                            Log::info('lastFilteredData:', ['lastFilteredData' => $filteredData]);
 
                             $filteredDataWithQuantity = $filteredData->map(function ($item) use ($items) {
                                 $quantity = collect($items)->firstWhere('product_id', $item['id'])['quantity'] ?? 0;
@@ -1382,20 +1389,37 @@ class ApiController extends Controller
                                 return $item;
                             })->toArray();
 
+                            Log::info('filteredDataWithQuantity:', ['filteredDataWithQuantity' => $filteredDataWithQuantity]);
+
                             $lastFilteredData = collect($filteredDataWithQuantity)->last();
 
-                            Log::info('lastFilteredData:', ['lastFilteredData' => $lastFilteredData]);
+                            foreach ($filteredDataWithQuantity as $data) {
+                                if ($surcharge['selectedMultiplyLine'] == 'Yes') {
+                                    $rate->base_price += ($data['value'] * $data['quantity']);
+                                } elseif ($surcharge['selectedMultiplyLine'] == 'per') {
+                                    $rate->base_price += $data['value'] + ((($data['price'] * $surcharge['cart_total_percentage'] / 100) * $data['quantity']));
+                                }
 
-                            if ($surcharge['selectedMultiplyLine'] == 'Yes' && !empty($lastFilteredData)) {
-                                $rate->base_price = $rate->base_price + ($lastFilteredData['value'] * $lastFilteredData['quantity']);
-                            } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
-                                $rate->base_price = $rate->base_price + $lastFilteredData['value'] + ((($lastFilteredData['price'] % $surcharge['cart_total_percentage'] / 100) * $lastFilteredData['quantity']));
-                                if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
+                                // Ensure base price is within min/max charge limits
+                                if ($minChargePrice != 0 && $rate->base_price < $minChargePrice) {
                                     $rate->base_price = $minChargePrice;
                                 } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
                                     $rate->base_price = $maxChargePrice;
                                 }
                             }
+
+                            // Log::info('lastFilteredData:', ['lastFilteredData' => $lastFilteredData]);
+
+                            // if ($surcharge['selectedMultiplyLine'] == 'Yes' && !empty($lastFilteredData)) {
+                            //     $rate->base_price = $rate->base_price + ($lastFilteredData['value'] * $lastFilteredData['quantity']);
+                            // } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
+                            //     $rate->base_price = $rate->base_price + $lastFilteredData['value'] + ((($lastFilteredData['price'] % $surcharge['cart_total_percentage'] / 100) * $lastFilteredData['quantity']));
+                            //     if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
+                            //         $rate->base_price = $minChargePrice;
+                            //     } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
+                            //         $rate->base_price = $maxChargePrice;
+                            //     }
+                            // }
                         }
                         break;
                     case 'Vendor':

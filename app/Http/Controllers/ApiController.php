@@ -1393,7 +1393,12 @@ class ApiController extends Controller
 
                             $lastFilteredData = collect($filteredDataWithQuantity)->last();
 
-                            $onlyProductPrice = $rate->base_price + ($totalPrice * $surcharge['cart_total_percentage'] / 100);
+                            // Default to base price
+                            $onlyProductPrice = $rate->base_price;
+
+                            if ($surcharge['selectedMultiplyLine'] === 'per' && !empty($surcharge['cart_total_percentage'])) {
+                                $onlyProductPrice += ($totalPrice * $surcharge['cart_total_percentage'] / 100);
+                            }
 
                             $additionalPrice = 0;
                             $additionalPrice1 = 0;
@@ -1407,11 +1412,7 @@ class ApiController extends Controller
                                 $additionalPrice1 += $itemTotal;
                             }
 
-                            if ($surcharge['selectedMultiplyLine'] === 'Yes') {
-                                $additionalPrice += $additionalPrice1;
-                            } elseif ($surcharge['selectedMultiplyLine'] === 'per') {
-                                $additionalPrice += $onlyProductPrice + $additionalPrice1;
-                            }
+                            $additionalPrice += $onlyProductPrice + $additionalPrice1;
 
                             $rate->base_price = $additionalPrice;
 
@@ -1596,15 +1597,15 @@ class ApiController extends Controller
                         if ($checkRateTier) {
                             $rate->base_price = $tier['basePrice'] + $perItem + $percentCharge + $perkg;
                             Log::info("checkRateTier", [
-                                "basePrice"=>$tier['basePrice'],
-                                "perItem"=>$perItem,
-                                "percentCharge"=>$percentCharge,
-                                "perkg"=>$perkg,
-                                "perkg1"=>$perkg,
-                                "perkg2"=>$this->convertWeightUnit($baseUnitTier, $totalWeight),
-                                "totalWeight"=>$totalWeight,
-                                "base_price"=>$rate->base_price,
-                                "totalPrice"=>$totalPrice,
+                                "basePrice" => $tier['basePrice'],
+                                "perItem" => $perItem,
+                                "percentCharge" => $percentCharge,
+                                "perkg" => $perkg,
+                                "perkg1" => $perkg,
+                                "perkg2" => $this->convertWeightUnit($baseUnitTier, $totalWeight),
+                                "totalWeight" => $totalWeight,
+                                "base_price" => $rate->base_price,
+                                "totalPrice" => $totalPrice,
                             ]);
                         }
                     }
@@ -1637,7 +1638,7 @@ class ApiController extends Controller
                 if (!$excludeProducts['exclude_products_radio']) {
                     if ($excludeProducts['set_exclude_products'] == 'product_vendor') {
                         $excludeProducts['set_exclude_products'] = 'vendor';
-                    }else if ($excludeProducts['set_exclude_products'] == 'product_tag') {
+                    } else if ($excludeProducts['set_exclude_products'] == 'product_tag') {
                         $excludeProducts['set_exclude_products'] = 'tags';
                     } else if ($excludeProducts['set_exclude_products'] == 'custome_selection') {
                         if (isset($excludeProducts['productsData'])) {
@@ -1661,7 +1662,7 @@ class ApiController extends Controller
                         $productData = ($excludeType != 'product_sku') ?
                             $this->fetchShopifyProductData($userData, $item['product_id'], $excludeType) :
                             $item['sku'];
-                        Log::info('productData',['productData'=>$productData]);
+                        Log::info('productData', ['productData' => $productData]);
                         if ($this->arraysHaveCommonElement($excludeText, explode(',', $productData))) {
                             return null;
                         }
@@ -3018,7 +3019,7 @@ class ApiController extends Controller
                             $searchFilters[] = 'title:*' . $post['query'] . '*';
                             break;
                     }
-                } else if(!empty($post['query'])){
+                } else if (!empty($post['query'])) {
                     $searchFilters[] = 'title:*' . $post['query'] . '*';
                 }
 

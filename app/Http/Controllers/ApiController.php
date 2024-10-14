@@ -1393,19 +1393,32 @@ class ApiController extends Controller
 
                             $lastFilteredData = collect($filteredDataWithQuantity)->last();
 
-                            foreach ($filteredDataWithQuantity as $data) {
-                                if ($surcharge['selectedMultiplyLine'] == 'Yes') {
-                                    $rate->base_price += ($data['value'] * $data['quantity']);
-                                } elseif ($surcharge['selectedMultiplyLine'] == 'per') {
-                                    $rate->base_price += ($totalPrice * $surcharge['cart_total_percentage'] / 100) + ($data['value'] * $data['quantity']);
-                                }
+                            $onlyProductPrice = $rate->base_price + ($totalPrice * $surcharge['cart_total_percentage'] / 100);
 
-                                // Ensure base price is within min/max charge limits
-                                if ($minChargePrice != 0 && $rate->base_price < $minChargePrice) {
-                                    $rate->base_price = $minChargePrice;
-                                } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
-                                    $rate->base_price = $maxChargePrice;
-                                }
+                            $additionalPrice = 0;
+                            $additionalPrice1 = 0;
+
+                            foreach ($filteredDataWithQuantity as $data) {
+                                Log::info("onlyProductPrice", ["onlyProductPrice" => $onlyProductPrice]);
+                                $itemTotal = $data['value'] * $data['quantity'];
+                                Log::info("itemTotal", ["itemTotal" => $itemTotal]);
+
+                                $additionalPrice1 += $itemTotal;
+                            }
+
+                            if ($surcharge['selectedMultiplyLine'] === 'Yes') {
+                                $additionalPrice += $additionalPrice1;
+                            } elseif ($surcharge['selectedMultiplyLine'] === 'per') {
+                                $additionalPrice += $onlyProductPrice + $additionalPrice1;
+                            }
+
+                            $rate->base_price = $additionalPrice;
+
+                            // Ensure base price is within min/max charge limits
+                            if ($minChargePrice > 0 && $rate->base_price < $minChargePrice) {
+                                $rate->base_price = $minChargePrice;
+                            } elseif ($maxChargePrice > 0 && $rate->base_price > $maxChargePrice) {
+                                $rate->base_price = $maxChargePrice;
                             }
                         }
                         break;

@@ -1569,7 +1569,9 @@ function Rate(props) {
         if (items.length > 0) {
             items.forEach((item, index) => {
                 if (item.condition === 'between')
-                    newErrors[`value${index}2`] = 'Value is required.';
+                    if (!item.value2) {
+                        newErrors[`value${index}2`] = 'Value  is required.';
+                    }
             });
         }
         if (checkedState.checked1) {
@@ -1895,7 +1897,6 @@ function Rate(props) {
         ? productsForSurcharge?.filter(product => product.title.toLowerCase().includes)
         : productsForSurcharge?.filter(product => rate_based_on_surcharge.productData?.some(item => item.id === product.id));
 
-    console.log(rate_based_on_surcharge.productData)
     const rowMarkup = filteredProducts?.map(({ id, title, image, price }, index) => {
         const isChecked = Array.isArray(rate_based_on_surcharge.productData) && rate_based_on_surcharge.productData.some(item => item.id === id);
         const productValue = Array.isArray(rate_based_on_surcharge.productData) ? rate_based_on_surcharge.productData.find(item => item.id === id)?.value || '' : '';
@@ -1993,7 +1994,6 @@ function Rate(props) {
     const debouncedFetchProductsForEcxlude = useCallback(
         debounce((value) => {
             fetchProductsForExcludeRate(value);
-            console.log(value)
         }, 1000),
         []
     );
@@ -2490,6 +2490,7 @@ const productDataExclude = filteredProduct?.map(({ id, title, image, price }, in
                                                                                     onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
                                                                                     autoComplete="off"
                                                                                     suffix={item.unit ? item.unit : ''}
+                                                                                    error={errors[`value${index}2`]}
                                                                                 />
                                                                             )}
                                                                         </div>
@@ -2519,7 +2520,7 @@ const productDataExclude = filteredProduct?.map(({ id, title, image, price }, in
                                                                                 options={time}
                                                                                 onChange={handleConditionsChange(index, 'value')}
                                                                                 value={item.value}
-                                                                                error={errors[`value${index}`]}
+                                                                              
                                                                             />
                                                                             <Select
                                                                                 options={time}

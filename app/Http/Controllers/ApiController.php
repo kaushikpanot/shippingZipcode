@@ -1397,7 +1397,7 @@ class ApiController extends Controller
                                 if ($surcharge['selectedMultiplyLine'] == 'Yes') {
                                     $rate->base_price += ($data['value'] * $data['quantity']);
                                 } elseif ($surcharge['selectedMultiplyLine'] == 'per') {
-                                    $rate->base_price += $data['value'] + ((($totalPrice * $surcharge['cart_total_percentage'] / 100) * $data['quantity']));
+                                    $rate->base_price += ($totalPrice * $surcharge['cart_total_percentage'] / 100) + ($data['value'] * $data['quantity']);
                                 }
 
                                 // Ensure base price is within min/max charge limits

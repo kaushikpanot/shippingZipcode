@@ -48,7 +48,7 @@ function OnBording({ setOnBording }) {
                 <Card>
 
                     <div style={{ marginTop: "3%" }}>
-                        <img src='images/Shipping.png' alt='image not found'  style={{height:"60%",width:"60%"}}/>
+                        <img src='/public/images/Shipping.png' alt='image not found'  style={{height:"60%",width:"60%"}}/>
                         <Text variant="bodyLg" as="p">
                             Effortlessly manage your shipping zones and rates in one seamless application.
                         </Text>

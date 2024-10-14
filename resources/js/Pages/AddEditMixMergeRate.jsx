@@ -164,6 +164,10 @@ function AddEditMixMergeRate(props) {
       if (!formData.tags_to_combine) {
         newErrors.tags_to_combine = 'The tag to combine field is required.';
       }
+      if (formData.mix_shipping_rate > formData.min_shipping_rate ) {
+        newErrors.mix_shipping_rate = `> ${formData.min_shipping_rate}`;
+      }
+     
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);

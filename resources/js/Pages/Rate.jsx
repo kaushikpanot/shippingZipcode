@@ -1567,6 +1567,7 @@ function Rate(props) {
                     newErrors[`value${index}`] = 'Value is required.';
             });
         }
+        
         if (items.length > 0) {
             items.forEach((item, index) => {
                 if (item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2') {
@@ -1584,6 +1585,9 @@ function Rate(props) {
                 if (item.condition === 'between')
                     if (!item.value2) {
                         newErrors[`value${index}2`] = 'Value  is required.';
+                    }
+                    if (parseFloat(item.value2) < parseFloat(item.value)) {
+                        newErrors[`value${index}2`] = `> ${item.value}`;
                     }
             });
         }
@@ -1607,6 +1611,9 @@ function Rate(props) {
                 if (rate_based_on_surcharge.min_charge_price < 0) {
                     newErrors.min_charge_price = 'Value cannot be negative. Please enter a valid positive number';
                 }
+                if (rate_based_on_surcharge.max_charge_price > rate_based_on_surcharge.min_charge_price) {
+                    newErrors.max_charge_price = `> ${rate_based_on_surcharge.min_charge_price}`;
+                }
             }
             if (checkstate.selectedByCart === 'Percentage') {
                 if (!rate_based_on_surcharge.cart_total_percentage) {
@@ -1621,6 +1628,9 @@ function Rate(props) {
 
                 if (rate_based_on_surcharge.min_charge_price < 0) {
                     newErrors.min_charge_price1 = ' Value cannot be negative. Please enter a valid positive number';
+                }
+                if (rate_based_on_surcharge.max_charge_price > rate_based_on_surcharge.min_charge_price) {
+                    newErrors.max_charge_price1 = `> ${rate_based_on_surcharge.min_charge_price}`;
                 }
 
 
@@ -1640,6 +1650,9 @@ function Rate(props) {
                     if (rate_based_on_surcharge.min_charge_price < 0) {
                         newErrors.min_charge_price2 = ' Value cannot be negative. Please enter a valid positive number';
                     }
+                        if (rate_based_on_surcharge.max_charge_price > rate_based_on_surcharge.min_charge_price) {
+                            newErrors.max_charge_price2 = `> ${rate_based_on_surcharge.min_charge_price}`;
+                        }
                 }
 
                 if (!rate_based_on_surcharge.productData || rate_based_on_surcharge?.productData?.length <= 0) {
@@ -1662,6 +1675,9 @@ function Rate(props) {
                 }
                 if (rate_based_on_surcharge.max_charge_price < 0) {
                     newErrors.max_charge_price3 = ' Value cannot be negative. Please enter a valid positive number';
+                }
+                if (rate_based_on_surcharge.max_charge_price > rate_based_on_surcharge.min_charge_price) {
+                    newErrors.max_charge_price3 = `> ${rate_based_on_surcharge.min_charge_price}`;
                 }
 
             }
@@ -3282,9 +3298,9 @@ function Rate(props) {
                                                                     </div>
                                                                     <div style={{ marginTop: "4%" }}>
                                                                         <IndexTable
-                                                                            resourceName={resourceName}
+                                                                         
                                                                             itemCount={productsForSurcharge.length}
-
+                                                                            emptyState={emptyStateMarkup}
                                                                             headings={[
                                                                                 { title: ` ${selectedCount} Selected` },
                                                                                 { title: 'Image' },
@@ -3308,7 +3324,7 @@ function Rate(props) {
                                                                                         </div>
                                                                                     </IndexTable.Cell>
                                                                                 </IndexTable.Row>
-                                                                            ) : filteredProducts?.length === 0 ? ( // Show emptyStateMarkup when no data is found
+                                                                            ) : filteredProducts?.length === 0 ? ( 
                                                                                 <IndexTable.Row>
                                                                                     <IndexTable.Cell colSpan={5}>
                                                                                         <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
@@ -3692,9 +3708,9 @@ function Rate(props) {
                                                 </div>
                                                 <div style={{ marginTop: "4%" }}>
                                                     <IndexTable
-                                                        resourceName={resourceName}
+                                                
                                                         itemCount={productsForExcludeRate.length}
-
+                                                        emptyState={emptyStateMarkup}
                                                         headings={[
                                                             { title: ` ${selectedCount1} Selected` },
                                                             { title: 'Image' },
@@ -3719,7 +3735,7 @@ function Rate(props) {
                                                                 </IndexTable.Cell>
                                                             </IndexTable.Row>
                                                         ) :
-                                                         filteredProduct?.length === 0 ? ( // Show emptyStateMarkup when no data is found
+                                                         filteredProduct?.length === 0 ? (
                                                             <IndexTable.Row>
                                                                 <IndexTable.Cell colSpan={5}>
                                                                     <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>

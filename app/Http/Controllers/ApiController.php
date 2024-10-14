@@ -1393,11 +1393,11 @@ class ApiController extends Controller
 
                             $lastFilteredData = collect($filteredDataWithQuantity)->last();
 
-                            $onlyProductPrice = 0;
+                            // Default to base price
+                            $onlyProductPrice = $rate->base_price;
 
-                            // Only calculate $onlyProductPrice when 'selectedMultiplyLine' is 'per'
-                            if ($surcharge['selectedMultiplyLine'] === 'per') {
-                                $onlyProductPrice = $rate->base_price + ($totalPrice * ($surcharge['cart_total_percentage'] ?? 0) / 100);
+                            if ($surcharge['selectedMultiplyLine'] === 'per' && !empty($surcharge['cart_total_percentage'])) {
+                                $onlyProductPrice += ($totalPrice * $surcharge['cart_total_percentage'] / 100);
                             }
 
                             $additionalPrice = 0;
@@ -1412,11 +1412,7 @@ class ApiController extends Controller
                                 $additionalPrice1 += $itemTotal;
                             }
 
-                            if ($surcharge['selectedMultiplyLine'] === 'Yes') {
-                                $additionalPrice += $additionalPrice1;
-                            } elseif ($surcharge['selectedMultiplyLine'] === 'per') {
-                                $additionalPrice += $onlyProductPrice + $additionalPrice1;
-                            }
+                            $additionalPrice += $onlyProductPrice + $additionalPrice1;
 
                             $rate->base_price = $additionalPrice;
 

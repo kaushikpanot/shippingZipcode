@@ -25,7 +25,6 @@ function OnBording({ setOnBording }) {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            console.log('onBoardProcess', response.data)
             setOnBording(1);
         } catch (error) {
             console.error(error, 'error from');
@@ -49,7 +48,7 @@ function OnBording({ setOnBording }) {
                 <Card>
 
                     <div style={{ marginTop: "3%" }}>
-                        <img src='../images/box.png' />
+                        <img src='images/Shipping.png' alt='image not found'  style={{height:"60%",width:"60%"}}/>
                         <Text variant="bodyLg" as="p">
                             Effortlessly manage your shipping zones and rates in one seamless application.
                         </Text>

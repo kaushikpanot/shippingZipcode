@@ -67,7 +67,6 @@ const Settings = (props) => {
       });
 
       const data = response.data.settings;
-      console.log(data)
       setSettings(prevState => ({
         ...prevState,
         status: data.status ?? 1,
@@ -114,7 +113,6 @@ const Settings = (props) => {
           'Authorization': `Bearer ${token}`
         }
       });
-      console.log('plans', response.data.plan.status)
       let status = response.data.plan.status?.toLowerCase()
       if (status !== "active") {
         const name = 'khushi_test';
@@ -339,8 +337,6 @@ const Settings = (props) => {
       </Page>
     );
   }
-
-  console.log(is_on_board)
   // ====================================================
 
   const handleDeleteClick = (id, rateName) => {

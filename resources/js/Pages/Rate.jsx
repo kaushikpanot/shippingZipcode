@@ -1097,7 +1097,6 @@ function Rate(props) {
 
     const handleSelectChange = (index, newValue, isSecondSelect) => {
         const selectedOption = validations.find(option => option.value === newValue) || {};
-        console.log(selectedOption)
         if (newValue === 'type2') {
             setDeliveryType(prevState => {
                 const updatedItems = [...prevState];
@@ -1493,6 +1492,7 @@ function Rate(props) {
 
         if (!formData.name) newErrors.name = 'Rate name is required';
         if (!formData.base_price) newErrors.base_price = 'Base price is required';
+        if (formData.base_price < 0) newErrors.base_price = ' Value cannot be negative. Please enter a valid positive number';
         if (!formData.service_code) newErrors.service_code = 'Service code is required';
         if (!formData.description) newErrors.description = 'Description is required';
         if (checkedState.checked3) {
@@ -1501,6 +1501,9 @@ function Rate(props) {
             }
             if (!send_another_rate.adjustment_price) {
                 newErrors.adjustment_price = 'Adjustment Price is required';
+            }
+            if (send_another_rate.adjustment_price < 0) {
+                newErrors.adjustment_price = ' Value cannot be negative. Please enter a valid positive number';
             }
         }
         if (checkstate.selectedStateCondition !== 'All' && selectedOptions.length === 0) {
@@ -1513,6 +1516,7 @@ function Rate(props) {
             (selectedRate === 'product_vendor' ||
                 selectedRate === 'product_sku' ||
                 selectedRate === 'product_type' ||
+                selectedRate === 'product_tag' ||
                 selectedRate === 'product_properties') &&
             !exclude_Rate.exclude_products_textbox
         ) {
@@ -1526,6 +1530,22 @@ function Rate(props) {
                     newErrors[`maxWeight${index}`] = `Maximum weight for Tier ${index + 1} is required`;
                 if (!tier.basePrice)
                     newErrors[`basePrice${index}`] = `Base price for Tier ${index + 1} is required`;
+
+
+                if (tier.minWeight < 0)
+                    newErrors[`minWeight${index}`] = ' Value cannot be negative. Please enter a valid positive number';
+                if (tier.maxWeight < 0)
+                    newErrors[`maxWeight${index}`] = ' Value cannot be negative. Please enter a valid positive number';
+                if (tier.basePrice < 0)
+                    newErrors[`basePrice${index}`] = ' Value cannot be negative. Please enter a valid positive number';
+
+
+                if (tier.perItem < 0)
+                    newErrors[`perItem${index}`] = ' Value cannot be negative. Please enter a valid positive number';
+                if (tier.percentCharge < 0)
+                    newErrors[`percentCharge${index}`] = ' Value cannot be negative. Please enter a valid positive number';
+                if (tier.perkg < 0)
+                    newErrors[`perkg${index}`] = ' Value cannot be negative. Please enter a valid positive number';
             });
         }
         if (rateModifiers.length > 0) {
@@ -1534,6 +1554,10 @@ function Rate(props) {
                     newErrors[`name${id}`] = `Rate modifier name for Modifier ${id + 1} is required`;
                 if (!modifier.adjustment)
                     newErrors[`adjustment${id}`] = `Adjustment for Modifier ${id + 1} is required`;
+                if (modifier.adjustment < 0)
+                    newErrors[`adjustment${id}`] = ` Value cannot be negative. Please enter a valid positive number`;
+                if (modifier.rateDay < 0)
+                    newErrors[`rateDay${id}`] = ' Value cannot be negative. Please enter a valid positive number';
             });
         }
         if (items.length > 0) {
@@ -1542,34 +1566,91 @@ function Rate(props) {
                     newErrors[`value${index}`] = 'Value is required.';
             });
         }
+        if (items.length > 0) {
+            items.forEach((item, index) => {
+                if (item.condition === 'between')
+                    newErrors[`value${index}2`] = 'Value is required.';
+            });
+        }
         if (checkedState.checked1) {
             if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
-                if (rate_based_on_surcharge.charge_per_wight < 0) {
+                if (rate_based_on_surcharge.charge_per_wight === "") {
                     newErrors.charge_per_wight = 'The charge field is required.';
                 }
-                if (rate_based_on_surcharge.unit_for < 0) {
+                if (rate_based_on_surcharge.charge_per_wight < 0) {
+                    newErrors.charge_per_wight = ' Value cannot be negative. Please enter a valid positive number';
+                }
+                if (rate_based_on_surcharge.unit_for === "") {
                     newErrors.unit_for = 'The unit field is required.';
+                }
+                if (rate_based_on_surcharge.unit_for < 0) {
+                    newErrors.unit_for = 'Value cannot be negative. Please enter a valid positive number';
+                }
+                if (rate_based_on_surcharge.max_charge_price < 0) {
+                    newErrors.max_charge_price = 'Value cannot be negative. Please enter a valid positive number';
+                }
+                if (rate_based_on_surcharge.min_charge_price < 0) {
+                    newErrors.min_charge_price = 'Value cannot be negative. Please enter a valid positive number';
                 }
             }
             if (checkstate.selectedByCart === 'Percentage') {
                 if (!rate_based_on_surcharge.cart_total_percentage) {
                     newErrors.cart_total_percentage = 'The cart total percentage field is required.';
                 }
+                if (rate_based_on_surcharge.cart_total_percentage < 0) {
+                    newErrors.cart_total_percentage = ' Value cannot be negative. Please enter a valid positive number';
+                }
+                if (rate_based_on_surcharge.max_charge_price < 0) {
+                    newErrors.max_charge_price1 = ' Value cannot be negative. Please enter a valid positive number';
+                }
 
+                if (rate_based_on_surcharge.min_charge_price < 0) {
+                    newErrors.min_charge_price1 = ' Value cannot be negative. Please enter a valid positive number';
+                }
+
+
+            }
+
+            if (checkstate.selectedByCart === 'Product') {
+                if (checkstate.selectedMultiplyLine === 'per') {
+                    if (!rate_based_on_surcharge.cart_total_percentage) {
+                        newErrors.cart_total_percentage2 = 'The cart total percentage field is required.';
+                    }
+                    if (rate_based_on_surcharge.cart_total_percentage < 0) {
+                        newErrors.cart_total_percentage2 = ' Value cannot be negative. Please enter a valid positive number';
+                    }
+                    if (rate_based_on_surcharge.max_charge_price < 0) {
+                        newErrors.max_charge_price2 = ' Value cannot be negative. Please enter a valid positive number';
+                    }
+                    if (rate_based_on_surcharge.min_charge_price < 0) {
+                        newErrors.min_charge_price2 = ' Value cannot be negative. Please enter a valid positive number';
+                    }
+                }
+
+                if (!rate_based_on_surcharge.productData || rate_based_on_surcharge?.productData?.length <= 0) {
+                    newErrors.productsDatas = 'Select at least 1 product.';
+                }
             }
 
             if (checkstate.selectedByCart === 'Vendor' || checkstate.selectedByCart === 'Tag' || checkstate.selectedByCart === 'Type' || checkstate.selectedByCart === 'SKU' || checkstate.selectedByCart === 'Collection' || checkstate.selectedByCart === 'Collection') {
                 if (!rate_based_on_surcharge.descriptions) {
                     newErrors.descriptions = 'This field is required.';
                 }
-
-            }
-            if (checkstate.selectedByCart === 'Product') {
-                if (!rate_based_on_surcharge.productData || rate_based_on_surcharge?.productData?.length <= 0) {
-                    newErrors.productsDatas = 'Select at least 1 product.';
+                if (!rate_based_on_surcharge.cart_total_percentage) {
+                    newErrors.cart_total_percentage1 = 'The cart total percentage field is required.';
+                }
+                if (rate_based_on_surcharge.cart_total_percentage < 0) {
+                    newErrors.cart_total_percentage1 = ' Value cannot be negative. Please enter a valid positive number';
+                }
+                if (rate_based_on_surcharge.min_charge_price < 0) {
+                    newErrors.min_charge_price3 = ' Value cannot be negative. Please enter a valid positive number';
+                }
+                if (rate_based_on_surcharge.max_charge_price < 0) {
+                    newErrors.max_charge_price3 = ' Value cannot be negative. Please enter a valid positive number';
                 }
 
             }
+
         }
 
         if (checkstate.selectedByschedule === 1) {
@@ -1584,10 +1665,12 @@ function Rate(props) {
             }
         }
         if (Object.keys(newErrors).length > 0) {
+            console.log(errors)
             setErrors(newErrors);
             setToastContent('Sorry. Couldn’t be saved. Please try again.');
             setErroToast(true);
             return;
+
         }
         try {
             setLoadingButton(true);
@@ -1712,8 +1795,7 @@ function Rate(props) {
 
             const payload = {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
-                ...(value ? { query: value } : {}),
-                query: queryString,
+                query: value ? value : queryString,
                 collectionId: collectionId,
                 type: searchType
             };
@@ -1747,7 +1829,8 @@ function Rate(props) {
     const handlesearchChangeForRateSurcharge = useCallback(
         (value) => {
             setTextFieldValueForRateSurcharge(value);
-            debouncedFetchProductsForRateSurcharge(value);
+            debouncedFetchProductsForRateSurcharge(value)
+
         },
         [debouncedFetchProductsForRateSurcharge]
     );
@@ -1762,7 +1845,106 @@ function Rate(props) {
             fetchProducts(null, pageInfo.startCursor, 'prev');
         }
     };
+    const handleProductChange = (productId, checked, text = '') => {
+        if (text < 0) {
+            setToastContent('Value cannot be negative. Please enter a positive number.');
+            setErroToast(true);
+            return;
 
+        }
+        Setrate_based_on_surcharge((prevState) => {
+            const updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
+
+            const product = productsForSurcharge.find(product => product.id === productId);
+
+            if (checked) {
+                if (product) {
+                    const existingProductIndex = updatedProductData.findIndex(item => item.id === productId);
+
+                    if (existingProductIndex !== -1) {
+
+                        updatedProductData[existingProductIndex] = {
+                            ...updatedProductData[existingProductIndex],
+                            value: text
+                        };
+                    } else {
+                        updatedProductData.push({
+                            id: product.id,
+                            title: product.title,
+                            price: product.price,
+                            value: text
+                        });
+                    }
+                }
+                return {
+                    ...prevState,
+                    productData: updatedProductData,
+                };
+            } else {
+                return {
+                    ...prevState,
+                    productData: updatedProductData.filter(item => item.id !== productId),
+                };
+            }
+
+        });
+    };
+
+    const selectedCount = rate_based_on_surcharge.productData?.length || 0
+    const filteredProducts = showAllProducts
+        ? productsForSurcharge?.filter(product => product.title.toLowerCase().includes)
+        : productsForSurcharge?.filter(product => rate_based_on_surcharge.productData?.some(item => item.id === product.id));
+
+    console.log(rate_based_on_surcharge.productData)
+    const rowMarkup = filteredProducts?.map(({ id, title, image, price }, index) => {
+        const isChecked = Array.isArray(rate_based_on_surcharge.productData) && rate_based_on_surcharge.productData.some(item => item.id === id);
+        const productValue = Array.isArray(rate_based_on_surcharge.productData) ? rate_based_on_surcharge.productData.find(item => item.id === id)?.value || '' : '';
+        return (
+            <IndexTable.Row
+                id={id}
+                key={id}
+                position={index}
+            >
+                <IndexTable.Cell>
+                    <Checkbox
+                        checked={isChecked}
+                        onChange={(checked) => handleProductChange(id, checked, productValue)}
+                    />
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <Thumbnail
+                        source={image}
+                        size="small"
+                        alt={title}
+                    />
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
+                        <Text fontWeight="bold" as="span">
+                            {title}
+                        </Text>
+                    </div>
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <Text fontWeight="bold" as="span">
+                        {price}
+                    </Text>
+                </IndexTable.Cell>
+
+                <IndexTable.Cell>
+                    <TextField
+                        value={productValue}
+                        onChange={(text) => handleProductChange(id, isChecked, text)}
+                        disabled={!isChecked}
+                        placeholder={isChecked ? '0.00' : ''}
+                        prefix={isChecked ? shop_currency : undefined}
+                        type='number'
+                    />
+
+                </IndexTable.Cell>
+            </IndexTable.Row>
+        );
+    });
 
     // ========================================================second table==========================================
     const [textFieldValueForExclude, setTextFieldValueForExclude] = useState("");
@@ -1782,8 +1964,7 @@ function Rate(props) {
 
             const payload = {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
-                ...(value ? { query: value } : {}),
-                query: queryString,
+                query: value ? value : queryString,
                 collectionId: collectionIdForExcludeRate,
                 type: searchTypeForExcludeRate
 
@@ -1812,6 +1993,7 @@ function Rate(props) {
     const debouncedFetchProductsForEcxlude = useCallback(
         debounce((value) => {
             fetchProductsForExcludeRate(value);
+            console.log(value)
         }, 1000),
         []
     );
@@ -1834,6 +2016,57 @@ function Rate(props) {
             fetchProductsForExcludeRate(null, pageInfoForEclude.startCursor, 'prev');
         }
     };
+
+
+    const filteredProduct = showAllProduct
+    ? productsForExcludeRate?.filter(product => product.title.toLowerCase().includes)
+    : productsForExcludeRate?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
+
+const toggleProduct = (id, title, price) => {
+    SetExclude_Rate(prevState => {
+        const currentProductData = Array.isArray(prevState.productsData) ? prevState.productsData : [];
+        const isSelected = currentProductData.some(product => product.id === id);
+        const updatedProductData = isSelected
+            ? currentProductData.filter(product => product.id !== id)
+            : [...currentProductData, { id, title, price }];
+        return { ...prevState, productsData: updatedProductData };
+    });
+};
+const selectedCount1 = exclude_Rate.productsData?.length || 0
+const productDataExclude = filteredProduct?.map(({ id, title, image, price }, index) => {
+    return (
+        <IndexTable.Row
+            id={id}
+            key={id}
+            position={index}
+        >
+            <IndexTable.Cell>
+                <Checkbox
+                    checked={exclude_Rate.productsData?.some(product => product.id === id) || false}
+                    onChange={() => toggleProduct(id, title, price)}
+                />
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <Thumbnail
+                    source={image}
+                    size="small"
+                    alt={title}
+                />
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <Text fontWeight="bold" as="span">
+                    {title}
+                </Text>
+            </IndexTable.Cell>
+            <IndexTable.Cell>
+                <Text fontWeight="bold" as="span">
+                    {price}
+                </Text>
+            </IndexTable.Cell>
+        </IndexTable.Row>
+    );
+});
+
     // ===========================================third table===========================
     const [textFieldValue, setTextFieldValue] = useState("");
     const fetchProductsForRate = async (value = null, cursor, direction) => {
@@ -1926,149 +2159,7 @@ function Rate(props) {
 
     }, [formData.id, zone_id, navigate]);
 
-    const handleProductChange = (productId, checked, text = '') => {
-        Setrate_based_on_surcharge((prevState) => {
-            const updatedProductData = Array.isArray(prevState.productData) ? [...prevState.productData] : [];
-
-            const product = productsForSurcharge.find(product => product.id === productId);
-
-            if (checked) {
-                if (product) {
-                    const existingProductIndex = updatedProductData.findIndex(item => item.id === productId);
-
-                    if (existingProductIndex !== -1) {
-
-                        updatedProductData[existingProductIndex] = {
-                            ...updatedProductData[existingProductIndex],
-                            value: text
-                        };
-                    } else {
-                        updatedProductData.push({
-                            id: product.id,
-                            title: product.title,
-                            price: product.price,
-                            value: text
-                        });
-                    }
-                }
-                return {
-                    ...prevState,
-                    productData: updatedProductData,
-                };
-            } else {
-                return {
-                    ...prevState,
-                    productData: updatedProductData.filter(item => item.id !== productId),
-                };
-            }
-
-        });
-    };
-
-    const selectedCount = rate_based_on_surcharge.productData?.length || 0
-    const filteredProducts = showAllProducts
-        ? productsForSurcharge?.filter(product => product.title.toLowerCase().includes)
-        : productsForSurcharge?.filter(product => rate_based_on_surcharge.productData?.some(item => item.id === product.id));
-
-    const rowMarkup = filteredProducts?.map(({ id, title, image, price }, index) => {
-        const isChecked = Array.isArray(rate_based_on_surcharge.productData) && rate_based_on_surcharge.productData.some(item => item.id === id);
-        const productValue = Array.isArray(rate_based_on_surcharge.productData) ? rate_based_on_surcharge.productData.find(item => item.id === id)?.value || '' : '';
-        return (
-            <IndexTable.Row
-                id={id}
-                key={id}
-                position={index}
-            >
-                <IndexTable.Cell>
-                    <Checkbox
-                        checked={isChecked}
-                        onChange={(checked) => handleProductChange(id, checked, productValue)}
-                    />
-                </IndexTable.Cell>
-                <IndexTable.Cell>
-                    <Thumbnail
-                        source={image}
-                        size="small"
-                        alt={title}
-                    />
-                </IndexTable.Cell>
-                <IndexTable.Cell>
-                    <div style={{ whiteSpace: 'normal', wordWrap: 'break-word' }}>
-                        <Text fontWeight="bold" as="span">
-                            {title}
-                        </Text>
-                    </div>
-                </IndexTable.Cell>
-                <IndexTable.Cell>
-                    <Text fontWeight="bold" as="span">
-                        {price}
-                    </Text>
-                </IndexTable.Cell>
-
-                <IndexTable.Cell>
-                    <TextField
-                        value={productValue}
-                        onChange={(text) => handleProductChange(id, isChecked, text)}
-                        disabled={!isChecked}
-                        placeholder={isChecked ? '0.00' : ''}
-                        prefix={isChecked ? shop_currency : undefined}
-                        type='number'
-                    />
-
-                </IndexTable.Cell>
-            </IndexTable.Row>
-        );
-    });
-
-    const filteredProduct = showAllProduct
-        ? productsForExcludeRate?.filter(product => product.title.toLowerCase().includes)
-        : productsForExcludeRate?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
-
-    const toggleProduct = (id, title, price) => {
-        SetExclude_Rate(prevState => {
-            const currentProductData = Array.isArray(prevState.productsData) ? prevState.productsData : [];
-            const isSelected = currentProductData.some(product => product.id === id);
-            const updatedProductData = isSelected
-                ? currentProductData.filter(product => product.id !== id)
-                : [...currentProductData, { id, title, price }];
-            return { ...prevState, productsData: updatedProductData };
-        });
-    };
-    const selectedCount1 = exclude_Rate.productsData?.length || 0
-    const productDataExclude = filteredProduct?.map(({ id, title, image, price }, index) => {
-        return (
-            <IndexTable.Row
-                id={id}
-                key={id}
-                position={index}
-            >
-                <IndexTable.Cell>
-                    <Checkbox
-                        checked={exclude_Rate.productsData?.some(product => product.id === id) || false}
-                        onChange={() => toggleProduct(id, title, price)}
-                    />
-                </IndexTable.Cell>
-                <IndexTable.Cell>
-                    <Thumbnail
-                        source={image}
-                        size="small"
-                        alt={title}
-                    />
-                </IndexTable.Cell>
-                <IndexTable.Cell>
-                    <Text fontWeight="bold" as="span">
-                        {title}
-                    </Text>
-                </IndexTable.Cell>
-                <IndexTable.Cell>
-                    <Text fontWeight="bold" as="span">
-                        {price}
-                    </Text>
-                </IndexTable.Cell>
-            </IndexTable.Row>
-        );
-    });
-
+   
 
     const handleCheckboxChange2 = (modifierId, productId) => {
         setSelectedProductIds((prevSelected) => ({
@@ -2359,17 +2450,16 @@ function Rate(props) {
                                                                             value={item.condition}
                                                                         />
                                                                     )}
-                                                                    {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && item.name !== 'total' &&
-                                                                        item.name !== 'total2' &&
-                                                                        item.name !== 'price' && (
-                                                                            <TextField
-                                                                                value={item.value}
-                                                                                onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
-                                                                                autoComplete="off"
-                                                                                suffix={item.unit ? item.unit : ''}
-                                                                                error={errors[`value${index}`]}
-                                                                            />
-                                                                        )}
+                                                                    {(item.name === 'quantity' || item.name === 'weight' || item.name === 'lineitem' || item.name === 'distance' || item.name === 'quantity2' || item.name === 'weight2' || item.name === 'previousCount' || item.name === 'previousSpent') && (
+                                                                        <TextField
+                                                                            value={item.value}
+                                                                            onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
+                                                                            autoComplete="off"
+                                                                            suffix={item.unit ? item.unit : ''}
+                                                                            error={errors[`value${index}`]}
+                                                                            type='number'
+                                                                        />
+                                                                    )}
 
                                                                     {(item.name === 'total' || item.name === 'total2' || item.name === 'price') && (
                                                                         <TextField
@@ -2378,6 +2468,17 @@ function Rate(props) {
                                                                             autoComplete="off"
                                                                             suffix={shop_currency}
                                                                             error={errors[`value${index}`]}
+                                                                            type='number'
+                                                                        />
+                                                                    )}
+                                                                    {(item.name === 'name' || item.name === 'localcode' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'name2' || item.name === 'email' || item.name === 'phone' || item.name === 'company' || item.name === 'addrss1' || item.name === 'address2' || item.name === 'city' || item.name === 'provinceCode' || item.name === 'tag2' || item.name === 'provinceCode' || item.name === 'provinceCode') && (
+                                                                        <TextField
+                                                                            value={item.value}
+                                                                            onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
+                                                                            autoComplete="off"
+                                                                            suffix={item.unit ? item.unit : ''}
+                                                                            error={errors[`value${index}`]}
+                                                                            type='text'
                                                                         />
                                                                     )}
 
@@ -2948,13 +3049,14 @@ function Rate(props) {
                                                 <FormLayout>
                                                     <FormLayout.Group>
                                                         <TextField
-                                                            type="text"
+                                                            type="number"
                                                             label="Minimum Charge Price"
                                                             autoComplete="off"
                                                             prefix={shop_currency}
                                                             placeholder='0'
                                                             value={rate_based_on_surcharge.min_charge_price}
                                                             onChange={handleRateFormChange('min_charge_price')}
+                                                            error={errors.min_charge_price}
                                                         />
                                                         <TextField
                                                             type="number"
@@ -2964,6 +3066,7 @@ function Rate(props) {
                                                             placeholder='0'
                                                             value={rate_based_on_surcharge.max_charge_price}
                                                             onChange={handleRateFormChange('max_charge_price')}
+                                                            error={errors.max_charge_price}
                                                         />
                                                     </FormLayout.Group>
                                                 </FormLayout>
@@ -2973,7 +3076,7 @@ function Rate(props) {
                                             <div >
                                                 <FormLayout>
                                                     <TextField
-                                                        type="text"
+                                                        type="number"
                                                         label="Cart Total Percentage"
                                                         autoComplete="off"
                                                         prefix="%"
@@ -2981,16 +3084,18 @@ function Rate(props) {
                                                         value={rate_based_on_surcharge.cart_total_percentage}
                                                         onChange={handleRateFormChange('cart_total_percentage')}
                                                         error={errors.cart_total_percentage}
+
                                                     />
                                                     <FormLayout.Group>
                                                         <TextField
-                                                            type="text"
+                                                            type="number"
                                                             label="Minimum Charge Price"
                                                             autoComplete="off"
                                                             prefix={shop_currency}
                                                             placeholder='0'
                                                             value={rate_based_on_surcharge.min_charge_price}
                                                             onChange={handleRateFormChange('min_charge_price')}
+                                                            error={errors.min_charge_price1}
                                                         />
                                                         <TextField
                                                             type="number"
@@ -3000,6 +3105,7 @@ function Rate(props) {
                                                             placeholder='0'
                                                             value={rate_based_on_surcharge.max_charge_price}
                                                             onChange={handleRateFormChange('max_charge_price')}
+                                                            error={errors.max_charge_price1}
                                                         />
                                                     </FormLayout.Group>
                                                 </FormLayout>
@@ -3049,32 +3155,35 @@ function Rate(props) {
                                                         {checkstate.selectedMultiplyLine === 'per' && (
                                                             <div style={{ marginTop: "2%" }}>
                                                                 <TextField
-                                                                    type="text"
+                                                                    type="number"
                                                                     label="Cart Total Percentage"
                                                                     autoComplete="off"
                                                                     placeholder='0.00'
                                                                     prefix='%'
                                                                     value={rate_based_on_surcharge.cart_total_percentage}
                                                                     onChange={handleRateFormChange('cart_total_percentage')}
+                                                                    error={errors.cart_total_percentage2}
                                                                 />
                                                                 <div style={{ marginTop: "2%", marginBottom: "3%" }}>
                                                                     <FormLayout>
                                                                         <FormLayout.Group>
                                                                             <TextField
-                                                                                type="text"
+                                                                                type="number"
                                                                                 label="Minimum Charge Price"
                                                                                 autoComplete="off"
                                                                                 placeholder='0'
                                                                                 value={rate_based_on_surcharge.min_charge_price}
                                                                                 onChange={handleRateFormChange('min_charge_price')}
+                                                                                error={errors.min_charge_price2}
                                                                             />
                                                                             <TextField
-                                                                                type="text"
+                                                                                type="number"
                                                                                 label="Maximum Charge Price"
                                                                                 autoComplete="off"
                                                                                 placeholder='0'
                                                                                 value={rate_based_on_surcharge.max_charge_price}
                                                                                 onChange={handleRateFormChange('max_charge_price')}
+                                                                                error={errors.max_charge_price2}
                                                                             />
                                                                         </FormLayout.Group>
                                                                     </FormLayout>
@@ -3146,7 +3255,7 @@ function Rate(props) {
                                                                             type="text"
                                                                             prefix={<Icon source={SearchIcon} color="inkLighter" />}
                                                                             autoComplete="off"
-                                                                            clearButton
+                                                                           
                                                                         />
                                                                     </div>
                                                                     <div style={{ marginTop: "4%" }}>
@@ -3224,32 +3333,36 @@ function Rate(props) {
                                                         {checkstate.selectedMultiplyLine === 'per' && (
                                                             <div style={{ marginTop: "2%" }}>
                                                                 <TextField
-                                                                    type="text"
+                                                                    type="number"
                                                                     label="Cart Total Percentage"
                                                                     autoComplete="off"
                                                                     placeholder='0.00'
                                                                     prefix='%'
                                                                     value={rate_based_on_surcharge.cart_total_percentage}
                                                                     onChange={handleRateFormChange('cart_total_percentage')}
+                                                                    error={errors.cart_total_percentage1}
                                                                 />
                                                                 <div style={{ marginTop: "2%", marginBottom: "3%" }}>
                                                                     <FormLayout>
                                                                         <FormLayout.Group>
                                                                             <TextField
-                                                                                type="text"
+                                                                                type="number"
                                                                                 label="Minimum Charge Price"
                                                                                 autoComplete="off"
                                                                                 placeholder='0'
                                                                                 value={rate_based_on_surcharge.min_charge_price}
                                                                                 onChange={handleRateFormChange('min_charge_price')}
+                                                                                error={errors.min_charge_price3}
                                                                             />
                                                                             <TextField
-                                                                                type="text"
+                                                                                type="number"
                                                                                 label="Maximum Charge Price"
                                                                                 autoComplete="off"
                                                                                 placeholder='0'
                                                                                 value={rate_based_on_surcharge.max_charge_price}
                                                                                 onChange={handleRateFormChange('max_charge_price')}
+                                                                                error={errors.max_charge_price3}
+
                                                                             />
                                                                         </FormLayout.Group>
                                                                     </FormLayout>
@@ -3385,6 +3498,8 @@ function Rate(props) {
                                                                             autoComplete="off"
                                                                             prefix={shop_currency}
                                                                             placeholder="0.00"
+                                                                            type='number'
+                                                                            error={errors[`perItem${index}`]}
                                                                         />
                                                                         <div style={{ padding: '20px 3px 0 3px', fontSize: '18px' }}>+</div>
                                                                         <TextField
@@ -3394,6 +3509,8 @@ function Rate(props) {
                                                                             autoComplete="off"
                                                                             prefix="%"
                                                                             placeholder="0.00"
+                                                                            type='number'
+                                                                            error={errors[`percentCharge${index}`]}
                                                                         />
                                                                         <div style={{ padding: '20px 3px 0 3px', fontSize: '18px' }}>+</div>
                                                                         <TextField
@@ -3403,6 +3520,8 @@ function Rate(props) {
                                                                             autoComplete="off"
                                                                             prefix={shop_currency}
                                                                             placeholder="0.00"
+                                                                            type='number'
+                                                                            error={errors[`perkg${index}`]}
                                                                         />
                                                                     </div>
                                                                 </FormLayout.Group>
@@ -3822,7 +3941,7 @@ function Rate(props) {
                                                             )}
 
                                                             {modifier.rateModifier === 'date' && (
-                                                                <div style={{ width: "50%" }}>
+                                                                <div style={{ width: "30%" }}>
                                                                     <TextField
                                                                         value={modifier.rateDay}
                                                                         onChange={handleRateModifierChange(modifier.id, 'rateDay')}
@@ -3856,6 +3975,7 @@ function Rate(props) {
                                                                                                 modifier.rateModifier === 'availableQuan' ? "Quantity" :
                                                                                                     "Calculate Rate Price"
                                                                     }
+                                                                    error={errors[`rateDay${index}`]}
                                                                 />
                                                             )}
 
@@ -3866,6 +3986,7 @@ function Rate(props) {
                                                                     onChange={handleRateDayInputChange(modifier.id, 'rateDay')}
                                                                     autoComplete="off"
                                                                     placeholder="Delivery X day from today is"
+
                                                                 />
                                                             )}
                                                             {modifier.rateModifier === 'type' && (
@@ -3877,11 +3998,12 @@ function Rate(props) {
                                                             )}
                                                             {modifier.rateModifier === 'localCode' && (
                                                                 <TextField
-                                                                    type="text"
+                                                                    type="number"
                                                                     value={modifier.rateDay}
                                                                     onChange={handleRateModifierChange(modifier.id, 'rateDay')}
                                                                     autoComplete="off"
                                                                     placeholder='locale code'
+                                                                    error={errors[`rateDay${index}`]}
                                                                 />
 
                                                             )}
@@ -4032,11 +4154,13 @@ function Rate(props) {
                                                                         />
                                                                     )}
                                                                     {modifier.rateModifier2 === 'date' && (
-                                                                        <TextField
-                                                                            value={modifier.rateDay2}
-                                                                            onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
-                                                                            type="date"
-                                                                        />
+                                                                        <div style={{ width: "50%" }}>
+                                                                            <TextField
+                                                                                value={modifier.rateDay2}
+                                                                                onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
+                                                                                type="date"
+                                                                            />
+                                                                        </div>
                                                                     )}
                                                                     {modifier.rateModifier2 === 'ids' && (
                                                                         <TextField
@@ -4575,7 +4699,7 @@ function Rate(props) {
                                                                 </div>
                                                             </div>
                                                             <TextField
-                                                                type="text"
+                                                                type="number"
                                                                 label="Adjustment Price"
                                                                 value={send_another_rate.adjustment_price}
                                                                 onChange={handleRateFormChange('adjustment_price')}

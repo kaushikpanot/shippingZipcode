@@ -1398,6 +1398,7 @@ class ApiController extends Controller
                             $additionalPrice = 0;
                             $additionalPrice1 = 0;
 
+
                             foreach ($filteredDataWithQuantity as $data) {
                                 Log::info("onlyProductPrice", ["onlyProductPrice" => $onlyProductPrice]);
                                 $itemTotal = $data['value'] * $data['quantity'];

@@ -1397,7 +1397,7 @@ class ApiController extends Controller
                                 if ($surcharge['selectedMultiplyLine'] == 'Yes') {
                                     $rate->base_price += ($data['value'] * $data['quantity']);
                                 } elseif ($surcharge['selectedMultiplyLine'] == 'per') {
-                                    $rate->base_price += $data['value'] + ((($data['price'] * $surcharge['cart_total_percentage'] / 100) * $data['quantity']));
+                                    $rate->base_price += $data['value'] + ((($totalPrice * $surcharge['cart_total_percentage'] / 100) * $data['quantity']));
                                 }
 
                                 // Ensure base price is within min/max charge limits
@@ -1407,19 +1407,6 @@ class ApiController extends Controller
                                     $rate->base_price = $maxChargePrice;
                                 }
                             }
-
-                            // Log::info('lastFilteredData:', ['lastFilteredData' => $lastFilteredData]);
-
-                            // if ($surcharge['selectedMultiplyLine'] == 'Yes' && !empty($lastFilteredData)) {
-                            //     $rate->base_price = $rate->base_price + ($lastFilteredData['value'] * $lastFilteredData['quantity']);
-                            // } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
-                            //     $rate->base_price = $rate->base_price + $lastFilteredData['value'] + ((($lastFilteredData['price'] % $surcharge['cart_total_percentage'] / 100) * $lastFilteredData['quantity']));
-                            //     if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
-                            //         $rate->base_price = $minChargePrice;
-                            //     } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
-                            //         $rate->base_price = $maxChargePrice;
-                            //     }
-                            // }
                         }
                         break;
                     case 'Vendor':
@@ -1436,7 +1423,7 @@ class ApiController extends Controller
                             if ($surcharge['selectedMultiplyLine'] == 'Yes') {
                                 $rate->base_price = $rate->base_price;
                             } elseif ($surcharge['selectedMultiplyLine'] == 'per') {
-                                $rate->base_price = $rate->base_price + ($rate->base_price * $surcharge['cart_total_percentage'] / 100);
+                                $rate->base_price = $rate->base_price + ($totalPrice * $surcharge['cart_total_percentage'] / 100);
                                 if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
                                     $rate->base_price = $minChargePrice;
                                 } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
@@ -1470,7 +1457,7 @@ class ApiController extends Controller
                             if ($surcharge['selectedMultiplyLine'] == 'Yes') {
                                 $rate->base_price = $rate->base_price;
                             } elseif ($surcharge['selectedMultiplyLine'] == 'per') {
-                                $rate->base_price = $rate->base_price + ($rate->base_price * $surcharge['cart_total_percentage'] / 100);
+                                $rate->base_price = $rate->base_price + ($totalPrice * $surcharge['cart_total_percentage'] / 100);
                                 if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
                                     $rate->base_price = $minChargePrice;
                                 } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
@@ -1504,7 +1491,7 @@ class ApiController extends Controller
                             if ($surcharge['selectedMultiplyLine'] == 'Yes') {
                                 $rate->base_price = $rate->base_price;
                             } elseif ($surcharge['selectedMultiplyLine'] == 'per') {
-                                $rate->base_price = $rate->base_price + ($rate->base_price * $surcharge['cart_total_percentage'] / 100);
+                                $rate->base_price = $rate->base_price + ($totalPrice * $surcharge['cart_total_percentage'] / 100);
                                 if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
                                     $rate->base_price = $minChargePrice;
                                 } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
@@ -1539,7 +1526,7 @@ class ApiController extends Controller
                                 $rate->base_price = $rate->base_price;
                                 Log::info('option1:', ['option1' => $rate->base_price]);
                             } elseif ($surcharge['selectedMultiplyLine'] == 'per') {
-                                $rate->base_price = $rate->base_price + ($rate->base_price * $surcharge['cart_total_percentage'] / 100);
+                                $rate->base_price = $rate->base_price + ($totalPrice * $surcharge['cart_total_percentage'] / 100);
                                 if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
                                     $rate->base_price = $minChargePrice;
                                 } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {
@@ -1564,7 +1551,7 @@ class ApiController extends Controller
                             if ($surcharge['selectedMultiplyLine'] == 'Yes') {
                                 $rate->base_price = $rate->base_price;
                             } elseif ($surcharge['selectedMultiplyLine'] == 'per' && !empty($lastFilteredData)) {
-                                $rate->base_price = $rate->base_price + ($rate->base_price * $surcharge['cart_total_percentage'] / 100);
+                                $rate->base_price = $rate->base_price + ($totalPrice * $surcharge['cart_total_percentage'] / 100);
                                 if ($rate->base_price < $minChargePrice && $minChargePrice != 0) {
                                     $rate->base_price = $minChargePrice;
                                 } elseif ($maxChargePrice != 0 && $rate->base_price > $maxChargePrice) {

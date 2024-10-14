@@ -32,6 +32,7 @@ import {
     List,
     Modal,
     Spinner,
+    EmptySearchResult
 } from '@shopify/polaris';
 import { DeleteIcon, PlusIcon, SearchIcon, SelectIcon } from '@shopify/polaris-icons';
 import '../../../public/css/style.css';
@@ -1568,6 +1569,18 @@ function Rate(props) {
         }
         if (items.length > 0) {
             items.forEach((item, index) => {
+                if (item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2') {
+                    if (item.per_product === 'anyTag' || item.per_product === 'allTag') {
+                        if (!item.tag) {
+                            newErrors[`tag${index}`] = 'Tag field is required.';
+                        }
+                    }
+                }
+            });
+        }
+        console.log(items)
+        if (items.length > 0) {
+            items.forEach((item, index) => {
                 if (item.condition === 'between')
                     if (!item.value2) {
                         newErrors[`value${index}2`] = 'Value  is required.';
@@ -1781,6 +1794,13 @@ function Rate(props) {
             };
         });
     };
+    const emptyStateMarkup = (
+        <EmptySearchResult
+            title={'No products found'}
+            description={'Try changing the filters or search term'}
+            withIllustration
+        />
+    );
     // ===============================================first tabe=================================
     const [textFieldValueForRateSurcharge, setTextFieldValueForRateSurcharge] = useState("");
 
@@ -2019,53 +2039,53 @@ function Rate(props) {
 
 
     const filteredProduct = showAllProduct
-    ? productsForExcludeRate?.filter(product => product.title.toLowerCase().includes)
-    : productsForExcludeRate?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
+        ? productsForExcludeRate?.filter(product => product.title.toLowerCase().includes)
+        : productsForExcludeRate?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
 
-const toggleProduct = (id, title, price) => {
-    SetExclude_Rate(prevState => {
-        const currentProductData = Array.isArray(prevState.productsData) ? prevState.productsData : [];
-        const isSelected = currentProductData.some(product => product.id === id);
-        const updatedProductData = isSelected
-            ? currentProductData.filter(product => product.id !== id)
-            : [...currentProductData, { id, title, price }];
-        return { ...prevState, productsData: updatedProductData };
+    const toggleProduct = (id, title, price) => {
+        SetExclude_Rate(prevState => {
+            const currentProductData = Array.isArray(prevState.productsData) ? prevState.productsData : [];
+            const isSelected = currentProductData.some(product => product.id === id);
+            const updatedProductData = isSelected
+                ? currentProductData.filter(product => product.id !== id)
+                : [...currentProductData, { id, title, price }];
+            return { ...prevState, productsData: updatedProductData };
+        });
+    };
+    const selectedCount1 = exclude_Rate.productsData?.length || 0
+    const productDataExclude = filteredProduct?.map(({ id, title, image, price }, index) => {
+        return (
+            <IndexTable.Row
+                id={id}
+                key={id}
+                position={index}
+            >
+                <IndexTable.Cell>
+                    <Checkbox
+                        checked={exclude_Rate.productsData?.some(product => product.id === id) || false}
+                        onChange={() => toggleProduct(id, title, price)}
+                    />
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <Thumbnail
+                        source={image}
+                        size="small"
+                        alt={title}
+                    />
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <Text fontWeight="bold" as="span">
+                        {title}
+                    </Text>
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    <Text fontWeight="bold" as="span">
+                        {price}
+                    </Text>
+                </IndexTable.Cell>
+            </IndexTable.Row>
+        );
     });
-};
-const selectedCount1 = exclude_Rate.productsData?.length || 0
-const productDataExclude = filteredProduct?.map(({ id, title, image, price }, index) => {
-    return (
-        <IndexTable.Row
-            id={id}
-            key={id}
-            position={index}
-        >
-            <IndexTable.Cell>
-                <Checkbox
-                    checked={exclude_Rate.productsData?.some(product => product.id === id) || false}
-                    onChange={() => toggleProduct(id, title, price)}
-                />
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <Thumbnail
-                    source={image}
-                    size="small"
-                    alt={title}
-                />
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <Text fontWeight="bold" as="span">
-                    {title}
-                </Text>
-            </IndexTable.Cell>
-            <IndexTable.Cell>
-                <Text fontWeight="bold" as="span">
-                    {price}
-                </Text>
-            </IndexTable.Cell>
-        </IndexTable.Row>
-    );
-});
 
     // ===========================================third table===========================
     const [textFieldValue, setTextFieldValue] = useState("");
@@ -2159,7 +2179,7 @@ const productDataExclude = filteredProduct?.map(({ id, title, image, price }, in
 
     }, [formData.id, zone_id, navigate]);
 
-   
+
 
     const handleCheckboxChange2 = (modifierId, productId) => {
         setSelectedProductIds((prevSelected) => ({
@@ -2520,7 +2540,7 @@ const productDataExclude = filteredProduct?.map(({ id, title, image, price }, in
                                                                                 options={time}
                                                                                 onChange={handleConditionsChange(index, 'value')}
                                                                                 value={item.value}
-                                                                              
+
                                                                             />
                                                                             <Select
                                                                                 options={time}
@@ -2666,6 +2686,7 @@ const productDataExclude = filteredProduct?.map(({ id, title, image, price }, in
                                                                                 value={item.tag}
                                                                                 onChange={(newValue) => handleConditionChange(newValue, index, 'tag')}
                                                                                 placeholder='tag1,tag2,tag3'
+                                                                                error={errors[`tag${index}`]}
                                                                             />
                                                                         )}
                                                                     </div>
@@ -3129,7 +3150,7 @@ const productDataExclude = filteredProduct?.map(({ id, title, image, price }, in
                                                         Multiply line item QTY price:
                                                     </Text>
                                                     <RadioButton
-                                                        label="product condition"
+                                                        label="Fixed"
                                                         checked={checkstate.selectedMultiplyLine === 'Yes'}
                                                         id="Yes"
                                                         name="Yes"
@@ -3246,7 +3267,7 @@ const productDataExclude = filteredProduct?.map(({ id, title, image, price }, in
                                                         )}
 
                                                         <div style={{ marginTop: "4%" }}>
-                                                            {filteredProducts?.length > 0 && (
+                                                        
                                                                 <div>
                                                                     <div>
                                                                         <TextField
@@ -3256,7 +3277,7 @@ const productDataExclude = filteredProduct?.map(({ id, title, image, price }, in
                                                                             type="text"
                                                                             prefix={<Icon source={SearchIcon} color="inkLighter" />}
                                                                             autoComplete="off"
-                                                                           
+
                                                                         />
                                                                     </div>
                                                                     <div style={{ marginTop: "4%" }}>
@@ -3287,6 +3308,14 @@ const productDataExclude = filteredProduct?.map(({ id, title, image, price }, in
                                                                                         </div>
                                                                                     </IndexTable.Cell>
                                                                                 </IndexTable.Row>
+                                                                            ) : filteredProducts?.length === 0 ? ( // Show emptyStateMarkup when no data is found
+                                                                                <IndexTable.Row>
+                                                                                    <IndexTable.Cell colSpan={5}>
+                                                                                        <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                                                                            {emptyStateMarkup}
+                                                                                        </div>
+                                                                                    </IndexTable.Cell>
+                                                                                </IndexTable.Row>
                                                                             ) : (
                                                                                 rowMarkup
                                                                             )}
@@ -3294,7 +3323,7 @@ const productDataExclude = filteredProduct?.map(({ id, title, image, price }, in
                                                                         </IndexTable>
                                                                     </div>
                                                                 </div>
-                                                            )}
+                                                         
                                                         </div>
                                                     </div>
                                                 )}
@@ -3649,7 +3678,7 @@ const productDataExclude = filteredProduct?.map(({ id, title, image, price }, in
                                         {errors.productsData && (
                                             <p style={{ color: 'red', marginTop: "2%" }}>{errors.productsData}</p>
                                         )}
-                                        {filteredProduct?.length > 0 && (
+                                        {/* {filteredProduct?.length > 0 && ( */}
                                             <div style={{ marginTop: "4%" }}>
                                                 <div>
                                                     <TextField
@@ -3689,6 +3718,15 @@ const productDataExclude = filteredProduct?.map(({ id, title, image, price }, in
                                                                     </div>
                                                                 </IndexTable.Cell>
                                                             </IndexTable.Row>
+                                                        ) :
+                                                         filteredProduct?.length === 0 ? ( // Show emptyStateMarkup when no data is found
+                                                            <IndexTable.Row>
+                                                                <IndexTable.Cell colSpan={5}>
+                                                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                                                        {emptyStateMarkup}
+                                                                    </div>
+                                                                </IndexTable.Cell>
+                                                            </IndexTable.Row>
                                                         ) : (
                                                             productDataExclude
                                                         )}
@@ -3696,7 +3734,7 @@ const productDataExclude = filteredProduct?.map(({ id, title, image, price }, in
                                                     </IndexTable>
                                                 </div>
                                             </div>
-                                        )}
+                                        {/* )} */}
 
                                     </div>
                                 )}

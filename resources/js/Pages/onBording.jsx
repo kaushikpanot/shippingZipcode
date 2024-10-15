@@ -33,6 +33,7 @@ function OnBording({ setOnBording }) {
             setLoading(false)
         }
     }
+    const imageSrc = `${apiCommonURL}/public/images/shipping.png`;
 
     return (
         <div style={{ width: '50%', margin: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: "2%", textAlign: "center", }}>
@@ -48,8 +49,7 @@ function OnBording({ setOnBording }) {
                 <Card>
 
                     <div style={{ marginTop: "3%" }}>
-                        <img src='
-                        /public/images/Shipping.png' alt='image not found'  style={{height:"60%",width:"60%"}}/>
+                        <img src={imageSrc} alt='image not found'  style={{height:"60%",width:"60%"}}/>
                         <Text variant="bodyLg" as="p">
                             Effortlessly manage your shipping zones and rates in one seamless application.
                         </Text>

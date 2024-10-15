@@ -33,7 +33,7 @@ function OnBording({ setOnBording }) {
             setLoading(false)
         }
     }
-    const imageSrc = `${apiCommonURL}/public/images/shipping.png`;
+    const imageSrc = `${apiCommonURL}/public/images/installation.png`;
 
     return (
         <div style={{ width: '50%', margin: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: "2%", textAlign: "center", }}>

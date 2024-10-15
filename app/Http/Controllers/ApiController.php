@@ -1414,7 +1414,9 @@ class ApiController extends Controller
 
                             $additionalPrice += $onlyProductPrice + $additionalPrice1;
 
-                            $rate->base_price = $additionalPrice;
+                            if(count($filteredDataWithQuantity) > 0){
+                                $rate->base_price = $additionalPrice;
+                            }
 
                             // Ensure base price is within min/max charge limits
                             if ($minChargePrice > 0 && $rate->base_price < $minChargePrice) {
@@ -1662,8 +1664,9 @@ class ApiController extends Controller
                         $productData = ($excludeType != 'product_sku') ?
                             $this->fetchShopifyProductData($userData, $item['product_id'], $excludeType) :
                             $item['sku'];
-                        Log::info('productData', ['productData' => $productData]);
-                        if ($this->arraysHaveCommonElement($excludeText, explode(',', $productData))) {
+                        $cleanedProductData = str_replace(' ', '', $productData);
+                        Log::info('productData', ['productData' => $cleanedProductData]);
+                        if ($this->arraysHaveCommonElement($excludeText, explode(',', $cleanedProductData))) {
                             return null;
                         }
                     }

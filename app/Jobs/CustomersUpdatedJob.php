@@ -26,6 +26,6 @@ class CustomersUpdatedJob implements ShouldQueue
      */
     public function handle(): void
     {
-        Log::info('Received customers/create webhook:', $this->webhookData);
+        Log::info('Received customers/create webhook:');
     }
 }

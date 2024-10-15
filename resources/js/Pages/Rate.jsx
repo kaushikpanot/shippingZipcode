@@ -1612,7 +1612,7 @@ function Rate(props) {
                     newErrors.min_charge_price = 'Value cannot be negative. Please enter a valid positive number';
                 }
                 if (rate_based_on_surcharge.max_charge_price < rate_based_on_surcharge.min_charge_price) {
-                    newErrors.min_charge_price = `> ${rate_based_on_surcharge.min_charge_price}`;
+                    newErrors.min_charge_price = `> ${rate_based_on_surcharge.max_charge_price}`;
                 }
             }
             if (checkstate.selectedByCart === 'Percentage') {
@@ -1630,7 +1630,7 @@ function Rate(props) {
                     newErrors.min_charge_price1 = ' Value cannot be negative. Please enter a valid positive number';
                 }
                 if (rate_based_on_surcharge.max_charge_price < rate_based_on_surcharge.min_charge_price) {
-                    newErrors.min_charge_price1 = `> ${rate_based_on_surcharge.min_charge_price}`;
+                    newErrors.min_charge_price1 = `> ${rate_based_on_surcharge.max_charge_price}`;
                 }
 
 
@@ -1651,7 +1651,7 @@ function Rate(props) {
                         newErrors.min_charge_price2 = ' Value cannot be negative. Please enter a valid positive number';
                     }
                         if (rate_based_on_surcharge.max_charge_price < rate_based_on_surcharge.min_charge_price) {
-                            newErrors.min_charge_price2 = `> ${rate_based_on_surcharge.min_charge_price}`;
+                            newErrors.min_charge_price2 = `> ${rate_based_on_surcharge.max_charge_price}`;
                         }
                 }
 
@@ -1677,7 +1677,7 @@ function Rate(props) {
                     newErrors.max_charge_price3 = ' Value cannot be negative. Please enter a valid positive number';
                 }
                 if (rate_based_on_surcharge.max_charge_price < rate_based_on_surcharge.min_charge_price) {
-                    newErrors.min_charge_price3 = `> ${rate_based_on_surcharge.min_charge_price}`;
+                    newErrors.min_charge_price3 = `> ${rate_based_on_surcharge.max_charge_price}`;
                 }
 
             }

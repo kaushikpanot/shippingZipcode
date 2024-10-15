@@ -118,6 +118,7 @@ function Rate(props) {
     const [showToast, setShowToast] = useState(false);
     const [errorToast, setErroToast] = useState(false)
     const [toastContent, setToastContent] = useState("");
+    const [toastSave, setToastSave] = useState("");
     const [errors, setErrors] = useState({});
     const [toastActive, setToastActive] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
@@ -1556,9 +1557,11 @@ function Rate(props) {
                 if (!modifier.adjustment)
                     newErrors[`adjustment${id}`] = `Adjustment for Modifier ${id + 1} is required`;
                 if (modifier.adjustment < 0)
-                    newErrors[`adjustment${id}`] = ` Value cannot be negative. Please enter a valid positive number`;
+                    newErrors[`adjustment${id}`] = `3Value cannot be negative. Please enter a valid positive number`;
                 if (modifier.rateDay < 0)
                     newErrors[`rateDay${id}`] = ' Value cannot be negative. Please enter a valid positive number';
+                if (modifier.rateDay2 < 0)
+                    newErrors[`rateDay${id}2`] = ' Value cannot be negative. Please enter a valid positive number';
             });
         }
         if (items.length > 0) {
@@ -1582,15 +1585,18 @@ function Rate(props) {
         console.log(items)
         if (items.length > 0) {
             items.forEach((item, index) => {
-                if (item.condition === 'between')
+                if (item.condition === 'between') {
                     if (!item.value2) {
-                        newErrors[`value${index}2`] = 'Value  is required.';
+                        newErrors[`value${index}2`] = 'Value is required.';
                     }
                     if (parseFloat(item.value2) < parseFloat(item.value)) {
                         newErrors[`value${index}2`] = `> ${item.value}`;
                     }
+                }
             });
         }
+        
+        
         if (checkedState.checked1) {
             if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
                 if (rate_based_on_surcharge.charge_per_wight === "") {
@@ -1721,7 +1727,7 @@ function Rate(props) {
                 id: response.data.id,
             }))
             setErrors({});
-            setToastContent('Rate saved successfully');
+            setToastSave('Rate saved successfully');
             setShowToast(true);
             editRate();
             setLoadingButton(false);
@@ -1730,9 +1736,9 @@ function Rate(props) {
             const service_code = errors.service_code?.[0];
             if (service_code) {
 
-                setToastContent(service_code);
+                setToastSave(service_code);
             } else {
-                setToastContent('Error occurred while saving data');
+                setToastSave('Error occurred while saving data');
             }
             setShowToast(true);
         }
@@ -4245,6 +4251,7 @@ function Rate(props) {
                                                                                                             modifier.rateModifier2 === 'calculateRate' ? "Calculate Rate Price" :
                                                                                                                 "Locale Code"
                                                                             }
+                                                                            error={errors[`rateDay${index}2`]}
                                                                         />
                                                                     )}
                                                                     {modifier.rateModifier2 === 'type' && (
@@ -4814,7 +4821,7 @@ function Rate(props) {
                 </div>
 
                 {showToast && (
-                    <Toast content={toastContent} duration={toastDuration} onDismiss={() => setShowToast(false)} />
+                    <Toast content={toastSave} duration={toastDuration} onDismiss={() => setShowToast(false)} />
                 )}
                 {errorToast && (
                     <Toast content={toastContent} error duration={toastDuration} onDismiss={() => setErroToast(false)} />

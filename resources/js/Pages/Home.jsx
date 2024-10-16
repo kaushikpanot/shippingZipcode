@@ -20,6 +20,7 @@ import {
     SkeletonBodyText,
     SkeletonDisplayText,
     LegacyCard,
+    EmptySearchResult
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
@@ -37,7 +38,6 @@ const apiCommonURL = import.meta.env.VITE_COMMON_API_URL;
 function Home(props) {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
-    const [loadingDelete, setLoadingDelete] = useState(false)
     const [zoneDetails, setZoneDetails] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -90,7 +90,7 @@ function Home(props) {
     }
     const handleDelete = async () => {
         try {
-            setLoadingDelete(true)
+        
             const token = await getSessionToken(app);
             await axios.delete(`${apiCommonURL}/api/zone/${selectedZoneId}`, {
                 headers: {
@@ -103,9 +103,7 @@ function Home(props) {
         } catch (error) {
             console.error('Error deleting zone:', error);
         }
-        finally {
-            setLoadingDelete(false)
-        }
+        
     };
 
     const handleTextFieldChange = useCallback(
@@ -207,6 +205,13 @@ function Home(props) {
             </Page>
         );
     }
+    const emptyStateMarkup = (
+        <EmptySearchResult
+            title={'No Zones found'}
+            description={'Try changing the filters or search term'}
+            withIllustration
+        />
+    );
     return (
         <Page
             fullWidth
@@ -248,10 +253,7 @@ function Home(props) {
                                 <IndexTable
                                     resourceName={resourceName}
                                     itemCount={filteredZones.length}
-                                    // selectedItemsCount={
-                                    //     allResourcesSelected ? 'All' : selectedResources.length
-                                    // }
-                                    // onSelectionChange={handleSelectionChange}
+                                    emptyState={emptyStateMarkup}
                                     headings={[
                                         { title: 'Zipcode Rule Name' },
                                         { title: 'Country' },

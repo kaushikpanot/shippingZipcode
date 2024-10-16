@@ -161,16 +161,16 @@ function AddEditMixMergeRate(props) {
       if (!formData.rate_name) {
         newErrors.rate_name = 'The Rate name field is required.';
       }
-      if (!formData.tags_to_combine) {
-        newErrors.tags_to_combine = 'The tag to combine field is required.';
-      }
+
       if (formData.mix_shipping_rate < formData.min_shipping_rate) {
         newErrors.min_shipping_rate = 'Minimum Shipping Rate should not be greater than Maximum Shipping Rate';
       }
-
-      if (!formData.tags_to_combine.includes(',') && formData.tags_to_combine === formData.tags_to_exclude) {
+      if (!formData.tags_to_combine) {
+        newErrors.tags_to_combine = 'The tag to combine field is required.';
+      } else if (!formData.tags_to_combine.includes(',') && formData.tags_to_combine === formData.tags_to_exclude) {
         newErrors.tags_to_exclude = 'Tags to combine and tags to exclude should not be the same.';
       }
+
 
 
 

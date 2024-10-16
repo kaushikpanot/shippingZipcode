@@ -64,7 +64,7 @@ function Zone(props) {
     const [totalPages, setTotalPages] = useState(1);
     const [itemsPerPage] = useState(5);
     const [loadingButton, setLoadingButton] = useState(false);
-    const[deleteLading,setDeleteLoading] = useState(false)
+    const [deleteLading, setDeleteLoading] = useState(false)
 
     const [toastActive, setToastActive] = useState(false);
     const toggleToast = useCallback(() => setToastActive((toastActive) => !toastActive), []);
@@ -228,8 +228,8 @@ function Zone(props) {
             setToastContent("Error occurred while deleting item");
             setShowToast(true);
         }
-        finally{
-            setDeleteLoading(false); 
+        finally {
+            setDeleteLoading(false);
         }
     };
 
@@ -597,11 +597,6 @@ function Zone(props) {
                                         resourceName={resourceName}
                                         itemCount={rate.length}
                                         emptyState={emptyStateMarkup}
-
-                                        // selectedItemsCount={
-                                        //     allResourcesSelected ? 'All' : selectedResources.length
-                                        // }
-                                        // onSelectionChange={handleSelectionChange}
                                         headings={[
                                             { title: 'Rate Name' },
                                             { title: 'Service Code' },
@@ -609,7 +604,6 @@ function Zone(props) {
                                             { title: 'Description' },
                                             { title: 'Status' },
                                             { title: 'Actions' },
-
                                         ]}
                                         paginated
                                         pagination={{
@@ -620,8 +614,17 @@ function Zone(props) {
                                         }}
                                         selectable={false}
                                     >
-                                        {rowMarkup}
+                                        {paginatedZones?.length === 0 ? (
+                                            <IndexTable.Row>
+                                                <IndexTable.Cell colSpan={6}>
+                                                    {emptyStateMarkup}
+                                                </IndexTable.Cell>
+                                            </IndexTable.Row>
+                                        ) : (
+                                            rowMarkup
+                                        )}
                                     </IndexTable>
+
                                 </div>
                             </Card>
                         </div>
@@ -644,7 +647,7 @@ function Zone(props) {
                         {
                             content: 'Cancel',
                             onAction: toggleModal,
-                            
+
                         },
                     ]}
                 >

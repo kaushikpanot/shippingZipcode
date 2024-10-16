@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
   Toast, Select, Page, Button, Grid, Divider,
   LegacyCard, RadioButton, Text, Banner, TextField, BlockStack, List, SkeletonDisplayText, SkeletonBodyText, Card, Icon, IndexTable,
-  Link, ButtonGroup, Modal, TextContainer
+  Link, ButtonGroup, Modal, TextContainer, EmptySearchResult
 } from '@shopify/polaris';
 import axios from 'axios';
 import '../../../public/css/style.css';
@@ -27,7 +27,7 @@ const Settings = (props) => {
   const navigate = useNavigate()
   const [loadingButton, setLoadingButton] = useState(false);
   const [activeToast, setActiveToast] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [mixMergeRate, setMixMergeRate] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,7 +79,6 @@ const Settings = (props) => {
       }));
       setIs_on_board(data.is_on_board)
 
-      setLoading(false);
     } catch (error) {
       console.error("Error fetching settings data:", error);
     }
@@ -88,7 +87,6 @@ const Settings = (props) => {
   const getMergeRateDetails = async () => {
     const token = await getSessionToken(app);
 
-    setLoading(true);
     try {
       const response = await axios.get(`${apiCommonURL}/api/mixMergeRate`, {
         headers: {
@@ -105,6 +103,7 @@ const Settings = (props) => {
   };
 
   const getonPlans = async () => {
+    setLoading(true)
     const token = await getSessionToken(app);
     const redirect = Redirect.create(app);
     try {
@@ -119,14 +118,18 @@ const Settings = (props) => {
 
         setPlanStatus(true)
         redirect.dispatch(
-            Redirect.Action.ADMIN_PATH,
-            `/charges/${name}/pricing_plans`
+          Redirect.Action.ADMIN_PATH,
+          `/charges/${name}/pricing_plans`
         );
-    }
+      }
     } catch (error) {
       console.error(error, 'error from');
     }
+    finally {
+      setLoading(false)
+    }
   }
+  
   const handleTextFieldChange = useCallback(
     (value) => setTextFieldValue(value),
     [],
@@ -166,20 +169,14 @@ const Settings = (props) => {
       ...prevState,
       [key]: value,
     }));
-  };
-
-  // useEffect(() => {
-  //   getSettingData();
-  //   getonPlans();
-  //   getMergeRateDetails()
-  // }, []);
+  }
 
   useEffect(() => {
     apiCall();
   }, [planStatus])
   const apiCall = async () => {
-    await getonPlans().then(function () {
-      getSettingData();
+    await getSettingData().then(function () {
+      getonPlans();
       getMergeRateDetails()
     })
 
@@ -233,7 +230,7 @@ const Settings = (props) => {
   ) : null;
 
 
-  if (loading && is_on_board === 1) {
+  if (loading) {
     return (
       <Page
         title='Settings'
@@ -337,6 +334,15 @@ const Settings = (props) => {
       </Page>
     );
   }
+
+
+  const emptyStateMarkup = (
+    <EmptySearchResult
+      title={'No MixMerge Rates found'}
+      description={'Try changing the filters or search term'}
+      withIllustration
+    />
+  );
   // ====================================================
 
   const handleDeleteClick = (id, rateName) => {
@@ -577,6 +583,7 @@ const Settings = (props) => {
                               <IndexTable
                                 resourceName={resourceName}
                                 itemCount={mixMergeRate.length}
+                                emptyState={emptyStateMarkup}
                                 headings={[
                                   { title: 'Rate Name' },
                                   { title: 'Service Code' },
@@ -594,7 +601,15 @@ const Settings = (props) => {
                                 }}
                                 selectable={false}
                               >
-                                {rowMarkup}
+                                {paginatedZones?.length === 0 ? (
+                                  <IndexTable.Row>
+                                    <IndexTable.Cell colSpan={6}>
+                                      {emptyStateMarkup}
+                                    </IndexTable.Cell>
+                                  </IndexTable.Row>
+                                ) : (
+                                  rowMarkup
+                                )}
                               </IndexTable>
                             </div>
                           </div>

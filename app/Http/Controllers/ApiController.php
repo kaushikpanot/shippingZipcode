@@ -13,7 +13,6 @@ use App\Models\ZoneCountry;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use GuzzleHttp\Exception\RequestException;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -775,6 +774,8 @@ class ApiController extends Controller
         $latitudeTo = $input['rate']['destination']['latitude'];
         $longitudeTo = $input['rate']['destination']['longitude'];
 
+        // $distance = GoogleDistance::calculate('Salarganj Gulamali Pura, Bahraich, Uttar Pradesh, 271801', 'Bhavnagar Airport Fire Station Airport Road Subhashnagar, Bhavnagar, Ruva Part, Gujarat, 364001');
+
         $distance = DistanceHelper::haversineGreatCircleDistance(
             $latitudeFrom,
             $longitudeFrom,
@@ -1414,7 +1415,9 @@ class ApiController extends Controller
 
                             $additionalPrice += $onlyProductPrice + $additionalPrice1;
 
-                            $rate->base_price = $additionalPrice;
+                            if(count($filteredDataWithQuantity) > 0){
+                                $rate->base_price = $additionalPrice;
+                            }
 
                             // Ensure base price is within min/max charge limits
                             if ($minChargePrice > 0 && $rate->base_price < $minChargePrice) {
@@ -1662,8 +1665,9 @@ class ApiController extends Controller
                         $productData = ($excludeType != 'product_sku') ?
                             $this->fetchShopifyProductData($userData, $item['product_id'], $excludeType) :
                             $item['sku'];
-                        Log::info('productData', ['productData' => $productData]);
-                        if ($this->arraysHaveCommonElement($excludeText, explode(',', $productData))) {
+                        $cleanedProductData = str_replace(' ', '', $productData);
+                        Log::info('productData', ['productData' => $cleanedProductData]);
+                        if ($this->arraysHaveCommonElement($excludeText, explode(',', $cleanedProductData))) {
                             return null;
                         }
                     }
@@ -1911,112 +1915,6 @@ class ApiController extends Controller
             }
         }
 
-        // if (isset($setting) && $setting->mix_merge_rate == 0 && count($filteredRates) > 1) {
-        //     $collection = collect($filteredRates);
-
-        //     // Group the rates by 'merge_rate_tag'
-        //     $grouped = $collection->groupBy('merge_rate_tag');
-        //     $newGrouped = [];
-        //     $currency = null;
-        //     $tagArr = [];
-
-        //     // Loop through each group
-        //     foreach ($grouped as $tag => $ratesGroup) {
-        //         if (!empty($tag)) {
-        //             // Fetch MixMergeRate based on the tag
-        //             $mixMergeRate = MixMergeRate::whereRaw("FIND_IN_SET(?, tags_to_combine)", [$tag])
-        //                 ->where('user_id', $userId)
-        //                 ->where('status', 1)
-        //                 ->first();
-
-        //             if ($mixMergeRate) {
-        //                 $mixMergeRateId = $mixMergeRate->id;
-
-        //                 // Initialize or merge rates under each MixMergeRate id
-        //                 if (!isset($newGrouped[$mixMergeRateId])) {
-        //                     $newGrouped[$mixMergeRateId] = [];
-        //                 }
-        //                 // Exclude certain tags
-        //                 $tagsToExclude = explode(',', $mixMergeRate->tags_to_exclude);
-
-        //                 if (!in_array($tag, $tagsToExclude)) {
-        //                     $newGrouped[$mixMergeRateId] = array_merge($newGrouped[$mixMergeRateId], $ratesGroup->toArray());
-        //                 }
-        //             }
-
-        //             $tagArr[] = $tag;
-        //         }
-
-        //         // Store currency (zone) if rates are not empty
-        //         if ($ratesGroup->isNotEmpty() && is_null($currency)) {
-        //             $currency = $ratesGroup->first()['zone'];
-        //         }
-        //     }
-        //     // Remove the grouped rates from $filteredRates
-        //     $filteredRates = $filteredRates->reject(function ($rate) use ($tagArr) {
-        //         // Log the current rate and tag for debugging
-        //         Log::info("Checking rate for removal", ['merge_rate_tag' => $rate->merge_rate_tag, 'tagArr' => $tagArr]);
-
-        //         // Reject (remove) if the merge_rate_tag is in the tagArr
-        //         return in_array($rate->merge_rate_tag, $tagArr);
-        //     });
-
-        //     // Log::info($filteredRates);
-        //     // Calculate and add new rates
-        //     $newRates = [];
-        //     foreach ($newGrouped as $mixMergeRateId => $groupRates) {
-        //         $groupRatesCollection = collect($groupRates);
-        //         $mixMergeRate = MixMergeRate::find($mixMergeRateId);
-
-        //         if ($mixMergeRate) {
-        //             $allTagBasePrice = 0;
-
-        //             // Price calculation based on the type
-        //             switch ($mixMergeRate->price_calculation_type) {
-        //                 case 0: // Sum
-        //                     $allTagBasePrice = $groupRatesCollection->sum('base_price');
-        //                     break;
-        //                 case 1: // Average
-        //                     $allTagBasePrice = round($groupRatesCollection->avg('base_price'), 2);
-        //                     break;
-        //                 case 2: // Minimum
-        //                     $allTagBasePrice = $groupRatesCollection->min('base_price');
-        //                     break;
-        //                 case 3: // Maximum
-        //                     $allTagBasePrice = $groupRatesCollection->max('base_price');
-        //                     break;
-        //                 case 4: // Product
-        //                     $allTagBasePrice = $groupRatesCollection->reduce(function ($carry, $item) {
-        //                         return $carry * $item['base_price'];
-        //                     }, 1);
-        //                     break;
-        //                 default:
-        //                     $allTagBasePrice = $groupRatesCollection->first()['base_price'];
-        //                     break;
-        //             }
-
-        //             // Apply min/max shipping rate constraints
-        //             if ($mixMergeRate->min_shipping_rate > $allTagBasePrice && $mixMergeRate->min_shipping_rate != 0) {
-        //                 $allTagBasePrice = $mixMergeRate->min_shipping_rate;
-        //             } elseif ($mixMergeRate->mix_shipping_rate < $allTagBasePrice && $mixMergeRate->mix_shipping_rate != 0) {
-        //                 $allTagBasePrice = $mixMergeRate->mix_shipping_rate;
-        //             }
-
-        //             // Add to new rates
-        //             $newRates[] = (object)[
-        //                 'name' => $mixMergeRate->rate_name,
-        //                 'service_code' => $mixMergeRate->service_code,
-        //                 'description' => $mixMergeRate->description,
-        //                 'base_price' => $allTagBasePrice,
-        //                 'zone' => $currency
-        //             ];
-        //         }
-        //     }
-
-        //     // Merge the newly calculated rates with any remaining ungrouped rates
-        //     $filteredRates = collect($filteredRates)->merge($newRates);
-        // }
-
         if (isset($setting) && $setting->mix_merge_rate == 0 && count($filteredRates) > 1) {
             $collection = collect($filteredRates);
 
@@ -2096,7 +1994,21 @@ class ApiController extends Controller
                             break;
                         case 4: // Product
                             $calculatedPrice = $groupRatesCollection->reduce(function ($carry, $item) {
-                                return $carry * $item['base_price'];
+                                // Use data_get to safely retrieve 'base_price' whether $item is an object or an array
+                                $itemBasePrice = data_get($item, 'stdClass.base_price', data_get($item, 'base_price'));
+
+                                // Log the carry value for debugging
+                                Log::info('Current carry value:', ['carry' => $carry]);
+
+                                // Log item details safely (as array for consistency)
+                                Log::info('Item data:', (array) $item);
+
+                                // Safely retrieve base_price with data_get, and handle it correctly
+                                $basePrice = data_get($item, 'base_price');
+                                Log::info('Base price of the item:', ['base_price' => $basePrice]);
+
+                                // Multiply the carry value by the item base price
+                                return $carry * $itemBasePrice;
                             }, 1);
                             break;
                         default:

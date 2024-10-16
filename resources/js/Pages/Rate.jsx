@@ -1541,6 +1541,9 @@ function Rate(props) {
                 if (tier.basePrice < 0)
                     newErrors[`basePrice${index}`] = ' Value cannot be negative. Please enter a valid positive number';
 
+                if (Number(tier.maxWeight) < Number(tier.minWeight)) {
+                    newErrors[`minWeight${index}`] = 'Minimum Weight should not be greater than Maximum Weight';
+                }
 
                 if (tier.perItem < 0)
                     newErrors[`perItem${index}`] = ' Value cannot be negative. Please enter a valid positive number';
@@ -1570,7 +1573,7 @@ function Rate(props) {
                     newErrors[`value${index}`] = 'Value is required.';
             });
         }
-        
+
         if (items.length > 0) {
             items.forEach((item, index) => {
                 if (item.name === 'quantity2' || item.name === 'price' || item.name === 'total2' || item.name === 'weight2') {
@@ -1595,8 +1598,8 @@ function Rate(props) {
                 }
             });
         }
-        
-        
+
+
         if (checkedState.checked1) {
             if (checkstate.selectedByCart === 'weight' || checkstate.selectedByCart === 'Qty' || checkstate.selectedByCart === 'Distance') {
                 if (rate_based_on_surcharge.charge_per_wight === "") {
@@ -1617,8 +1620,8 @@ function Rate(props) {
                 if (rate_based_on_surcharge.min_charge_price < 0) {
                     newErrors.min_charge_price = 'Value cannot be negative. Please enter a valid positive number';
                 }
-                if (rate_based_on_surcharge.max_charge_price < rate_based_on_surcharge.min_charge_price) {
-                    newErrors.min_charge_price = `> ${rate_based_on_surcharge.max_charge_price}`;
+                if (Number(rate_based_on_surcharge.max_charge_price) < Number(rate_based_on_surcharge.min_charge_price)) {
+                    newErrors.min_charge_price = "Minimum Charge Price should not be greater than Maximum Charge Price";
                 }
             }
             if (checkstate.selectedByCart === 'Percentage') {
@@ -1635,8 +1638,8 @@ function Rate(props) {
                 if (rate_based_on_surcharge.min_charge_price < 0) {
                     newErrors.min_charge_price1 = ' Value cannot be negative. Please enter a valid positive number';
                 }
-                if (rate_based_on_surcharge.max_charge_price < rate_based_on_surcharge.min_charge_price) {
-                    newErrors.min_charge_price1 = `> ${rate_based_on_surcharge.max_charge_price}`;
+                if (Number(rate_based_on_surcharge.max_charge_price) < Number(rate_based_on_surcharge.min_charge_price)) {
+                    newErrors.min_charge_price1 = 'Minimum Charge Price should not be greater than Maximum Charge Price';
                 }
 
 
@@ -1656,9 +1659,9 @@ function Rate(props) {
                     if (rate_based_on_surcharge.min_charge_price < 0) {
                         newErrors.min_charge_price2 = ' Value cannot be negative. Please enter a valid positive number';
                     }
-                        if (rate_based_on_surcharge.max_charge_price < rate_based_on_surcharge.min_charge_price) {
-                            newErrors.min_charge_price2 = `> ${rate_based_on_surcharge.max_charge_price}`;
-                        }
+                    if (Number(rate_based_on_surcharge.max_charge_price) < Number(rate_based_on_surcharge.min_charge_price)) {
+                        newErrors.min_charge_price2 = 'Minimum Charge Price should not be greater than Maximum Charge Price';
+                    }
                 }
 
                 if (!rate_based_on_surcharge.productData || rate_based_on_surcharge?.productData?.length <= 0) {
@@ -1682,8 +1685,8 @@ function Rate(props) {
                 if (rate_based_on_surcharge.max_charge_price < 0) {
                     newErrors.max_charge_price3 = ' Value cannot be negative. Please enter a valid positive number';
                 }
-                if (rate_based_on_surcharge.max_charge_price < rate_based_on_surcharge.min_charge_price) {
-                    newErrors.min_charge_price3 = `> ${rate_based_on_surcharge.max_charge_price}`;
+                if (Number(rate_based_on_surcharge.max_charge_price) < Number(rate_based_on_surcharge.min_charge_price)) {
+                    newErrors.min_charge_price3 = 'Minimum Charge Price should not be greater than Maximum Charge Price';
                 }
 
             }
@@ -3289,63 +3292,63 @@ function Rate(props) {
                                                         )}
 
                                                         <div style={{ marginTop: "4%" }}>
-                                                        
+
+                                                            <div>
                                                                 <div>
-                                                                    <div>
-                                                                        <TextField
-                                                                            placeholder='search'
-                                                                            onChange={handlesearchChangeForRateSurcharge}
-                                                                            value={textFieldValueForRateSurcharge}
-                                                                            type="text"
-                                                                            prefix={<Icon source={SearchIcon} color="inkLighter" />}
-                                                                            autoComplete="off"
+                                                                    <TextField
+                                                                        placeholder='search'
+                                                                        onChange={handlesearchChangeForRateSurcharge}
+                                                                        value={textFieldValueForRateSurcharge}
+                                                                        type="text"
+                                                                        prefix={<Icon source={SearchIcon} color="inkLighter" />}
+                                                                        autoComplete="off"
 
-                                                                        />
-                                                                    </div>
-                                                                    <div style={{ marginTop: "4%" }}>
-                                                                        <IndexTable
-                                                                         
-                                                                            itemCount={productsForSurcharge.length}
-                                                                            emptyState={emptyStateMarkup}
-                                                                            headings={[
-                                                                                { title: ` ${selectedCount} Selected` },
-                                                                                { title: 'Image' },
-                                                                                { title: 'Title' },
-                                                                                { title: 'Price' },
-                                                                                { title: 'Rate Price' },
-                                                                            ]}
-                                                                            selectable={false}
-                                                                            pagination={{
-                                                                                hasNext: pageInfo.hasNextPage,
-                                                                                onNext: handleNextPage,
-                                                                                hasPrevious: pageInfo.hasPreviousPage,
-                                                                                onPrevious: handlePreviousPage,
-                                                                            }}
-                                                                        >
-                                                                            {loadingTable ? (
-                                                                                <IndexTable.Row>
-                                                                                    <IndexTable.Cell colSpan={5}>
-                                                                                        <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-                                                                                            <Spinner accessibilityLabel="Loading products" size="small" />
-                                                                                        </div>
-                                                                                    </IndexTable.Cell>
-                                                                                </IndexTable.Row>
-                                                                            ) : filteredProducts?.length === 0 ? ( 
-                                                                                <IndexTable.Row>
-                                                                                    <IndexTable.Cell colSpan={5}>
-                                                                                        <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-                                                                                            {emptyStateMarkup}
-                                                                                        </div>
-                                                                                    </IndexTable.Cell>
-                                                                                </IndexTable.Row>
-                                                                            ) : (
-                                                                                rowMarkup
-                                                                            )}
-
-                                                                        </IndexTable>
-                                                                    </div>
+                                                                    />
                                                                 </div>
-                                                         
+                                                                <div style={{ marginTop: "4%" }}>
+                                                                    <IndexTable
+
+                                                                        itemCount={productsForSurcharge.length}
+                                                                        emptyState={emptyStateMarkup}
+                                                                        headings={[
+                                                                            { title: ` ${selectedCount} Selected` },
+                                                                            { title: 'Image' },
+                                                                            { title: 'Title' },
+                                                                            { title: 'Price' },
+                                                                            { title: 'Rate Price' },
+                                                                        ]}
+                                                                        selectable={false}
+                                                                        pagination={{
+                                                                            hasNext: pageInfo.hasNextPage,
+                                                                            onNext: handleNextPage,
+                                                                            hasPrevious: pageInfo.hasPreviousPage,
+                                                                            onPrevious: handlePreviousPage,
+                                                                        }}
+                                                                    >
+                                                                        {loadingTable ? (
+                                                                            <IndexTable.Row>
+                                                                                <IndexTable.Cell colSpan={5}>
+                                                                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                                                                        <Spinner accessibilityLabel="Loading products" size="small" />
+                                                                                    </div>
+                                                                                </IndexTable.Cell>
+                                                                            </IndexTable.Row>
+                                                                        ) : filteredProducts?.length === 0 ? (
+                                                                            <IndexTable.Row>
+                                                                                <IndexTable.Cell colSpan={5}>
+                                                                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                                                                        {emptyStateMarkup}
+                                                                                    </div>
+                                                                                </IndexTable.Cell>
+                                                                            </IndexTable.Row>
+                                                                        ) : (
+                                                                            rowMarkup
+                                                                        )}
+
+                                                                    </IndexTable>
+                                                                </div>
+                                                            </div>
+
                                                         </div>
                                                     </div>
                                                 )}
@@ -3701,47 +3704,47 @@ function Rate(props) {
                                             <p style={{ color: 'red', marginTop: "2%" }}>{errors.productsData}</p>
                                         )}
                                         {/* {filteredProduct?.length > 0 && ( */}
+                                        <div style={{ marginTop: "4%" }}>
+                                            <div>
+                                                <TextField
+                                                    type="text"
+                                                    value={textFieldValueForExclude}
+                                                    placeholder="Search by Title..."
+                                                    onChange={handlesearchChangeForExclude}
+                                                    prefix={<Icon source={SearchIcon} />}
+                                                    autoComplete="off"
+                                                />
+                                            </div>
                                             <div style={{ marginTop: "4%" }}>
-                                                <div>
-                                                    <TextField
-                                                        type="text"
-                                                        value={textFieldValueForExclude}
-                                                        placeholder="Search by Title..."
-                                                        onChange={handlesearchChangeForExclude}
-                                                        prefix={<Icon source={SearchIcon} />}
-                                                        autoComplete="off"
-                                                    />
-                                                </div>
-                                                <div style={{ marginTop: "4%" }}>
-                                                    <IndexTable
-                                                
-                                                        itemCount={productsForExcludeRate.length}
-                                                        emptyState={emptyStateMarkup}
-                                                        headings={[
-                                                            { title: ` ${selectedCount1} Selected` },
-                                                            { title: 'Image' },
-                                                            { title: 'Title' },
-                                                            { title: 'Price' },
+                                                <IndexTable
 
-                                                        ]}
-                                                        selectable={false}
-                                                        pagination={{
-                                                            hasNext: pageInfoForEclude.hasNextPage,
-                                                            onNext: handleNextPageExcludeRate,
-                                                            hasPrevious: pageInfoForEclude.hasPreviousPage,
-                                                            onPrevious: handlePreviousPageExcludeRate,
-                                                        }}
-                                                    >
-                                                        {loadingTable ? (
-                                                            <IndexTable.Row>
-                                                                <IndexTable.Cell colSpan={5}>
-                                                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-                                                                        <Spinner accessibilityLabel="Loading products" size="small" />
-                                                                    </div>
-                                                                </IndexTable.Cell>
-                                                            </IndexTable.Row>
-                                                        ) :
-                                                         filteredProduct?.length === 0 ? (
+                                                    itemCount={productsForExcludeRate.length}
+                                                    emptyState={emptyStateMarkup}
+                                                    headings={[
+                                                        { title: ` ${selectedCount1} Selected` },
+                                                        { title: 'Image' },
+                                                        { title: 'Title' },
+                                                        { title: 'Price' },
+
+                                                    ]}
+                                                    selectable={false}
+                                                    pagination={{
+                                                        hasNext: pageInfoForEclude.hasNextPage,
+                                                        onNext: handleNextPageExcludeRate,
+                                                        hasPrevious: pageInfoForEclude.hasPreviousPage,
+                                                        onPrevious: handlePreviousPageExcludeRate,
+                                                    }}
+                                                >
+                                                    {loadingTable ? (
+                                                        <IndexTable.Row>
+                                                            <IndexTable.Cell colSpan={5}>
+                                                                <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                                                    <Spinner accessibilityLabel="Loading products" size="small" />
+                                                                </div>
+                                                            </IndexTable.Cell>
+                                                        </IndexTable.Row>
+                                                    ) :
+                                                        filteredProduct?.length === 0 ? (
                                                             <IndexTable.Row>
                                                                 <IndexTable.Cell colSpan={5}>
                                                                     <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
@@ -3753,9 +3756,9 @@ function Rate(props) {
                                                             productDataExclude
                                                         )}
 
-                                                    </IndexTable>
-                                                </div>
+                                                </IndexTable>
                                             </div>
+                                        </div>
                                         {/* )} */}
 
                                     </div>
@@ -4059,7 +4062,7 @@ function Rate(props) {
                                                             )}
                                                             {modifier.rateModifier === 'localCode' && (
                                                                 <TextField
-                                                                    type="number"
+                                                                    type="text"
                                                                     value={modifier.rateDay}
                                                                     onChange={handleRateModifierChange(modifier.id, 'rateDay')}
                                                                     autoComplete="off"
@@ -4234,7 +4237,7 @@ function Rate(props) {
 
                                                                         />
                                                                     )}
-                                                                    {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'localCode' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (
+                                                                    {(modifier.rateModifier2 === 'price' || modifier.rateModifier2 === 'calculateRate' || modifier.rateModifier2 === 'weight' || modifier.rateModifier2 === 'quantity' || modifier.rateModifier2 === 'distance' || modifier.rateModifier2 === 'estimatedDay' || modifier.rateModifier2 === 'timefromCurrent' || modifier.rateModifier2 === 'availableQuan') && (
                                                                         <TextField
                                                                             type="number"
                                                                             value={modifier.rateDay2}
@@ -4248,8 +4251,8 @@ function Rate(props) {
                                                                                                 modifier.rateModifier2 === 'timefromCurrent' ? "Order Delivery X hours from current is" :
                                                                                                     modifier.rateModifier2 === 'estimatedDay' ? "Estimated Delivery day" :
                                                                                                         modifier.rateModifier2 === 'availableQuan' ? "Quantity" :
-                                                                                                            modifier.rateModifier2 === 'calculateRate' ? "Calculate Rate Price" :
-                                                                                                                "Locale Code"
+                                                                                                            "Calculate Rate Price"
+
                                                                             }
                                                                             error={errors[`rateDay${index}2`]}
                                                                         />
@@ -4260,6 +4263,17 @@ function Rate(props) {
                                                                             value={modifier.rateDay2}
                                                                             onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                         />
+                                                                    )}
+                                                                    {modifier.rateModifier2 === 'localCode' && (
+                                                                        <TextField
+                                                                            type="text"
+                                                                            value={modifier.rateDay2}
+                                                                            onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
+                                                                            autoComplete="off"
+                                                                            placeholder='locale code'
+                                                                           
+                                                                        />
+
                                                                     )}
                                                                     {modifier.rateModifier2 === 'dayFromToday' && (
                                                                         <TextField

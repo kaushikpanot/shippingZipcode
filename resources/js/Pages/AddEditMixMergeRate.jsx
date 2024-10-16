@@ -68,11 +68,11 @@ function AddEditMixMergeRate(props) {
 
     const numericValue = Number(value);
     if (numericValue < 0) {
-        setErrors((prevErrors) => ({
-            ...prevErrors,
-            [field]: 'Value cannot be negative',
-        }));
-        return; 
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        [field]: 'Value cannot be negative',
+      }));
+      return;
     }
 
     setFormData((prevState) => ({
@@ -164,10 +164,15 @@ function AddEditMixMergeRate(props) {
       if (!formData.tags_to_combine) {
         newErrors.tags_to_combine = 'The tag to combine field is required.';
       }
-      if (formData.mix_shipping_rate > formData.min_shipping_rate ) {
-        newErrors.mix_shipping_rate = `> ${formData.min_shipping_rate}`;
+      if (formData.mix_shipping_rate < formData.min_shipping_rate) {
+        newErrors.min_shipping_rate = 'Minimum Shipping Rate should not be greater than Maximum Shipping Rate';
       }
-     
+
+      if (!formData.tags_to_combine.includes(',') && formData.tags_to_combine === formData.tags_to_exclude) {
+        newErrors.tags_to_exclude = 'Tags to combine and tags to exclude should not be the same.';
+      }
+
+
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
@@ -189,6 +194,7 @@ function AddEditMixMergeRate(props) {
         ...prevFormData,
         id: response.data.id,
       }))
+      setErrors({})
       setToastContent("Merge rate saved successfully..");
       setShowToast(true);
       // navigate(`/add-edit-merge-rate/${formData.id}`)
@@ -197,7 +203,7 @@ function AddEditMixMergeRate(props) {
       setToastContent("Error occurred while saving data");
       setShowToast(true);
     }
-    finally{
+    finally {
       setLoadingButton(false);
     }
   }
@@ -259,7 +265,7 @@ function AddEditMixMergeRate(props) {
           <div style={{ position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#F1F1F1" }}>
             <Page
               title={id ? 'Edit Merge Rate' : 'Add Merge Rate'}
-              primaryAction={<Button variant="primary" onClick={saevMergeRate}   loading={loadingButton}>Save</Button>}
+              primaryAction={<Button variant="primary" onClick={saevMergeRate} loading={loadingButton}>Save</Button>}
               secondaryActions={<Button onClick={navigateHome} >Back</Button>}>
             </Page>
             <Divider borderColor="border" />
@@ -321,7 +327,7 @@ function AddEditMixMergeRate(props) {
           </div>
 
           <Divider borderColor="border" />
-          <div style={{ marginTop: "2%", marginBottom:"2%"}}>
+          <div style={{ marginTop: "2%", marginBottom: "2%" }}>
 
             <div style={{ marginTop: "5%" }}>
               <p style={{ fontSize: "15px", marginBottom: "2%", fontWeight: "600" }}>
@@ -369,7 +375,7 @@ function AddEditMixMergeRate(props) {
                     value={formData.tags_to_exclude}
                     onChange={handleZoneDataChange('tags_to_exclude')}
                     placeholder='Example: merge2'
-                  // helpText='Enter multiple shipping rate tags by comma(,) separated.'
+                    error={errors.tags_to_exclude}
                   />
                 </div>
                 <div style={{ marginTop: '3.5%' }}>
@@ -386,7 +392,7 @@ function AddEditMixMergeRate(props) {
                       label="Maximum Shipping Rate (Optional)"
                       value={formData.mix_shipping_rate}
                       onChange={handleZoneDataChange('mix_shipping_rate')}
-                      error={errors.mix_shipping_rate} 
+                      error={errors.mix_shipping_rate}
                     />
                   </FormLayout.Group>
                 </div>

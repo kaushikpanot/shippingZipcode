@@ -1764,9 +1764,9 @@ class ApiController extends Controller
 
                                     $resultStatus = $this->checkCondition($condition, $totalQuantity);
 
-                                    if ($condition['condition'] == 'contains' && $resultStatus) {
+                                    if ($condition['condition'] == 'contains' || $condition['condition'] == 'equal' && $resultStatus) {
                                         return true; // Return true as soon as any item meets the condition
-                                    } else if ($condition['condition'] == 'notcontains' && $resultStatus) {
+                                    } else if ($condition['condition'] == 'notcontains' || $condition['condition'] == 'notequal' && $resultStatus) {
                                         return false;
                                     } else if ($resultStatus) {
                                         Log::info("notcontains Section last");

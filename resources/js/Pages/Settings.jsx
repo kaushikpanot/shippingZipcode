@@ -75,7 +75,8 @@ const Settings = (props) => {
         mix_merge_rate: data.mix_merge_rate ?? 1,
         mix_merge_rate_1: data.mix_merge_rate_1 ?? 1,
         additional_description_of_mix_rate: data.additional_description_of_mix_rate || '',
-        max_price_of_auto_product_base_mix_rate: data.max_price_of_auto_product_base_mix_rate || ''
+        max_price_of_auto_product_base_mix_rate: data.max_price_of_auto_product_base_mix_rate || '',
+        google_map_api_key: data.google_map_api_key || ''
       }));
       setIs_on_board(data.is_on_board)
 
@@ -129,7 +130,7 @@ const Settings = (props) => {
       setLoading(false)
     }
   }
-  
+
   const handleTextFieldChange = useCallback(
     (value) => setTextFieldValue(value),
     [],
@@ -154,8 +155,16 @@ const Settings = (props) => {
     mix_merge_rate: 1,
     mix_merge_rate_1: 1,
     additional_description_of_mix_rate: '',
-    max_price_of_auto_product_base_mix_rate: ''
+    max_price_of_auto_product_base_mix_rate: '',
+    google_map_api_key: ''
   });
+
+  const handleGoogleApiKeyChange = (value) => {
+    setSettings((prevSettings) => ({
+      ...prevSettings,
+      google_map_api_key: value
+    }));
+  };
 
   const handleInputChange = useCallback((field) => (value) => {
     setSettings((prevState) => ({
@@ -230,7 +239,7 @@ const Settings = (props) => {
   ) : null;
 
 
-  if (loading) {
+  if (loading && is_on_board === 1) {
     return (
       <Page
         title='Settings'
@@ -429,9 +438,8 @@ const Settings = (props) => {
                   </List.Item> */}
                         </List>
                       </div>
-
-
                     </Grid.Cell>
+
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                       <LegacyCard title="" sectioned>
                         <RadioButton
@@ -489,6 +497,33 @@ const Settings = (props) => {
                   onChange={handleInputChange('rateModifierTitle')}
                   value={settings.rateModifierTitle}
                 /> */}
+                      </LegacyCard>
+                    </Grid.Cell>
+                  </Grid>
+                </div>
+
+                <Divider borderColor="border" />
+                <div style={{ marginTop: '2%', marginBottom: '2%' }}>
+                  <Grid>
+                    <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
+                      <div style={{ marginTop: "5%" }}>
+                        <Text variant="headingMd" as="h6">Google Map API Key</Text>
+                      </div>
+                      <div style={{ marginTop: '4%' }}>
+                        <List>
+                          <List.Item>
+                            You can add google map api key for distance base rate from here
+                          </List.Item>
+                        </List>
+                      </div>
+                    </Grid.Cell>
+                    <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
+                      <LegacyCard sectioned>
+                        <TextField
+                          placeholder='Enter Google Api Key'
+                          value={settings.google_map_api_key}
+                          onChange={handleGoogleApiKeyChange}
+                        />
                       </LegacyCard>
                     </Grid.Cell>
                   </Grid>

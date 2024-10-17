@@ -162,7 +162,7 @@ function AddEditMixMergeRate(props) {
         newErrors.rate_name = 'The Rate name field is required.';
       }
 
-      if (formData.mix_shipping_rate < formData.min_shipping_rate) {
+      if (Number(formData.mix_shipping_rate) < Number(formData.min_shipping_rate)) {
         newErrors.min_shipping_rate = 'Minimum Shipping Rate should not be greater than Maximum Shipping Rate';
       }
       if (!formData.tags_to_combine) {

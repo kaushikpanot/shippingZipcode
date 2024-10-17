@@ -1677,11 +1677,13 @@ function Rate(props) {
                 if (!rate_based_on_surcharge.descriptions) {
                     newErrors.descriptions = 'This field is required.';
                 }
-                if (!rate_based_on_surcharge.cart_total_percentage) {
-                    newErrors.cart_total_percentage1 = 'The cart total percentage field is required.';
-                }
-                if (rate_based_on_surcharge.cart_total_percentage < 0) {
-                    newErrors.cart_total_percentage1 = ' Value cannot be negative. Please enter a valid positive number';
+                if (checkstate.selectedMultiplyLine === 'per') {
+                    if (!rate_based_on_surcharge.cart_total_percentage) {
+                        newErrors.cart_total_percentage1 = 'The cart total percentage field is required.';
+                    }
+                    if (rate_based_on_surcharge.cart_total_percentage < 0) {
+                        newErrors.cart_total_percentage1 = ' Value cannot be negative. Please enter a valid positive number';
+                    }
                 }
                 if (rate_based_on_surcharge.min_charge_price < 0) {
                     newErrors.min_charge_price3 = ' Value cannot be negative. Please enter a valid positive number';
@@ -1866,12 +1868,12 @@ function Rate(props) {
                 hasNextPage: productData.hasNextPage,
                 hasPreviousPage: productData.hasPreviousPage,
             });
-           
+
         } catch (error) {
-          
+
             console.error('Error fetching product data:', error);
         }
-        finally{
+        finally {
             setLoadingTable(false)
         }
     };
@@ -1947,9 +1949,8 @@ function Rate(props) {
     };
 
     const selectedCount = rate_based_on_surcharge.productData?.length || 0
-    const filteredProducts = showAllProducts
-        ? productsForSurcharge?.filter(product => product.title.toLowerCase().includes)
-        : productsForSurcharge?.filter(product => rate_based_on_surcharge.productData?.some(item => item.id === product.id));
+    const filteredProducts = productsForSurcharge
+
 
     const rowMarkup = filteredProducts?.map(({ id, title, image, price }, index) => {
         const isChecked = Array.isArray(rate_based_on_surcharge.productData) && rate_based_on_surcharge.productData.some(item => item.id === id);
@@ -2039,12 +2040,12 @@ function Rate(props) {
                 hasNextPage: productData.hasNextPage,
                 hasPreviousPage: productData.hasPreviousPage,
             });
-           
+
         } catch (error) {
-           
+
             console.error('Error fetching product data:', error);
         }
-        finally{
+        finally {
             setLoadingTable(false)
         }
     };
@@ -2075,9 +2076,7 @@ function Rate(props) {
     };
 
 
-    const filteredProduct = showAllProduct
-        ? productsForExcludeRate?.filter(product => product.title.toLowerCase().includes)
-        : productsForExcludeRate?.filter(product => exclude_Rate.productsData?.some(selectedProduct => selectedProduct.id === product.id));
+    const filteredProduct = productsForExcludeRate
 
     const toggleProduct = (id, title, price) => {
         SetExclude_Rate(prevState => {
@@ -2130,7 +2129,7 @@ function Rate(props) {
     const fetchProductsForRate = async (value = null, cursor, direction) => {
         try {
             setLoadingLastTable(true)
-            console.log('loadingTable',loadingTable)
+            console.log('loadingTable', loadingTable)
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
@@ -2158,12 +2157,12 @@ function Rate(props) {
                 hasNextPage: productData.hasNextPage,
                 hasPreviousPage: productData.hasPreviousPage,
             });
-           
+
         } catch (error) {
-            
+
             console.error('Error fetching product data:', error);
         }
-        finally{
+        finally {
             setLoadingLastTable(false)
         }
     };
@@ -3849,7 +3848,7 @@ function Rate(props) {
                                             <Box id={`modify-${modifier.id}`} borderColor="border" borderWidth="025" borderRadius="200">
                                                 <div style={{ padding: '10px' }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                        <div style={{display:"flex", gap:"10px"}}>
+                                                        <div style={{ display: "flex", gap: "10px" }}>
                                                             <Button
                                                                 variant="tertiary"
                                                                 onClick={handleToggle(modifier.id)}
@@ -3857,7 +3856,7 @@ function Rate(props) {
                                                                 ariaControls={`collapsible-${modifier.id}`}
                                                                 icon={SelectIcon}
                                                             />
-                                                           <Text variant="headingXs" as="h6">{modifier.name}</Text>
+                                                            <Text variant="headingXs" as="h6">{modifier.name}</Text>
                                                         </div>
                                                         <p style={{ color: '#ef5350', fontWeight: 'bold', cursor: 'pointer' }}
                                                             onClick={() => handleRemoveRateModifier(modifier.id)}
@@ -4030,6 +4029,7 @@ function Rate(props) {
                                                                         value={modifier.rateDay}
                                                                         onChange={handleRateModifierChange(modifier.id, 'rateDay')}
                                                                         type="date"
+                                                                        error={errors[`rateDay${index}`]}
                                                                     />
                                                                 </div>
                                                             )}
@@ -4041,6 +4041,7 @@ function Rate(props) {
                                                                     readOnly // Make it read-only to prevent direct editing
                                                                     helpText='Selected product IDs'
                                                                     multiline={2}
+                                                                    error={errors[`rateDay${index}`]}
                                                                 />
                                                             )}
                                                             {(modifier.rateModifier === 'price' || modifier.rateModifier === 'weight' || modifier.rateModifier === 'quantity' || modifier.rateModifier === 'distance' || modifier.rateModifier === 'estimatedDay' || modifier.rateModifier === 'timefromCurrent' || modifier.rateModifier === 'availableQuan') && (
@@ -4069,6 +4070,7 @@ function Rate(props) {
                                                                     value={modifier.rateDay}
                                                                     onChange={handleRateDayInputChange(modifier.id, 'rateDay')}
                                                                     autoComplete="off"
+                                                                    error={errors[`rateDay${index}`]}
                                                                     placeholder="Delivery X day from today is"
 
                                                                 />
@@ -4137,8 +4139,12 @@ function Rate(props) {
                                                                                                                     modifier.rateModifier === 'tag2' ? "contains match customer address with comma(,) separator" :
                                                                                                                         modifier.rateModifier === 'thirdParty' ? "add exact third party services with comma(,) separator" :
                                                                                                                             "add collection ids with comma(,) separator"}
+
+                                                                    error={errors[`rateDay${index}`]}
+
                                                                 />
                                                             )}
+
                                                         </div>
 
 
@@ -4916,7 +4922,7 @@ function Rate(props) {
                                                 onPrevious: handlePreviousPageRate,
                                             }}
                                         >
-                                            {loadingLastTable === true? (
+                                            {loadingLastTable === true ? (
                                                 <IndexTable.Row>
                                                     <IndexTable.Cell colSpan={4}>
                                                         <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>

@@ -744,7 +744,7 @@ class ApiController extends Controller
         $input = $request->input();
 
         Log::info('header logs:', ['customerData' => $customer_id]);
-        // Log::info('header logs:', ['inputData' => $request->input()]);
+        Log::info('header logs:', ['inputData' => $request->input()]);
 
         $shopDomain = $request->header();
 
@@ -774,18 +774,26 @@ class ApiController extends Controller
         $latitudeTo = $input['rate']['destination']['latitude'];
         $longitudeTo = $input['rate']['destination']['longitude'];
 
-        // $distance = GoogleDistance::calculate('Salarganj Gulamali Pura, Bahraich, Uttar Pradesh, 271801', 'Bhavnagar Airport Fire Station Airport Road Subhashnagar, Bhavnagar, Ruva Part, Gujarat, 364001');
+        // $destinationAdd
 
-        $distance = DistanceHelper::haversineGreatCircleDistance(
-            $latitudeFrom,
-            $longitudeFrom,
-            $latitudeTo,
-            $longitudeTo
-        );
+        // $distance = DistanceHelper::haversineGreatCircleDistance(
+        //     $latitudeFrom,
+        //     $longitudeFrom,
+        //     $latitudeTo,
+        //     $longitudeTo
+        // );
 
         $destinationZipcode = $input['rate']['destination']['postal_code'];
         $destinationData = $input['rate']['destination'];
         $destinationAddress = $input['rate']['destination']['address1'] . " " . $input['rate']['destination']['address2'];
+
+        $originAddress = $input['rate']['origin']['address1'] . " " . $input['rate']['origin']['address2'];
+        $originData = $input['rate']['origin'];
+
+        $destinationCity = $destinationData['city'];
+        $destinationAddressWithZip = "{$destinationAddress}, {$destinationData['city']}, {$destinationData['postal_code']}";
+        $originAddressWithZip = "{$originAddress}, {$originData['city']}, {$originData['postal_code']}";
+
 
         $userData = User::where('name', $companyName)->first();
         $userId = $userData->id;
@@ -801,6 +809,40 @@ class ApiController extends Controller
         if (!$setting->status) {
             return response()->json($response);
         }
+
+        $distance = null;
+
+        if (!is_null($setting->google_map_api_key)) {
+            // Construct the API URL
+            $distanceMatrixUrl = "https://maps.googleapis.com/maps/api/distancematrix/json?destinations={$destinationAddressWithZip}&origins={$originAddressWithZip}&units=km&key={$setting->google_map_api_key}";
+
+            // Make the request to Google Maps API
+            $response = Http::get($distanceMatrixUrl);
+
+            // Check if the request was successful
+            if ($response->successful()) {
+                // Decode the response body
+                $distanceData = $response->json();
+
+                // Navigate through the JSON structure to get the "text" value of the distance
+                if (isset($distanceData['rows'][0]['elements'][0]['distance']['text'])) {
+                    $distanceText = $distanceData['rows'][0]['elements'][0]['distance']['text'];
+                    Log::info("Distance Text", ["distance" => $distanceText]);
+                } else {
+                    Log::warning("Distance not found in the Google Maps API response", ["response" => $distanceData]);
+                }
+            } else {
+                // Handle errors
+                Log::error("Failed to get response from Google Maps API", ["status" => $response->status(), "body" => $response->body()]);
+            }
+        }
+
+
+        Log::info('distance', [
+            "destinations" => $destinationAddressWithZip,
+            "origins" => $originAddressWithZip,
+            "key" => $setting->google_map_api_key,
+        ]);
 
         $jsonFileData = file_get_contents(public_path('countries.json'));
         $data = json_decode($jsonFileData, true);
@@ -1415,7 +1457,7 @@ class ApiController extends Controller
 
                             $additionalPrice += $onlyProductPrice + $additionalPrice1;
 
-                            if(count($filteredDataWithQuantity) > 0){
+                            if (count($filteredDataWithQuantity) > 0) {
                                 $rate->base_price = $additionalPrice;
                             }
 

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\DistanceHelper;
 use App\Models\MixMergeRate;
 use App\Models\Rate;
 use App\Models\RateZipcode;
@@ -744,7 +743,7 @@ class ApiController extends Controller
         $input = $request->input();
 
         Log::info('header logs:', ['customerData' => $customer_id]);
-        Log::info('header logs:', ['inputData' => $request->input()]);
+        // Log::info('header logs:', ['inputData' => $request->input()]);
 
         $shopDomain = $request->header();
 
@@ -769,20 +768,6 @@ class ApiController extends Controller
 
         $totalPrice = round($totalPrice1, 2);
 
-        $latitudeFrom = $input['rate']['origin']['latitude'];
-        $longitudeFrom = $input['rate']['origin']['longitude'];
-        $latitudeTo = $input['rate']['destination']['latitude'];
-        $longitudeTo = $input['rate']['destination']['longitude'];
-
-        // $destinationAdd
-
-        // $distance = DistanceHelper::haversineGreatCircleDistance(
-        //     $latitudeFrom,
-        //     $longitudeFrom,
-        //     $latitudeTo,
-        //     $longitudeTo
-        // );
-
         $destinationZipcode = $input['rate']['destination']['postal_code'];
         $destinationData = $input['rate']['destination'];
         $destinationAddress = $input['rate']['destination']['address1'] . " " . $input['rate']['destination']['address2'];
@@ -790,7 +775,6 @@ class ApiController extends Controller
         $originAddress = $input['rate']['origin']['address1'] . " " . $input['rate']['origin']['address2'];
         $originData = $input['rate']['origin'];
 
-        $destinationCity = $destinationData['city'];
         $destinationAddressWithZip = "{$destinationAddress}, {$destinationData['city']}, {$destinationData['postal_code']}";
         $originAddressWithZip = "{$originAddress}, {$originData['city']}, {$originData['postal_code']}";
 
@@ -800,6 +784,7 @@ class ApiController extends Controller
 
         $setting = Setting::where('user_id', $userId)->first();
         $response = [];
+        // $response = ['rates' => []];
 
         if (!$setting) {
             Log::info('Setting Data Not Found');
@@ -817,31 +802,41 @@ class ApiController extends Controller
             $distanceMatrixUrl = "https://maps.googleapis.com/maps/api/distancematrix/json?destinations={$destinationAddressWithZip}&origins={$originAddressWithZip}&units=km&key={$setting->google_map_api_key}";
 
             // Make the request to Google Maps API
-            $response = Http::get($distanceMatrixUrl);
+            $distanceResponse = Http::get($distanceMatrixUrl);
 
             // Check if the request was successful
-            if ($response->successful()) {
+            if ($distanceResponse->successful()) {
                 // Decode the response body
-                $distanceData = $response->json();
+                $distanceData = $distanceResponse->json();
 
                 // Navigate through the JSON structure to get the "text" value of the distance
                 if (isset($distanceData['rows'][0]['elements'][0]['distance']['text'])) {
                     $distanceText = $distanceData['rows'][0]['elements'][0]['distance']['text'];
+
+                    // Remove commas from the distance text (e.g., "1,104 km" becomes "1104 km")
+                    $cleanedDistanceText = str_replace(',', '', $distanceText);
                     Log::info("Distance Text", ["distance" => $distanceText]);
+                    // Extract only the number using regular expression
+                    if (preg_match('/\d+(\.\d+)?/', $cleanedDistanceText, $matches)) {
+                        $distance = $matches[0];  // This contains only the numeric part (e.g., "0.3" or "1104")
+                        Log::info("Distance Number", ["distance" => $distance]);
+                    } else {
+                        Log::warning("Could not extract number from distance text", ["distanceText" => $distanceText]);
+                    }
                 } else {
                     Log::warning("Distance not found in the Google Maps API response", ["response" => $distanceData]);
                 }
             } else {
                 // Handle errors
-                Log::error("Failed to get response from Google Maps API", ["status" => $response->status(), "body" => $response->body()]);
+                Log::error("Failed to get response from Google Maps API", ["status" => $distanceResponse->status(), "body" => $distanceResponse->body()]);
             }
         }
-
 
         Log::info('distance', [
             "destinations" => $destinationAddressWithZip,
             "origins" => $originAddressWithZip,
             "key" => $setting->google_map_api_key,
+            "distance" => $distance
         ]);
 
         $jsonFileData = file_get_contents(public_path('countries.json'));
@@ -2007,9 +2002,6 @@ class ApiController extends Controller
                 return in_array($rate->merge_rate_tag, $tagArr);
             });
 
-            // Log the remaining rates after grouping for debugging
-            // Log::info("Remaining rates after removal", ['filteredRates' => $filteredRates]);
-
             // Calculate new rates for each group
             $newRates = [];
 
@@ -2058,13 +2050,6 @@ class ApiController extends Controller
                             break;
                     }
 
-                    // Apply min/max shipping rate constraints
-                    // if ($mixMergeRate->min_shipping_rate && $calculatedPrice < $mixMergeRate->min_shipping_rate) {
-                    //     $calculatedPrice = $mixMergeRate->min_shipping_rate;
-                    // } elseif ($mixMergeRate->mix_shipping_rate && $calculatedPrice > $mixMergeRate->mix_shipping_rate) {
-                    //     $calculatedPrice = $mixMergeRate->mix_shipping_rate;
-                    // }
-
                     if ($mixMergeRate->min_shipping_rate > $calculatedPrice && $mixMergeRate->min_shipping_rate != 0) {
                         $calculatedPrice = $mixMergeRate->min_shipping_rate;
                     } elseif ($mixMergeRate->mix_shipping_rate < $calculatedPrice && $mixMergeRate->mix_shipping_rate != 0) {
@@ -2103,17 +2088,6 @@ class ApiController extends Controller
 
         foreach ($filteredRates as $rate) {
 
-            // Log::info('input logs:', ['finalRatePrice' => $rate->base_price]);
-            // Log::info('input logs:', ['currencyCode' => $currencyCode]);
-
-            $convertedAmount = 0;
-            if ($rate->base_price > 0) {
-                $convertedAmount1 = CurrencyConverter::convert($rate->base_price)->from($reqCurrency)->to($currencyCode)->get();
-                $convertedAmount = round($convertedAmount1, 2);
-            }
-
-            // Log::info('input logs:', ['convertedAmount' => $convertedAmount]);
-
             if (strpos($rate->description, "#") !== false) {
                 $deliveryDay = str_replace('#', '', $rate->description);
                 $descriptionNew = Carbon::now()->addDay($deliveryDay)->format('l, d M');
@@ -2126,9 +2100,7 @@ class ApiController extends Controller
                 'service_code' => $rate->service_code,
                 'total_price' => $rate->base_price * 100, // Convert to cents if needed
                 'description' => $descriptionNew,
-                'currency' => $rate->zone->currency,
-                // 'min_delivery_date' => Carbon::now()->addDay($deliveryDay)->toIso8601String(),
-                // 'max_delivery_date' => Carbon::now()->addDay($deliveryDay)->toIso8601String(),
+                'currency' => $rate->zone->currency
             ];
         }
 

@@ -523,6 +523,7 @@ const Settings = (props) => {
                           placeholder='Enter Google Api Key'
                           value={settings.google_map_api_key}
                           onChange={handleGoogleApiKeyChange}
+                          type='password'
                         />
                       </LegacyCard>
                     </Grid.Cell>

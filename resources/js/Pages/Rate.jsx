@@ -4250,6 +4250,7 @@ function Rate(props) {
                                                                                 value={modifier.rateDay2}
                                                                                 onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                                 type="date"
+                                                                                error={errors[`rateDay${index}2`]}
                                                                             />
                                                                         </div>
                                                                     )}
@@ -4261,6 +4262,7 @@ function Rate(props) {
                                                                             readOnly // Make it read-only to prevent direct editing
                                                                             helpText='Selected product IDs'
                                                                             multiline={2}
+                                                                            error={errors[`rateDay${index}2`]}
 
                                                                         />
                                                                     )}
@@ -4298,6 +4300,7 @@ function Rate(props) {
                                                                             onChange={handleRateModifierChange(modifier.id, 'rateDay2')}
                                                                             autoComplete="off"
                                                                             placeholder='locale code'
+                                                                            error={errors[`rateDay${index}2`]}
 
                                                                         />
 
@@ -4309,6 +4312,7 @@ function Rate(props) {
                                                                             onChange={handleRateDayInputChange(modifier.id, 'rateDay2')}
                                                                             autoComplete="off"
                                                                             placeholder="Delivery X day from today is"
+                                                                            error={errors[`rateDay${index}2`]}
                                                                         />
                                                                     )}
                                                                     {modifier.rateModifier2 === 'available' && (
@@ -4356,7 +4360,10 @@ function Rate(props) {
                                                                                                                             modifier.rateModifier2 === 'tag2' ? "contains match customer address with comma(,) separator" :
                                                                                                                                 modifier.rateModifier2 === 'thirdParty' ? "add exact third party services with comma(,) separator" :
                                                                                                                                     "add collection ids with comma(,) separator"}
-                                                                        />
+                                                                       
+                                                                       
+                                                                                                                                    error={errors[`rateDay${index}2`]}
+                                                                                                                                    />
                                                                     )}
                                                                 </div>
                                                             </div>

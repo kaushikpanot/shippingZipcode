@@ -228,7 +228,7 @@ class SettingContoller extends Controller
                 ], 404);
             }
 
-            $plans = Charge::where('user_id', $userId)->select('id','user_id', 'status')->first();
+            $plans = Charge::where('user_id', $userId)->select('id', 'user_id', 'status')->first();
 
             return response()->json([
                 'status' => true,
@@ -263,7 +263,7 @@ class SettingContoller extends Controller
                 ], 404);
             }
 
-            if($eventUser->is_on_board){
+            if ($eventUser->is_on_board) {
                 return response()->json([
                     'status' => true,
                     'message' => 'Carrier service call applied successfully!'
@@ -302,19 +302,38 @@ class SettingContoller extends Controller
             }
 
             // Define the REST API endpoint
-            $apiEndpoint = "https://{$eventUser['name']}/admin/api/2024-04/shop.json";
+            $apiEndpoint = "https://{$eventUser['name']}/admin/api/2024-04/graphql.json";
 
-            // Make HTTP GET request to Shopify REST API endpoint
-            $shopJsonResponse = Http::withHeaders($customHeaders)->get($apiEndpoint);
+            // GraphQL query to fetch shop details (currency, timezone, and weight unit)
+            $graphqlQuery = <<<GRAPHQL
+                    {
+                        shop {
+                            currency
+                            ianaTimezone
+                            weightUnit
+                        }
+                    }
+                    GRAPHQL;
 
-            $shopJson = $shopJsonResponse->json();
+            // Make HTTP POST request to Shopify GraphQL API endpoint
+            $shopJsonResponse = Http::withHeaders($customHeaders)->post($apiEndpoint, [
+                'query' => $graphqlQuery,
+            ]);
 
-            if (!empty($shopJson['shop']['currency'])) {
-                User::where('id', $eventUser['id'])->update(['shop_currency' => $shopJson['shop']['currency'], 'carrier_service_id' => $carrier_service_id, 'shop_timezone' => $shopJson['shop']['iana_timezone'], "shop_weight_unit" => $shopJson['shop']['weight_unit'], 'is_on_board' => 1]);
+            $shopData = $shopJsonResponse->json('data.shop');
+
+            // Check if shop data is successfully retrieved
+            if (!empty($shopData['currency'])) {
+                User::where('id', $eventUser['id'])->update([
+                    'shop_currency' => $shopData['currency'],
+                    'carrier_service_id' => $carrier_service_id,
+                    'shop_timezone' => $shopData['ianaTimezone'],
+                    'shop_weight_unit' => $shopData['weightUnit'],
+                    'is_on_board' => 1,
+                ]);
             } else {
                 User::where('id', $eventUser['id'])->update(['is_on_board' => 1]);
             }
-
 
             return response()->json([
                 'status' => true,

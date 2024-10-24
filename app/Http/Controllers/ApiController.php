@@ -458,6 +458,39 @@ class ApiController extends Controller
      * @return mixed The requested product field data
      */
 
+    // private function fetchShopifyProductData($userData, $productId, $field)
+    // {
+    //     $apiVersion = config('services.shopify.api_version');
+    //     $shopName = $userData['name'];
+    //     $accessToken = $userData['password'];
+
+    //     // Set up common headers
+    //     $customHeaders = [
+    //         'X-Shopify-Access-Token' => $accessToken,
+    //         'Content-Type' => 'application/json',
+    //     ];
+
+
+
+    //     // Fetch product data using REST API
+    //     $restEndpoint = "https://{$shopName}/admin/api/{$apiVersion}/products/{$productId}.json";
+    //     $restResponse = Http::withHeaders($customHeaders)->get($restEndpoint);
+
+    //     if ($restResponse->failed()) {
+    //         return null;
+    //     }
+
+    //     $productData = $restResponse->json('product');
+
+    //     // If the specific field is 'collections', fetch collection data using GraphQL
+    //     if ($field === 'collections') {
+    //         $collections = $this->fetchShopifyProductCollections($shopName, $apiVersion, $productId, $accessToken);
+    //         return $collections;
+    //     }
+
+    //     return $productData[$field] ?? null;
+    // }
+
     private function fetchShopifyProductData($userData, $productId, $field)
     {
         $apiVersion = config('services.shopify.api_version');
@@ -470,23 +503,54 @@ class ApiController extends Controller
             'Content-Type' => 'application/json',
         ];
 
-        // Fetch product data using REST API
-        $restEndpoint = "https://{$shopName}/admin/api/{$apiVersion}/products/{$productId}.json";
-        $restResponse = Http::withHeaders($customHeaders)->get($restEndpoint);
+        // GraphQL query to fetch product data
+        $graphqlQuery = <<<GRAPHQL
+                {
+                    product(id: "gid://shopify/Product/{$productId}") {
+                        id
+                        title
+                        tags
+                        productType
+                        collections(first: 10) {
+                            edges {
+                                node {
+                                    id
+                                    title
+                                }
+                            }
+                        }
+                    }
+                }
+                GRAPHQL;
 
-        if ($restResponse->failed()) {
+        // Make the GraphQL request
+        $graphqlEndpoint = "https://{$shopName}/admin/api/{$apiVersion}/graphql.json";
+        $graphqlResponse = Http::withHeaders($customHeaders)->post($graphqlEndpoint, [
+            'query' => $graphqlQuery,
+        ]);
+
+        if ($graphqlResponse->failed()) {
             return null;
         }
 
-        $productData = $restResponse->json('product');
+        $responseData = $graphqlResponse->json('data.product');
 
-        // If the specific field is 'collections', fetch collection data using GraphQL
+        // Handle the specific field if requested
         if ($field === 'collections') {
-            $collections = $this->fetchShopifyProductCollections($shopName, $apiVersion, $productId, $accessToken);
-            return $collections;
+            $collections = $responseData['collections']['edges'] ?? [];
+
+            // Extract the collection IDs and join them into a comma-separated string
+            $collectionIds = array_map(function ($edge) {
+                $expload = explode('/', $edge['node']['id']);
+                return $expload[4];
+            }, $collections);
+
+            return implode(',', $collectionIds);
+            // return $responseData['collections']['edges'] ?? [];
         }
 
-        return $productData[$field] ?? null;
+        // Return the requested field data or null if not found
+        return $responseData[$field] ?? null;
     }
 
     private function fetchShopifyProductCollections($shopName, $apiVersion, $productId, $accessToken)
@@ -940,7 +1004,7 @@ class ApiController extends Controller
                                 'weight2' => 'grams',
                                 'name' => 'name',
                                 'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
-                                'type' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
+                                'type' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'productType'),
                                 'sku' => 'sku',
                                 'vendor' => 'vendor'
                             ];
@@ -1089,7 +1153,7 @@ class ApiController extends Controller
                                 'weight2' => 'grams',
                                 'name' => 'name',
                                 'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
-                                'type' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
+                                'type' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'productType'),
                                 'sku' => 'sku',
                                 'vendor' => 'vendor'
                             ];
@@ -1239,7 +1303,7 @@ class ApiController extends Controller
                                 'weight2' => 'grams',
                                 'name' => 'name',
                                 'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
-                                'type' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
+                                'type' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'productType'),
                                 'sku' => 'sku',
                                 'vendor' => 'vendor'
                             ];
@@ -1527,7 +1591,7 @@ class ApiController extends Controller
                         $allType = [];
 
                         foreach ($items as $item) {
-                            $types = $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type');
+                            $types = $this->fetchShopifyProductData($userData, $item['product_id'], 'productType');
                             $newtypes = explode(',', $types);
                             if (is_array($newtypes)) {
                                 $allType = array_merge($allType, $newtypes);
@@ -1680,6 +1744,8 @@ class ApiController extends Controller
                         $excludeProducts['set_exclude_products'] = 'vendor';
                     } else if ($excludeProducts['set_exclude_products'] == 'product_tag') {
                         $excludeProducts['set_exclude_products'] = 'tags';
+                    } else if ($excludeProducts['set_exclude_products'] == 'product_type') {
+                        $excludeProducts['set_exclude_products'] = 'productType';
                     } else if ($excludeProducts['set_exclude_products'] == 'custome_selection') {
                         if (isset($excludeProducts['productsData'])) {
                             $collection = collect($excludeProducts['productsData']);
@@ -1742,7 +1808,7 @@ class ApiController extends Controller
                     'ids' => 'product_id',
                     'title' => 'name',
                     'tag' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'tags'),
-                    'type2' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'product_type'),
+                    'type2' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'productType'),
                     'collectionsIds' => fn($item) => $this->fetchShopifyProductData($userData, $item['product_id'], 'collections'),
                     'sku' => 'sku',
                     'vendor' => 'vendor'
@@ -2799,13 +2865,68 @@ class ApiController extends Controller
         }
     }
 
+    // public function getShopLocation()
+    // {
+    //     try {
+
+    //         // Retrieve the Shopify session
+    //         $shop = request()->attributes->get('shopifySession');
+    //         // $shop = "krishnalaravel-test.myshopify.com";
+
+    //         if (!$shop) {
+    //             return response()->json([
+    //                 'status' => false,
+    //                 'message' => 'Token not provided.'
+    //             ], 400);
+    //         }
+
+    //         // Fetch the token for the shop
+    //         $token = User::where('name', $shop)->first();
+
+    //         if (!$token) {
+    //             return response()->json([
+    //                 'status' => false,
+    //                 'message' => 'User not found.'
+    //             ], 404);
+    //         }
+
+    //         // Define the REST API endpoint
+    //         $restEndpoint = "https://{$shop}/admin/api/2024-04/locations.json";
+
+    //         // Headers for Shopify API request
+    //         $customHeaders = [
+    //             'X-Shopify-Access-Token' => $token['password'],
+    //         ];
+
+    //         // Make HTTP GET request to Shopify REST API endpoint
+    //         $response = Http::withHeaders($customHeaders)->get($restEndpoint);
+    //         // Check if the request was successful
+    //         if ($response->successful()) {
+    //             $responseData = [
+    //                 "status" => true,
+    //                 "message" => "Shop location retrieved successfully.",
+    //                 'locations' => $response->json('locations')
+    //             ];
+
+    //             return response()->json($responseData);
+    //         } else {
+    //             // Handle non-successful responses
+    //             return response()->json(['status' => false, 'error' => 'Unable to fetch shop location list']);
+    //         }
+    //     } catch (RequestException $e) {
+    //         Log::error('HTTP request error', ['exception' => $e->getMessage()]);
+    //         return response()->json(['status' => false, 'message' => 'An unexpected error occurred:']);
+    //     } catch (Throwable $th) {
+    //         Log::error('Unexpected error', ['exception' => $th->getMessage()]);
+    //         return response()->json(['status' => false, 'message' => 'An unexpected error occurred:']);
+    //     }
+    // }
+
     public function getShopLocation()
     {
         try {
-
             // Retrieve the Shopify session
-            $shop = request()->attributes->get('shopifySession');
-            // $shop = "krishnalaravel-test.myshopify.com";
+            $shop = request()->attributes->get('shopifySession', 'kaushik-panot.myshopify.com');
 
             if (!$shop) {
                 return response()->json([
@@ -2824,25 +2945,53 @@ class ApiController extends Controller
                 ], 404);
             }
 
-            // Define the REST API endpoint
-            $restEndpoint = "https://{$shop}/admin/api/2024-04/locations.json";
+            // GraphQL query to fetch shop locations
+            $graphqlQuery = <<<GRAPHQL
+                {
+                    locations(first: 10) {
+                        edges {
+                            node {
+                                id
+                                name
+                                address {
+                                    address1
+                                    city
+                                    province
+                                    country
+                                    zip
+                                }
+                            }
+                        }
+                    }
+                }
+                GRAPHQL;
 
-            // Headers for Shopify API request
+            // Set up the GraphQL endpoint
+            $graphqlEndpoint = "https://{$shop}/admin/api/2024-04/graphql.json";
+
+            // Headers for Shopify GraphQL API request
             $customHeaders = [
                 'X-Shopify-Access-Token' => $token['password'],
+                'Content-Type' => 'application/json',
             ];
 
-            // Make HTTP GET request to Shopify REST API endpoint
-            $response = Http::withHeaders($customHeaders)->get($restEndpoint);
+            // Make HTTP POST request to Shopify GraphQL endpoint
+            $response = Http::withHeaders($customHeaders)->post($graphqlEndpoint, [
+                'query' => $graphqlQuery,
+            ]);
+
             // Check if the request was successful
             if ($response->successful()) {
-                $responseData = [
+                $locations = $response->json('data.locations.edges') ?? [];
+
+                // Extract and format the locations data directly
+                $formattedLocations = collect($locations)->pluck('node')->all();
+
+                return response()->json([
                     "status" => true,
                     "message" => "Shop location retrieved successfully.",
-                    'locations' => $response->json('locations')
-                ];
-
-                return response()->json($responseData);
+                    'locations' => $formattedLocations
+                ]);
             } else {
                 // Handle non-successful responses
                 return response()->json(['status' => false, 'error' => 'Unable to fetch shop location list']);
@@ -2855,6 +3004,7 @@ class ApiController extends Controller
             return response()->json(['status' => false, 'message' => 'An unexpected error occurred:']);
         }
     }
+
 
     public function getProductList(Request $request)
     {

@@ -13,7 +13,8 @@ import {
   Toast,
   SkeletonBodyText,
   SkeletonDisplayText,
-  Card
+  Text,
+
 } from '@shopify/polaris';
 import createApp from '@shopify/app-bridge';
 import { getSessionToken } from "@shopify/app-bridge-utils";
@@ -35,7 +36,7 @@ function AddEditMixMergeRate(props) {
   const toggleActive = useCallback(() => setActive((active) => !active), []);
 
   const toastMarkup = active ? (
-    <Toast content="Sorry. Couldn’t be saved. Please try again." error onDismiss={toggleActive} />
+    <Toast content="Please fill missing detains." error onDismiss={toggleActive} />
   ) : null;
 
   const condition = [
@@ -264,7 +265,7 @@ function AddEditMixMergeRate(props) {
         <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
           <div style={{ position: "sticky", top: 0, zIndex: 1000, backgroundColor: "#F1F1F1" }}>
             <Page
-              title={id ? 'Edit Merge Rate' : 'Add Merge Rate'}
+              title={id ? 'Edit Merge Rate' : 'Create a New Merge Rate'}
               primaryAction={<Button variant="primary" onClick={saevMergeRate} loading={loadingButton}>Save</Button>}
               secondaryActions={<Button onClick={navigateHome} >Back</Button>}>
             </Page>
@@ -273,45 +274,52 @@ function AddEditMixMergeRate(props) {
 
           <div style={{ marginBottom: "3%" }}>
 
-            <div style={{ marginTop: "3%" }}>
-              <p style={{ fontSize: "15px", marginBottom: "2%", fontWeight: "600" }}>
-                Title and Description
-              </p>
 
-              <List type="bullet">
-                <List.Item>When merge rate execute, default rate title and description will be replaced with this new title and description.</List.Item>
-              </List>
-            </div>
 
-            <div style={{ marginTop: "5%" }}>
+            <div style={{ marginTop: "2%" }}>
               <LegacyCard sectioned>
-                <div className='choice' style={{ marginBottom: "3%" }}>
-                  <Select
-                    label="Merge Rate status"
-                    options={statusOptions}
-                    onChange={handleStatusChange}
-                    value={formData.status === 1 ? 'Enabled' : 'Disabled'}
-                  />
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2%" }}>
+                  <Text variant="headingMd" as="h6">
+                    {formData.status === 1 ? 'Active' : 'Inactive'}
+                  </Text>
+                  <div className='choice' >
+
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={formData.status === 1}  // Check if the status is enabled
+                        onChange={() => handleStatusChange(formData.status === 1 ? 'Disabled' : 'Enabled')} // Toggle the status
+                      />
+                      <span className="slider round"></span>
+                    </label>
+
+                  </div>
                 </div>
+
+
                 <Divider borderColor="border" />
 
-                <div style={{ marginTop: "2%" }} className='zonetext'>
-                  <TextField
-                    type="text"
-                    label="Rate Name"
-                    value={formData.rate_name}
-                    onChange={handleZoneDataChange('rate_name')}
-                    error={errors.rate_name}
-                  />
-                </div>
-                <div style={{ marginTop: "2%" }} className='zonetext'>
-                  <TextField
-                    type="text"
-                    label="Service Code (Optional)"
-                    value={formData.service_code}
-                    onChange={handleZoneDataChange('service_code')}
-                  />
-                </div>
+                <FormLayout>
+                  <FormLayout.Group>
+                    <div style={{ marginTop: "2%" }} className='zonetext'>
+                      <TextField
+                        type="text"
+                        label="Rate Name"
+                        value={formData.rate_name}
+                        onChange={handleZoneDataChange('rate_name')}
+                        error={errors.rate_name}
+                      />
+                    </div>
+                    <div style={{ marginTop: "2%" }} className='zonetext'>
+                      <TextField
+                        type="text"
+                        label="Service Code (Optional)"
+                        value={formData.service_code}
+                        onChange={handleZoneDataChange('service_code')}
+                      />
+                    </div>
+                  </FormLayout.Group>
+                </FormLayout>
                 <div style={{ marginTop: "2%" }} className='zonetext'>
                   <TextField
                     type="text"
@@ -327,9 +335,9 @@ function AddEditMixMergeRate(props) {
           </div>
 
           <Divider borderColor="border" />
-          <div style={{ marginTop: "2%", marginBottom: "2%" }}>
+          <div style={{ marginTop: "2%"}}>
 
-            <div style={{ marginTop: "5%" }}>
+            {/* <div style={{ marginTop: "5%" }}>
               <p style={{ fontSize: "15px", marginBottom: "2%", fontWeight: "600" }}>
                 Merge Rate Condition
               </p>
@@ -337,9 +345,9 @@ function AddEditMixMergeRate(props) {
               <List type="bullet">
                 <List.Item>From here, you can merge rates according on your needs.</List.Item>
               </List>
-            </div>
+            </div> */}
 
-            <div style={{ marginTop: "5%" }}>
+            <div style={{ marginTop: "%" }}>
               <LegacyCard sectioned>
                 {/* <div className='choice' style={{ marginBottom: "3%" }}>
                   <Select
@@ -363,12 +371,12 @@ function AddEditMixMergeRate(props) {
                     label="Merge Rate Tags To Combine"
                     value={formData.tags_to_combine}
                     onChange={handleZoneDataChange('tags_to_combine')}
-                    placeholder='Example: merge1,merge2,merge3'
+                    placeholder='E.g.,tag1,tag2,ag3'
                     error={errors.tags_to_combine}
                   // helpText='Enter multiple shipping rate tags by comma(,) separated.'
                   />
                 </div>
-                <div style={{ marginTop: "3.5%" }} className='zonetext'>
+                {/* <div style={{ marginTop: "3.5%" }} className='zonetext'>
                   <TextField
                     type="text"
                     label="Tags To Exclude from Rate Calculation (Optional)"
@@ -377,7 +385,7 @@ function AddEditMixMergeRate(props) {
                     placeholder='Example: merge2'
                     error={errors.tags_to_exclude}
                   />
-                </div>
+                </div> */}
                 <div style={{ marginTop: '3.5%' }}>
                   <FormLayout.Group>
                     <TextField

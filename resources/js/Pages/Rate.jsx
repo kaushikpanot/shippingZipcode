@@ -288,7 +288,7 @@ function Rate(props) {
         // { label: 'Third Party Service', value: 'thirdParty', mainlabel: "Rate" },
     ];
     const [open, setOpen] = useState({});
-   
+
     const handleToggle = (id) => () => {
         setOpen((prevState) => ({
             ...prevState,
@@ -418,43 +418,43 @@ function Rate(props) {
                             deliveryXday2: '',
                         }),
                     };
-    
+
                     const daysValue = parseInt(newModifier.rateDay, 10);
                     const daysValue2 = parseInt(newModifier.rateDay2, 10);
-    
-                 
+
+
                     if (!isNaN(daysValue) && daysValue >= 0) {
                         const futureDate = new Date();
                         futureDate.setDate(futureDate.getDate() + daysValue);
                         if (!isNaN(futureDate.getTime())) {
                             newModifier.deliveryXday = futureDate.toISOString().split('T')[0];
                         } else {
-                            newModifier.deliveryXday = ''; 
+                            newModifier.deliveryXday = '';
                         }
                     } else {
                         newModifier.deliveryXday = '';
                     }
-    
+
                     if (!isNaN(daysValue2) && daysValue2 >= 0) {
                         const futureDate2 = new Date();
                         futureDate2.setDate(futureDate2.getDate() + daysValue2);
                         if (!isNaN(futureDate2.getTime())) {
                             newModifier.deliveryXday2 = futureDate2.toISOString().split('T')[0];
                         } else {
-                            newModifier.deliveryXday2 = ''; 
+                            newModifier.deliveryXday2 = '';
                         }
                     } else {
                         newModifier.deliveryXday2 = '';
                     }
-    
+
                     return newModifier;
                 }
                 return modifier;
             })
         );
     };
-    
-    
+
+
     const handleRateDayInputChange = (id, field) => (value) => {
         const parsedValue = parseInt(value, 10);
 
@@ -1283,7 +1283,7 @@ function Rate(props) {
         }
         // getLocation();
         getstate();
-      
+
     }, []);
 
 
@@ -1713,9 +1713,7 @@ function Rate(props) {
                 newErrors.endDate = 'End date cannot be before start date.';
             }
         }
-        console.log(formData)
         if (Object.keys(newErrors).length > 0) {
-            console.log(errors)
             setErrors(newErrors);
             setToastContent('Please fill missing detains.');
             setErroToast(true);
@@ -1854,8 +1852,10 @@ function Rate(props) {
             const payload = {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
                 query: value ? value : queryString,
-                collectionId: collectionId,
-                type: searchType
+                // collectionId: collectionId,
+                // type: searchType,
+                isCalling: "rate_based_on_surcharge",
+                rate_id : formData.id
             };
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
                 headers: {
@@ -1886,7 +1886,7 @@ function Rate(props) {
             fetchProducts();
         }
     }, [checkstate.selectedByCart]);
-    
+
     const debouncedFetchProductsForRateSurcharge = useCallback(
         debounce((value) => {
             fetchProducts(value);
@@ -2031,9 +2031,10 @@ function Rate(props) {
             const payload = {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
                 query: value ? value : queryString,
-                collectionId: collectionIdForExcludeRate,
-                type: searchTypeForExcludeRate,
-                 isColling: 'excludeRate'
+                // collectionId: collectionIdForExcludeRate,
+                // type: searchTypeForExcludeRate,
+                isCalling: "exclude_rate_for_products",
+                rate_id: formData.id
 
             };
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
@@ -2061,11 +2062,11 @@ function Rate(props) {
         }
     };
 
-    useEffect(() =>{
-        if(selectedRate === 'custome_selection'){
+    useEffect(() => {
+        if (selectedRate === 'custome_selection') {
             fetchProductsForExcludeRate()
         }
-    },[selectedRate])
+    }, [selectedRate])
     const debouncedFetchProductsForEcxlude = useCallback(
         debounce((value) => {
             fetchProductsForExcludeRate(value);
@@ -2146,7 +2147,6 @@ function Rate(props) {
     const fetchProductsForRate = async (value = null, cursor, direction) => {
         try {
             setLoadingLastTable(true)
-            console.log('loadingTable', loadingTable)
             const app = createApp({
                 apiKey: SHOPIFY_API_KEY,
                 host: props.host,
@@ -2156,7 +2156,7 @@ function Rate(props) {
             const payload = {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
                 ...(value ? { query: value } : {}),
-               
+
             };
 
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
@@ -2221,7 +2221,7 @@ function Rate(props) {
         plural: 'products',
     };
 
-   
+
     const handleClick = () => {
         fetchProductsForExcludeRate();
         setShowAllProduct(true);
@@ -2365,8 +2365,8 @@ function Rate(props) {
                                             <label className="switch">
                                                 <input
                                                     type="checkbox"
-                                                    checked={formData.status === 1}  
-                                                    onChange={() => handleStatusChange(formData.status === 1 ? 'Disabled' : 'Enabled')} 
+                                                    checked={formData.status === 1}
+                                                    onChange={() => handleStatusChange(formData.status === 1 ? 'Disabled' : 'Enabled')}
                                                 />
                                                 <span className="slider round"></span>
                                             </label>
@@ -3278,7 +3278,7 @@ function Rate(props) {
                                                                 <Divider borderColor="border" />
                                                             </div>
                                                         )}
-                                                            {/* <div style={{ marginTop: "2%" }}>
+                                                        {/* <div style={{ marginTop: "2%" }}>
                                                                 <FormLayout>
                                                                     <FormLayout.Group>
                                                                         <TextField

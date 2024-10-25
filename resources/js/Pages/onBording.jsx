@@ -38,7 +38,7 @@ function OnBording({ setOnBording }) {
     return (
         <div style={{ width: '50%', margin: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: "2%", textAlign: "center", }}>
             <Text variant="headingLg" as="h5" textAlign="center">
-                Welcome to Meetanshi appName
+                Welcome to Meetanshi ShipFlow: Shipping Rules
             </Text>
             <div style={{ marginTop: "1%", marginBottom: "2%", textAlign: "center" }}>
                 <Text variant="bodyLg" as="p">

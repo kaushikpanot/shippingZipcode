@@ -288,14 +288,7 @@ function Rate(props) {
         // { label: 'Third Party Service', value: 'thirdParty', mainlabel: "Rate" },
     ];
     const [open, setOpen] = useState({});
-    // useEffect(() => {
-    //     const initialOpenState = rateModifiers.reduce((acc, modifier) => {
-    //         acc[modifier.id] = true;
-    //         return acc;
-    //     }, {});
-    //     setOpen(initialOpenState);
-    // }, [open]);
-
+   
     const handleToggle = (id) => () => {
         setOpen((prevState) => ({
             ...prevState,
@@ -1280,7 +1273,7 @@ function Rate(props) {
         }
         // getLocation();
         getstate();
-        fetchProducts()
+      
     }, []);
 
 
@@ -1714,7 +1707,7 @@ function Rate(props) {
         if (Object.keys(newErrors).length > 0) {
             console.log(errors)
             setErrors(newErrors);
-            setToastContent('Sorry. Couldn’t be saved. Please try again.');
+            setToastContent('Please fill all Missing details');
             setErroToast(true);
             return;
 
@@ -1877,6 +1870,13 @@ function Rate(props) {
             setLoadingTable(false)
         }
     };
+
+    useEffect(() => {
+        if (checkstate.selectedByCart === 'Product') {
+            fetchProducts();
+        }
+    }, [checkstate.selectedByCart]);
+    
     const debouncedFetchProductsForRateSurcharge = useCallback(
         debounce((value) => {
             fetchProducts(value);
@@ -2022,7 +2022,8 @@ function Rate(props) {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
                 query: value ? value : queryString,
                 collectionId: collectionIdForExcludeRate,
-                type: searchTypeForExcludeRate
+                type: searchTypeForExcludeRate,
+                 isColling: 'excludeRate'
 
             };
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
@@ -2049,6 +2050,12 @@ function Rate(props) {
             setLoadingTable(false)
         }
     };
+
+    useEffect(() =>{
+        if(selectedRate === 'custome_selection'){
+            fetchProductsForExcludeRate()
+        }
+    },[selectedRate])
     const debouncedFetchProductsForEcxlude = useCallback(
         debounce((value) => {
             fetchProductsForExcludeRate(value);
@@ -2139,6 +2146,7 @@ function Rate(props) {
             const payload = {
                 ...(direction === 'next' ? { endCursor: cursor } : { startCursor: cursor }),
                 ...(value ? { query: value } : {}),
+               
             };
 
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
@@ -2203,10 +2211,7 @@ function Rate(props) {
         plural: 'products',
     };
 
-    const handleSearchClick = () => {
-        fetchProducts();
-        setShowAllProducts(true);
-    };
+   
     const handleClick = () => {
         fetchProductsForExcludeRate();
         setShowAllProduct(true);
@@ -2216,7 +2221,6 @@ function Rate(props) {
         if (formData.id) {
             navigate(`/Zone/${zone_id}/Rate/Edit/${formData.id}`);
         }
-        fetchProductsForExcludeRate()
 
     }, [formData.id, zone_id, navigate]);
 
@@ -3254,54 +3258,54 @@ function Rate(props) {
                                                                 <Divider borderColor="border" />
                                                             </div>
                                                         )}
-                                                        <div style={{ marginTop: "2%" }}>
-                                                            <FormLayout>
-                                                                <FormLayout.Group>
-                                                                    <TextField
-                                                                        type="text"
-                                                                        label="Full Product Title"
-                                                                        autoComplete="off"
-                                                                        placeholder='Enter Full Product Title'
-                                                                        value={textFields.fullProductTitle}
-                                                                        onChange={handleTextFieldChange('fullProductTitle')}
-                                                                    />
-                                                                    <TextField
-                                                                        type="text"
-                                                                        label="Enter Collection Id"
-                                                                        autoComplete="off"
-                                                                        placeholder='Enter Collection Id'
-                                                                        value={collectionId}
-                                                                        onChange={handleCollectionIdChange}
-                                                                    />
-                                                                </FormLayout.Group>
-                                                            </FormLayout>
-                                                        </div>
-                                                        <div style={{ marginTop: "2%" }}>
-                                                            <FormLayout>
-                                                                <FormLayout.Group>
-                                                                    <TextField
-                                                                        type="text"
-                                                                        label="Full Product Type"
-                                                                        autoComplete="off"
-                                                                        placeholder='Enter Full Product Type'
-                                                                        value={textFields.productType}
-                                                                        onChange={handleTextFieldChange('productType')}
-                                                                    />
-                                                                    <TextField
-                                                                        type="text"
-                                                                        label="Full Product Vendor"
-                                                                        autoComplete="off"
-                                                                        placeholder='Enter Full Product Vendor'
-                                                                        value={textFields.productVendor}
-                                                                        onChange={handleTextFieldChange('productVendor')}
-                                                                    />
-                                                                </FormLayout.Group>
-                                                            </FormLayout>
-                                                        </div>
-                                                        <p style={{ marginTop: "2%", fontSize: "11px" }}>Note: Please enter the exact term for product title, collection id, product type, and product vendor that needs to be searched.
+                                                            {/* <div style={{ marginTop: "2%" }}>
+                                                                <FormLayout>
+                                                                    <FormLayout.Group>
+                                                                        <TextField
+                                                                            type="text"
+                                                                            label="Full Product Title"
+                                                                            autoComplete="off"
+                                                                            placeholder='Enter Full Product Title'
+                                                                            value={textFields.fullProductTitle}
+                                                                            onChange={handleTextFieldChange('fullProductTitle')}
+                                                                        />
+                                                                        <TextField
+                                                                            type="text"
+                                                                            label="Enter Collection Id"
+                                                                            autoComplete="off"
+                                                                            placeholder='Enter Collection Id'
+                                                                            value={collectionId}
+                                                                            onChange={handleCollectionIdChange}
+                                                                        />
+                                                                    </FormLayout.Group>
+                                                                </FormLayout>
+                                                            </div>
+                                                            <div style={{ marginTop: "2%" }}>
+                                                                <FormLayout>
+                                                                    <FormLayout.Group>
+                                                                        <TextField
+                                                                            type="text"
+                                                                            label="Full Product Type"
+                                                                            autoComplete="off"
+                                                                            placeholder='Enter Full Product Type'
+                                                                            value={textFields.productType}
+                                                                            onChange={handleTextFieldChange('productType')}
+                                                                        />
+                                                                        <TextField
+                                                                            type="text"
+                                                                            label="Full Product Vendor"
+                                                                            autoComplete="off"
+                                                                            placeholder='Enter Full Product Vendor'
+                                                                            value={textFields.productVendor}
+                                                                            onChange={handleTextFieldChange('productVendor')}
+                                                                        />
+                                                                    </FormLayout.Group>
+                                                                </FormLayout>
+                                                            </div> */}
+                                                        {/* <p style={{ marginTop: "2%", fontSize: "11px" }}>Note: Please enter the exact term for product title, collection id, product type, and product vendor that needs to be searched.
                                                         </p>
                                                         <div style={{ marginTop: "2%", width: '20%' }} >
-                                                            <Button variant="primary" onClick={handleSearchClick} >Search Product</Button></div>
+                                                            <Button variant="primary" onClick={handleSearchClick} >Search Product</Button></div> */}
 
                                                         {errors.productsDatas && (
                                                             <p style={{ color: 'red', marginTop: "2%" }}>{errors.productsDatas}</p>
@@ -3667,7 +3671,7 @@ function Rate(props) {
                                             />
                                         </div> */}
 
-                                        <div style={{ marginTop: "2%" }}>
+                                        {/* <div style={{ marginTop: "2%" }}>
                                             <FormLayout>
                                                 <FormLayout.Group>
                                                     <TextField
@@ -3715,7 +3719,7 @@ function Rate(props) {
                                         <p style={{ marginTop: "1%", color: "gray", fontSize: "11px" }}>Note: Please enter the exact term for product title, collection id, product type, and product vendor that needs to be searched.
                                         </p>
                                         <div style={{ marginTop: "2%", width: '20%' }}>
-                                            <Button variant="primary" onClick={handleClick}>Search Product</Button></div>
+                                            <Button variant="primary" onClick={handleClick}>Search Product</Button></div> */}
                                         {errors.productsData && (
                                             <p style={{ color: 'red', marginTop: "2%" }}>{errors.productsData}</p>
                                         )}

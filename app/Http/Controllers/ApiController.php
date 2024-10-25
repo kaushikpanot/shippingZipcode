@@ -3005,11 +3005,215 @@ class ApiController extends Controller
         }
     }
 
+    // public function getProductList(Request $request)
+    // {
+    //     try {
+    //         $shop = $request->attributes->get('shopifySession');
+
+    //         if (!$shop) {
+    //             return response()->json([
+    //                 'status' => false,
+    //                 'message' => 'Token not provided.'
+    //             ], 400);
+    //         }
+
+    //         $post = $request->input();
+
+    //         // Retrieve the Shopify access token based on the store name
+    //         $token = User::where('name', $shop)->first();
+
+    //         if (!$token) {
+    //             return response()->json([
+    //                 'status' => false,
+    //                 'message' => 'User not found.'
+    //             ], 404);
+    //         }
+
+    //         // Pagination setup
+    //         $querystring = 'first: 25'; // Default pagination
+    //         if (!empty($post['endCursor'])) {
+    //             $querystring = 'first: 25, after: "' . $post['endCursor'] . '"';
+    //         } elseif (!empty($post['startCursor'])) {
+    //             $querystring = 'last: 25, before: "' . $post['startCursor'] . '"';
+    //         }
+
+    //         // GraphQL query based on collectionId or search filters
+    //         if (!empty($post['collectionId']) && is_numeric($post['collectionId']) && empty($post['query'])) {
+    //             $collectionId = $post['collectionId'];
+    //             $query = <<<GRAPHQL
+    //             {
+    //                 collection(id: "gid://shopify/Collection/$collectionId") {
+    //                     products($querystring) {
+    //                         edges {
+    //                             node {
+    //                                 id
+    //                                 title
+    //                                 variants(first: 1) {
+    //                                     edges {
+    //                                         node {
+    //                                             id
+    //                                             price
+    //                                         }
+    //                                     }
+    //                                 }
+    //                                 images(first: 1) {
+    //                                     edges {
+    //                                         node {
+    //                                             originalSrc
+    //                                             altText
+    //                                         }
+    //                                     }
+    //                                 }
+    //                             }
+    //                         }
+    //                         pageInfo {
+    //                             hasNextPage
+    //                             hasPreviousPage
+    //                             endCursor
+    //                             startCursor
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //             GRAPHQL;
+    //         } else {
+    //             $searchFilters = [];
+
+    //             if (!empty($post['query']) && isset($post['type'])) {
+    //                 switch ($post['type']) {
+    //                     case 'fullProductTitle':
+    //                         $searchFilters[] = 'title:*' . $post['query'] . '*';
+    //                         break;
+    //                     case 'productType':
+    //                         $searchFilters[] = 'product_type:*' . $post['query'] . '*';
+    //                         break;
+    //                     case 'productVendor':
+    //                         $searchFilters[] = 'vendor:*' . $post['query'] . '*';
+    //                         break;
+    //                     default:
+    //                         $searchFilters[] = 'title:*' . $post['query'] . '*';
+    //                         break;
+    //                 }
+    //             } else if (!empty($post['query'])) {
+    //                 $searchFilters[] = 'title:*' . $post['query'] . '*';
+    //             }
+
+    //             $queryParam = '';
+    //             if (!empty($searchFilters)) {
+    //                 $queryParam = 'query:"' . implode(' OR ', $searchFilters) . '"';
+    //             }
+    //             // dd($queryParam);
+    //             $query = <<<GRAPHQL
+    //             {
+    //                 products($querystring, sortKey: CREATED_AT, reverse: true, $queryParam) {
+    //                     edges {
+    //                         node {
+    //                             id
+    //                             title
+    //                             productType
+    //                             vendor
+    //                             variants(first: 1) {
+    //                                 edges {
+    //                                     node {
+    //                                         id
+    //                                         price
+    //                                     }
+    //                                 }
+    //                             }
+    //                             images(first: 1) {
+    //                                 edges {
+    //                                     node {
+    //                                         originalSrc
+    //                                         altText
+    //                                     }
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                     pageInfo {
+    //                         hasNextPage
+    //                         hasPreviousPage
+    //                         endCursor
+    //                         startCursor
+    //                     }
+    //                 }
+    //             }
+    //             GRAPHQL;
+    //         }
+
+    //         // Shopify GraphQL endpoint
+    //         $graphqlEndpoint = "https://$shop/admin/api/2023-07/graphql.json";
+
+    //         // Headers for Shopify API request
+    //         $customHeaders = [
+    //             'X-Shopify-Access-Token' => $token['password'],
+    //         ];
+
+    //         // Make HTTP POST request to Shopify GraphQL endpoint
+    //         $response = Http::withHeaders($customHeaders)->post($graphqlEndpoint, [
+    //             'query' => $query,
+    //         ]);
+
+    //         // Parse the JSON response
+    //         $jsonResponse = $response->json();
+
+    //         // Check if collection exists or products are found
+    //         if (
+    //             !isset($jsonResponse['data']) ||
+    //             (isset($jsonResponse['data']['collection']) && empty($jsonResponse['data']['collection']['products']['edges'])) ||
+    //             (!isset($jsonResponse['data']['products']) && !isset($jsonResponse['data']['collection']))
+    //         ) {
+    //             return response()->json([
+    //                 'status' => false,
+    //                 'message' => 'Collection or products not found.'
+    //             ], 404);
+    //         }
+
+    //         // Handle product data
+    //         $productsData = isset($jsonResponse['data']['collection'])
+    //             ? $jsonResponse['data']['collection']['products']
+    //             : $jsonResponse['data']['products'];
+
+    //         $collectionsArray = [];
+    //         foreach ($productsData['edges'] as $value) {
+    //             $product = $value['node'];
+
+    //             // Fetch the first variant's price
+    //             $price = $product['variants']['edges'][0]['node']['price'] ?? null;
+
+    //             $itemArray = [
+    //                 'id' => str_replace('gid://shopify/Product/', '', $product['id']),
+    //                 'title' => ucfirst($product['title']),
+    //                 'image' => $product['images']['edges'][0]['node']['originalSrc'] ?? null,
+    //                 'price' => $price
+    //             ];
+    //             $collectionsArray[] = $itemArray;
+    //         }
+
+    //         $data = [
+    //             'products' => $collectionsArray,
+    //             'hasNextPage' => $productsData['pageInfo']['hasNextPage'],
+    //             'hasPreviousPage' => $productsData['pageInfo']['hasPreviousPage'],
+    //             'endCursor' => $productsData['pageInfo']['endCursor'],
+    //             'startCursor' => $productsData['pageInfo']['startCursor'],
+    //         ];
+
+    //         // Return the JSON response
+    //         return response()->json($data);
+    //     } catch (Throwable $th) {
+    //         Log::error('Unexpected error during product list fetch', [
+    //             'exception' => $th->getMessage(),
+    //             'file' => $th->getFile(),
+    //             'line' => $th->getLine()
+    //         ]);
+    //         return response()->json(['status' => false, 'message' => 'An unexpected error occurred.'], 500);
+    //     }
+    // }
 
     public function getProductList(Request $request)
     {
         try {
-            $shop = $request->attributes->get('shopifySession');
+            $shop = $request->attributes->get('shopifySession', 'kaushik-panot.myshopify.com');
 
             if (!$shop) {
                 return response()->json([
@@ -3030,21 +3234,97 @@ class ApiController extends Controller
                 ], 404);
             }
 
-            // Pagination setup
-            $querystring = 'first: 25'; // Default pagination
-            if (!empty($post['endCursor'])) {
-                $querystring = 'first: 25, after: "' . $post['endCursor'] . '"';
-            } elseif (!empty($post['startCursor'])) {
-                $querystring = 'last: 25, before: "' . $post['startCursor'] . '"';
+            $collectionsArray = [];
+            $rateProductDataId = [];
+            $graphqlEndpoint = "https://$shop/admin/api/2024-07/graphql.json";
+
+            if (filled($post['isCalling']) && filled($post['rate_id'])) {
+                $rate = Rate::where('id', $post['rate_id'])->firstOrFail([$post['isCalling']]);
+                $productData1 = isset($rate[$post['isCalling']]['productData']) ? $rate[$post['isCalling']]['productData'] : $rate[$post['isCalling']]['productsData'];
+                if (isset($productData1)) {
+                    $rateProductData =  collect($productData1)->pluck('id');
+
+                    $rateProductDataId = $rateProductData->map(function ($id) {
+                        return "gid://shopify/Product/" . trim($id);
+                    });
+
+                    $graphqlQuery = <<<GRAPHQL
+                        query ProductsByIds(\$ids: [ID!]!) {
+                            nodes(ids: \$ids) {
+                                ... on Product {
+                                        id
+                                        title
+                                        variants(first: 1) {
+                                            edges {
+                                                node {
+                                                    id
+                                                    price
+                                                }
+                                            }
+                                        }
+                                        images(first: 1) {
+                                            edges {
+                                                node {
+                                                    originalSrc
+                                                    altText
+                                                }
+                                            }
+                                        }
+                                    }
+                            }
+                        }
+                        GRAPHQL;
+
+                    $variables = [
+                        'ids' => $rateProductDataId
+                    ];
+
+                    $customHeaders1 = [
+                        'X-Shopify-Access-Token' => $token['password'],
+                    ];
+
+                    // Make HTTP POST request to Shopify GraphQL endpoint
+                    $response1 = Http::withHeaders($customHeaders1)->post($graphqlEndpoint, [
+                        'query' => $graphqlQuery,
+                        'variables' => (object)$variables,
+                    ]);
+                    // Parse the JSON response
+                    $jsonExtraResponse = $response1->json()['data']['nodes'];
+
+                    foreach ($jsonExtraResponse as $product) {
+                        $price = $product['variants']['edges'][0]['node']['price'] ?? null;
+
+                        $itemArray = [
+                            'id' => str_replace('gid://shopify/Product/', '', $product['id']),
+                            'title' => ucfirst($product['title']),
+                            'image' => $product['images']['edges'][0]['node']['originalSrc'] ?? null,
+                            'price' => $price
+                        ];
+                        $collectionsArray[] = $itemArray;
+                    }
+                }
             }
 
-            // GraphQL query based on collectionId or search filters
-            if (!empty($post['collectionId']) && is_numeric($post['collectionId']) && empty($post['query'])) {
-                $collectionId = $post['collectionId'];
-                $query = <<<GRAPHQL
-                {
-                    collection(id: "gid://shopify/Collection/$collectionId") {
-                        products($querystring) {
+            $recordCounter = 25 - count($rateProductDataId);
+
+            // Pagination setup
+            $querystring = 'first: '. $recordCounter; // Default pagination
+            if (!empty($post['endCursor'])) {
+                $querystring = 'first: '. $recordCounter . ', after: "' . $post['endCursor'] . '"';
+            } elseif (!empty($post['startCursor'])) {
+                $querystring = 'last: ' .$recordCounter. ', before: "' . $post['startCursor'] . '"';
+            }
+
+            // Set up title filter if a query is provided
+            $queryParam = '';
+            if (!empty($post['query'])) {
+                $queryParam = 'query: "title:*' . $post['query'] . '*"';
+            }
+
+            // GraphQL query for products with title filter
+            $query = <<<GRAPHQL
+                    {
+                        products($querystring, sortKey: CREATED_AT, reverse: true, $queryParam) {
                             edges {
                                 node {
                                     id
@@ -3075,75 +3355,9 @@ class ApiController extends Controller
                             }
                         }
                     }
-                }
-                GRAPHQL;
-            } else {
-                $searchFilters = [];
+                    GRAPHQL;
 
-                if (!empty($post['query']) && isset($post['type'])) {
-                    switch ($post['type']) {
-                        case 'fullProductTitle':
-                            $searchFilters[] = 'title:*' . $post['query'] . '*';
-                            break;
-                        case 'productType':
-                            $searchFilters[] = 'product_type:*' . $post['query'] . '*';
-                            break;
-                        case 'productVendor':
-                            $searchFilters[] = 'vendor:*' . $post['query'] . '*';
-                            break;
-                        default:
-                            $searchFilters[] = 'title:*' . $post['query'] . '*';
-                            break;
-                    }
-                } else if (!empty($post['query'])) {
-                    $searchFilters[] = 'title:*' . $post['query'] . '*';
-                }
 
-                $queryParam = '';
-                if (!empty($searchFilters)) {
-                    $queryParam = 'query:"' . implode(' OR ', $searchFilters) . '"';
-                }
-                // dd($queryParam);
-                $query = <<<GRAPHQL
-                {
-                    products($querystring, sortKey: CREATED_AT, reverse: true, $queryParam) {
-                        edges {
-                            node {
-                                id
-                                title
-                                productType
-                                vendor
-                                variants(first: 1) {
-                                    edges {
-                                        node {
-                                            id
-                                            price
-                                        }
-                                    }
-                                }
-                                images(first: 1) {
-                                    edges {
-                                        node {
-                                            originalSrc
-                                            altText
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        pageInfo {
-                            hasNextPage
-                            hasPreviousPage
-                            endCursor
-                            startCursor
-                        }
-                    }
-                }
-                GRAPHQL;
-            }
-
-            // Shopify GraphQL endpoint
-            $graphqlEndpoint = "https://$shop/admin/api/2023-07/graphql.json";
 
             // Headers for Shopify API request
             $customHeaders = [
@@ -3154,41 +3368,38 @@ class ApiController extends Controller
             $response = Http::withHeaders($customHeaders)->post($graphqlEndpoint, [
                 'query' => $query,
             ]);
-
+            // dd($response->json());
             // Parse the JSON response
             $jsonResponse = $response->json();
-
-            // Check if collection exists or products are found
-            if (
-                !isset($jsonResponse['data']) ||
-                (isset($jsonResponse['data']['collection']) && empty($jsonResponse['data']['collection']['products']['edges'])) ||
-                (!isset($jsonResponse['data']['products']) && !isset($jsonResponse['data']['collection']))
-            ) {
+            // Check if products are found
+            if (!isset($jsonResponse['data']['products']['edges']) || empty($jsonResponse['data']['products']['edges'])) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Collection or products not found.'
+                    'message' => 'No products found.'
                 ], 404);
             }
 
             // Handle product data
-            $productsData = isset($jsonResponse['data']['collection'])
-                ? $jsonResponse['data']['collection']['products']
-                : $jsonResponse['data']['products'];
+            $productsData = $jsonResponse['data']['products'];
 
-            $collectionsArray = [];
+            $rateProductDataIdArray = [];
+            if(!empty($rateProductDataId)) {
+                $rateProductDataIdArray = $rateProductDataId->toArray();
+            }
+
             foreach ($productsData['edges'] as $value) {
                 $product = $value['node'];
-
-                // Fetch the first variant's price
                 $price = $product['variants']['edges'][0]['node']['price'] ?? null;
 
-                $itemArray = [
-                    'id' => str_replace('gid://shopify/Product/', '', $product['id']),
-                    'title' => ucfirst($product['title']),
-                    'image' => $product['images']['edges'][0]['node']['originalSrc'] ?? null,
-                    'price' => $price
-                ];
-                $collectionsArray[] = $itemArray;
+                if (!in_array($product['id'], $rateProductDataIdArray)) {
+                    $itemArray = [
+                        'id' => str_replace('gid://shopify/Product/', '', $product['id']),
+                        'title' => ucfirst($product['title']),
+                        'image' => $product['images']['edges'][0]['node']['originalSrc'] ?? null,
+                        'price' => $price
+                    ];
+                    $collectionsArray[] = $itemArray;
+                }
             }
 
             $data = [
@@ -3199,7 +3410,6 @@ class ApiController extends Controller
                 'startCursor' => $productsData['pageInfo']['startCursor'],
             ];
 
-            // Return the JSON response
             return response()->json($data);
         } catch (Throwable $th) {
             Log::error('Unexpected error during product list fetch', [

@@ -1,0 +1,66 @@
+.select-header {
+    font-weight: bolder;
+    color: rgb(1, 10, 14);
+  }
+ .list >.Polaris-ResourceItem__ListItem{
+list-style: none;
+ }
+
+ .card >.Polaris-LegacyCard{
+  overflow: visible;
+  margin-bottom: 2%;
+ }
+
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 35px;   /* Small width */
+  height: 20px;  /* Small height */
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 10px; /* Rounded for the outer switch */
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 12px;  /* Smaller inner box */
+  width: 12px;   /* Smaller inner box */
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 3px; /* Slightly rounded for a rectangular appearance */
+}
+
+input:checked + .slider {
+  background-color: #131212;
+}
+
+input:checked + .slider:before {
+  transform: translateX(15px); /* Adjusted for smaller size */
+}
+
+.round {
+  border-radius: 4px; /* Rounded corners */
+}
+
+.icons >.Polaris-Icon >.Polaris-Icon__Svg{
+  color: rgb(0, 0, 0);
+}

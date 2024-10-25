@@ -28,7 +28,7 @@ import {
     LegacyStack,
     Icon,
     List,
-    Tooltip
+    Badge
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
@@ -408,7 +408,21 @@ function Zone(props) {
                 <IndexTable.Cell>{service_code}</IndexTable.Cell>
                 <IndexTable.Cell>{base_price}</IndexTable.Cell>
                 <IndexTable.Cell>{description}</IndexTable.Cell>
-                <IndexTable.Cell> {status === 1 ? "Enabled" : "Disabled"}</IndexTable.Cell>
+                <IndexTable.Cell>
+                    {status === 1 ? (
+                        <Badge
+                            tone="success"
+                            progress="complete"
+                            toneAndProgressLabelOverride="Status: Published. Your online store is visible."
+                        >
+                            Active
+                        </Badge>
+                    ) : (
+                        <Badge progress="complete">
+                            Inactive
+                        </Badge>
+                    )}
+                </IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
                         <Button icon={EditIcon} variant="tertiary" onClick={() => handleEditRate(id)} />
@@ -518,14 +532,24 @@ function Zone(props) {
                         </Grid.Cell>
                         <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                             <LegacyCard sectioned>
-                                <div className='choice'>
-                                    <Select
-                                        label="Zone status"
-                                        options={statusOptions}
-                                        onChange={handleStatusChange}
-                                        value={formData.status === 1 ? 'Enabled' : 'Disabled'}
-                                    />
+                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2%" }}>
+                                    <Text variant="headingMd" as="h6">
+                                        {formData.status === 1 ? 'Active' : 'Inactive'}
+                                    </Text>
+                                    <div className='choice' >
+
+                                        <label className="switch">
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.status === 1}  // Check if the status is enabled
+                                                onChange={() => handleStatusChange(formData.status === 1 ? 'Disabled' : 'Enabled')} // Toggle the status
+                                            />
+                                            <span className="slider round"></span>
+                                        </label>
+
+                                    </div>
                                 </div>
+                                <Divider borderColor="border" />
                                 <div style={{ marginTop: "2%" }} className='zonetext'>
                                     <TextField
                                         type="text"

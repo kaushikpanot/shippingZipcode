@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   Toast, Select, Page, Button, Grid, Divider,
-  LegacyCard, RadioButton, Text, Banner, TextField, BlockStack, List, SkeletonDisplayText, SkeletonBodyText, Card, Icon, IndexTable,
+  LegacyCard, Text, Badge, TextField, BlockStack, List, SkeletonDisplayText, SkeletonBodyText, Card, Icon, IndexTable,
   Link, ButtonGroup, Modal, TextContainer, EmptySearchResult
 } from '@shopify/polaris';
 import axios from 'axios';
@@ -16,6 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import OnBording from './onBording';
 import { Redirect } from '@shopify/app-bridge/actions';
+import '../../css/app.css'
 
 
 
@@ -44,7 +45,6 @@ const Settings = (props) => {
     apiKey: SHOPIFY_API_KEY,
     host: props.host,
   });
-
 
   const handleEditMergeRate = (id) => {
     navigate(`/add-edit-merge-rate/${id}`);
@@ -159,6 +159,13 @@ const Settings = (props) => {
     google_map_api_key: ''
   });
 
+
+  const handleCheckboxChange = () => {
+    setSettings((prevSettings) => ({
+      ...prevSettings,
+      status: prevSettings.status === 1 ? 0 : 1
+    }));
+  };
   const handleGoogleApiKeyChange = (value) => {
     setSettings((prevSettings) => ({
       ...prevSettings,
@@ -347,7 +354,7 @@ const Settings = (props) => {
 
   const emptyStateMarkup = (
     <EmptySearchResult
-      title={'No MixMerge Rates found'}
+      title={'No  Rates found'}
       description={'Try changing the filters or search term'}
       withIllustration
     />
@@ -391,7 +398,22 @@ const Settings = (props) => {
         </IndexTable.Cell>
         {/* <IndexTable.Cell> {description}</IndexTable.Cell> */}
         <IndexTable.Cell> {tags_to_combine}</IndexTable.Cell>
-        <IndexTable.Cell>  {status === 1 ? "Enabled" : "Disabled"}</IndexTable.Cell>
+        <IndexTable.Cell>
+          {status === 1 ? (
+            <Badge
+              tone="success"
+              progress="complete"
+              toneAndProgressLabelOverride="Status: Published. Your online store is visible."
+            >
+              Active
+            </Badge>
+          ) : (
+            <Badge progress="complete">
+              Inactive
+            </Badge>
+          )}
+
+        </IndexTable.Cell>
         <IndexTable.Cell>
           <ButtonGroup>
             <Button icon={EditIcon} variant="primary" onClick={() => handleEditMergeRate(id)} />
@@ -426,39 +448,23 @@ const Settings = (props) => {
                   <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                       <div style={{ marginLeft: '%' }}>
-                        <Text variant="headingMd" as="h6">Setting</Text>
-                      </div>
-                      <div style={{ marginTop: '4%' }}>
-                        <List>
-                          <List.Item>
-                            You can enable or disable the app without deleting the App
-                          </List.Item>
-                          {/* <List.Item>
-                  To see the shipping rate when test mode is on, use the first name Cirkle during checkout.
-                  </List.Item> */}
-                        </List>
+                        <Text variant="headingMd" as="h6">App Status</Text>
                       </div>
                     </Grid.Cell>
 
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                       <LegacyCard title="" sectioned>
-                        <RadioButton
-                          label="Enable"
-                          helpText="Enable Shipping Rates by ZipCode APP"
-                          checked={settings.status === 1}
-                          id="enabled"
-                          name="status"
-                          onChange={() => handleInputChange('status')(1)}
-                        />
-                        <RadioButton
-                          label="Disable"
-                          helpText="Disable Shipping Rates by ZipCode APP"
-                          checked={settings.status === 0}
-                          id="disabled"
-                          name="status"
-                          onChange={() => handleInputChange('status')(0)}
-                        />
-
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <Text variant="headingMd" as="h6"> {settings.status === 1 ? 'Active' : 'Inactive'}</Text>
+                          <label className="switch">
+                            <input
+                              type="checkbox"
+                              checked={settings.status === 1}  // Convert status to a boolean for checkbox
+                              onChange={handleCheckboxChange}
+                            />
+                            <span className="slider round"></span>
+                          </label>
+                        </div>
                       </LegacyCard>
                     </Grid.Cell>
                   </Grid>
@@ -470,21 +476,21 @@ const Settings = (props) => {
                   <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                       <div style={{ marginTop: "5%" }}>
-                        <Text variant="headingMd" as="h6">Display Shipping Rate</Text>
+                        <Text variant="headingMd" as="h6">Display Preferences</Text>
                       </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                       <LegacyCard sectioned>
                         <Select
-                          label="Display Shipping Rate"
+
                           options={[
-                            { label: 'All', value: 'All' },
-                            { label: 'Only Higher', value: 'Only Higher' },
-                            { label: 'Only Lower', value: 'Only Lower' },
+                            { label: 'All Rates', value: 'All' },
+                            { label: 'Highest Rate', value: 'Only Higher' },
+                            { label: 'Lowest Rate', value: 'Only Lower' },
                           ]}
                           onChange={handleInputChange('shippingRate')}
                           value={settings.shippingRate}
-                        /><br />
+                        />
                         {/* <Select
                   label="Rate Modifier Title Settings"
                   options={[
@@ -507,20 +513,13 @@ const Settings = (props) => {
                   <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                       <div style={{ marginTop: "5%" }}>
-                        <Text variant="headingMd" as="h6">Google Map API Key</Text>
-                      </div>
-                      <div style={{ marginTop: '4%' }}>
-                        <List>
-                          <List.Item>
-                            You can add google map api key for distance base rate from here
-                          </List.Item>
-                        </List>
+                        <Text variant="headingMd" as="h6">Google Maps Integration (Required for distance-based shipping)</Text>
                       </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                       <LegacyCard sectioned>
                         <TextField
-                          placeholder='Enter Google Api Key'
+                          placeholder='Enter the Google Maps API key here'
                           value={settings.google_map_api_key}
                           onChange={handleGoogleApiKeyChange}
                           type='password'
@@ -535,51 +534,38 @@ const Settings = (props) => {
                   <Grid>
                     <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                       <div style={{ marginTop: '5%' }}>
-                        <Text variant="headingMd" as="h6">Mix/Merge Rate Setting</Text>
+                        <Text variant="headingMd" as="h6">Merge Rates </Text>
                       </div>
                       <div style={{ marginTop: '4%' }}>
                         <List>
                           <List.Item>
-                            When product rate set combine it with all product rates & additive with normal rate.
+                            Mix multiple rates into one  by tags.
                           </List.Item>
                         </List>
                       </div>
                     </Grid.Cell>
                     <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                       <LegacyCard sectioned>
-                        <Banner tone="warning">
-                          <p>
-                            If the first option of mix/merge rate setting is No, the merge rate will not work.
-                          </p>
-                        </Banner>
-                        <div style={{ marginTop: "3%" }}>
-                          <Text variant="headingXs" as="h6">
-                            Do you want to combine all product/tag/SKU/type/vendor shipping rates into one rate?
+                        <div style={{ display: 'flex', justifyContent: "space-between", }}>
+
+                          <Text variant="headingMd" as="h6">
+                            {settings.mix_merge_rate === 0 ? 'Yes' : 'No'}
                           </Text>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10%', marginTop: "2%" }}>
-                            <RadioButton
-                              label="Yes (Manually - Using merge rate)"
+
+                          <label className="switch">
+                            <input
+                              type="checkbox"
                               checked={settings.mix_merge_rate === 0}
-                              id="yes"
-                              name="mix_merge_rate"
-                              onChange={() => handleCheckedChange('mix_merge_rate', 0)}
+                              onChange={() => handleCheckedChange('mix_merge_rate', settings.mix_merge_rate === 0 ? 1 : 0)}
                             />
-                            <RadioButton
-                              label="No"
-                              checked={settings.mix_merge_rate === 1}
-                              id="No"
-                              name="mix_merge_rate"
-                              onChange={() => handleCheckedChange('mix_merge_rate', 1)}
-                            />
-                          </div>
+                            <span className="slider round"></span>
+                          </label>
 
 
                         </div>
-
-
                         {settings.mix_merge_rate === 0 && (
                           <div>
-                            <div style={{ marginTop: "4%", marginBottom: "4%" }}>
+                            <div style={{ marginTop: "2%", marginBottom: "2%" }}>
                               <Divider borderColor="border" />
                             </div>
                             <BlockStack gap="200">
@@ -587,7 +573,7 @@ const Settings = (props) => {
 
 
                                 <Text variant="headingMd" as="h6">
-                                  Merge Rate
+                                  Merged Rates
                                 </Text>
                                 <div style={{ display: "flex", gap: "20px" }}>
                                   <Button
@@ -595,15 +581,11 @@ const Settings = (props) => {
                                     variant='primary'
                                     icon={PlusIcon}
                                   >
-                                    Add     Merge Rate
+                                    Add New
                                   </Button>
                                 </div>
                               </div>
-                              <div style={{ marginTop: "1%", fontWeight: "bold" }}>
-                                <Text as="p" variant="bodyMd">
-                                  If the first option of the mix/merge rate setting on the shipping settings page is No (Manually - Using merge rate), this merge rate setting will work.
-                                </Text>
-                              </div>
+
                             </BlockStack>
                             <div style={{ marginTop: "3%" }}>
                               <TextField

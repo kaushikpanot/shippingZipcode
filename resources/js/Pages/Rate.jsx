@@ -62,7 +62,7 @@ function Rate(props) {
         selectedByUpdatePriceType: 0,
         selectedByUpdatePriceEffect: 0,
         selectedZipCondition: 'All',
-        selectedZipCode: 'exclude',
+        selectedZipCode: 'Include',
         selectedMultiplyLine: 'Yes',
         selectedPriceReplace: 'BasePrice',
         exclude_products_radio: 0, // 0=Remove rate  1=Reduce only product price, weight and quantity
@@ -396,7 +396,7 @@ function Rate(props) {
                         ...(field === 'rateModifier' && {
                             label1: option?.mainlabel || '',
                             unit: value === 'weight' ? shop_weight_unit : '',
-                            rateDay: value === 'dayOfOrder' || value === 'day' ? 'Sunday' : value === 'time' ? '00:00' : '',
+                            rateDay: value === 'dayOfOrder' || value === 'day' ? 'Sunday' : value === 'time' ? '00:00' : "",
                             rateOperator:
                                 value === 'availableQuan'
                                     ? 'lthenoequal'
@@ -408,7 +408,7 @@ function Rate(props) {
                         ...(field === 'rateModifier2' && {
                             label2: option?.mainlabel || '',
                             unit2: value === 'weight' ? shop_weight_unit : '',
-                            rateDay2: value === 'dayOfOrder' || value === 'day' ? 'Sunday' : value === 'time' ? '00:00' : '',
+                            rateDay2: value === 'dayOfOrder' || value === 'day' ? 'Sunday' : value === 'time' ? '00:00' : "",
                             rateOperator2:
                                 value === 'availableQuan'
                                     ? 'lthenoequal'
@@ -418,33 +418,43 @@ function Rate(props) {
                             deliveryXday2: '',
                         }),
                     };
-
+    
                     const daysValue = parseInt(newModifier.rateDay, 10);
                     const daysValue2 = parseInt(newModifier.rateDay2, 10);
-
+    
+                 
                     if (!isNaN(daysValue) && daysValue >= 0) {
                         const futureDate = new Date();
                         futureDate.setDate(futureDate.getDate() + daysValue);
-                        newModifier.deliveryXday = futureDate.toISOString().split('T')[0];
+                        if (!isNaN(futureDate.getTime())) {
+                            newModifier.deliveryXday = futureDate.toISOString().split('T')[0];
+                        } else {
+                            newModifier.deliveryXday = ''; 
+                        }
                     } else {
                         newModifier.deliveryXday = '';
                     }
-
+    
                     if (!isNaN(daysValue2) && daysValue2 >= 0) {
                         const futureDate2 = new Date();
                         futureDate2.setDate(futureDate2.getDate() + daysValue2);
-                        newModifier.deliveryXday2 = futureDate2.toISOString().split('T')[0];
+                        if (!isNaN(futureDate2.getTime())) {
+                            newModifier.deliveryXday2 = futureDate2.toISOString().split('T')[0];
+                        } else {
+                            newModifier.deliveryXday2 = ''; 
+                        }
                     } else {
                         newModifier.deliveryXday2 = '';
                     }
-
-
+    
                     return newModifier;
                 }
                 return modifier;
             })
         );
     };
+    
+    
     const handleRateDayInputChange = (id, field) => (value) => {
         const parsedValue = parseInt(value, 10);
 
@@ -1707,7 +1717,7 @@ function Rate(props) {
         if (Object.keys(newErrors).length > 0) {
             console.log(errors)
             setErrors(newErrors);
-            setToastContent('Please fill all Missing details');
+            setToastContent('Please fill missing detains.');
             setErroToast(true);
             return;
 
@@ -2345,12 +2355,24 @@ function Rate(props) {
                         <Layout.Section>
                             <LegacyCard sectioned>
                                 <div style={{ marginBottom: "2%" }}>
-                                    <Select
-                                        label="Rate status"
-                                        options={statusOptions}
-                                        onChange={handleStatusChange}
-                                        value={formData.status === 1 ? 'Enabled' : 'Disabled'}
-                                    />
+
+                                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2%" }}>
+                                        <Text variant="headingMd" as="h6">
+                                            {formData.status === 1 ? 'Active' : 'Inactive'}
+                                        </Text>
+                                        <div className='choice' >
+
+                                            <label className="switch">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.status === 1}  
+                                                    onChange={() => handleStatusChange(formData.status === 1 ? 'Disabled' : 'Enabled')} 
+                                                />
+                                                <span className="slider round"></span>
+                                            </label>
+
+                                        </div>
+                                    </div>
                                 </div>
                                 <Divider borderColor="border" />
                                 <div style={{ marginTop: '2%' }} className='zonetext'>
@@ -2365,7 +2387,7 @@ function Rate(props) {
                                 </div>
                                 <div style={{ marginTop: '2%' }} className='zonetext'>
                                     <TextField
-                                        label="Base price"
+                                        label="Base Rate"
                                         placeholder="0.00"
                                         autoComplete="off"
                                         prefix={shop_currency}
@@ -2377,8 +2399,8 @@ function Rate(props) {
                                 </div>
                                 <div style={{ marginTop: '2%', marginBottom: '2%' }} className='zonetext'>
                                     <TextField
-                                        label="Service code"
-                                        placeholder="Service code"
+                                        label="Service Code"
+                                        placeholder="Service Code"
                                         autoComplete="off"
                                         value={formData.service_code}
                                         onChange={handleRateFormChange('service_code')}
@@ -2389,7 +2411,7 @@ function Rate(props) {
                                 <div style={{ marginTop: '2%' }} className='zonetext'>
                                     <TextField
                                         label="Description"
-                                        placeholder="Enter Description"
+                                        placeholder="Enter description"
                                         autoComplete="off"
                                         value={formData.description}
                                         onChange={handleRateFormChange('description')}
@@ -2408,13 +2430,7 @@ function Rate(props) {
                             <Text variant="headingMd" as="h6">
                                 Conditions
                             </Text>
-                            <div style={{ marginTop: "4%" }}>
-                                <List>
-                                    <List.Item>
-                                        New Condition Scenario
-                                    </List.Item>
-                                </List>
-                            </div>
+
                         </Grid.Cell>
                         <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                             <LegacyCard sectioned>
@@ -2423,28 +2439,28 @@ function Rate(props) {
                                         Condition match
                                     </Text>
                                     <RadioButton
-                                        label="Not Any Condition"
+                                        label="No Conditions"
                                         checked={checkstate.selectedCondition === 0}
                                         id="notAny"
                                         name="conditionMatch"
                                         onChange={() => handlecheckedChange('selectedCondition', 0)}
                                     />
                                     <RadioButton
-                                        label="All"
+                                        label="Match All"
                                         checked={checkstate.selectedCondition === 1}
                                         id="AllCondition"
                                         name="conditionMatch"
                                         onChange={() => handlecheckedChange('selectedCondition', 1)}
                                     />
                                     <RadioButton
-                                        label="Any"
+                                        label="Match Any"
                                         checked={checkstate.selectedCondition === 2}
                                         id="Any"
                                         name="conditionMatch"
                                         onChange={() => handlecheckedChange('selectedCondition', 2)}
                                     />
                                     <RadioButton
-                                        label="NOT All"
+                                        label="Match None"
                                         checked={checkstate.selectedCondition === 3}
                                         id="notAll"
                                         name="conditionMatch"
@@ -2774,7 +2790,7 @@ function Rate(props) {
                     <Grid>
                         <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                             <Text variant="headingMd" as="h6">
-                                Set State/ZipCode
+                                Applicable States / Zip Codes
                             </Text>
                             <div style={{ marginTop: '4%' }}>
                                 <List>
@@ -2784,9 +2800,7 @@ function Rate(props) {
                                     <List.Item>
                                         If you want to exclude the specific Zipcode from that state then you can use exclude ZipCode on Allow Zipcode settings.
                                     </List.Item>
-                                    <List.Item>
-                                        To format zipcodes/pincodes correctly and remove unnecessary blank space,  <a href="https://sbz.cirkleinc.com/zipcode-formatter.php" target="_blank" style={{ textDecoration: "none", color: "#1e87f0" }}>Click here.</a>
-                                    </List.Item>
+
                                 </List>
                             </div>
                         </Grid.Cell>
@@ -2800,14 +2814,14 @@ function Rate(props) {
                                                     State Selection
                                                 </Text>
                                                 <RadioButton
-                                                    label="Custom"
+                                                    label="Select States"
                                                     checked={checkstate.selectedStateCondition === 'Custom'}
                                                     id="Custom"
                                                     name="stateSelection"
                                                     onChange={() => handlecheckedChange('selectedStateCondition', 'Custom')}
                                                 />
                                                 <RadioButton
-                                                    label="All"
+                                                    label="All States"
                                                     checked={checkstate.selectedStateCondition === 'All'}
                                                     id="All"
                                                     name="stateSelection"
@@ -2835,14 +2849,14 @@ function Rate(props) {
                                         ZipCode
                                     </Text>
                                     <RadioButton
-                                        label="Custom"
+                                        label="Specific Zip Codes"
                                         checked={checkstate.selectedZipCondition === 'Custom'}
                                         id="customeZip"
                                         name="zipcodeSelection"
                                         onChange={() => handlecheckedChange('selectedZipCondition', 'Custom')}
                                     />
                                     <RadioButton
-                                        label="All"
+                                        label="All Zip Codes"
                                         checked={checkstate.selectedZipCondition === 'All'}
                                         id="AllZip"
                                         name="zipcodeSelection"
@@ -2890,16 +2904,14 @@ function Rate(props) {
                     <Grid>
                         <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                             <Text variant="headingMd" as="h6">
-                                Rate Based On/Surcharge
+                                Cart/Product-based Rate/Surcharge
                             </Text>
                             <div style={{ marginTop: "4%" }}>
                                 <List type='bullet'>
                                     <List.Item>
-                                        Specify rate calculation based on Order Weight, Order Quantity with surcharge value.
+                                        Specify rules to add Surcharge to base rate.
                                     </List.Item>
-                                    <List.Item>
-                                        Surcharge calculation will add on Base Price which is available on top of the page.
-                                    </List.Item>
+
                                 </List>
                             </div>
 
@@ -2907,7 +2919,7 @@ function Rate(props) {
                         <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                             <LegacyCard sectioned>
                                 <Checkbox
-                                    label="Based On Cart"
+                                    label="Based On Cart and Products"
                                     checked={checkedState.checked1}
                                     onChange={() => handleCheckChange('checked1')}
                                 />
@@ -3099,14 +3111,22 @@ function Rate(props) {
                                                 </Text>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10%', paddingTop: '1%', marginBottom: "4%" }}>
                                                     <RadioButton
-                                                        label="Divided by each unit"
+                                                        label="Per unit"
                                                         checked={checkstate.selectedByAmount === 'unit'}
                                                         id="unit"
                                                         name="unit"
                                                         onChange={() => handlecheckedChange('selectedByAmount', 'unit')}
                                                     />
                                                     <RadioButton
-                                                        label="Surcharge add by every more then unit"
+                                                        label={
+                                                            checkstate.selectedByCart === 'weight'
+                                                                ? "For every unit after specified weight"
+                                                                : checkstate.selectedByCart === 'Qty'
+                                                                    ? "For every unit after specified quantity"
+                                                                    : checkstate.selectedByCart === 'Distance'
+                                                                        ? "For every unit after specified distance"
+                                                                        : "Default Label"
+                                                        }
                                                         checked={checkstate.selectedByAmount === 'units'}
                                                         id="units"
                                                         name="units"
@@ -3497,7 +3517,7 @@ function Rate(props) {
                     <Grid>
                         <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                             <Text variant="headingMd" as="h6">
-                                Rate Tier
+                                Base Rate Tier
                             </Text>
                             <div style={{ marginTop: '4%' }}>
                                 <List type='bullet'>
@@ -3550,7 +3570,7 @@ function Rate(props) {
                                                                 error={errors[`maxWeight${index}`]}
                                                             />
                                                             <TextField
-                                                                label='Base Price'
+                                                                label='Base Rate'
                                                                 type='number'
                                                                 value={tier.basePrice}
                                                                 onChange={(value) => handleInputChange(index, 'basePrice', value)}
@@ -3881,7 +3901,7 @@ function Rate(props) {
                                                                 <FormLayout.Group>
                                                                     <TextField
                                                                         type="text"
-                                                                        label="Rate Modifier Name"
+                                                                        label="Modified Rate Name"
                                                                         value={modifier.name}
                                                                         onChange={handleRateModifierChange(modifier.id, 'name')}
                                                                         autoComplete="off"
@@ -3895,7 +3915,7 @@ function Rate(props) {
                                                                         onChange={handleRateModifierChange(modifier.id, 'title')}
                                                                         autoComplete="off"
                                                                         placeholder="Rate Modifier Title -Optional"
-                                                                        helpText="Text that will be appended to the rate description"
+                                                                        helpText="it will be displayed under rate name"
                                                                     />
                                                                 </FormLayout.Group>
                                                             </FormLayout>
@@ -4364,10 +4384,10 @@ function Rate(props) {
                                                                                                                             modifier.rateModifier2 === 'tag2' ? "contains match customer address with comma(,) separator" :
                                                                                                                                 modifier.rateModifier2 === 'thirdParty' ? "add exact third party services with comma(,) separator" :
                                                                                                                                     "add collection ids with comma(,) separator"}
-                                                                       
-                                                                       
-                                                                                                                                    error={errors[`rateDay${index}2`]}
-                                                                                                                                    />
+
+
+                                                                            error={errors[`rateDay${index}2`]}
+                                                                        />
                                                                     )}
                                                                 </div>
                                                             </div>
@@ -4436,7 +4456,7 @@ function Rate(props) {
                                                                 onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('Percentage')}
                                                             />
                                                             <RadioButton
-                                                                label="Static"
+                                                                label="New Rate"
                                                                 checked={modifier.modifierType === 'Static'}
                                                                 id={`Static-${modifier.id}`}
                                                                 name={`modifierType-${modifier.id}`}
@@ -4450,7 +4470,7 @@ function Rate(props) {
                                                                 onChange={() => handleRateModifierChange(modifier.id, 'modifierType')('RemoveRate')}
                                                             />
                                                             <RadioButton
-                                                                label="Show Only"
+                                                                label="No Change"
                                                                 checked={modifier.modifierType === 'ShowOnly'}
                                                                 id={`ShowOnly-${modifier.id}`}
                                                                 name={`modifierType-${modifier.id}`}
@@ -4552,19 +4572,20 @@ function Rate(props) {
                     <Grid>
                         <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                             <Text variant="headingMd" as="h6">
-                                Merge rate
+                                Rate Tag (for Merging)
                             </Text>
-                            <div style={{ marginTop: "4%" }}>
+                            {/* <div style={{ marginTop: "4%" }}>
                                 <List>
                                     <List.Item>
                                         We recommend using the same Shipping Tag for all related Shipping rates when merge shipping rates.
                                     </List.Item>
                                 </List>
-                            </div>                    </Grid.Cell>
+                            </div>   */}
+                        </Grid.Cell>
                         <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                             <LegacyCard sectioned>
                                 <TextField
-                                    label="Merge rate tag"
+
                                     value={formData.merge_rate_tag}
                                     onChange={handleRateFormChange('merge_rate_tag')}
                                     autoComplete="off"
@@ -4657,24 +4678,17 @@ function Rate(props) {
                         </Grid.Cell>
                         <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                             <LegacyCard sectioned>
-                                <Text variant="headingSm" as="h6">
-                                    Do you want to apply schedule rate?
-                                </Text>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10%', paddingTop: '2%' }}>
-                                    <RadioButton
-                                        label="Yes"
-                                        checked={checkstate.selectedByschedule === 1}
-                                        id="Yess"
-                                        name="Yess"
-                                        onChange={() => handlecheckedChange('selectedByschedule', 1)}
-                                    />
-                                    <RadioButton
-                                        label="No"
-                                        checked={checkstate.selectedByschedule === 0}
-                                        id="No"
-                                        name="No"
-                                        onChange={() => handlecheckedChange('selectedByschedule', 0)}
-                                    />
+
+                                <div style={{ display: 'flex', justifyContent: "space-between" }}>
+                                    <Text variant="headingMd" as="h6">{checkstate.selectedByschedule === 1 ? "Yes" : "No"}</Text>
+                                    <label className="switch">
+                                        <input
+                                            type="checkbox"
+                                            checked={checkstate.selectedByschedule === 1}
+                                            onChange={() => handlecheckedChange('selectedByschedule', checkstate.selectedByschedule === 1 ? 0 : 1)}
+                                        />
+                                        <span className="slider round"></span>
+                                    </label>
                                 </div>
                                 {checkstate.selectedByschedule === 1 && (
                                     <div>
@@ -4712,15 +4726,16 @@ function Rate(props) {
                     <Grid>
                         <Grid.Cell columnSpan={{ xs: 4, sm: 3, md: 3, lg: 4, xl: 4 }}>
                             <Text variant="headingMd" as="h6">
-                                Send another rate
+                                Display Additional Rate
                             </Text>
-                            <div style={{ marginTop: "4%" }}>
+                            {/* <div style={{ marginTop: "4%" }}>
                                 <List>
                                     <List.Item>
                                         By selecting the Send Another Rate option it will allow to set another additional rate.
                                     </List.Item>
                                 </List>
-                            </div>                    </Grid.Cell>
+                            </div> */}
+                        </Grid.Cell>
                         <Grid.Cell columnSpan={{ xs: 8, sm: 3, md: 3, lg: 8, xl: 8 }}>
                             <LegacyCard sectioned>
                                 <div style={{ alignItems: 'center' }}>

@@ -20,7 +20,8 @@ import {
     SkeletonBodyText,
     SkeletonDisplayText,
     LegacyCard,
-    EmptySearchResult
+    EmptySearchResult,
+    Badge
 } from '@shopify/polaris';
 import '../../../public/css/style.css';
 import {
@@ -165,7 +166,21 @@ function Home(props) {
                     })}
                 </IndexTable.Cell>
                 <IndexTable.Cell> {currency}</IndexTable.Cell>
-                <IndexTable.Cell>  {status === 1 ? "Enabled" : "Disabled"}</IndexTable.Cell>
+                <IndexTable.Cell> 
+                {status === 1 ? (
+            <Badge
+              tone="success"
+              progress="complete"
+              toneAndProgressLabelOverride="Status: Published. Your online store is visible."
+            >
+              Active
+            </Badge>
+          ) : (
+            <Badge progress="complete">
+              Inactive
+            </Badge>
+          )}
+                     </IndexTable.Cell>
                 <IndexTable.Cell>
                     <ButtonGroup>
                         <Button icon={EditIcon} variant="primary" onClick={() => handleEditZone(id)} />
@@ -224,7 +239,7 @@ function Home(props) {
                             <BlockStack gap="200">
                                 <InlineGrid columns="1fr auto">
                                     <Text variant="headingLg" as="h5">
-                                        Zones
+                                    Shipping Zones
                                     </Text>
                                     <Button
                                         onClick={() => zoneNavigate()}
@@ -236,7 +251,7 @@ function Home(props) {
                                     </Button>
                                 </InlineGrid>
                                 <Text as="p" variant="bodyMd">
-                                    Group your zip codes into zones and easily assign rates to each zone.
+                                Group regions/zip codes into zones and create shipping rules to them.
                                 </Text>
                             </BlockStack>
                             <div style={{ marginTop: "2.5%" }}>
@@ -255,10 +270,10 @@ function Home(props) {
                                     itemCount={filteredZones.length}
                                     emptyState={emptyStateMarkup}
                                     headings={[
-                                        { title: 'Zipcode Rule Name' },
-                                        { title: 'Country' },
-                                        { title: 'currency' },
-                                        { title: 'Status' },
+                                        { title: 'Zone Name' },
+                                        { title: 'Country ' },
+                                        { title: 'Currency ' },
+                                        { title: 'Status ' },
                                         { title: 'Action' },
                                     ]}
                                     selectable={false}

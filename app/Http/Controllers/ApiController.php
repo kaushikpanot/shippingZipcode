@@ -3240,8 +3240,8 @@ class ApiController extends Controller
 
             if (filled($post['isCalling']) && filled($post['rate_id'])) {
                 $rate = Rate::where('id', $post['rate_id'])->firstOrFail([$post['isCalling']]);
-                $productData1 = isset($rate[$post['isCalling']]['productData']) ? $rate[$post['isCalling']]['productData'] : $rate[$post['isCalling']]['productsData'];
-                if (isset($productData1)) {
+                $productData1 = $rate[$post['isCalling']]['productData'] ?? $rate[$post['isCalling']]['productsData'] ?? null;
+                if (!empty($productData1)) {
                     $rateProductData =  collect($productData1)->pluck('id');
 
                     $rateProductDataId = $rateProductData->map(function ($id) {

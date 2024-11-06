@@ -1521,9 +1521,9 @@ class ApiController extends Controller
                             }
 
                             // Ensure base price is within min/max charge limits
-                            if ($minChargePrice > 0 && $rate->base_price < $minChargePrice) {
+                            if ($minChargePrice > 0 && $rate->base_price < $minChargePrice && $surcharge['selectedMultiplyLine'] == 'per') {
                                 $rate->base_price = $minChargePrice;
-                            } elseif ($maxChargePrice > 0 && $rate->base_price > $maxChargePrice) {
+                            } elseif ($maxChargePrice > 0 && $rate->base_price > $maxChargePrice && $surcharge['selectedMultiplyLine'] == 'per') {
                                 $rate->base_price = $maxChargePrice;
                             }
                         }

@@ -60,7 +60,7 @@ class AppUninstalledJob implements ShouldQueue
             Log::info('Decoded Webhook Data:', ['data' => $data_json]);
 
             // $to = $data_json['email'];
-            $to = "bhushan.trivedi@meetanshi.com";
+            $to = "sanjay@meetanshi.com";
             $name = $data_json['shop_owner'];
             $shopDomain = $data_json['domain'];
 

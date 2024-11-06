@@ -60,7 +60,8 @@ class HomeController extends Controller
             if ($shopDomain) {
 
                 $emailData = [
-                    "to" => "bhushan.trivedi@meetanshi.com",
+                    "to" => "sanjay@meetanshi.com",
+                    // "to" => "bhushan.trivedi@meetanshi.com",
                     'name' => $name,
                     'shopDomain' => $shopDomain,
                 ];

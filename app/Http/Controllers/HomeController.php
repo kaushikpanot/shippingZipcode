@@ -54,19 +54,57 @@ class HomeController extends Controller
         if ($shopDomain) {
             // Perform your logic here, e.g., clean up the database, revoke tokens, etc.
             // Example: Delete the shop from the database
-            // $user = User::where('name', $shopDomain)->first();
+            $user = User::where('name', $shopDomain)->first();
+
+            $graphqlEndpoint = "https://$shopDomain/admin/api/2024-07/graphql.json";
+
+            // Headers for Shopify API request
+            $customHeaders = [
+                'X-Shopify-Access-Token' => $user['password'],
+            ];
+
+            $query = <<<GRAPHQL
+                {
+                    shop {
+                        name
+                        email
+                    }
+                }
+                GRAPHQL;
+
+            // Make HTTP POST request to Shopify GraphQL endpoint
+            $response = Http::withHeaders($customHeaders)->post($graphqlEndpoint, [
+                'query' => $query,
+            ]);
+            // dd($response->json());
+            // Parse the JSON response
+            $jsonResponse = $response->json();
+
             $name = explode('@', $shopDomain)[0];
 
             if ($shopDomain) {
 
                 $emailData = [
-                    "to" => "sanjay@meetanshi.com",
+                    // "to" => "sanjay@meetanshi.com",
                     // "to" => "bhushan.trivedi@meetanshi.com",
+                    "to" => $jsonResponse['data']['shop']['email'] ?? "sanjay@meetanshi.com",
                     'name' => $name,
                     'shopDomain' => $shopDomain,
                 ];
 
+                $emailData1 = [
+                    // "to" => "sanjay@meetanshi.com",
+                    // "to" => "bhushan.trivedi@meetanshi.com",
+                    "to" => "sanjay@meetanshi.com",
+                    'name' => $name,
+                    'shopDomain' => $shopDomain,
+                ];
+
+                Log::info('User email data:',['emailData'=>$emailData]);
+                Log::info('User email data:',['emailData1'=>$emailData1]);
+
                 SendEmailJob::dispatch($emailData, InstallMail::class)->onQueue('emails');
+                SendEmailJob::dispatch($emailData1, InstallMail::class)->onQueue('emails');
 
                 // Mail::to("bhushan.trivedi@meetanshi.com")->send(new InstallMail($name, $shopDomain));
                 // Mail::to("bhushan.trivedi@meetanshi.com")->send(new InstallMail($name, $shopDomain));
@@ -156,4 +194,50 @@ class HomeController extends Controller
     //     }
     //     return true;
     // }
+
+    protected function getStoreOwnerEmail($shop)
+    {
+        $user = $shop;
+        $shop_url = "https://" . $user['name'] . "/admin/api/2024-07/shop.json";
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $shop_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "GET",
+            CURLOPT_HTTPHEADER => [
+                "Content-Type: application/json",
+                "X-Shopify-Access-Token:" . $user['password']
+            ],
+        ]);
+
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+
+        curl_close($curl);
+
+        if ($err) {
+            return false;
+        } else {
+            $data = json_decode($response, true);
+
+            if (@$data['shop']) {
+
+                $storeOwnerEmail = $data['shop']['email'];
+                $store_name = $data['shop']['name'];
+                User::where('name', $user['name'])->update(['store_owner_email' => $storeOwnerEmail, 'store_name' => $store_name,'isInstall'=>1]);
+                $details = [
+                    'title' => 'Thank You for Installing Call For Price for Shopify - Meetanshi',
+                    'name' => $store_name
+                ];
+
+              //  \Mail::to($storeOwnerEmail)->send(new \App\Mail\InstallMail($details));
+             //    \Mail::to("krishna.patel@meetanshi.com")->send(new \App\Mail\InstallMail($details));
+                return true;
+            }
+        }
+    }
 }

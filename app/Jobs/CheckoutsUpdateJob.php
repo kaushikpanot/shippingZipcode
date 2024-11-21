@@ -31,42 +31,51 @@ class CheckoutsUpdateJob implements ShouldQueue
      */
     public function handle(): void
     {
-        if (isset($this->webhookData['customer'])) {
+        if (!is_null($this->webhookData['email'])) {
+            $domain = explode('@', $this->webhookData['email'])[0];
+        } else {
+            $domain = $this->webhookData['phone'];
+        }
+        Log::info('Email cataco', ['mainEmail' => $domain]);
+        $customerData = [
+            'compare_email' => $this->webhookData['email'],
+        ];
 
-            $shopDomain = request()->header();
+        $shopDomain = request()->header();
 
-            $shopName = $shopDomain['x-shopify-shop-domain'][0];
+        $shopName = $shopDomain['x-shopify-shop-domain'][0];
 
-            $token = User::where('name', $shopName)->first();
+        $token = User::where('name', $shopName)->first();
 
-            if (null != $token['carrier_service_id']) {
-                $graphqlEndpoint = "https://$shopName/admin/api/2024-04/carrier_services/{$token['carrier_service_id']}.json";
+        if (null != $token['carrier_service_id']) {
+            $graphqlEndpoint = "https://$shopName/admin/api/2024-04/carrier_services/{$token['carrier_service_id']}.json";
 
-                $customHeaders = [
-                    'X-Shopify-Access-Token' => $token['password'],
-                ];
+            $customHeaders = [
+                'X-Shopify-Access-Token' => $token['password'],
+            ];
 
-                $data = [
-                    'carrier_service' => [
-                        'callback_url' => env('VITE_COMMON_API_URL') . "/api/carrier/callback/{$this->webhookData['customer']['id']}",
-                        'format' => 'json'
-                    ]
-                ];
+            $data = [
+                'carrier_service' => [
+                    'callback_url' => env('VITE_COMMON_API_URL') . "/api/carrier/callback/{$domain}",
+                    'format' => 'json'
+                ]
+            ];
 
-                Http::withHeaders($customHeaders)->put($graphqlEndpoint, $data);
+            Http::withHeaders($customHeaders)->put($graphqlEndpoint, $data);
 
-                $seconds = 2700;
-                $customerData = [
-                    'id' => $this->webhookData['customer']['id'],
-                    'orders_count' => $this->webhookData['customer']['orders_count'],
-                    'total_spent' => $this->webhookData['customer']['total_spent'],
-                    'phone' => $this->webhookData['customer']['phone'],
-                    'tags' => $this->webhookData['customer']['tags'],
-                    'email' => $this->webhookData['customer']['email']
-                ];
-
-                Cache::put($this->webhookData['customer']['id'], ["customer" => $customerData], $seconds);
+            if (isset($this->webhookData['customer'])) {
+                $customerData = array_merge($customerData, [
+                    'id' => $this->webhookData['customer']['id'] ?? null,
+                    'orders_count' => $this->webhookData['customer']['orders_count'] ?? 0,
+                    'total_spent' => $this->webhookData['customer']['total_spent'] ?? 0.0,
+                    'phone' => $this->webhookData['customer']['phone'] ?? $this->webhookData['phone'],
+                    'tags' => $this->webhookData['customer']['tags'] ?? '',
+                    'email' => $this->webhookData['customer']['email'] ?? $this->webhookData['email'],
+                ]);
             }
+
+            $seconds = 2700;
+            Cache::put($domain, ["customer" => $customerData], $seconds);
         }
     }
 }

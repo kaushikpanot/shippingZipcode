@@ -332,7 +332,7 @@ class SettingContoller extends Controller
                     'is_on_board' => 1,
                 ]);
             } else {
-                User::where('id', $eventUser['id'])->update(['is_on_board' => 1]);
+                User::where('id', $eventUser['id'])->update(['is_on_board' => 1, 'carrier_service_id' => $carrier_service_id]);
             }
 
             return response()->json([

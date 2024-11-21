@@ -663,7 +663,7 @@ class ApiController extends Controller
         return !empty(array_intersect($array1, $array2));
     }
 
-    private function getCustomerByPhone($field, $customer_id)
+    private function getCustomerByPhone($field, $customer_id, $isDomain=false)
     {
         if (empty($customer_id)) {
             return null;
@@ -675,6 +675,13 @@ class ApiController extends Controller
             if (empty($catchData)) {
                 return null;
             } else {
+                Log::info('domain', ['hello word'=>$isDomain]);
+                if($isDomain){
+                    $email = $catchData['customer'][$field];
+                    $domain = explode('@', $email);
+                    Log::info('domain', ['hello word'=>$domain]);
+                    return $domain;
+                }
                 return $catchData['customer'][$field];
             }
         }
@@ -1037,7 +1044,7 @@ class ApiController extends Controller
                         if ($condition['label'] == 'Customer') {
                             $fieldMap = [
                                 'name2' => 'name',
-                                'email' => fn($item) => $this->getCustomerByPhone('email', $customer_id),
+                                'email' => fn($item) => $this->getCustomerByPhone('compare_email', $customer_id),
                                 'phone' => 'phone',
                                 'company' => 'company_name',
                                 'address' => 'address1',
@@ -1046,6 +1053,7 @@ class ApiController extends Controller
                                 'city' => 'city',
                                 'provinceCode' => 'province',
                                 'tag2' => fn($item) => $this->getCustomerByPhone('tags', $customer_id),
+                                'email_domain' => fn($item) => $this->getCustomerByPhone('compare_email', $customer_id, true),
                                 'previousCount' => fn($item) => $this->getCustomerByPhone('orders_count', $customer_id),
                                 'previousSpent' => fn($item) => $this->getCustomerByPhone('total_spent', $customer_id),
                             ];
@@ -1195,6 +1203,7 @@ class ApiController extends Controller
                                 'city' => 'city',
                                 'provinceCode' => 'province',
                                 'tag2' => fn($item) => $this->getCustomerByPhone('tags', $customer_id),
+                                'email_domain' => fn($item) => $this->getCustomerByPhone('compare_email', $customer_id, true),
                                 'previousCount' => fn($item) => $this->getCustomerByPhone('orders_count', $customer_id),
                                 'previousSpent' => fn($item) => $this->getCustomerByPhone('total_spent', $customer_id),
                             ];
@@ -1345,6 +1354,7 @@ class ApiController extends Controller
                                 'city' => 'city',
                                 'provinceCode' => 'province',
                                 'tag2' => fn($item) => $this->getCustomerByPhone('tags', $customer_id),
+                                'email_domain' => fn($item) => $this->getCustomerByPhone('compare_email', $customer_id, true),
                                 'previousCount' => fn($item) => $this->getCustomerByPhone('orders_count', $customer_id),
                                 'previousSpent' => fn($item) => $this->getCustomerByPhone('total_spent', $customer_id),
                             ];

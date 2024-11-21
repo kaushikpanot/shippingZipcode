@@ -670,7 +670,7 @@ class ApiController extends Controller
         } else {
             $catchData = Cache::get($customer_id);
             Log::info('header logs:', ['catchData' => $catchData]);
-            Log::info('header logs:', ['catchData' => $catchData['customer'][$field]]);
+            // Log::info('header logs:', ['catchData' => $catchData['customer'][$field]]);
 
             if (empty($catchData)) {
                 return null;
@@ -993,12 +993,14 @@ class ApiController extends Controller
                                 case 'day':
                                     $comparativeValue = $currentDay;
                                     break;
+                                case 'coupon_code':
+                                    $comparativeValue = $this->getCustomerByPhone('coupon_code', $customer_id);
+                                    break;
 
                                 default:
                                     Log::error('Unknown condition name: ' . $condition['name']);
                                     break;
                             }
-
                             // Check the condition with the determined comparative value
                             return $this->checkCondition($condition, $comparativeValue);
                         }
@@ -1142,6 +1144,10 @@ class ApiController extends Controller
 
                                 case 'day':
                                     $comparativeValue = $currentDay;
+                                    break;
+
+                                case 'coupon_code':
+                                    $comparativeValue = $this->getCustomerByPhone('coupon_code', $customer_id);
                                     break;
 
                                 default:
@@ -1293,6 +1299,10 @@ class ApiController extends Controller
 
                                 case 'day':
                                     $comparativeValue = $currentDay;
+                                    break;
+
+                                case 'coupon_code':
+                                    $comparativeValue = $this->getCustomerByPhone('coupon_code', $customer_id);
                                     break;
 
                                 default:

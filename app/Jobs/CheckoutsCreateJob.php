@@ -34,10 +34,12 @@ class CheckoutsCreateJob implements ShouldQueue
         } else {
             $domain = $this->webhookData['phone'];
         }
+
         Log::info('Email cataco', ['mainEmail' => $domain]);
 
         $customerData = [
             'compare_email' => $this->webhookData['email'],
+            'coupon_code' => $this->webhookData['discount_codes'][0]['code'] ?? null,
         ];
 
         $shopDomain = request()->header();

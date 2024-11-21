@@ -36,9 +36,10 @@ class CheckoutsUpdateJob implements ShouldQueue
         } else {
             $domain = $this->webhookData['phone'];
         }
-        Log::info('Email cataco', ['mainEmail' => $domain]);
+        // Log::info('Email cataco', ['mainEmail' => $this->webhookData['discount_codes'][0]['code']]);
         $customerData = [
             'compare_email' => $this->webhookData['email'],
+            'coupon_code' => $this->webhookData['discount_codes'][0]['code'] ?? null,
         ];
 
         $shopDomain = request()->header();

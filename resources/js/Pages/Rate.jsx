@@ -1027,6 +1027,8 @@ function Rate(props) {
         { label: 'Day', value: 'day', mainlabel: "Cart_Order" },
         { label: 'Time', value: 'time', mainlabel: "Cart_Order" },
         { label: 'Locale Code', value: 'localcode', mainlabel: "Cart_Order" },
+        { label: 'Coupon Code', value: 'coupon_code', mainlabel: "Cart_Order" },
+
 
         { label: 'Per Product', value: '', disabled: true, className: 'select-header' },
         { label: 'Quantity', value: 'quantity2', unit: 'items', mainlabel: 'Per_Product' },
@@ -2497,7 +2499,8 @@ function Rate(props) {
                                                                         onChange={(newValue) => handleSelectChange(index, newValue, false)}
                                                                         value={item.name}
                                                                     />
-                                                                    {item.name !== 'day' && item.name !== 'localcode' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'time' && item.name !== 'name2' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'address' && item.name !== 'address' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'tag2' && item.name !== 'dayIs' && item.name !== 'type2' && item.name !== 'timeIn' && item.name !== 'dayOfWeek' && item.name !== 'company' && item.name !== 'phone' && item.name !== 'email' && item.name !== 'email_domain' && (
+                                                                    {item.name !== 'day' && item.name !== 'localcode' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'time' && item.name !== 'name2' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'address' && item.name !== 'address' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'tag2' && item.name !== 'dayIs' && item.name !== 'type2' && item.name !== 'timeIn' && item.name !== 'dayOfWeek' && item.name !== 'company' && item.name !== 'phone' && item.name !== 'email' && item.name !== 'email_domain' &&
+                                                                    item.name !== 'coupon_code' && (
                                                                         <Select
                                                                             options={option}
                                                                             onChange={(newValue) => handleSelectChange(index, newValue, true)}
@@ -2511,7 +2514,7 @@ function Rate(props) {
                                                                             value={item.condition}
                                                                         />
                                                                     )}
-                                                                    {(item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties' || item.name === 'name2' || item.name === 'email' || item.name === 'phone' || item.name === 'company' || item.name === 'addrss1' || item.name === 'address2' || item.name === 'city' || item.name === 'tag2' || item.name === 'email_domain') && (
+                                                                    {(item.name === 'name' || item.name === 'tag' || item.name === 'sku' || item.name === 'type' || item.name === 'vendor' || item.name === 'properties' || item.name === 'name2' || item.name === 'email' || item.name === 'phone' || item.name === 'company' || item.name === 'addrss1' || item.name === 'address2' || item.name === 'city' || item.name === 'tag2' || item.name === 'email_domain' || item.name === 'coupon_code') && (
                                                                         <Select
                                                                             options={name}
                                                                             onChange={(newValue) => handleSelectChange(index, newValue, true)}
@@ -2567,7 +2570,7 @@ function Rate(props) {
                                                                     {item.condition === 'between' && (
                                                                         <div>
                                                                             {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'name2' && item.name !== 'email' && item.name !== 'phone' && item.name !== 'company' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'Customer' && item.name !== 'localcode' &&
-                                                                            item.name !== 'email_domain' && (
+                                                                            item.name !== 'email_domain' && item.name !== 'coupon_code' && (
                                                                                 <TextField
                                                                                     value={item.value2}
                                                                                     onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
@@ -2596,11 +2599,17 @@ function Rate(props) {
                                                                             autoComplete="off"
                                                                             placeholder='gmail.com'
                                                                             error={errors[`value${index}`]}
-                                                                           
                                                                         />
                                                                     )}
-
-
+                                                                     {item.name === 'coupon_code' && (
+                                                                        <TextField
+                                                                            value={item.value}
+                                                                            onChange={(newValue) => handleConditionChange(newValue, index, 'value')}
+                                                                            autoComplete="off"
+                                                                            // placeholder='gmail.com'
+                                                                            error={errors[`value${index}`]}
+                                                                        />
+                                                                    )}
 
                                                                     {item.name === 'time' && (
                                                                         <div style={{

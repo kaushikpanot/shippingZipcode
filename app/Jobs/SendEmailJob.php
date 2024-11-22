@@ -9,6 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Symfony\Component\Mailer\Exception\TransportException;
 
 class SendEmailJob implements ShouldQueue
 {
@@ -37,8 +38,12 @@ class SendEmailJob implements ShouldQueue
      */
     public function handle(): void
     {
-        $mailable = new $this->mailableClass($this->name, $this->shopDomain);
-        Log::info("mail job", ['To mail'=>$mailable]);
-        Mail::to($this->to)->send($mailable);
+        try{
+            $mailable = new $this->mailableClass($this->name, $this->shopDomain);
+            Log::info("mail job", ['To mail'=>$mailable]);
+            Mail::to($this->to)->send($mailable);
+        } catch (TransportException $e) {
+            Log::error("Mail sending failed for {$this->to}: " . $e->getMessage());
+        }
     }
 }

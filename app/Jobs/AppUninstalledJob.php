@@ -74,7 +74,7 @@ class AppUninstalledJob implements ShouldQueue
 
             if ($user) {
                 $user->password = "";
-                $user->is_on_board = "";
+                $user->is_on_board = 0;
                 $user->save();
             } else {
                 Log::warning('User not found for shop domain: ' . $shopDomain);

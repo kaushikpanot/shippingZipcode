@@ -49,20 +49,69 @@ class CheckoutsUpdateJob implements ShouldQueue
         $token = User::where('name', $shopName)->first();
 
         if (null != $token['carrier_service_id']) {
-            $graphqlEndpoint = "https://$shopName/admin/api/2024-04/carrier_services/{$token['carrier_service_id']}.json";
+            $graphqlEndpoint = "https://$shopName/admin/api/2024-10/graphql.json";
 
+            // Headers for Shopify API request
             $customHeaders = [
                 'X-Shopify-Access-Token' => $token['password'],
             ];
 
-            $data = [
-                'carrier_service' => [
-                    'callback_url' => env('VITE_COMMON_API_URL') . "/api/carrier/callback/{$domain}",
-                    'format' => 'json'
-                ]
+            // GraphQL query for creating a carrier service
+            $query = <<<'GRAPHQL'
+                mutation carrierServiceUpdate($input: DeliveryCarrierServiceUpdateInput!) {
+                    carrierServiceUpdate(input: $input) {
+                        carrierService {
+                            id
+                            name
+                            callbackUrl
+                            supportsServiceDiscovery
+                            active
+                        }
+                        userErrors {
+                            field
+                            message
+                        }
+                    }
+                }
+                GRAPHQL;
+
+            // Variables for the mutation
+            $variables = [
+                'input' => [
+                    'name' => 'Shipping Rate Provider For Meetanshi',
+                    'callbackUrl' => env('VITE_COMMON_API_URL') . "/api/carrier/callback/{$domain}",
+                    'id' => $token['carrier_service_id'],
+                    'supportsServiceDiscovery' => true,
+                    'active' => true,
+                ],
             ];
 
-            Http::withHeaders($customHeaders)->put($graphqlEndpoint, $data);
+            // Prepare the data for the GraphQL request
+            $data = [
+                'query' => $query,
+                'variables' => $variables,
+            ];
+
+            // Make the HTTP POST request to Shopify GraphQL endpoint
+            $response = Http::withHeaders($customHeaders)->post($graphqlEndpoint, $data);
+
+            // Parse the JSON response
+            $jsonResponse = $response->json();
+
+            Log::info("GraphQL User Error: ", ["jsonResponse" => $jsonResponse]);
+
+            // Check for errors in the response
+            if (isset($jsonResponse['data']['carrierServiceCreate']['userErrors']) && !empty($jsonResponse['data']['carrierServiceCreate']['userErrors'])) {
+                $errors = $jsonResponse['data']['carrierServiceCreate']['userErrors'];
+                foreach ($errors as $error) {
+                    Log::error("GraphQL User Error: " . $error['message'], ['field' => $error['field']]);
+                }
+            }
+
+            if (isset($jsonResponse['data']['carrierServiceCreate']['carrierService'])) {
+                $carrierService = $jsonResponse['data']['carrierServiceCreate']['carrierService'];
+                Log::info('Carrier Service Created Successfully', $carrierService);
+            }
 
             if (isset($this->webhookData['customer'])) {
                 $customerData = array_merge($customerData, [

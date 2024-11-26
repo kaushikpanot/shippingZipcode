@@ -270,35 +270,72 @@ class SettingContoller extends Controller
                 ], 200);
             }
 
-            $graphqlEndpoint = "https://{$eventUser['name']}/admin/api/2024-04/carrier_services.json";
+            $graphqlEndpoint = "https://$shop/admin/api/2024-10/graphql.json";
 
-            // // Headers for Shopify API request
+            // Headers for Shopify API request
             $customHeaders = [
                 'X-Shopify-Access-Token' => $eventUser['password'],
             ];
 
-            $data = [
-                'carrier_service' => [
+            // GraphQL query for creating a carrier service
+            $query = <<<'GRAPHQL'
+                mutation carrierServiceCreate($input: DeliveryCarrierServiceCreateInput!) {
+                    carrierServiceCreate(input: $input) {
+                        carrierService {
+                            id
+                            name
+                            callbackUrl
+                            supportsServiceDiscovery
+                            active
+                        }
+                        userErrors {
+                            field
+                            message
+                        }
+                    }
+                }
+                GRAPHQL;
+
+            // Variables for the mutation
+            $variables = [
+                'input' => [
                     'name' => 'Shipping Rate Provider For Meetanshi',
-                    'callback_url' => env('VITE_COMMON_API_URL') . "/api/carrier/callback",
-                    'service_discovery' => true,
-                    'format' => 'json'
-                ]
+                    'callbackUrl' => env('VITE_COMMON_API_URL') . "/api/carrier/callback",
+                    'supportsServiceDiscovery' => true,
+                    'active' => true,
+                ],
             ];
 
-            // // Encode the data as JSON
-            $jsonData = json_encode($data);
-            // // Make HTTP POST request to Shopify GraphQL endpoint
+            // Prepare the data for the GraphQL request
+            $data = [
+                'query' => $query,
+                'variables' => $variables,
+            ];
+
+            // Make the HTTP POST request to Shopify GraphQL endpoint
             $response = Http::withHeaders($customHeaders)->post($graphqlEndpoint, $data);
 
-            // // Parse the JSON response
-            $carrier_service_id = $eventUser['carrier_service_id'];
-            if (isset($response->json()['carrier_service'])) {
-                $jsonResponse = $response->json()['carrier_service'];
+            // Parse the JSON response
+            $jsonResponse = $response->json();
 
-                if (isset($jsonResponse['id'])) {
-                    $carrier_service_id = $jsonResponse['id'];
+            Log::info("GraphQL User Error: ", ["jsonResponse" => $jsonResponse]);
+
+            // Check for errors in the response
+            if (isset($jsonResponse['data']['carrierServiceCreate']['userErrors']) && !empty($jsonResponse['data']['carrierServiceCreate']['userErrors'])) {
+                $errors = $jsonResponse['data']['carrierServiceCreate']['userErrors'];
+                foreach ($errors as $error) {
+                    Log::error("GraphQL User Error: " . $error['message'], ['field' => $error['field']]);
                 }
+            }
+
+            // Check for carrier service in the response
+            $carrier_service_id = $eventUser['carrier_service_id'];
+            if (isset($jsonResponse['data']['carrierServiceCreate']['carrierService'])) {
+                $carrierService = $jsonResponse['data']['carrierServiceCreate']['carrierService'];
+                if (isset($carrierService['id'])) {
+                    $carrier_service_id = $carrierService['id'];
+                }
+                Log::info('Carrier Service Created Successfully', $carrierService);
             }
 
             // Define the REST API endpoint

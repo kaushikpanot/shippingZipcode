@@ -26,3 +26,5 @@ Route::get('/{path}', [HomeController::class, 'common'])->where('path', '[a-zA-Z
 Route::post('/webhook/checkouts-create', [WebhookController::class, 'handleCheckoutsCreate']);
 
 Route::post('/webhook/carts-create', [WebhookController::class, 'handleCartsCreate']);
+Route::post('customers/update', [WebhookController::class, 'customersUpdate']);
+Route::post('customers/delete', [webhookController::class, 'customersDelete']);

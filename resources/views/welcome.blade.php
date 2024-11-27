@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="shopify-api-key" content="{{ env('SHOPIFY_API_KEY') }}">
+    <meta name="shopify-api-key" content="{{ config('shopify-app.api_key') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ \Osiset\ShopifyApp\Util::getShopifyConfig('app_name') }}</title>

@@ -21,23 +21,9 @@ class HomeController extends Controller
         $host = $request->input('host');
 
         $shopName = $post['shop'];
-        // $token = User::where('name', $shopName)->first();
         User::where('name', $shopName)->update(['is_on_board'=>0]);
 
         $this->handleInstallMail($shopName);
-
-
-
-        // if ($token) {
-        //     $shopDetail = [
-        //         "name" => $token['name'],
-        //         "password" => $token['password']
-        //     ];
-
-        //     // event(new ProcessDataEvent($token));
-
-        //     // $this->handleInstallMail($token);
-        // }
 
         return view('welcome', compact('shop', 'host'));
     }

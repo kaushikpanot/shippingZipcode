@@ -19,8 +19,13 @@ class VerifyShop
         if ($request->input('embedded') == 1) {
             $shop = $request->input('host');
             return response()->view('welcome', ['host' => $shop], 200);
-
+        } else {
+            $shop = $request->input('shop');
+            if (@$shop) {
+                return $next($request);
+            }
+            $pathToFile = public_path('site/index.html');
+            return response()->file($pathToFile);
         }
-        return $next($request);
     }
 }

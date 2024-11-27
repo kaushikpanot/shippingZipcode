@@ -404,6 +404,14 @@ return [
             'topic' => env('SHOPIFY_WEBHOOK_6_TOPIC', 'customers/update'),
             'address' => env('SHOPIFY_WEBHOOK_6_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/customers-updated')
         ],
+        [
+            'topic' => env('SHOPIFY_WEBHOOK_3_TOPIC', 'customers/update'),
+            'address' => env('SHOPIFY_WEBHOOK_3_ADDRESS', env('VITE_COMMON_API_URL') . "/customers/update")
+        ],
+        [
+            'topic' => env('SHOPIFY_WEBHOOK_4_TOPIC', 'customers/delete'),
+            'address' => env('SHOPIFY_WEBHOOK_4_ADDRESS', env('VITE_COMMON_API_URL') . "/customers/delete")
+        ],
         // [
         //     'topic' => env('SHOPIFY_ORDER_WEBHOOK_TOPIC', 'orders/create'),
         //     'address' => env('SHOPIFY_ORDER_WEBHOOK_ADDRESS', env('APP_URL') . '/webhook/order-created')

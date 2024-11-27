@@ -23,7 +23,7 @@ class VerifyShopifyJWT
     public function handle(Request $request, Closure $next)
     {
         $token = $request->header('Authorization');
-        $secret = env('SHOPIFY_API_SECRET');
+        $secret = config('shopify-app.api_secret');
 
         if (!$token) {
             return response()->json(["status" => false, 'error' => 'Unauthorized'], 401);

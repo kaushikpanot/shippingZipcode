@@ -179,7 +179,7 @@ return [
     |
     */
 
-    'api_key' => env('SHOPIFY_API_KEY', ''),
+    'api_key' => env('SHOPIFY_API_KEY', 'fa8e0391c1af197fcf23173b38533c91'),
 
     /*
     |--------------------------------------------------------------------------
@@ -190,7 +190,7 @@ return [
     |
     */
 
-    'api_secret' => env('SHOPIFY_API_SECRET', ''),
+    'api_secret' => env('SHOPIFY_API_SECRET', '2b335acb7451cdbdd954ebc8bd5392c3'),
 
     /*
     |--------------------------------------------------------------------------
@@ -403,14 +403,6 @@ return [
         [
             'topic' => env('SHOPIFY_WEBHOOK_6_TOPIC', 'customers/update'),
             'address' => env('SHOPIFY_WEBHOOK_6_ADDRESS', env('VITE_COMMON_API_URL').'/webhook/customers-updated')
-        ],
-        [
-            'topic' => env('SHOPIFY_WEBHOOK_3_TOPIC', 'customers/update'),
-            'address' => env('SHOPIFY_WEBHOOK_3_ADDRESS', env('VITE_COMMON_API_URL') . "/customers/update")
-        ],
-        [
-            'topic' => env('SHOPIFY_WEBHOOK_4_TOPIC', 'customers/delete'),
-            'address' => env('SHOPIFY_WEBHOOK_4_ADDRESS', env('VITE_COMMON_API_URL') . "/customers/delete")
         ],
         // [
         //     'topic' => env('SHOPIFY_ORDER_WEBHOOK_TOPIC', 'orders/create'),

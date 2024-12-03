@@ -4,7 +4,14 @@ namespace App\Jobs;
 
 use App\Mail\UninstallEmail;
 use App\Mail\UninstallSupportEmail;
+use App\Models\Charge;
+use App\Models\MixMergeRate;
+use App\Models\Rate;
+use App\Models\RateZipcode;
+use App\Models\Setting;
 use App\Models\User;
+use App\Models\Zone;
+use App\Models\ZoneCountry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -76,14 +83,19 @@ class AppUninstalledJob implements ShouldQueue
                 $user->password = "";
                 $user->is_on_board = 0;
                 $user->save();
+
+                Zone::where('user_id', $user->id)->delete();
+                ZoneCountry::where('user_id', $user->id)->delete();
+                Setting::where('user_id', $user->id)->delete();
+                RateZipcode::where('user_id', $user->id)->delete();
+                Rate::where('user_id', $user->id)->delete();
+                MixMergeRate::where('user_id', $user->id)->delete();
+                Charge::where('user_id', $user->id)->delete();
             } else {
                 Log::warning('User not found for shop domain: ' . $shopDomain);
             }
 
-            // $this->markAsProcessed($shopDomain);
-
             Mail::to($to)->send(new UninstallEmail($name, $shopDomain));
-            // Mail::to("krishna.patel@meetanshi.com")->send(new UninstallSupportEmail($name, $shopDomain));
 
             Log::info('User password successfully!');
         } catch (\Throwable $e) {

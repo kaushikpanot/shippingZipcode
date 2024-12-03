@@ -190,7 +190,7 @@ return [
     |
     */
 
-    'api_secret' => env('SHOPIFY_API_SECRET', '50cc1ef71e87bb960faf249f43dbae2d'),
+    'api_secret' => env('SHOPIFY_API_SECRET', '92ae19cc99912afa9c23366125605ff2'),
 
     /*
     |--------------------------------------------------------------------------

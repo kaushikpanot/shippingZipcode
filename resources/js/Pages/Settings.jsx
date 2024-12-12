@@ -185,6 +185,8 @@ const Settings = (props) => {
       ...prevState,
       [key]: value,
     }));
+
+    getMergeRateDetails()
   }
 
   useEffect(() => {
@@ -193,7 +195,6 @@ const Settings = (props) => {
   const apiCall = async () => {
     await getSettingData().then(function () {
       getonPlans();
-      getMergeRateDetails()
     })
 
   }

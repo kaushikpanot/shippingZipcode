@@ -1858,7 +1858,7 @@ function Rate(props) {
                 // collectionId: collectionId,
                 // type: searchType,
                 isCalling: "rate_based_on_surcharge",
-                rate_id : formData.id
+                rate_id: formData.id
             };
             const response = await axios.post(`${apiCommonURL}/api/products`, payload, {
                 headers: {
@@ -2500,13 +2500,13 @@ function Rate(props) {
                                                                         value={item.name}
                                                                     />
                                                                     {item.name !== 'day' && item.name !== 'localcode' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'time' && item.name !== 'name2' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'address' && item.name !== 'address' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'tag2' && item.name !== 'dayIs' && item.name !== 'type2' && item.name !== 'timeIn' && item.name !== 'dayOfWeek' && item.name !== 'company' && item.name !== 'phone' && item.name !== 'email' && item.name !== 'email_domain' &&
-                                                                    item.name !== 'coupon_code' && (
-                                                                        <Select
-                                                                            options={option}
-                                                                            onChange={(newValue) => handleSelectChange(index, newValue, true)}
-                                                                            value={item.condition}
-                                                                        />
-                                                                    )}
+                                                                        item.name !== 'coupon_code' && (
+                                                                            <Select
+                                                                                options={option}
+                                                                                onChange={(newValue) => handleSelectChange(index, newValue, true)}
+                                                                                value={item.condition}
+                                                                            />
+                                                                        )}
                                                                     {(item.name === 'day' || item.name === 'localcode' || item.name === 'provinceCode' || item.name === 'dayOfWeek' || item.name === 'dayIs' || item.name === 'type2') && (
                                                                         <Select
                                                                             options={day}
@@ -2570,15 +2570,15 @@ function Rate(props) {
                                                                     {item.condition === 'between' && (
                                                                         <div>
                                                                             {item.name !== 'dayOfWeek' && item.name !== 'type2' && item.name !== 'date' && item.name !== 'dayIs' && item.name !== 'day' && item.name !== 'time' && item.name !== 'timeIn' && item.name !== 'name' && item.name !== 'tag' && item.name !== 'sku' && item.name !== 'type' && item.name !== 'vendor' && item.name !== 'properties' && item.name !== 'name2' && item.name !== 'email' && item.name !== 'phone' && item.name !== 'company' && item.name !== 'address' && item.name !== 'addrss1' && item.name !== 'address2' && item.name !== 'city' && item.name !== 'provinceCode' && item.name !== 'Customer' && item.name !== 'localcode' &&
-                                                                            item.name !== 'email_domain' && item.name !== 'coupon_code' && (
-                                                                                <TextField
-                                                                                    value={item.value2}
-                                                                                    onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
-                                                                                    autoComplete="off"
-                                                                                    suffix={item.unit ? item.unit : ''}
-                                                                                    error={errors[`value${index}2`]}
-                                                                                />
-                                                                            )}
+                                                                                item.name !== 'email_domain' && item.name !== 'coupon_code' && (
+                                                                                    <TextField
+                                                                                        value={item.value2}
+                                                                                        onChange={(newValue) => handleConditionChange(newValue, index, 'value2')}
+                                                                                        autoComplete="off"
+                                                                                        suffix={item.unit ? item.unit : ''}
+                                                                                        error={errors[`value${index}2`]}
+                                                                                    />
+                                                                                )}
                                                                         </div>
                                                                     )}
 
@@ -2601,7 +2601,7 @@ function Rate(props) {
                                                                             error={errors[`value${index}`]}
                                                                         />
                                                                     )}
-                                                                     {item.name === 'coupon_code' && (
+                                                                    {item.name === 'coupon_code' && (
                                                                         <TextField
                                                                             value={item.value}
                                                                             onChange={(newValue) => handleConditionChange(newValue, index, 'value')}

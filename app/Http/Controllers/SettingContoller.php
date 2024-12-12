@@ -50,7 +50,7 @@ class SettingContoller extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Setting list retrieved successfully.',
-                'settings' => $settings ?: (object) []
+                'settings' => $settings ?: (object) ['is_on_board' => $user_id['is_on_board']]
             ]);
         } catch (\Throwable $th) {
             Log::error('Error occurred while processing Add Setting API:' . $th->getMessage());

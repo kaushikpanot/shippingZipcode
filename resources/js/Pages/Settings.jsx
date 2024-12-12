@@ -113,7 +113,7 @@ const Settings = (props) => {
           'Authorization': `Bearer ${token}`
         }
       });
-      let status = response.data.plan.status?.toLowerCase()
+      let status = response?.data?.plan?.status?.toLowerCase()
       if (status !== "active") {
         const name = 'khushi_test';
 
@@ -192,6 +192,7 @@ const Settings = (props) => {
   useEffect(() => {
     apiCall();
   }, [planStatus])
+
   const apiCall = async () => {
     await getSettingData().then(function () {
       getonPlans();
